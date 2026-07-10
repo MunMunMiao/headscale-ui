@@ -247,7 +247,14 @@ export class RestHeadscaleClient implements HeadscaleClient {
 
   async getPolicy() {
     recordOperationCall("policy.get", "GET", "/api/v1/policy", {});
-    return (await this.http.get("/api/v1/policy")).data;
+    try {
+      return (await this.http.get("/api/v1/policy")).data;
+    } catch (error) {
+      if (error instanceof Error && /acl\s+policy not found/i.test(error.message)) {
+        return { policy: "" };
+      }
+      throw error;
+    }
   }
 
   async setPolicy(payload: OperationPayload) {
