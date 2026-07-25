@@ -1031,6 +1031,7 @@ const commonMessagesBase = {
   encryptionCorruptedBadge: "Danneggiato",
   encryptionUnsupportedHint: "Questo browser non supporta l'archiviazione persistente.",
   encryptionMultiTabNote: "Ogni scheda del browser richiede il proprio sblocco.",
+ },    
 } satisfies Record<SourceLocale, Record<MessageKey, string>>;
 
 export const commonMessages: Record<Locale, Record<MessageKey, string>> = {
@@ -1108,6 +1109,7 @@ const groupLabelsBase = {
     routes: "Rotte",
     apikeys: "Chiavi API",
     policy: "Politica",
+  },  
 } satisfies Record<SourceLocale, Record<OperationGroup, string>>;
 
 export const groupLabels: Record<Locale, Record<OperationGroup, string>> = {
@@ -1872,6 +1874,8 @@ const operationMessagesBase = {
       title: "Salva policy",
       description:
         "Salva la policy generata dal designer visuale di ACL, gruppi e proprietari delle etichette.",
+    },
+  },  
 } satisfies Record<SourceLocale, OperationText>;
 
 export const operationMessages: Record<Locale, OperationText> = {
