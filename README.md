@@ -76,13 +76,31 @@ Recommended Cloudflare Pages settings:
 
 - Build command: `bun install --frozen-lockfile && bun run build`
 - Build output directory: `dist`
-- Environment variable: `BUN_VERSION=1.3.14`
+- Environment variable: `BUN_VERSION=1.4.0`
 
 The repository includes `public/_redirects` so deep profile URLs are served by
 `index.html`:
 
 ```text
 /* /index.html 200
+```
+
+The UI is also published to GitHub Container Registry as a multi-arch image
+(`linux/amd64` and `linux/arm64`) when a GitHub Release is published:
+
+```bash
+docker run --rm -p 8080:80 ghcr.io/munmunmiao/headscale-ui:latest
+```
+
+Open http://localhost:8080. Tags follow the release version (`0.1.0`, `0.1`)
+plus `latest` for non-prerelease releases. After the first push, set the GHCR
+package visibility to public in the repository Packages settings.
+
+Build a local image from this repository with:
+
+```bash
+docker build -t headscale-ui:local .
+docker run --rm -p 8080:80 headscale-ui:local
 ```
 
 ## Verification
