@@ -70,20 +70,12 @@ development, tests, builds, and deployment commands.
 
 ## Deployment
 
-The app is a static SPA and can be deployed to Cloudflare Pages.
+Production is published to GitHub Pages at https://headscale.lyz.cloud when a
+non-prerelease GitHub Release is published. Pull requests and ordinary pushes
+to `main` do not update that site.
 
-Recommended Cloudflare Pages settings:
-
-- Build command: `bun install --frozen-lockfile && bun run build`
-- Build output directory: `dist`
-- Environment variable: `BUN_VERSION=1.4.0`
-
-The repository includes `public/_redirects` so deep profile URLs are served by
-`index.html`:
-
-```text
-/* /index.html 200
-```
+The Docker image and GitHub Pages site both serve the SPA from `/`. Deep links
+on GitHub Pages fall back through `404.html` (a copy of `index.html`).
 
 The UI is also published to GitHub Container Registry as a multi-arch image
 (`linux/amd64` and `linux/arm64`) when a GitHub Release is published:
