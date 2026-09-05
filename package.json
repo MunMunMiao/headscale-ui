@@ -13,7 +13,8 @@
     "test": "bun test src",
     "test:coverage": "bun test scripts/check-unit-coverage.test.ts && bun --config=./bunfig.coverage.toml test --coverage src && bun scripts/check-unit-coverage.ts",
     "test:e2e": "bun scripts/run-e2e.ts",
-    "check": "bun run lint && bun run test:coverage && bun run build && bun run test:e2e"
+    "test:deployment": "bun scripts/check-deployment.ts",
+    "check": "bun run lint && bun run test:coverage && bun run build && bun run test:e2e && bun run test:deployment"
   },
   "dependencies": {
     "@internationalized/date": "^3.12.1",
@@ -42,6 +43,7 @@
     "vite": "8.0.10",
     "vitest": "4.1.5",
     "vitest-browser-vue": "2.1.0",
-    "vue-tsc": "3.2.7"
+    "vue-tsc": "3.2.7",
+    "webdriverio": "9.27.1"
   }
 }

@@ -59,7 +59,7 @@ async function clearAll() {
     await clearAllSecureData();
     // Full reload so bootstrap runs from a clean slate; the cleared query
     // suppresses the empty-state auto-dialog and shows a confirmation banner.
-    window.location.assign("/login?cleared=1");
+    window.location.assign(router.resolve({ name: "login", query: { cleared: "1" } }).href);
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : String(err);
     clearing.value = false;

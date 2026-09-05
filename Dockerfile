@@ -5,9 +5,10 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY . .
-RUN bun run build
+RUN PAGES_BASE=/__HEADSCALE_UI_BASE__/ bun run build
 
 FROM nginx:1.28-alpine
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY docker/nginx.conf /opt/headscale-ui/nginx.conf.template
+COPY --chmod=755 docker/40-configure-base.sh /docker-entrypoint.d/40-configure-base.sh
+COPY --from=build /app/dist /opt/headscale-ui/dist
 EXPOSE 80
