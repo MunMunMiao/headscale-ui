@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, Lock, ShieldCheck, Unlock } from "lucide-vue-next";
 import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,7 @@ import { useHeadscaleI18n } from "@/i18n";
 import { clearAllSecureData } from "@/lib/secure-storage";
 
 const mp = useMasterPassword();
+const router = useRouter();
 const { t } = useHeadscaleI18n();
 
 type Mode = "idle" | "enable" | "change" | "disable";
@@ -102,7 +104,7 @@ async function clearAll() {
   clearing.value = true;
   try {
     await clearAllSecureData();
-    window.location.assign("/login");
+    window.location.assign(router.resolve({ name: "login" }).href);
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : String(err);
     clearing.value = false;
@@ -210,13 +212,6 @@ async function clearAll() {
           data-testid="security-confirm-passphrase"
         />
       </div>
-      <p
-        v-if="errorMessage"
-        class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </p>
       <div class="flex justify-end gap-2">
         <Button
           type="button"
@@ -272,13 +267,6 @@ async function clearAll() {
           data-testid="security-change-confirm-passphrase"
         />
       </div>
-      <p
-        v-if="errorMessage"
-        class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </p>
       <div class="flex justify-end gap-2">
         <Button
           type="button"
@@ -317,13 +305,6 @@ async function clearAll() {
           data-testid="security-disable-current"
         />
       </div>
-      <p
-        v-if="errorMessage"
-        class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </p>
       <div class="flex justify-end gap-2">
         <Button
           type="button"
@@ -344,6 +325,14 @@ async function clearAll() {
         </Button>
       </div>
     </form>
+
+    <p
+      v-if="errorMessage"
+      class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
 
     <div class="grid gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
       <p class="text-sm font-medium text-destructive">

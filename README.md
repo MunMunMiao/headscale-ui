@@ -62,7 +62,8 @@ bun run lint      # Run Biome checks
 bun run test           # Run Bun unit tests
 bun run test:coverage  # Require 100% function and line coverage for business modules
 bun run test:e2e       # Run browser E2E against a Docker Headscale service
-bun run check          # Lint, covered unit tests, build, and Docker E2E
+bun run test:deployment # Test the production image and subpath deployment in Chrome
+bun run check          # Lint, covered unit tests, build, and both Docker test suites
 ```
 
 The project intentionally avoids Node.js scripts. Use Bun for installation,
@@ -74,8 +75,9 @@ Production is published to GitHub Pages at https://headscale.lyz.cloud when a
 non-prerelease GitHub Release is published. Pull requests and ordinary pushes
 to `main` do not update that site.
 
-The Docker image and GitHub Pages site both serve the SPA from `/`. Deep links
-on GitHub Pages fall back through `404.html` (a copy of `index.html`).
+The Docker image defaults to `/` and supports a configurable subpath. The
+GitHub Pages site serves from `/`; its deep links fall back through `404.html`
+(a copy of `index.html`).
 
 The UI is also published to GitHub Container Registry as a multi-arch image
 (`linux/amd64` and `linux/arm64`) when a GitHub Release is published:
@@ -95,6 +97,68 @@ docker build -t headscale-ui:local .
 docker run --rm -p 8080:80 headscale-ui:local
 ```
 
+### Docker subpath deployment
+
+Use the same image with `BASE_PATH` to serve the UI under `/admin/`:
+
+```bash
+docker run --rm -p 8080:80 -e BASE_PATH=/admin/ ghcr.io/munmunmiao/headscale-ui:latest
+```
+
+Open http://localhost:8080/admin/. The equivalent Compose service is:
+
+```yaml
+services:
+  headscale-ui:
+    image: ghcr.io/munmunmiao/headscale-ui:latest
+    environment:
+      BASE_PATH: /admin/
+    ports:
+      - "8080:80"
+```
+
+An unset or empty `BASE_PATH` uses `/`. A missing trailing slash is added, so
+`/admin` and `/admin/` are equivalent. Nested paths such as `/tools/headscale/`
+are supported. Paths must start with `/`; segments may contain ASCII letters,
+digits, `.`, `_`, `~`, and `-`. Empty segments, `.` or `..` segments, encoded
+characters, full URLs, whitespace, query strings, fragments, and the reserved
+`__HEADSCALE_UI_BASE__` marker are rejected with an `Invalid BASE_PATH` startup
+error.
+
+The container generates its assets and Nginx configuration before serving
+requests. Recreate the container after changing `BASE_PATH`; rebuilding the
+image is unnecessary. Non-root deployments return 404 outside their prefix.
+
+When using a reverse proxy, **preserve the prefix**. For an Nginx proxy on the
+same Docker network, use:
+
+```nginx
+location = /admin {
+    return 308 /admin/$is_args$args;
+}
+
+location /admin/ {
+    proxy_pass http://headscale-ui:80;
+}
+```
+
+The `proxy_pass` URL has no trailing slash: adding one would strip `/admin/`
+and conflict with the container configuration. Keep the Headscale server URL
+in connection settings pointed at its API; `BASE_PATH` configures only the UI.
+
+### Static hosting without Docker
+
+For a static build, set the existing build-time `PAGES_BASE` instead:
+
+```bash
+PAGES_BASE=/admin/ bun run build
+```
+
+Serve the contents of `dist/` at `/admin/`, with page requests falling back to
+`/admin/index.html` and missing assets returning 404. `PAGES_BASE` is compiled
+into this build; setting an environment variable on a static server afterward
+does not change it. Docker handles runtime configuration through `BASE_PATH`.
+
 ## Verification
 
 Before shipping a change, run:
@@ -104,5 +168,7 @@ bun run check
 ```
 
 This covers Biome, the business-unit coverage gate, the TypeScript production
-build, and browser E2E against a disposable Docker Headscale service. Docker
-Compose must be available for the E2E suite.
+build, browser E2E against a disposable Docker Headscale service, and production
+image deployment tests covering root/subpath routing and local-data reset.
+Docker Compose and Chrome must be available for the browser suites. Deployment
+tests use mock profiles and disposable containers, without a real Headscale API.
