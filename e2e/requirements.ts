@@ -129,6 +129,12 @@ export const E2E_REQUIREMENTS = [
     testTitle: "creates a device label with an accessor + label manager and saves the rule",
   },
   {
+    id: "journey.policy-cli-tag-owner",
+    kind: "journey",
+    environment: "docker-headscale",
+    testTitle: "saves a live CLI user without email as a device-label manager against Headscale",
+  },
+  {
     id: "journey.policy-guard",
     kind: "journey",
     environment: "browser-mock",

@@ -82,7 +82,12 @@ import {
   withGroupPrefix,
   withTagPrefix,
 } from "@/domain/policy-views";
-import { PrincipalIndex, toPrincipal } from "@/domain/principal";
+import {
+  PrincipalIndex,
+  policyPrincipalForUser,
+  toPrincipal,
+  userMatchesPolicyValue,
+} from "@/domain/principal";
 import { useHeadscaleI18n } from "@/i18n";
 import { type CountMessage, formatCount } from "@/i18n/plural";
 
@@ -300,10 +305,28 @@ function tagIcon(tagName: string) {
   return Tag;
 }
 
-function buildAccessOptions(taken: ReadonlySet<string>): MemberOption[] {
+function userPickerOptions(selectedValues: readonly string[], groupOrder: number): MemberOption[] {
   const opts: MemberOption[] = [];
+  for (const user of visibleUsers.value) {
+    const id = policyPrincipalForUser(user);
+    if (!id) continue;
+    if (selectedValues.some((value) => userMatchesPolicyValue(user, value))) continue;
+    opts.push({
+      value: id,
+      label: user.displayName || user.name || id,
+      description: user.email || undefined,
+      group: copy.value.optionGroupUsers,
+      groupOrder,
+    });
+  }
+  return opts;
+}
+
+function buildAccessOptions(selectedValues: readonly string[]): MemberOption[] {
+  const opts: MemberOption[] = [];
+  const takenGroups = new Set(selectedValues.map((value) => toPrincipal(value)));
   for (const group of policyGroups.value) {
-    if (taken.has(toPrincipal(group.name))) continue;
+    if (takenGroups.has(toPrincipal(group.name))) continue;
     opts.push({
       value: group.name,
       label: stripGroupPrefix(group.name),
@@ -312,50 +335,24 @@ function buildAccessOptions(taken: ReadonlySet<string>): MemberOption[] {
       groupOrder: 1,
     });
   }
-  for (const user of visibleUsers.value) {
-    const id = user.email || user.name;
-    if (!id) continue;
-    if (taken.has(toPrincipal(id))) continue;
-    opts.push({
-      value: id,
-      label: user.displayName || user.name || id,
-      description: user.email || undefined,
-      group: copy.value.optionGroupUsers,
-      groupOrder: 2,
-    });
-  }
+  opts.push(...userPickerOptions(selectedValues, 2));
   return opts;
 }
 
-const accessorOptionsForCurrentTag = computed<MemberOption[]>(() => {
-  const taken = new Set((currentTagMeta.value?.accessors ?? []).map((a) => toPrincipal(a.who)));
-  return buildAccessOptions(taken);
-});
+const accessorOptionsForCurrentTag = computed<MemberOption[]>(() =>
+  buildAccessOptions((currentTagMeta.value?.accessors ?? []).map((a) => a.who)),
+);
 
-const ownerOptionsForCurrentTag = computed<MemberOption[]>(() => {
-  const taken = new Set((currentTagMeta.value?.owners ?? []).map((o) => toPrincipal(o)));
-  return buildAccessOptions(taken);
-});
+const ownerOptionsForCurrentTag = computed<MemberOption[]>(() =>
+  buildAccessOptions(currentTagMeta.value?.owners ?? []),
+);
 
-const memberOptionsForCurrentTeam = computed<MemberOption[]>(() => {
-  const taken = new Set(
-    (currentTeamMeta.value?.group.members ?? []).map((m) => toPrincipal(m.value)),
-  );
-  const opts: MemberOption[] = [];
-  for (const user of visibleUsers.value) {
-    const id = user.email || user.name;
-    if (!id) continue;
-    if (taken.has(toPrincipal(id))) continue;
-    opts.push({
-      value: id,
-      label: user.displayName || user.name || id,
-      description: user.email || undefined,
-      group: copy.value.optionGroupUsers,
-      groupOrder: 1,
-    });
-  }
-  return opts;
-});
+const memberOptionsForCurrentTeam = computed<MemberOption[]>(() =>
+  userPickerOptions(
+    (currentTeamMeta.value?.group.members ?? []).map((member) => member.value),
+    1,
+  ),
+);
 
 function openCreateTeam() {
   teamDetailCurrent.value = "";

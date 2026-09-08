@@ -11,4 +11,5 @@ e2e/__screenshots__/
 *.log
 .claude
 .codex
+.grok
 coverage/
