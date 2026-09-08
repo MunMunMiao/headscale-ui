@@ -9,6 +9,7 @@ import { useHeadscaleClient } from "@/composables/useHeadscaleClient";
 import { masterPasswordTestingHandle, useMasterPassword } from "@/composables/useMasterPassword";
 import { useSnapshot } from "@/composables/useSnapshot";
 import type { OperationId } from "@/domain/headscale-operations";
+import { policyPrincipalForUser } from "@/domain/principal";
 import { i18n, LOCALE_META, SUPPORTED_LOCALES } from "@/i18n";
 import { productCopy } from "@/i18n/product-copy";
 import {
@@ -2274,6 +2275,58 @@ test("creates a device label with an accessor + label manager and saves the rule
   expect(portsString).toContain("8080");
 });
 
+test("saves a no-email CLI user as a device-label manager with name@", async () => {
+  window.__headscaleUiOperationCalls = [];
+  await renderLogin();
+  await connectWithDefaults();
+
+  await page.getByTestId("section-members").click();
+  await openCreateMemberDialog();
+  await page.getByTestId("member-name").fill("test-user");
+  await page.getByTestId("create-member").click();
+  await expect.element(page.getByTestId("member-test-user")).toBeVisible();
+  expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
+
+  const created = useHeadscaleClient().mockClient.snapshot.users.find(
+    (user) => user.name === "test-user",
+  );
+  expect(created).toBeTruthy();
+  if (!created) throw new Error("mock user test-user was not created");
+  expect((created.email ?? "").trim()).toBe("");
+  const principal = policyPrincipalForUser(created);
+
+  await openAccessSection();
+  window.__headscaleUiOperationCalls = [];
+  await page.getByTestId("new-device-label").click();
+  await expect.element(page.getByTestId("tag-detail-dialog")).toBeVisible();
+  inputDomTestId("tag-name-input", "issue7");
+  await page.getByTestId("tag-name-confirm").click();
+  await expect.element(page.getByTestId("tag-owners-section")).toBeVisible();
+
+  await clickVisibleDomTestId("tag-add-owner-trigger");
+  await expect.element(page.getByTestId("tag-add-owner-content")).toBeVisible();
+  expect(document.querySelector('[data-testid="tag-add-owner-option-tagged-devices"]')).toBeNull();
+  expect(document.querySelector('[data-testid="tag-add-owner-option-tagged-devices@"]')).toBeNull();
+  await page.getByTestId(`tag-add-owner-option-${principal}`).click();
+  await expect.element(page.getByTestId(`tag-owner-row-${principal}`)).toBeVisible();
+
+  await page.getByTestId("tag-detail-close").click();
+  await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
+  await page.getByTestId("unsaved-changes-save").click();
+  await expect
+    .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
+    .toBe(true);
+
+  const saved = latestSavedPolicy();
+  expect(saved.tagOwners?.["tag:issue7"]).toEqual([principal]);
+  const owners = Object.values(saved.tagOwners ?? {}).flat();
+  const members = Object.values(saved.groups ?? {}).flat();
+  expect(owners).not.toContain("tagged-devices");
+  expect(owners).not.toContain("tagged-devices@");
+  expect(members).not.toContain("tagged-devices");
+  expect(members).not.toContain("tagged-devices@");
+});
+
 test("removes an accessor row from a tag detail dialog", async () => {
   await renderLogin();
   await connectWithDefaults();
@@ -3657,3 +3710,51 @@ test("cleans only true orphan references against Headscale v0.28.0", async () =>
   expect(persisted.tagOwners["tag:test-01"]).toEqual(["admin-test@"]);
   expect(body.policy).not.toContain("deleted-test@");
 });
+
+test("saves a live CLI user without email as a device-label manager against Headscale", async () => {
+  await renderLogin();
+  const { apiKey, baseUrl } = await connectToDockerHeadscale("Docker issue 7 tag owner");
+
+  await page.getByTestId("section-members").click();
+  await openCreateMemberDialog();
+  await page.getByTestId("member-name").fill("issue7-live");
+  await page.getByTestId("create-member").click();
+  await expect.element(page.getByTestId("member-issue7-live")).toBeVisible();
+
+  await openAccessSection();
+  window.__headscaleUiOperationCalls = [];
+  await page.getByTestId("new-device-label").click();
+  await expect.element(page.getByTestId("tag-detail-dialog")).toBeVisible();
+  inputDomTestId("tag-name-input", "issue7-live");
+  await page.getByTestId("tag-name-confirm").click();
+  await expect.element(page.getByTestId("tag-owners-section")).toBeVisible();
+
+  await clickVisibleDomTestId("tag-add-owner-trigger");
+  await expect.element(page.getByTestId("tag-add-owner-content")).toBeVisible();
+  await expect.element(page.getByTestId("tag-add-owner-option-issue7-live@")).toBeVisible();
+  await page.getByTestId("tag-add-owner-option-issue7-live@").click();
+  await expect.element(page.getByTestId("tag-owner-row-issue7-live@")).toBeVisible();
+
+  await page.getByTestId("tag-detail-close").click();
+  await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
+  await page.getByTestId("unsaved-changes-save").click();
+  await expect
+    .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
+    .toBe(true);
+
+  const saved = latestSavedPolicy();
+  expect(saved.tagOwners?.["tag:issue7-live"]).toEqual(["issue7-live@"]);
+  expect(saved.tagOwners?.["tag:issue7-live"]).not.toContain("issue7-live");
+
+  await expect
+    .poll(async () => {
+      const response = await fetch(`${baseUrl}/api/v1/policy`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!response.ok) return false;
+      const body = (await response.json()) as { policy: string };
+      const persisted = JSON.parse(body.policy) as { tagOwners?: Record<string, string[]> };
+      return persisted.tagOwners?.["tag:issue7-live"]?.join(",") === "issue7-live@";
+    })
+    .toBe(true);
+}, 120_000);

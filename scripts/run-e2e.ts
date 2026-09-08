@@ -105,14 +105,20 @@ try {
   if (!port) throw new Error("Docker Compose did not publish the Headscale port");
 
   run(["bun", "scripts/check-e2e-button-coverage.ts"]);
+  const e2eEnv = {
+    ...process.env,
+    HEADSCALE_E2E_URL: `http://127.0.0.1:${port}`,
+    HEADSCALE_E2E_API_KEY: apiKey,
+    VITE_HEADSCALE_E2E_API_KEY: apiKey,
+    HEADSCALE_E2E_COMPOSE_PROJECT: project,
+    HEADSCALE_E2E_COMPOSE_FILE: composeFile,
+  };
   run(
     ["bun", "--bun", "node_modules/vitest/vitest.mjs", "--config", "vitest.e2e.config.ts", "--run"],
-    {
-      ...process.env,
-      HEADSCALE_E2E_URL: `http://127.0.0.1:${port}`,
-      VITE_HEADSCALE_E2E_API_KEY: apiKey,
-    },
+    e2eEnv,
   );
+  // Same compose project as the browser suite — do not start a second Headscale lane.
+  run(["bun", "test", "./e2e/issue-7-policy-principals.ts", "--max-concurrency", "1"], e2eEnv);
 } finally {
   cleanup();
 }

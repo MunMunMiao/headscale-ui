@@ -85,6 +85,7 @@ import {
   serializePolicy,
   toMemberRef,
 } from "@/domain/policy-designer";
+import { policyPrincipalForUser, userPolicyPrincipals } from "@/domain/principal";
 import { useHeadscaleI18n } from "@/i18n";
 import { downloadCsv } from "@/utils/csv";
 import { nodePendingRoutes } from "@/utils/node";
@@ -198,14 +199,6 @@ function activeAuthKeysForUser(user: HeadscaleUser) {
   return snapshot.value.preAuthKeys.filter(
     (key) => key.user?.id === user.id && !key.used && !isExpired(key.expiration),
   );
-}
-
-function userPolicyPrincipals(user: HeadscaleUser) {
-  return [user.email, user.name].filter((value): value is string => Boolean(value));
-}
-
-function preferredPrincipalForUser(user: HeadscaleUser) {
-  return user.email || user.name || "";
 }
 
 function userPolicyReferences(user: HeadscaleUser): UserPolicyReference[] {
@@ -544,7 +537,7 @@ function handleAssignTagOwnershipsDialogOpen(open: boolean) {
 async function applyAssignMemberships(selectedGroupIds: string[]) {
   const target = assignMembershipsTarget.value;
   if (!target) return;
-  const principal = preferredPrincipalForUser(target);
+  const principal = policyPrincipalForUser(target);
   if (!principal) return;
 
   const principals = userPolicyPrincipals(target);
@@ -574,7 +567,7 @@ async function applyAssignMemberships(selectedGroupIds: string[]) {
 async function applyAssignTagOwnerships(selectedTagOwnerIds: string[]) {
   const target = assignTagOwnershipsTarget.value;
   if (!target) return;
-  const principal = preferredPrincipalForUser(target);
+  const principal = policyPrincipalForUser(target);
   if (!principal) return;
 
   const principals = userPolicyPrincipals(target);
@@ -828,7 +821,7 @@ function openNodeDetailsFromDialog(node: HeadscaleNode) {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       :data-testid="`assign-member-groups-mobile-${user.name}`"
-                      :disabled="!preferredPrincipalForUser(user)"
+                      :disabled="!policyPrincipalForUser(user)"
                       @click="openAssignMembershipsDialog(user)"
                     >
                       <Users class="h-4 w-4" aria-hidden="true" />
@@ -836,7 +829,7 @@ function openNodeDetailsFromDialog(node: HeadscaleNode) {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       :data-testid="`assign-member-tags-mobile-${user.name}`"
-                      :disabled="!preferredPrincipalForUser(user)"
+                      :disabled="!policyPrincipalForUser(user)"
                       @click="openAssignTagOwnershipsDialog(user)"
                     >
                       <ShieldCheck class="h-4 w-4" aria-hidden="true" />
@@ -906,7 +899,7 @@ function openNodeDetailsFromDialog(node: HeadscaleNode) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         :data-testid="`assign-member-groups-${user.name}`"
-                        :disabled="!preferredPrincipalForUser(user)"
+                        :disabled="!policyPrincipalForUser(user)"
                         @click="openAssignMembershipsDialog(user)"
                       >
                         <Users class="h-4 w-4" aria-hidden="true" />
@@ -914,7 +907,7 @@ function openNodeDetailsFromDialog(node: HeadscaleNode) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         :data-testid="`assign-member-tags-${user.name}`"
-                        :disabled="!preferredPrincipalForUser(user)"
+                        :disabled="!policyPrincipalForUser(user)"
                         @click="openAssignTagOwnershipsDialog(user)"
                       >
                         <ShieldCheck class="h-4 w-4" aria-hidden="true" />
