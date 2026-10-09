@@ -321,7 +321,83 @@ try {
   await element("connect-server-url").setValue(origin);
   await element("connect-api-key").setValue(apiKey);
   await click("connect-submit");
-  await click("profile-option-Lifecycle");
+  try {
+    await click("profile-option-Lifecycle");
+  } catch (error) {
+    try {
+      const state = await page.execute(
+        ({ expectedOrigin, expectedKey }) => ({
+          pathname: location.pathname,
+          input: {
+            nameMatches:
+              document.querySelector<HTMLInputElement>('[data-testid="connect-profile-name"]')
+                ?.value === "Lifecycle",
+            urlMatches:
+              document.querySelector<HTMLInputElement>('[data-testid="connect-server-url"]')
+                ?.value === expectedOrigin,
+            keyMatches:
+              document.querySelector<HTMLInputElement>('[data-testid="connect-api-key"]')?.value ===
+              expectedKey,
+          },
+          submitDisabled: document.querySelector<HTMLButtonElement>(
+            '[data-testid="connect-submit"]',
+          )?.disabled,
+          connectionDialog: !!document.querySelector('[data-testid="connection-dialog"]'),
+          validationDialog: !!document.querySelector('[data-testid="profile-validation-dialog"]'),
+          errors: ["connect-error", "profile-validation-error", "login-error"].map((id) => ({
+            id,
+            text: document.querySelector(`[data-testid="${id}"]`)?.textContent?.trim(),
+          })),
+          profileCount: document.querySelectorAll('[data-testid^="profile-option-"]').length,
+          resources: performance
+            .getEntriesByType("resource")
+            .filter(
+              (entry) =>
+                new URL(entry.name).pathname.startsWith("/api/") ||
+                new URL(entry.name).pathname === "/version",
+            )
+            .map((entry) => ({
+              path: new URL(entry.name).pathname,
+              status: (entry as PerformanceResourceTiming).responseStatus,
+              start: entry.startTime,
+              end: (entry as PerformanceResourceTiming).responseEnd,
+            })),
+        }),
+        { expectedOrigin: origin, expectedKey: apiKey },
+      );
+      for (const item of state.errors) {
+        item.text = item.text?.replaceAll(/https?:\/\/[^\s"'<>]+/gi, (url) => {
+          try {
+            return new URL(url).pathname;
+          } catch {
+            return "[URL]";
+          }
+        });
+      }
+      const failures = (await page.getLogs("browser")).flatMap((record) => {
+        const message = String(record.message);
+        const url = message.match(/https?:\/\/[^\s"'<>]+/)?.[0];
+        const status = message.match(/status of (\d{3})/)?.[1];
+        const errorText = message.match(/net::ERR_[A-Z0-9_]+/)?.[0];
+        if (!url || (!status && !errorText)) return [];
+        return [
+          {
+            timestamp: record.timestamp,
+            path: new URL(url).pathname,
+            status: status ? Number(status) : undefined,
+            errorText,
+          },
+        ];
+      });
+      console.error(
+        "Lifecycle connection failure",
+        JSON.stringify({ state, failures }).replaceAll(apiKey, "[REDACTED]"),
+      );
+    } catch {
+      console.error("Lifecycle connection diagnostics unavailable");
+    }
+    throw error;
+  }
   await openAccess();
   await element("open-access-banner").waitForDisplayed({ timeout: 15000 });
   await element("ip-rules-section").waitForDisplayed({ timeout: 15000 });
