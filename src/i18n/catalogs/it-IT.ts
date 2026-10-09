@@ -8,6 +8,8 @@ export const itITCatalog = {
     serverUrl: "URL del server",
     apiKey: "Chiave API",
     apiKeyPlaceholder: "Token Bearer creato con headscale apikeys create",
+    connectionInvalidUrl: "Inserisci un URL assoluto del server con protocollo HTTP(S).",
+    connectionApiKeyRequired: "Inserisci una chiave API.",
     connectTitle: "Connetti a Headscale",
     connectSubtitle:
       "Inserisci l'indirizzo del server e il token di autorizzazione prima di aprire il pannello di controllo.",
@@ -58,9 +60,6 @@ export const itITCatalog = {
     cancel: "Annulla",
     connect: "Connetti",
     logout: "Disconnetti",
-    mode: "Modalità",
-    mockMode: "Simulazione",
-    realMode: "Reale",
     theme: "Tema",
     language: "Lingua",
     light: "Chiaro",

@@ -1,11 +1,13 @@
-import { beforeEach, expect, test, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { commands, page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-vue";
+import { nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import App from "@/App.vue";
 import { RestHeadscaleClient } from "@/api/headscale-client";
 import ErrorScreen from "@/components/ErrorScreen.vue";
 import { resetAllSingletons } from "@/composables/__testing";
+import { type ActionFeedbackKey, useActionFeedback } from "@/composables/useActionFeedback";
 import { useHeadscaleClient } from "@/composables/useHeadscaleClient";
 import { masterPasswordTestingHandle, useMasterPassword } from "@/composables/useMasterPassword";
 import { useSnapshot } from "@/composables/useSnapshot";
@@ -25,6 +27,14 @@ import { hydrateSettings, settingsStorageTestingHandle } from "@/lib/settings-st
 import { installAuthGuard, routes } from "@/router";
 import { E2E_REQUIREMENTS } from "./requirements";
 import "@/styles/globals.css";
+import policyFixture from "./headscale-policy.hujson?raw";
+
+declare module "vitest/browser" {
+  interface BrowserCommands {
+    reportNetworkFailures(failedTest?: string): Promise<void>;
+    resetHeadscaleFixture(blankPolicy?: boolean): Promise<void>;
+  }
+}
 
 const realHeadscaleApiKey = import.meta.env.VITE_HEADSCALE_E2E_API_KEY;
 
@@ -74,6 +84,14 @@ async function clearHeadscaleDb(): Promise<void> {
   });
 }
 
+afterEach(async ({ task }) => {
+  try {
+    await commands.reportNetworkFailures(task.result?.state === "fail" ? task.name : undefined);
+  } catch {
+    console.error("E2E network diagnostics unavailable");
+  }
+});
+
 beforeEach(async () => {
   await page.viewport(1366, 768);
   document.body.innerHTML = "";
@@ -90,6 +108,7 @@ beforeEach(async () => {
   document.documentElement.dir = "ltr";
   window.__headscaleUiOperationCalls = [];
   resetAllSingletons();
+  if (realHeadscaleApiKey) await commands.resetHeadscaleFixture();
 });
 
 /**
@@ -100,7 +119,7 @@ async function seedProfileInIdb(
   plain: {
     id: string;
     name: string;
-    mode: "mock" | "real";
+    mode?: "mock" | "real";
     baseUrl: string;
     apiKey: string;
     updatedAt: string;
@@ -113,7 +132,7 @@ async function seedProfileInIdb(
   await idbPut(STORE_PROFILES, {
     id: plain.id,
     name: plain.name,
-    mode: plain.mode,
+    ...(plain.mode ? { mode: plain.mode } : {}),
     baseUrl: plain.baseUrl,
     apiKey,
     updatedAt: plain.updatedAt,
@@ -150,40 +169,44 @@ async function renderLogin(path = "/") {
   return rendered;
 }
 
+function dockerSettings() {
+  if (!realHeadscaleApiKey) throw new Error("VITE_HEADSCALE_E2E_API_KEY is required");
+  return { apiKey: realHeadscaleApiKey, baseUrl: `${window.location.origin}/__headscale-e2e` };
+}
+
+async function fillRealConnection() {
+  const settings = dockerSettings();
+  await page.getByTestId("connect-server-url").fill(settings.baseUrl);
+  await page.getByTestId("connect-api-key").fill(settings.apiKey);
+}
+
 async function connectWithDefaults() {
   const form = document.querySelector<HTMLElement>('[data-testid="connect-form"]');
-  const defaultProfile = document.querySelector<HTMLElement>(
-    '[data-testid="profile-option-Local mock"]',
-  );
-  if (!defaultProfile && (!form || form.getBoundingClientRect().width === 0)) {
+  if (!form || form.getBoundingClientRect().width === 0)
     await page.getByTestId("profile-option-new").click();
-  }
-  if (!defaultProfile) {
-    await expect.element(page.getByTestId("connect-form")).toBeVisible();
-    await page.getByTestId("connect-submit").click();
-    await expect.element(page.getByTestId("profile-option-Local mock")).toBeVisible();
-  }
-  await page.getByTestId("profile-option-Local mock").click();
+  await page.getByTestId("connect-profile-name").fill("Docker Headscale");
+  await fillRealConnection();
+  await page.getByTestId("connect-submit").click();
+  await expect.element(page.getByTestId("profile-option-Docker Headscale")).toBeVisible();
+  await page.getByTestId("profile-option-Docker Headscale").click();
   await expect.element(page.getByTestId("profile-menu-trigger")).toBeVisible();
 }
 
 async function connectToDockerHeadscale(profileName: string) {
-  if (!realHeadscaleApiKey) {
-    throw new Error("VITE_HEADSCALE_E2E_API_KEY is required for Docker Headscale E2E tests");
-  }
-
+  const settings = dockerSettings();
+  const client = new RestHeadscaleClient(settings);
+  for (const name of ["admin-test", "team-test", "deleted-test"]) await client.createUser({ name });
+  await client.setPolicy({ policy: policyFixture });
+  const deleted = (await client.listUsers({ name: "deleted-test" })).users[0];
+  await client.deleteUser({ id: deleted.id });
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill(profileName);
-  selectDomTestId("connect-mode", "real");
-  const baseUrl = `${window.location.origin}/__headscale-e2e`;
-  await page.getByTestId("connect-server-url").fill(baseUrl);
-  await page.getByTestId("connect-api-key").fill(realHeadscaleApiKey);
+  await fillRealConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId(`profile-option-${profileName}`)).toBeVisible();
   await page.getByTestId(`profile-option-${profileName}`).click();
   await expect.element(page.getByTestId("section-home")).toBeVisible();
-
-  return { apiKey: realHeadscaleApiKey, baseUrl };
+  return settings;
 }
 
 async function openCreateMemberDialog() {
@@ -290,30 +313,15 @@ async function captureResponsiveScreenshot(name: string) {
 }
 
 function expectConnectionFormGridLayout() {
-  const profileName = document.querySelector<HTMLElement>('[data-testid="connect-profile-name"]');
-  const mode = document.querySelector<HTMLElement>('[data-testid="connect-mode"]');
-  const serverUrl = document.querySelector<HTMLElement>('[data-testid="connect-server-url"]');
-  const apiKey = document.querySelector<HTMLElement>('[data-testid="connect-api-key"]');
-  expect(profileName).toBeTruthy();
-  expect(mode).toBeTruthy();
-  expect(serverUrl).toBeTruthy();
-  expect(apiKey).toBeTruthy();
-  const modeWrapper = (mode as HTMLElement).closest<HTMLElement>(
-    '[data-slot="native-select-wrapper"]',
+  const fields = ["connect-profile-name", "connect-server-url", "connect-api-key"].map((testId) =>
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(modeWrapper).toBeTruthy();
-
-  const profileNameRect = (profileName as HTMLElement).getBoundingClientRect();
-  const modeRect = (mode as HTMLElement).getBoundingClientRect();
-  const modeWrapperRect = (modeWrapper as HTMLElement).getBoundingClientRect();
-  const serverUrlRect = (serverUrl as HTMLElement).getBoundingClientRect();
-  const apiKeyRect = (apiKey as HTMLElement).getBoundingClientRect();
-  expect(Math.abs(profileNameRect.top - modeRect.top)).toBeLessThan(2);
-  expect(Math.abs(modeWrapperRect.width - profileNameRect.width)).toBeLessThan(2);
-  expect(Math.abs(serverUrlRect.left - profileNameRect.left)).toBeLessThan(2);
-  expect(Math.abs(apiKeyRect.left - profileNameRect.left)).toBeLessThan(2);
-  expect(serverUrlRect.width).toBeGreaterThan(profileNameRect.width * 1.8);
-  expect(apiKeyRect.width).toBeGreaterThan(modeRect.width * 1.8);
+  expect(fields.every(Boolean)).toBe(true);
+  const [name, url, key] = fields.map((field) => (field as HTMLElement).getBoundingClientRect());
+  expect(Math.abs(name.width - url.width)).toBeLessThan(2);
+  expect(Math.abs(key.width - url.width)).toBeLessThan(2);
+  expect(Math.abs(name.left - url.left)).toBeLessThan(2);
+  expect(Math.abs(key.left - url.left)).toBeLessThan(2);
 }
 
 function expectDialogHasNoInternalScrollbar(testId: string) {
@@ -592,7 +600,7 @@ async function expectMachinesWorkbench() {
   expect(deviceIpBadges).toHaveLength(2);
   expect(deviceIpBadges[0]?.textContent).toContain("100.64.0.1");
   expect(deviceIpBadges[0]?.className).toContain("font-mono");
-  const deviceTag = document.querySelector<HTMLElement>('[data-testid="device-tag-1-0"]');
+  const deviceTag = document.querySelector<HTMLElement>('[data-testid="device-tag-2-0"]');
   const deviceStatus = document.querySelector<HTMLElement>('[data-testid="device-status-1"]');
   const offlineStatus = document.querySelector<HTMLElement>('[data-testid="device-status-2"]');
   const expiredStatus = document.querySelector<HTMLElement>('[data-testid="device-status-3"]');
@@ -600,7 +608,7 @@ async function expectMachinesWorkbench() {
   expect(deviceStatus).toBeTruthy();
   expect(offlineStatus).toBeTruthy();
   expect(expiredStatus).toBeTruthy();
-  expect(deviceTag?.className).toContain("bg-fuchsia-50");
+  expect(deviceTag?.className).toContain("bg-cyan-50");
   expect(deviceTag?.className).not.toBe(deviceStatus?.className);
   expect(deviceStatus?.textContent).toContain("Online");
   expect(deviceStatus?.className).toContain("emerald");
@@ -699,14 +707,32 @@ async function expectPolicyRemovalDialogClosed() {
     .toBeNull();
 }
 
-function latestSavedPolicy() {
+async function waitForActionFinished(key: ActionFeedbackKey) {
+  const feedback = useActionFeedback();
+  // A mutation and its snapshot refresh each have a 15-second HTTP deadline.
+  await expect.poll(() => feedback.isActionPending(key), { timeout: 30_000 }).toBe(false);
+  expect(feedback.actionError(key)).toBe("");
+  expect(feedback.lastError.value).toBe("");
+}
+
+async function latestSavedPolicy() {
+  await waitForActionFinished("save-policy");
   const policyCall = window.__headscaleUiOperationCalls
     ?.filter((call) => call.id === "policy.set")
     .at(-1);
   expect(policyCall).toBeTruthy();
   const payload = policyCall?.payload as { policy?: string };
   expect(typeof payload.policy).toBe("string");
-  return JSON.parse(payload.policy ?? "{}") as {
+  const expected = JSON.parse(payload.policy ?? "{}");
+  const client = useHeadscaleClient().createClient();
+  let persisted: unknown;
+  await expect
+    .poll(async () => {
+      persisted = JSON.parse((await client.getPolicy()).policy);
+      return persisted;
+    })
+    .toEqual(expected);
+  return persisted as {
     acls?: Array<{ action: string; src: string[]; dst: string[] }>;
     groups?: Record<string, string[]>;
     tagOwners?: Record<string, string[]>;
@@ -746,6 +772,12 @@ function visibleDomTestId(testId: string) {
 async function clickVisibleDomTestId(testId: string) {
   await expect.element(page.getByTestId(testId)).toBeVisible();
   visibleDomTestId(testId).click();
+}
+
+async function selectDomTab(testId: string) {
+  await expect.element(page.getByTestId(testId)).toBeVisible();
+  visibleDomTestId(testId).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+  await expect.element(page.getByTestId(testId)).toHaveAttribute("aria-selected", "true");
 }
 
 function inputDomTestId(testId: string, value: string) {
@@ -823,7 +855,7 @@ function stubClipboard() {
 async function openProfileMenu() {
   const menu = document.querySelector<HTMLElement>('[data-testid="profile-menu"]');
   if (!menu || menu.getBoundingClientRect().width === 0) {
-    await page.getByTestId("profile-menu-trigger").click();
+    await clickVisibleDomTestId("profile-menu-trigger");
   }
   await expect.element(page.getByTestId("profile-menu")).toBeVisible();
 }
@@ -873,7 +905,7 @@ async function chooseProfileMenuOption(testId: string) {
 }
 
 async function selectSectionTab(section: string) {
-  await page.getByTestId(`section-${section}`).click();
+  await selectDomTab(`section-${section}`);
   await expect
     .poll(() => window.location.pathname.endsWith(`/${section}`), { timeout: 2000 })
     .toBe(true);
@@ -884,6 +916,19 @@ async function confirmDeleteProfile(name: string) {
   await expect.element(page.getByTestId("delete-profile-dialog")).toBeVisible();
   await page.getByTestId("confirm-delete-profile").click();
 }
+
+test("requires real connection details for a new profile", async () => {
+  await renderLogin();
+  await page.getByTestId("profile-option-new").click();
+  expect(document.querySelector('[data-testid="connect-mode"]')).toBeNull();
+  await expect.element(page.getByTestId("connect-profile-name")).toHaveValue("");
+  await expect.element(page.getByTestId("connect-server-url")).toHaveValue("");
+  await expect.element(page.getByTestId("connect-api-key")).toHaveValue("");
+  await page.getByTestId("connect-submit").click();
+  expect(storedProfiles()).toEqual([]);
+  expect(storedActiveProfileId()).toBeNull();
+  expect(document.querySelector('[data-testid="section-home"]')).toBeNull();
+});
 
 test("renders bootstrap error recovery actions", async () => {
   let reloads = 0;
@@ -935,11 +980,11 @@ test("manages multiple saved connection profiles and supports logout", async () 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Office");
-  await page.getByTestId("connect-api-key").fill("office-api-key");
+  await fillRealConnection();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-submit").click();
-  expect(storedProfilesString()).toContain("Office");
+  await expect.poll(() => storedProfilesString()).toContain("Office");
   const officeProfile = storedProfiles().find((profile) => profile.name === "Office");
   expect(officeProfile?.id).toMatch(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
@@ -950,8 +995,8 @@ test("manages multiple saved connection profiles and supports logout", async () 
   await expect.element(page.getByTestId("connect-profile-name")).toHaveValue("Office");
   await page.getByTestId("connect-profile-name").fill("HQ");
   await page.getByTestId("connect-submit").click();
-  expect(storedProfilesString()).toContain("HQ");
-  expect(storedProfilesString()).not.toContain("Office");
+  await expect.poll(() => storedProfilesString()).toContain("HQ");
+  await expect.poll(() => storedProfilesString()).not.toContain("Office");
   const hqProfile = storedProfiles().find((profile) => profile.name === "HQ");
   expect(hqProfile).toBeTruthy();
   await expect.element(page.getByTestId("profile-row-HQ")).toBeVisible();
@@ -959,10 +1004,10 @@ test("manages multiple saved connection profiles and supports logout", async () 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Lab");
-  await page.getByTestId("connect-api-key").fill("lab-api-key");
+  await fillRealConnection();
   await page.getByTestId("connect-submit").click();
-  expect(storedProfilesString()).toContain("HQ");
-  expect(storedProfilesString()).toContain("Lab");
+  await expect.poll(() => storedProfilesString()).toContain("HQ");
+  await expect.poll(() => storedProfilesString()).toContain("Lab");
   const labProfile = storedProfiles().find((profile) => profile.name === "Lab");
   expect(labProfile).toBeTruthy();
 
@@ -1000,18 +1045,18 @@ test("manages multiple saved connection profiles and supports logout", async () 
   expect(window.__headscaleUiOperationCalls).toEqual([]);
   expect(window.location.pathname).toBe("/login");
   expect(storedActiveProfileId()).toBeNull();
-  expect(storedProfilesString()).toContain("HQ");
+  await expect.poll(() => storedProfilesString()).toContain("HQ");
 
   await page.getByTestId("delete-profile-HQ").click();
   await expect.element(page.getByTestId("delete-profile-dialog")).toBeVisible();
   await expect.element(page.getByTestId("delete-profile-dialog")).toHaveTextContent("HQ");
   await page.getByTestId("cancel-delete-profile").click();
-  expect(storedProfilesString()).toContain("HQ");
+  await expect.poll(() => storedProfilesString()).toContain("HQ");
   await confirmDeleteProfile("HQ");
-  expect(storedProfilesString()).not.toContain("HQ");
-  expect(storedProfilesString()).toContain("Lab");
+  await expect.poll(() => storedProfilesString()).not.toContain("HQ");
+  await expect.poll(() => storedProfilesString()).toContain("Lab");
   await confirmDeleteProfile("Lab");
-  expect(storedProfilesString()).toBeNull();
+  await expect.poll(() => storedProfilesString()).toBeNull();
 });
 
 test("does not flash the login form while restoring a profile route", async () => {
@@ -1019,9 +1064,7 @@ test("does not flash the login form while restoring a profile route", async () =
     {
       id: "profile-office",
       name: "Office",
-      mode: "mock",
-      baseUrl: "http://127.0.0.1:8080",
-      apiKey: "office-api-key",
+      ...dockerSettings(),
       updatedAt: "2026-05-04T00:00:00.000Z",
     },
     { active: true },
@@ -1040,9 +1083,7 @@ test("waits for the authenticated policy before exposing editors on a cold resto
     {
       id: "profile-policy-restore",
       name: "Policy restore",
-      mode: "mock",
-      baseUrl: "http://127.0.0.1:8080",
-      apiKey: "policy-restore-test-key",
+      ...dockerSettings(),
       updatedAt: "2026-05-04T00:00:00.000Z",
     },
     { active: true },
@@ -1052,12 +1093,16 @@ test("waits for the authenticated policy before exposing editors on a cold resto
     releaseRead = resolve;
   });
   let readCaptured = false;
+  const client = new RestHeadscaleClient(dockerSettings());
+  await client.setPolicy({ policy: '{"acls":[]}' });
+  const getPolicy = RestHeadscaleClient.prototype.getPolicy;
   const delayedRead = vi
-    .spyOn(useHeadscaleClient().mockClient, "getPolicy")
-    .mockImplementationOnce(async () => {
+    .spyOn(RestHeadscaleClient.prototype, "getPolicy")
+    .mockImplementationOnce(async function (this: RestHeadscaleClient) {
+      const result = await getPolicy.call(this);
       readCaptured = true;
       await readGate;
-      return { policy: '{"acls":[]}' };
+      return result;
     });
   try {
     await renderLogin("/access");
@@ -1086,9 +1131,7 @@ test("redirects unknown profile routes back to login", async () => {
     {
       id: "profile-office",
       name: "Office",
-      mode: "mock",
-      baseUrl: "http://127.0.0.1:8080",
-      apiKey: "office-api-key",
+      ...dockerSettings(),
       updatedAt: "2026-05-04T00:00:00.000Z",
     },
     { active: true },
@@ -1138,7 +1181,7 @@ test("normalizes stale mock profiles with remote URLs into real profiles", async
 
   await page.getByTestId("edit-profile-Office").click();
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
-  await expect.element(page.getByTestId("connect-mode")).toHaveValue("real");
+  expect(document.querySelector('[data-testid="connect-mode"]')).toBeNull();
   await expect
     .element(page.getByTestId("connect-server-url"))
     .toHaveValue("http://office.example.test");
@@ -1148,9 +1191,8 @@ test("asks before saving an unreachable profile and validates it before login", 
   await renderLogin();
 
   await page.getByTestId("profile-option-new").click();
-  await page.getByTestId("connect-mode").selectOptions("real");
   await page.getByTestId("connect-profile-name").fill("Offline");
-  await page.getByTestId("connect-server-url").fill("ftp://127.0.0.1");
+  await page.getByTestId("connect-server-url").fill("http://127.0.0.1:1");
   await page.getByTestId("connect-api-key").fill("offline-api-key");
   await page.getByTestId("connect-submit").click();
 
@@ -1166,7 +1208,7 @@ test("asks before saving an unreachable profile and validates it before login", 
   await expect.element(page.getByTestId("profile-validation-dialog")).toBeVisible();
   await page.getByTestId("continue-add-profile").click();
   await expect.element(page.getByTestId("profile-row-Offline")).toBeVisible();
-  expect(storedProfilesString()).toContain("Offline");
+  await expect.poll(() => storedProfilesString()).toContain("Offline");
   expect(storedActiveProfileId()).toBeNull();
 
   clickDomTestId("profile-option-Offline");
@@ -1181,13 +1223,13 @@ test("stores non-remembered profiles in session storage", async () => {
 
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill("Temporary");
-  await page.getByTestId("connect-api-key").fill("temporary-api-key");
+  await fillRealConnection();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-submit").click();
 
   // Session-scope profiles now live in IndexedDB tagged with ownerTabId — never in plaintext
   // localStorage/sessionStorage. The "session" semantic comes from hydrate-time tab-id cleanup.
-  expect(storedProfilesString()).toContain("Temporary");
+  await expect.poll(() => storedProfilesString()).toContain("Temporary");
   const sessionProfile = storedProfiles().find((p) => p.name === "Temporary");
   expect(sessionProfile).toBeDefined();
   expect(profileStorage.getProfileScope(sessionProfile?.id ?? "")).toBe("session");
@@ -1541,6 +1583,13 @@ test("supports consumer-friendly tailnet management flows", async () => {
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "node.setTags"))
     .toBe(true);
+  await waitForActionFinished("node-tags");
+  await expect.element(page.getByTestId("node-tags-dialog")).not.toBeInTheDocument();
+  await expect
+    .poll(
+      async () => (await useHeadscaleClient().createClient().getNode({ nodeId: "1" })).node.tags,
+    )
+    .toEqual(["tag:laptop"]);
 
   window.__headscaleUiOperationCalls = [];
   await page.getByTestId("section-routes").click();
@@ -1574,10 +1623,19 @@ test("supports consumer-friendly tailnet management flows", async () => {
   const routeApprovalCall = window.__headscaleUiOperationCalls?.find(
     (call) => call.id === "node.setApprovedRoutes",
   );
-  const routeApprovalPayload = routeApprovalCall?.payload as { nodeId?: string; routes?: string };
-  expect(routeApprovalPayload.nodeId).toBe("2");
-  expect(routeApprovalPayload.routes).toBe("10.42.0.0/16,0.0.0.0/0");
+  const routeApprovalPayload = routeApprovalCall?.payload as { routes?: string[] };
+  expect(routeApprovalCall?.url).toBe("/api/v1/node/2/approve_routes");
+  expect(routeApprovalPayload.routes).toEqual(["10.42.0.0/16", "0.0.0.0/0"]);
   expect(routeApprovalPayload.routes).not.toContain("::/0");
+  await waitForActionFinished("approve-route");
+  await expect.element(page.getByTestId("approve-route-dialog")).not.toBeInTheDocument();
+  await expect
+    .poll(async () =>
+      (
+        await useHeadscaleClient().createClient().getNode({ nodeId: "2" })
+      ).node.approvedRoutes.sort(),
+    )
+    .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
 
   expect(document.body.textContent).not.toContain("/api/v1/node");
   expect(document.querySelector('[data-testid="run-operation"]')).toBeNull();
@@ -1647,6 +1705,8 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "node.expire"))
     .toBe(true);
+  await waitForActionFinished("expire-node");
+  await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
   await clickVisibleDomTestId("machine-actions-trigger-3");
   await expect.element(page.getByTestId("machine-actions-menu-3")).toBeVisible();
   const deleteCallsBefore =
@@ -1667,7 +1727,12 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "node.delete"))
     .toBe(true);
-  expect(document.querySelector('[data-testid="device-3"]')).toBeNull();
+  await waitForActionFinished("remove-node");
+  await expect.element(page.getByTestId("remove-node-dialog")).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("device-3")).not.toBeInTheDocument();
+  expect(
+    (await useHeadscaleClient().createClient().listNodes({})).nodes.some((node) => node.id === "3"),
+  ).toBe(false);
 });
 
 test("keeps failed destructive member actions busy and error-visible", async () => {
@@ -1689,7 +1754,7 @@ test("keeps failed destructive member actions busy and error-visible", async () 
   );
   expect(confirmButton?.disabled).toBe(true);
   expect(confirmButton?.querySelector(".animate-spin")).toBeTruthy();
-  await expect.element(page.getByTestId("delete-member-error")).toHaveTextContent("auth keys");
+  await expect.element(page.getByTestId("delete-member-error")).toHaveTextContent("node(s) found");
   await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
   await expect.element(page.getByTestId("member-alice")).toBeVisible();
 });
@@ -1698,15 +1763,15 @@ test("recovers a failed snapshot refresh without losing the current data", async
   await renderLogin();
   await connectWithDefaults();
 
-  const { mockClient } = useHeadscaleClient();
-  const listNodes = mockClient.listNodes.bind(mockClient);
+  const client = RestHeadscaleClient.prototype;
+  const listNodes = client.listNodes;
   let failNextRefresh = true;
-  mockClient.listNodes = async (payload) => {
+  client.listNodes = async function (payload) {
     if (failNextRefresh) {
       failNextRefresh = false;
       throw new Error("temporary snapshot failure");
     }
-    return listNodes(payload);
+    return listNodes.call(this, payload);
   };
 
   try {
@@ -1726,7 +1791,7 @@ test("recovers a failed snapshot refresh without losing the current data", async
     await expect.poll(() => document.querySelector('[role="alert"]')).toBeNull();
     await expect.element(page.getByTestId("recent-device-status-1")).toBeVisible();
   } finally {
-    mockClient.listNodes = listNodes;
+    client.listNodes = listNodes;
   }
 });
 
@@ -1740,15 +1805,15 @@ test("preserves a failed mutation and succeeds when retried", async () => {
   await page.getByTestId("create-member").click();
   await expect.element(page.getByTestId("member-retry-user")).toBeVisible();
 
-  const { mockClient } = useHeadscaleClient();
-  const renameUser = mockClient.renameUser.bind(mockClient);
+  const client = RestHeadscaleClient.prototype;
+  const renameUser = client.renameUser;
   let failNextRename = true;
-  mockClient.renameUser = async (payload) => {
+  client.renameUser = async function (payload) {
     if (failNextRename) {
       failNextRename = false;
       throw new Error("temporary rename failure");
     }
-    return renameUser(payload);
+    return renameUser.call(this, payload);
   };
 
   try {
@@ -1770,7 +1835,7 @@ test("preserves a failed mutation and succeeds when retried", async () => {
       .poll(() => document.querySelector('[data-testid="rename-member-dialog"]'))
       .toBeNull();
   } finally {
-    mockClient.renameUser = renameUser;
+    client.renameUser = renameUser;
   }
 });
 
@@ -1784,7 +1849,13 @@ test("covers the empty machine state and add-first-device flow", async () => {
     await page.getByTestId(`remove-node-action-${nodeId}`).click();
     await expect.element(page.getByTestId("remove-node-dialog")).toBeVisible();
     await page.getByTestId("remove-node-confirm").click();
-    await expect.poll(() => document.querySelector(`[data-testid="device-${nodeId}"]`)).toBeNull();
+    await expect.element(page.getByTestId("remove-node-dialog")).not.toBeInTheDocument();
+    await expect.element(page.getByTestId(`device-${nodeId}`)).not.toBeInTheDocument();
+    expect(
+      (await useHeadscaleClient().createClient().listNodes({})).nodes.some(
+        (node) => node.id === nodeId,
+      ),
+    ).toBe(false);
   }
 
   await expect.element(page.getByTestId("machines-empty")).toBeVisible();
@@ -1824,13 +1895,53 @@ test("renames a machine reached from a user detail navigation", async () => {
   await expect.element(page.getByTestId("device-1")).toHaveTextContent("alice-from-user");
 });
 
+test("preserves an edited rename while its opening refresh completes", async () => {
+  await renderLogin();
+  await connectWithDefaults();
+  await page.getByTestId("section-devices").click();
+  await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+  const client = RestHeadscaleClient.prototype;
+  const read = client.listNodes;
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let captured = false;
+  client.listNodes = async function (payload) {
+    const result = await read.call(this, payload);
+    captured = true;
+    await gate;
+    return result;
+  };
+  try {
+    await clickVisibleDomTestId("machine-actions-trigger-1");
+    await clickVisibleDomTestId("rename-node-action-1");
+    await expect.element(page.getByTestId("rename-node-dialog")).toBeVisible();
+    await expect.poll(() => captured).toBe(true);
+    await page.getByTestId("rename-node-dialog-input").fill("alice-delayed-rename");
+    release();
+    await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+    await expect
+      .element(page.getByTestId("rename-node-dialog-input"))
+      .toHaveValue("alice-delayed-rename");
+    await page.getByTestId("rename-node-confirm").click();
+    await expect.element(page.getByTestId("device-1")).toHaveTextContent("alice-delayed-rename");
+    expect(
+      (await useHeadscaleClient().createClient().getNode({ nodeId: "1" })).node.givenName,
+    ).toBe("alice-delayed-rename");
+  } finally {
+    release();
+    client.listNodes = read;
+  }
+});
+
 test("preserves member group and tag selections while a policy refresh is pending", async () => {
   await renderLogin();
   await connectWithDefaults();
   await page.getByTestId("section-members").click();
   await expect.element(page.getByTestId("member-charlie")).toBeVisible();
   await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
-  const client = useHeadscaleClient().mockClient;
+  const client = RestHeadscaleClient.prototype;
 
   for (const kind of ["groups", "tags"]) {
     let releaseRead = () => {};
@@ -1838,9 +1949,11 @@ test("preserves member group and tag selections while a policy refresh is pendin
       releaseRead = resolve;
     });
     let readCaptured = false;
-    const getPolicy = client.getPolicy.bind(client);
-    const delayedRead = vi.spyOn(client, "getPolicy").mockImplementationOnce(async () => {
-      const result = await getPolicy();
+    const getPolicy = client.getPolicy;
+    const delayedRead = vi.spyOn(client, "getPolicy").mockImplementationOnce(async function (
+      this: RestHeadscaleClient,
+    ) {
+      const result = await getPolicy.call(this);
       readCaptured = true;
       await readGate;
       return result;
@@ -1896,7 +2009,7 @@ test("covers user filters, user export and member deletion", async () => {
   ).toBeTruthy();
   inputDomTestId("user-search", "charlie");
   await expect.element(page.getByTestId("member-charlie")).toBeVisible();
-  await expect.element(page.getByTestId("member-auth-source-charlie")).toHaveTextContent("oidc");
+  await expect.element(page.getByTestId("member-auth-source-charlie")).toHaveTextContent("-");
   const memberDeviceTags = document.querySelector<HTMLElement>(
     '[data-testid="member-device-tags-charlie"]',
   );
@@ -1910,7 +2023,7 @@ test("covers user filters, user export and member deletion", async () => {
   await closeLayerWithEscape("device-detail-dialog");
   await page.getByTestId("member-detail-link-charlie").click();
   await expect.element(page.getByTestId("user-detail-dialog")).toHaveTextContent("Charlie");
-  await expect.element(page.getByTestId("user-detail-dialog")).toHaveTextContent("oidc");
+  await expect.element(page.getByTestId("user-detail-dialog")).toHaveTextContent("Auth source: -");
   await closeLayerWithEscape("user-detail-dialog");
   clickDomTestId("member-actions-trigger-charlie");
   await clickVisibleDomTestId("assign-member-groups-charlie");
@@ -1987,7 +2100,9 @@ test("covers user filters, user export and member deletion", async () => {
   await clickVisibleDomTestId("delete-member-erin-admin");
   await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
   await clickVisibleDomTestId("confirm-delete-member");
-  await expect.poll(() => document.querySelector('[data-testid="member-erin-admin"]')).toBeNull();
+  await waitForActionFinished("delete-member");
+  await expect.element(page.getByTestId("delete-member-dialog")).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("member-erin-admin")).not.toBeInTheDocument();
   await openCreateMemberDialog();
   await page.getByTestId("member-name").fill("erin");
   await page.getByTestId("create-member").click();
@@ -1996,7 +2111,62 @@ test("covers user filters, user export and member deletion", async () => {
   await clickVisibleDomTestId("delete-member-erin");
   await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
   await clickVisibleDomTestId("confirm-delete-member");
-  await expect.poll(() => document.querySelector('[data-testid="member-erin"]')).toBeNull();
+  await waitForActionFinished("delete-member");
+  await expect.element(page.getByTestId("delete-member-dialog")).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("member-erin")).not.toBeInTheDocument();
+});
+
+test("preserves edited auth-key options while its opening refresh completes", async () => {
+  await renderLogin();
+  await connectWithDefaults();
+  expect(
+    (await useHeadscaleClient().createClient().listPreAuthKeys()).preAuthKeys.map((key) => key.id),
+  ).toEqual(["1", "2", "3"]);
+  expect(useSnapshot().snapshot.value.preAuthKeys.map((key) => key.id)).toEqual(["1", "2", "3"]);
+  await page.getByTestId("section-invites").click();
+  await expect.element(page.getByTestId("invite-1")).toBeVisible();
+  await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+  const client = RestHeadscaleClient.prototype;
+  const read = client.listUsers;
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let captured = false;
+  client.listUsers = async function (payload) {
+    const result = await read.call(this, payload);
+    captured = true;
+    await gate;
+    return result;
+  };
+  try {
+    await page.getByTestId("open-create-invite").click();
+    await expect.element(page.getByTestId("invite-create-dialog")).toBeVisible();
+    await expect.poll(() => captured).toBe(true);
+    await page.getByTestId("invite-user").selectOptions("3");
+    await page.getByTestId("invite-tags").fill("tag:server");
+    await page.getByTestId("invite-reusable").click();
+    await page.getByTestId("invite-ephemeral").click();
+    release();
+    await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+    await expect.element(page.getByTestId("invite-user")).toHaveValue("3");
+    await expect.element(page.getByTestId("invite-tags")).toHaveValue("tag:server");
+    await expect
+      .element(page.getByTestId("invite-reusable"))
+      .toHaveAttribute("aria-checked", "false");
+    await expect
+      .element(page.getByTestId("invite-ephemeral"))
+      .toHaveAttribute("aria-checked", "true");
+    await page.getByTestId("create-invite").click();
+    await expect.element(page.getByTestId("created-invite")).toBeVisible();
+    const createdKey = (
+      await useHeadscaleClient().createClient().listPreAuthKeys()
+    ).preAuthKeys.find((key) => key.user?.id === "3" && key.aclTags.includes("tag:server"));
+    expect(createdKey).toMatchObject({ reusable: false, ephemeral: true });
+  } finally {
+    release();
+    client.listUsers = read;
+  }
 });
 
 test("covers auth-key filters, expiration and deletion", async () => {
@@ -2006,6 +2176,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
 
   await page.getByTestId("section-invites").click();
   await expect.element(page.getByTestId("invite-table")).toBeVisible();
+  await expect.element(page.getByTestId("invite-1")).toBeVisible();
   expect(document.querySelector('[data-testid="invite-1"]')?.closest("table")).toBeTruthy();
   await page.getByTestId("invite-owner-link-1").click();
   await expect.element(page.getByTestId("user-detail-dialog")).toHaveTextContent("Alice Ops");
@@ -2057,18 +2228,18 @@ test("covers auth-key filters, expiration and deletion", async () => {
   );
   inputDomTestId("invite-search", "alice");
   await expect.element(page.getByTestId("invite-1")).toBeVisible();
-  expect(document.querySelector('[data-testid="invite-2"]')).toBeNull();
+  await expect.poll(() => document.querySelector('[data-testid="invite-2"]')).toBeNull();
   inputDomTestId("invite-search", "");
   inputDomTestId("invite-search", "tag:server");
   await expect.element(page.getByTestId("invite-1")).toBeVisible();
-  expect(document.querySelector('[data-testid="invite-2"]')).toBeNull();
+  await expect.poll(() => document.querySelector('[data-testid="invite-2"]')).toBeNull();
   inputDomTestId("invite-search", "");
   selectDomTestId("invite-filter", "used");
   await expect.element(page.getByTestId("invite-2")).toBeVisible();
   expect(document.querySelector('[data-testid="invite-1"]')).toBeNull();
   selectDomTestId("invite-filter", "tagged");
   await expect.element(page.getByTestId("invite-1")).toBeVisible();
-  expect(document.querySelector('[data-testid="invite-2"]')).toBeNull();
+  await expect.poll(() => document.querySelector('[data-testid="invite-2"]')).toBeNull();
 
   selectDomTestId("invite-filter", "all");
   await page.getByTestId("open-create-invite").click();
@@ -2117,9 +2288,17 @@ test("covers auth-key filters, expiration and deletion", async () => {
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "preauthkey.create"))
     .toBe(true);
   expect(
-    window.__headscaleUiOperationCalls?.find((call) => call.id === "preauthkey.create")?.payload
-      .expiration,
+    window.__headscaleUiOperationCalls?.filter((call) => call.id === "preauthkey.create").at(-1)
+      ?.payload.expiration,
   ).toBe(new Date("2026-06-01T00:00").toISOString());
+  await expect
+    .poll(async () => {
+      const key = (await useHeadscaleClient().createClient().listPreAuthKeys()).preAuthKeys.find(
+        (key) => key.aclTags?.includes("tag:mobile"),
+      );
+      return Date.parse(key?.expiration ?? "");
+    })
+    .toBe(new Date("2026-06-01T00:00").getTime());
 
   await clickVisibleDomTestId("invite-actions-trigger-1");
   await clickVisibleDomTestId("expire-invite-1");
@@ -2132,6 +2311,8 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "preauthkey.expire"))
     .toBe(true);
+  await waitForActionFinished("invite-action");
+  await expect.element(page.getByTestId("expire-invite-dialog")).not.toBeInTheDocument();
   await clickVisibleDomTestId("invite-actions-trigger-2");
   await clickVisibleDomTestId("delete-invite-2");
   await expect.element(page.getByTestId("delete-invite-dialog")).toBeVisible();
@@ -2139,12 +2320,14 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "preauthkey.delete"))
     .toBe(true);
-  expect(document.querySelector('[data-testid="invite-2"]')).toBeNull();
+  await waitForActionFinished("invite-action");
+  await expect.element(page.getByTestId("delete-invite-dialog")).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("invite-2")).not.toBeInTheDocument();
 });
 
-async function resetMockPolicy(policyJson: string) {
-  const { mockClient } = useHeadscaleClient();
-  await mockClient.setPolicy({ policy: policyJson });
+async function resetDockerPolicy(policyJson: string) {
+  if (policyJson) await useHeadscaleClient().createClient().setPolicy({ policy: policyJson });
+  else await commands.resetHeadscaleFixture(true);
   const { refreshSnapshot } = useSnapshot();
   await refreshSnapshot();
 }
@@ -2161,7 +2344,7 @@ async function openAccessSection() {
     .toBeTruthy();
 }
 
-test("renders initial mock policy with team/tag cards and risk banners", async () => {
+test("renders initial Docker policy with team/tag cards and risk banners", async () => {
   await renderLogin();
   await connectWithDefaults();
   await openAccessSection();
@@ -2180,7 +2363,7 @@ test("renders initial mock policy with team/tag cards and risk banners", async (
 test("clean up orphan refs banner: cancel keeps them, confirm strips them", async () => {
   await renderLogin();
   await connectWithDefaults();
-  await resetMockPolicy(
+  await resetDockerPolicy(
     JSON.stringify({
       groups: { "group:ops": ["alice@", "ghost@"] },
       tagOwners: { "tag:server": ["alice@", "ghost@"] },
@@ -2214,7 +2397,7 @@ test("clean up orphan refs banner: cancel keeps them, confirm strips them", asyn
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
 
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.groups?.["group:ops"]).toEqual(["alice@"]);
   expect(saved.tagOwners?.["tag:server"]).toEqual(["alice@"]);
   expect(saved.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
@@ -2233,7 +2416,7 @@ test("unsaved-changes dialog covers cancel, discard and save-and-close paths", a
   await page.getByTestId("team-card-group:ops").click();
   await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
 
-  // Make it dirty by removing an existing member. The mock policy must give
+  // Make it dirty by removing an existing member. The fixture policy must give
   // group:ops at least one member — fail loudly if that ever changes.
   const memberRow = document.querySelector(
     '[data-testid^="team-member-remove-"]',
@@ -2276,6 +2459,7 @@ test("unsaved-changes dialog covers cancel, discard and save-and-close paths", a
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
+  await latestSavedPolicy();
 });
 
 test("creates a team, adds a member, saves and reopens it", async () => {
@@ -2306,7 +2490,7 @@ test("creates a team, adds a member, saves and reopens it", async () => {
     .toBe(true);
   await expect.element(page.getByTestId("team-card-group:dev")).toBeVisible();
 
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.groups?.["group:dev"]).toEqual(["alice@example.com"]);
 
   await page.getByTestId("team-card-group:dev").click();
@@ -2365,7 +2549,7 @@ test("creates a device label with an accessor + label manager and saves the rule
     .toBe(true);
   await expect.element(page.getByTestId("tag-card-tag:db")).toBeVisible();
 
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.tagOwners?.["tag:db"]).toEqual(["group:ops"]);
   const dbRule = saved.acls?.find(
     (r: { src: string[]; dst: string[] }) =>
@@ -2391,11 +2575,11 @@ test("saves a no-email CLI user as a device-label manager with name@", async () 
   await expect.element(page.getByTestId("member-test-user")).toBeVisible();
   expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
 
-  const created = useHeadscaleClient().mockClient.snapshot.users.find(
+  const created = (await useHeadscaleClient().createClient().listUsers({})).users.find(
     (user) => user.name === "test-user",
   );
   expect(created).toBeTruthy();
-  if (!created) throw new Error("mock user test-user was not created");
+  if (!created) throw new Error("Headscale user test-user was not created");
   expect((created.email ?? "").trim()).toBe("");
   const principal = policyPrincipalForUser(created);
 
@@ -2421,7 +2605,7 @@ test("saves a no-email CLI user as a device-label manager with name@", async () 
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
 
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.tagOwners?.["tag:issue7"]).toEqual([principal]);
   const owners = Object.values(saved.tagOwners ?? {}).flat();
   const members = Object.values(saved.groups ?? {}).flat();
@@ -2463,10 +2647,10 @@ test("removes a tag owner and saves the cleanup", async () => {
 
   await page.getByTestId("tag-card-tag:server").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).toBeVisible();
-  await expect.element(page.getByTestId("tag-owner-row-alice@")).toBeVisible();
-  await page.getByTestId("tag-owner-remove-alice@").click();
+  await expect.element(page.getByTestId("tag-owner-row-alice@example.com")).toBeVisible();
+  await page.getByTestId("tag-owner-remove-alice@example.com").click();
   await expect
-    .poll(() => document.querySelector('[data-testid="tag-owner-row-alice@"]'))
+    .poll(() => document.querySelector('[data-testid="tag-owner-row-alice@example.com"]'))
     .toBeNull();
   // Dialog is dirty — close routes through the unsaved-changes confirm.
   await page.getByTestId("tag-detail-close").click();
@@ -2475,8 +2659,8 @@ test("removes a tag owner and saves the cleanup", async () => {
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
 
-  const saved = latestSavedPolicy();
-  const stillHasOwner = saved.tagOwners?.["tag:server"]?.includes?.("alice@") ?? false;
+  const saved = await latestSavedPolicy();
+  const stillHasOwner = saved.tagOwners?.["tag:server"]?.includes?.("alice@example.com") ?? false;
   expect(stillHasOwner).toBe(false);
 });
 
@@ -2509,13 +2693,13 @@ test("removes a device label and its policy entries via the card trash button", 
   await page.getByTestId("confirm-remove-policy-item").click();
   await expectPolicyRemovalDialogClosed();
 
-  // tag:server is also referenced by a mock node, so the card may still
+  // tag:server is also referenced by a real fixture node, so the card may still
   // render — but the saved policy must no longer contain its tagOwner entry.
   await page.getByTestId("save-policy").click();
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.tagOwners?.["tag:server"]).toBeUndefined();
 });
 
@@ -2559,7 +2743,7 @@ test("high-risk confirm appears when a service expands to all", async () => {
 test("empty state renders templates and applies one", async () => {
   await renderLogin();
   await connectWithDefaults();
-  await resetMockPolicy("");
+  await resetDockerPolicy("");
   await openAccessSection();
 
   await expect.element(page.getByTestId("resource-access-empty")).toBeVisible();
@@ -2589,7 +2773,7 @@ test("blank policy: edits still trigger the unsaved-changes guard", async () => 
   // detection.
   await renderLogin();
   await connectWithDefaults();
-  await resetMockPolicy("");
+  await resetDockerPolicy("");
   await openAccessSection();
 
   await expect.element(page.getByTestId("resource-access-empty")).toBeVisible();
@@ -2612,7 +2796,7 @@ test("blank policy: edits still trigger the unsaved-changes guard", async () => 
 test("IP-only rules collapse into the direct-device section", async () => {
   await renderLogin();
   await connectWithDefaults();
-  await resetMockPolicy(
+  await resetDockerPolicy(
     JSON.stringify({
       acls: [{ action: "accept", src: ["alice@example.com"], dst: ["10.0.0.1:22"] }],
       groups: {},
@@ -2652,6 +2836,7 @@ test("mobile save button posts a policy update", async () => {
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
+  await latestSavedPolicy();
 });
 
 test("does not expose a settings page", async () => {
@@ -2666,6 +2851,11 @@ test("does not expose a settings page", async () => {
 test("covers server settings API keys and maintenance actions", async () => {
   await renderLogin();
   await connectWithDefaults();
+  const fixtureKeys = (await useHeadscaleClient().createClient().listApiKeys()).apiKeys;
+  const livePrefix = fixtureKeys.find((key) => key.id === "2")?.prefix;
+  const oldPrefix = fixtureKeys.find((key) => key.id === "3")?.prefix;
+  expect(livePrefix).toBeTruthy();
+  expect(oldPrefix).toBeTruthy();
   window.__headscaleUiOperationCalls = [];
   const clipboard = stubClipboard();
 
@@ -2673,7 +2863,7 @@ test("covers server settings API keys and maintenance actions", async () => {
     await openProfileMenu();
     await page.getByTestId("open-server-settings").click();
     await expect.element(page.getByTestId("server-settings-dialog")).toBeVisible();
-    await page.getByTestId("server-tab-api-keys").click();
+    await selectDomTab("server-tab-api-keys");
     await expect.element(page.getByTestId("api-key-table")).toBeVisible();
     const apiKeyListsBeforeRefresh = operationCount("apikey.list");
     await clickVisibleDomTestId("refresh-api-keys");
@@ -2685,36 +2875,49 @@ test("covers server settings API keys and maintenance actions", async () => {
     await clickVisibleDomTestId("create-api-key-confirm");
     await expect.element(page.getByTestId("created-api-key")).toBeVisible();
     await clickVisibleDomTestId("copy-created-api-key");
-    expect(clipboard.writes.some((value) => value.startsWith("ak_demo_"))).toBe(true);
+    const copiedApiKey = document
+      .querySelector('[data-testid="created-api-key"] code')
+      ?.textContent?.trim();
+    expect(Boolean(copiedApiKey && clipboard.writes.includes(copiedApiKey))).toBe(true);
     await expect
       .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "apikey.create"))
       .toBe(true);
 
-    await clickVisibleDomTestId("api-key-actions-trigger-ak_live_demo");
-    await clickVisibleDomTestId("expire-api-key-ak_live_demo");
+    await clickVisibleDomTestId(`api-key-actions-trigger-${livePrefix}`);
+    await clickVisibleDomTestId(`expire-api-key-${livePrefix}`);
     await expect.element(page.getByTestId("expire-api-key-dialog")).toBeVisible();
     await clickVisibleDomTestId("cancel-api-key-action");
     await expect
       .poll(() => document.querySelector('[data-testid="expire-api-key-dialog"]'))
       .toBeNull();
-    await clickVisibleDomTestId("api-key-actions-trigger-ak_live_demo");
-    await clickVisibleDomTestId("expire-api-key-ak_live_demo");
+    await clickVisibleDomTestId(`api-key-actions-trigger-${livePrefix}`);
+    await clickVisibleDomTestId(`expire-api-key-${livePrefix}`);
     await expect.element(page.getByTestId("expire-api-key-dialog")).toBeVisible();
     await clickVisibleDomTestId("confirm-api-key-action");
+    await waitForActionFinished("api-key-action");
     await expect
       .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "apikey.expire"))
       .toBe(true);
+    await expect
+      .poll(() => document.querySelector('[data-testid="expire-api-key-dialog"]'))
+      .toBeNull();
 
-    await clickVisibleDomTestId("api-key-actions-trigger-ak_old_demo");
-    await clickVisibleDomTestId("delete-api-key-ak_old_demo");
+    await clickVisibleDomTestId(`api-key-actions-trigger-${oldPrefix}`);
+    await clickVisibleDomTestId(`delete-api-key-${oldPrefix}`);
     await expect.element(page.getByTestId("delete-api-key-dialog")).toBeVisible();
     await clickVisibleDomTestId("confirm-api-key-action");
+    await waitForActionFinished("api-key-action");
+    await expect
+      .poll(() => document.querySelector('[data-testid="delete-api-key-dialog"]'))
+      .toBeNull();
     await expect
       .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "apikey.delete"))
       .toBe(true);
-    expect(document.querySelector('[data-testid="api-key-row-ak_old_demo"]')).toBeNull();
+    await expect
+      .poll(() => document.querySelector(`[data-testid="api-key-row-${oldPrefix}"]`))
+      .toBeNull();
 
-    await page.getByTestId("server-tab-maintenance").click();
+    await selectDomTab("server-tab-maintenance");
     await expect.element(page.getByTestId("server-maintenance-settings")).toBeVisible();
     await page.getByTestId("open-backfill-node-ips").click();
     await expect.element(page.getByTestId("backfill-node-ips-dialog")).toBeVisible();
@@ -2729,7 +2932,7 @@ test("covers server settings API keys and maintenance actions", async () => {
       .toBe(true);
     await expect.element(page.getByTestId("backfill-node-ips-result")).toBeVisible();
 
-    await page.getByTestId("server-tab-security").click();
+    await selectDomTab("server-tab-security");
     await expect.element(page.getByTestId("security-settings")).toBeVisible();
     await page.getByTestId("security-enable-passphrase").click();
     await page.getByTestId("security-enable-cancel").click();
@@ -2768,7 +2971,7 @@ test("encrypts API keys at rest", async () => {
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Secure");
-  await page.getByTestId("connect-api-key").fill("secret-bearer-token");
+  await fillRealConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId("profile-row-Secure")).toBeVisible();
 
@@ -2796,12 +2999,21 @@ test("encrypts API keys at rest", async () => {
   expect(stored.apiKey.scheme).toBe("device");
   expect(typeof stored.apiKey.iv).toBe("string");
   expect(typeof stored.apiKey.ct).toBe("string");
-  expect(JSON.stringify(stored)).not.toContain("secret-bearer-token");
+  expect(JSON.stringify(stored).includes(dockerSettings().apiKey)).toBe(false);
+  await page.getByTestId("profile-option-Secure").click();
+  await expect.element(page.getByTestId("section-home")).toBeVisible();
 });
 
 test("covers task navigation and the client-device setup branch", async () => {
   await renderLogin();
   await connectWithDefaults();
+  const registrationKey = "abcdefghijklmnopqrstuvwx";
+  await useHeadscaleClient().createClient().debugCreateNode({
+    user: "alice",
+    key: registrationKey,
+    name: "pending-browser-device",
+    routes: [],
+  });
 
   expect(document.body.textContent).not.toContain("Quick actions");
   expect(document.querySelector('[data-testid="quick-invite"]')).toBeNull();
@@ -2836,12 +3048,15 @@ test("covers task navigation and the client-device setup branch", async () => {
   await page.getByTestId("add-pending-node").click();
   await expect.element(page.getByTestId("pending-registration-flow")).toBeVisible();
   await page.getByTestId("pending-registration-user").selectOptions("alice");
-  await page.getByTestId("pending-node-key").fill("nodekey:pending-e2e");
+  await expect.element(page.getByTestId("pending-node-key")).toHaveValue("");
+  await page.getByTestId("pending-node-key").fill(registrationKey);
   await page.getByTestId("register-pending-node").click();
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "node.register"))
     .toBe(true);
-  await expect.element(page.getByTestId("registration-result")).toBeVisible();
+  await expect
+    .element(page.getByTestId("registration-result"))
+    .toHaveTextContent("pending-browser-device");
   await page.getByTestId("add-device-finish").click();
   await page.getByTestId("add-device-toggle").click();
   await expect.element(page.getByTestId("add-device-options")).toBeVisible();
@@ -2890,6 +3105,10 @@ test("copies generated auth keys and install commands", async () => {
     await page.getByTestId("open-create-invite").click();
     await page.getByTestId("create-invite").click();
     await expect.element(page.getByTestId("created-invite")).toBeVisible();
+    const generatedKey = document
+      .querySelector('[data-testid="created-invite"] code')
+      ?.textContent?.trim();
+    expect(generatedKey).toBeTruthy();
     await page.getByTestId("copy-created-invite").click();
     await page.getByTestId("copy-created-install-command").click();
 
@@ -2905,7 +3124,20 @@ test("copies generated auth keys and install commands", async () => {
     await expect.element(page.getByTestId("created-invite")).toHaveTextContent("tailscale up");
     await page.getByTestId("copy-setup-install-command").click();
 
-    expect(clipboard.writes.some((value) => value.startsWith("preauthkey-demo-"))).toBe(true);
+    const setupKey = document
+      .querySelector('[data-testid="created-invite"] code')
+      ?.textContent?.trim();
+    expect(Boolean(generatedKey && clipboard.writes.includes(generatedKey))).toBe(true);
+    expect(
+      clipboard.writes.some(
+        (value) => value.includes("tailscale up") && value.includes(generatedKey as string),
+      ),
+    ).toBe(true);
+    expect(
+      clipboard.writes.some(
+        (value) => value.includes("tailscale up") && value.includes(setupKey as string),
+      ),
+    ).toBe(true);
     expect(clipboard.writes.filter((value) => value.includes("tailscale up")).length).toBe(2);
   } finally {
     clipboard.restore();
@@ -2960,7 +3192,11 @@ test("keeps every core function usable on mobile", async () => {
   await clickVisibleDomTestId("delete-member-mobile-mobile");
   await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
   await page.getByTestId("confirm-delete-member").click();
-  expect(document.querySelector('[data-testid="member-mobile"]')).toBeNull();
+  await waitForActionFinished("delete-member");
+  await expect
+    .poll(() => document.querySelector('[data-testid="delete-member-dialog"]'))
+    .toBeNull();
+  await expect.poll(() => document.querySelector('[data-testid="member-mobile"]')).toBeNull();
   expectNoHorizontalOverflow();
 
   inputDomTestId("user-search", "charlie");
@@ -3018,6 +3254,8 @@ test("keeps every core function usable on mobile", async () => {
   await expect.element(page.getByTestId("rename-node-dialog")).toBeVisible();
   await page.getByTestId("rename-node-dialog-input").fill("alice-phone");
   clickDomTestId("rename-node-confirm");
+  await waitForActionFinished("rename-node");
+  await expect.poll(() => document.querySelector('[data-testid="rename-node-dialog"]')).toBeNull();
   await expect.element(page.getByTestId("device-1")).toHaveTextContent("alice-phone");
   clickDomTestId("machine-actions-trigger-mobile-1");
   await expect.element(page.getByTestId("machine-actions-menu-mobile-1")).toBeVisible();
@@ -3037,6 +3275,10 @@ test("keeps every core function usable on mobile", async () => {
   await page.getByTestId("approve-routes-2").click();
   await expect.element(page.getByTestId("approve-routes-dialog")).toBeVisible();
   await page.getByTestId("approve-routes-confirm").click();
+  await waitForActionFinished("approve-routes");
+  await expect
+    .poll(() => document.querySelector('[data-testid="approve-routes-dialog"]'))
+    .toBeNull();
   await expect
     .poll(() =>
       window.__headscaleUiOperationCalls?.some((call) => call.id === "node.setApprovedRoutes"),
@@ -3046,7 +3288,13 @@ test("keeps every core function usable on mobile", async () => {
     .poll(() => document.querySelectorAll('[data-testid^="pending-route-2-"]').length)
     .toBe(0);
   expect(document.querySelector('[data-testid="pending-routes-list-2"]')).toBeNull();
-  await expect.element(page.getByTestId("route-approved-2-1")).toHaveTextContent("0.0.0.0/0");
+  await expect
+    .poll(() =>
+      Array.from(document.querySelectorAll('[data-testid^="route-approved-2-"]'), (route) =>
+        route.textContent?.trim(),
+      ).sort(),
+    )
+    .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
   expectNoHorizontalOverflow();
 
   await selectSectionTab("access");
@@ -3054,6 +3302,7 @@ test("keeps every core function usable on mobile", async () => {
   await expect.element(page.getByTestId("device-labels-section")).toBeVisible();
   window.__headscaleUiOperationCalls = [];
   await page.getByTestId("save-policy").click();
+  await latestSavedPolicy();
   await expect
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
@@ -3424,6 +3673,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await page.getByTestId("member-email").fill("operator@example.test");
   const userCreatesBeforeCreate = operationCount("user.create");
   await page.getByTestId("create-member").click();
+  await waitForActionFinished("create-member");
   await expect.element(page.getByTestId("member-e2e-user")).toBeVisible();
   await expectUiOperationDelta("user.create", userCreatesBeforeCreate, observedUiOperationIds);
 
@@ -3486,6 +3736,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("expire-invite-dialog")).toBeVisible();
   const preAuthKeyExpiresBeforeExpire = operationCount("preauthkey.expire");
   await clickVisibleDomTestId("confirm-invite-action");
+  await waitForActionFinished("invite-action");
   await expectUiOperationDelta(
     "preauthkey.expire",
     preAuthKeyExpiresBeforeExpire,
@@ -3509,6 +3760,10 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("delete-invite-dialog")).toBeVisible();
   const preAuthKeyDeletesBeforeDelete = operationCount("preauthkey.delete");
   await clickVisibleDomTestId("confirm-invite-action");
+  await waitForActionFinished("invite-action");
+  await expect
+    .poll(() => document.querySelector('[data-testid="delete-invite-dialog"]'))
+    .toBeNull();
   await expectUiOperationDelta(
     "preauthkey.delete",
     preAuthKeyDeletesBeforeDelete,
@@ -3528,6 +3783,10 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
   const userDeletesBeforeDelete = operationCount("user.delete");
   await clickVisibleDomTestId("confirm-delete-member");
+  await waitForActionFinished("delete-member");
+  await expect
+    .poll(() => document.querySelector('[data-testid="delete-member-dialog"]'))
+    .toBeNull();
   await expectUiOperationDelta("user.delete", userDeletesBeforeDelete, observedUiOperationIds);
   await expect
     .poll(async () => (await client.listUsers({ id: lifecycleUser?.id ?? "" })).users.length)
@@ -3587,6 +3846,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   inputDomTestId("rename-node-dialog-input", "e2e-router-main");
   const nodeRenamesBeforeRename = operationCount("node.rename");
   await clickVisibleDomTestId("rename-node-confirm");
+  await waitForActionFinished("rename-node");
   await expectUiOperationDelta("node.rename", nodeRenamesBeforeRename, observedUiOperationIds);
   await expect
     .poll(async () => (await client.getNode({ nodeId: lifecycleNode?.id ?? "" })).node.givenName)
@@ -3607,6 +3867,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   inputDomTestId("node-tags-input", "tag:test-01");
   const nodeSetTagsBeforeSave = operationCount("node.setTags");
   await clickVisibleDomTestId("node-tags-confirm");
+  await waitForActionFinished("node-tags");
   await expectUiOperationDelta("node.setTags", nodeSetTagsBeforeSave, observedUiOperationIds);
   await expect
     .poll(async () => (await client.getNode({ nodeId: lifecycleNode?.id ?? "" })).node.tags)
@@ -3621,6 +3882,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
     .toHaveTextContent("e2e-router-main");
   const routeApprovalsBeforeApprove = operationCount("node.setApprovedRoutes");
   await clickVisibleDomTestId("approve-routes-confirm");
+  await waitForActionFinished("approve-routes");
   await expectUiOperationDelta(
     "node.setApprovedRoutes",
     routeApprovalsBeforeApprove,
@@ -3638,6 +3900,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await openAccessSection();
   const policySetsBeforeSave = operationCount("policy.set");
   await page.getByTestId("save-policy").click();
+  await latestSavedPolicy();
   await expectUiOperationDelta("policy.set", policySetsBeforeSave, observedUiOperationIds);
   const persistedPolicy = await client.getPolicy();
   expect(JSON.parse(persistedPolicy.policy).groups["group:test-01"]).toContain("admin-test@");
@@ -3645,9 +3908,11 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   const apiKeyIdsBefore = new Set((await client.listApiKeys()).apiKeys.map((key) => key.id));
   await openProfileMenu();
   await page.getByTestId("open-server-settings").click();
-  await page.getByTestId("server-tab-api-keys").click();
+  await expect.element(page.getByTestId("server-settings-dialog")).toBeVisible();
+  await selectDomTab("server-tab-api-keys");
   const apiKeyCreatesBeforeCreate = operationCount("apikey.create");
-  await page.getByTestId("create-api-key-confirm").click();
+  await clickVisibleDomTestId("create-api-key-confirm");
+  await waitForActionFinished("api-key-create");
   await expect.element(page.getByTestId("created-api-key")).toBeVisible();
   await expectUiOperationDelta("apikey.create", apiKeyCreatesBeforeCreate, observedUiOperationIds);
 
@@ -3669,6 +3934,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("expire-api-key-dialog")).toBeVisible();
   const apiKeyExpiresBeforeExpire = operationCount("apikey.expire");
   await clickVisibleDomTestId("confirm-api-key-action");
+  await waitForActionFinished("api-key-action");
   await expectUiOperationDelta("apikey.expire", apiKeyExpiresBeforeExpire, observedUiOperationIds);
   await expect
     .poll(async () => {
@@ -3688,6 +3954,10 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("delete-api-key-dialog")).toBeVisible();
   const apiKeyDeletesBeforeDelete = operationCount("apikey.delete");
   await clickVisibleDomTestId("confirm-api-key-action");
+  await waitForActionFinished("api-key-action");
+  await expect
+    .poll(() => document.querySelector('[data-testid="delete-api-key-dialog"]'))
+    .toBeNull();
   await expectUiOperationDelta("apikey.delete", apiKeyDeletesBeforeDelete, observedUiOperationIds);
   await expect
     .poll(async () =>
@@ -3697,7 +3967,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
     )
     .toBe(false);
 
-  await page.getByTestId("server-tab-maintenance").click();
+  await selectDomTab("server-tab-maintenance");
   await page.getByTestId("open-backfill-node-ips").click();
   await expect.element(page.getByTestId("backfill-node-ips-dialog")).toBeVisible();
   await page.getByTestId("backfill-node-ips-confirmed").click();
@@ -3717,6 +3987,7 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("expire-node-dialog")).toHaveTextContent("e2e-router-main");
   const nodeExpiresBeforeExpire = operationCount("node.expire");
   await clickVisibleDomTestId("expire-node-confirm");
+  await waitForActionFinished("expire-node");
   await expectUiOperationDelta("node.expire", nodeExpiresBeforeExpire, observedUiOperationIds);
   await expect
     .poll(async () =>
@@ -3731,6 +4002,8 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   await expect.element(page.getByTestId("remove-node-dialog")).toHaveTextContent("e2e-router-main");
   const nodeDeletesBeforeDelete = operationCount("node.delete");
   await clickVisibleDomTestId("remove-node-confirm");
+  await waitForActionFinished("remove-node");
+  await expect.poll(() => document.querySelector('[data-testid="remove-node-dialog"]')).toBeNull();
   await expectUiOperationDelta("node.delete", nodeDeletesBeforeDelete, observedUiOperationIds);
   await expect
     .poll(async () =>
@@ -3754,6 +4027,26 @@ test("exercises every Headscale v0.28.0 REST operation with deterministic readba
   expect(requiredApiContractOperationIds).toHaveLength(2);
   expect(requiredUiOperationIds.length + requiredApiContractOperationIds.length).toBe(26);
 }, 120_000);
+
+test("keeps policy cards mounted when unchanged server policy is refreshed", async () => {
+  await renderLogin();
+  await connectToDockerHeadscale("Docker policy refresh");
+  await openAccessSection();
+  const snapshot = useSnapshot();
+  await expect.poll(() => snapshot.isRefreshing.value).toBe(false);
+  const policyText = snapshot.snapshot.value.policy?.policy;
+  const card = visibleDomTestId("team-card-group:test-01");
+
+  await snapshot.refreshSnapshot();
+  await nextTick();
+
+  expect(useActionFeedback().lastError.value).toBe("");
+  expect(snapshot.snapshot.value.policy?.policy).toBe(policyText);
+  expect(card.isConnected).toBe(true);
+  expect(visibleDomTestId("team-card-group:test-01")).toBe(card);
+  await page.getByTestId("team-card-group:test-01").click();
+  await expect.element(page.getByTestId("team-member-row-admin-test@")).toBeVisible();
+});
 
 test("cleans only true orphan references against Headscale v0.28.0", async () => {
   await renderLogin();
@@ -3786,7 +4079,7 @@ test("cleans only true orphan references against Headscale v0.28.0", async () =>
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
 
-  const submitted = latestSavedPolicy();
+  const submitted = await latestSavedPolicy();
   expect(submitted.groups?.["group:test-01"]).toEqual(["admin-test@"]);
   expect(submitted.tagOwners?.["tag:test-01"]).toEqual(["admin-test@"]);
   expect(submitted.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
@@ -3846,7 +4139,7 @@ test("saves a live CLI user without email as a device-label manager against Head
     .poll(() => window.__headscaleUiOperationCalls?.some((call) => call.id === "policy.set"))
     .toBe(true);
 
-  const saved = latestSavedPolicy();
+  const saved = await latestSavedPolicy();
   expect(saved.tagOwners?.["tag:issue7-live"]).toEqual(["issue7-live@"]);
   expect(saved.tagOwners?.["tag:issue7-live"]).not.toContain("issue7-live");
 
@@ -3948,7 +4241,7 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after reloading H
         const policySetsBeforeSave = operationCount("policy.set");
         await page.getByTestId("save-policy").click();
         await expect.poll(() => operationCount("policy.set")).toBe(policySetsBeforeSave + 1);
-        expect(latestSavedPolicy().acls).toEqual([]);
+        expect((await latestSavedPolicy()).acls).toEqual([]);
         await expect.element(page.getByTestId("save-policy")).toBeEnabled();
         expect(document.querySelector('[data-testid="save-policy-error"]')).toBeNull();
         await expect

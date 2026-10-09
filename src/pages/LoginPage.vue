@@ -52,7 +52,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useActionFeedback } from "@/composables/useActionFeedback";
 import { useConnectionDialog } from "@/composables/useConnectionDialog";
 import { useDisplayHelpers } from "@/composables/useDisplayHelpers";
@@ -101,7 +100,7 @@ const {
 
 const { colorMode, themeModes, themeLabel, themeModeLabel, chooseLocale, chooseTheme } =
   useLoginPageShell();
-const { profileVisualState, profileAvatarLabel, profileModeLabel } = useProfileVisuals();
+const { profileVisualState, profileAvatarLabel } = useProfileVisuals();
 const {
   syncConnectionFormBaseline,
   openConnectionDialogWithBaseline,
@@ -359,7 +358,7 @@ onMounted(() => {
                     {{ t("checkingCredentials") }}
                   </span>
                   <span v-else class="text-xs text-muted-foreground">
-                    {{ profileModeLabel(profile.mode) }} · {{ t("updatedProfile") }} {{ formatDate(profile.updatedAt) }}
+                    {{ t("updatedProfile") }} {{ formatDate(profile.updatedAt) }}
                   </span>
                   <span
                     v-if="profileVisualState(profile) !== 'device'"
@@ -460,7 +459,7 @@ onMounted(() => {
 
           <form class="flex min-h-0 flex-col" data-testid="connect-form" @submit.prevent="submitAddProfile">
             <div class="grid min-h-0 min-w-0 gap-2 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6 sm:pb-3 md:grid-cols-2">
-              <div class="min-w-0">
+              <div class="min-w-0 md:col-span-2">
                 <Label for="connect-profile-name">{{ t("profileName") }}</Label>
                 <Input
                   id="connect-profile-name"
@@ -468,14 +467,6 @@ onMounted(() => {
                   data-testid="connect-profile-name"
                   class="mt-1.5"
                 />
-              </div>
-
-              <div class="min-w-0 [&_[data-slot=native-select-wrapper]]:w-full">
-                <Label for="connect-mode">{{ t("mode") }}</Label>
-                <NativeSelect id="connect-mode" v-model="connectionForm.mode" data-testid="connect-mode" class="mt-1.5">
-                  <NativeSelectOption value="mock">{{ t("mockMode") }}</NativeSelectOption>
-                  <NativeSelectOption value="real">{{ t("realMode") }}</NativeSelectOption>
-                </NativeSelect>
               </div>
 
               <div class="min-w-0 md:col-span-2">

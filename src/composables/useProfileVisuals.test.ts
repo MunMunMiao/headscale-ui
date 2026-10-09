@@ -37,7 +37,6 @@ function profile(overrides: Partial<ConnectionProfile> = {}): ConnectionProfile 
   return {
     id: "profile-1",
     name: "Alpha",
-    mode: "real",
     baseUrl: "https://headscale.example",
     apiKey: { v: 1, scheme: "device", iv: "iv", ct: "ct" },
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -68,7 +67,7 @@ describe("useProfileVisuals", () => {
     expect(visuals.profileVisualState(profile())).toBe("device");
   });
 
-  test("builds avatar initials and localized mode labels", () => {
+  test("builds avatar initials from the name or server URL", () => {
     const visuals = mountComposable(useProfileVisuals);
 
     expect(visuals.profileAvatarLabel(profile({ name: " ab " }))).toBe("AB");
@@ -76,7 +75,5 @@ describe("useProfileVisuals", () => {
       "HT",
     );
     expect(visuals.profileAvatarLabel(profile({ name: "  ", baseUrl: "" }))).toBe("HS");
-    expect(visuals.profileModeLabel("mock")).toBe("Mock");
-    expect(visuals.profileModeLabel("real")).toBe("Real");
   });
 });

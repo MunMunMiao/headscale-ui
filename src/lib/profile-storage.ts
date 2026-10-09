@@ -1,7 +1,7 @@
+import { normalizedBaseUrl } from "../utils/strings";
 import { type ApiKeySecret, isEncryptedApiKey } from "./api-key-crypto";
 import {
   idbDelete,
-  idbGetAll,
   idbPut,
   openHeadscaleDb,
   STORE_META,
@@ -14,7 +14,6 @@ export type ProfileStorageScope = "persistent" | "session";
 export type ConnectionProfile = {
   id: string;
   name: string;
-  mode: "mock" | "real";
   baseUrl: string;
   apiKey: ApiKeySecret;
   updatedAt: string;
@@ -65,7 +64,59 @@ export type HydrateOptions = {
   encryptLegacy?: (plain: string) => Promise<ApiKeySecret>;
 };
 
+async function readMigratedProfiles(): Promise<unknown[]> {
+  const profiles: unknown[] = [];
+  let migrationError: unknown;
+
+  try {
+    await withTransaction([STORE_PROFILES, STORE_META], "readwrite", (tx) => {
+      const store = tx.objectStore(STORE_PROFILES);
+      const request = store.getAll();
+      request.onsuccess = () => {
+        try {
+          const removedIds = new Set<string>();
+          for (const record of request.result) {
+            if (
+              record.mode === "mock" &&
+              typeof record.baseUrl === "string" &&
+              normalizedBaseUrl(record.baseUrl) === "http://127.0.0.1:8080"
+            ) {
+              store.delete(record.id);
+              removedIds.add(record.id);
+              continue;
+            }
+            if (Object.hasOwn(record, "mode")) {
+              delete record.mode;
+              store.put(record);
+            }
+            profiles.push(record);
+          }
+          if (removedIds.size > 0) {
+            const meta = tx.objectStore(STORE_META);
+            const active = meta.get(ACTIVE_PROFILE_META_KEY);
+            active.onsuccess = () => {
+              try {
+                if (removedIds.has(active.result)) meta.delete(ACTIVE_PROFILE_META_KEY);
+              } catch (error) {
+                migrationError = error;
+                tx.abort();
+              }
+            };
+          }
+        } catch (error) {
+          migrationError = error;
+          tx.abort();
+        }
+      };
+    });
+  } catch (error) {
+    throw migrationError ?? error;
+  }
+  return profiles;
+}
+
 export async function hydrate(options: HydrateOptions = {}): Promise<void> {
+  hydrated = false;
   cache.tabId = obtainTabId();
   cache.profiles.clear();
   cache.activeProfileId = null;
@@ -80,7 +131,7 @@ export async function hydrate(options: HydrateOptions = {}): Promise<void> {
     return;
   }
 
-  const raw = await idbGetAll<unknown>(STORE_PROFILES);
+  const raw = await readMigratedProfiles();
   let migratedPlaintextCount = 0;
   const migratedIds: string[] = [];
 
@@ -131,7 +182,6 @@ export async function hydrate(options: HydrateOptions = {}): Promise<void> {
     const profile: ConnectionProfile = {
       id: candidate.id,
       name: candidate.name ?? candidate.baseUrl ?? "Profile",
-      mode: candidate.mode === "real" ? "real" : candidate.mode === "mock" ? "mock" : "real",
       baseUrl: candidate.baseUrl ?? "",
       apiKey,
       updatedAt: candidate.updatedAt ?? new Date().toISOString(),

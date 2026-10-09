@@ -412,6 +412,54 @@ export function removeReferencesToValues(
   };
 }
 
+export function removePolicyReferences(
+  state: PolicyDesignerState,
+  value: string,
+): PolicyDesignerState {
+  const extras = { ...state.extras };
+  if (Array.isArray(extras.ssh)) {
+    extras.ssh = extras.ssh.flatMap((rule): unknown[] => {
+      if (!isPlainObject(rule) || !Array.isArray(rule.src) || !Array.isArray(rule.dst)) {
+        return [rule];
+      }
+      const src = rule.src.filter((source) => source !== value);
+      const dst = rule.dst.filter((destination) => destination !== value);
+      if (src.length === rule.src.length && dst.length === rule.dst.length) return [rule];
+      return src.length && dst.length ? [{ ...rule, src, dst }] : [];
+    });
+  }
+  if (isPlainObject(extras.autoApprovers)) {
+    const approvers = { ...extras.autoApprovers };
+    if (isPlainObject(approvers.routes)) {
+      approvers.routes = Object.fromEntries(
+        Object.entries(approvers.routes).map(([route, principals]) => [
+          route,
+          Array.isArray(principals)
+            ? principals.filter((principal) => principal !== value)
+            : principals,
+        ]),
+      );
+    }
+    if (Array.isArray(approvers.exitNode)) {
+      approvers.exitNode = approvers.exitNode.filter((principal) => principal !== value);
+    }
+    extras.autoApprovers = approvers;
+  }
+  return {
+    ...removeReferencesToValues(state, [value]),
+    extras,
+    rules: state.rules
+      .map((rule) => ({
+        ...rule,
+        source: joinCommaList(parseCommaList(rule.source).filter((source) => source !== value)),
+        destination: joinCommaList(
+          parseCommaList(rule.destination).filter((destination) => destination !== value),
+        ),
+      }))
+      .filter((rule) => rule.source && rule.destination),
+  };
+}
+
 // A bare value (no prefix, no CIDR/wildcard) that should be looked up against
 // the user list. Captures non-email user references that `classifyMember`
 // otherwise lumps into "raw" — without this, `"alice"` written directly in the

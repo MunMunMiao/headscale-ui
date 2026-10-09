@@ -64,7 +64,6 @@ function newProfile(plain: string, mp: ReturnType<typeof useMasterPassword>) {
     const profile: ConnectionProfile = {
       id: crypto.randomUUID(),
       name: "p",
-      mode: "real",
       baseUrl: "https://hs",
       apiKey,
       updatedAt: new Date().toISOString(),

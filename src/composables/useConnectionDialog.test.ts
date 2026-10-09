@@ -71,7 +71,6 @@ function unsavedProfile(): ConnectionProfile {
   return {
     id: "missing-profile",
     name: "Missing",
-    mode: "real",
     baseUrl: "https://headscale.example",
     apiKey: { v: 1, scheme: "device", iv: "iv", ct: "ct" },
     updatedAt: "2026-01-01T00:00:00.000Z",

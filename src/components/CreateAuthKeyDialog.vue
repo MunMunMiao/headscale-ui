@@ -86,21 +86,22 @@ function submitForm() {
 }
 
 watch(
-  () => [
-    props.open,
-    props.defaults.user,
-    props.defaults.reusable,
-    props.defaults.ephemeral,
-    props.defaults.expiration,
-    props.defaults.aclTags,
-    props.users,
-  ],
-  () => {
-    if (props.open) {
+  () => props.open,
+  (open) => {
+    if (open) {
       resetForm();
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => props.users,
+  (users) => {
+    if (props.open && !users.some((user) => user.id === form.user)) {
+      form.user = resolveUser(props.defaults.user);
+    }
+  },
 );
 </script>
 

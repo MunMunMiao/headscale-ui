@@ -25,7 +25,7 @@ describe("useDeviceSetup", () => {
       returnAfterInvite: false,
       lastCreatedInvite: "",
       lastRegisteredNode: null,
-      pendingRegistrationForm: { user: "", key: "nodekey:pending-demo" },
+      pendingRegistrationForm: { user: "", key: "" },
     });
   });
 

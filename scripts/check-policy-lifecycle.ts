@@ -13,6 +13,7 @@ const image = process.env.DEPLOYMENT_IMAGE || owned;
 const headscale = `${owned}-headscale`;
 const ui = `${owned}-ui`;
 const proxy = `${owned}-proxy`;
+const networkProbe = `${owned}-network-probe`;
 const containers: string[] = [];
 const temporary = mkdtempSync(join(tmpdir(), `${owned}-`));
 let browser: Awaited<ReturnType<typeof remote>> | undefined;
@@ -28,6 +29,24 @@ function docker(...args: string[]): string {
   return result.stdout.toString().trim();
 }
 
+function headscaleNetworkIdentity(): string {
+  const identity = docker(
+    "run",
+    "--rm",
+    "--name",
+    networkProbe,
+    "--network",
+    `container:${headscale}`,
+    "--entrypoint",
+    "sh",
+    image,
+    "-c",
+    "readlink /proc/self/ns/net; cat /sys/class/net/eth0/iflink",
+  );
+  assert.match(identity, /^net:\[\d+\]\n\d+$/, "Expected a namespace and host interface identity");
+  return identity;
+}
+
 async function cleanup() {
   if (cleaned) return;
   cleaned = true;
@@ -40,7 +59,11 @@ async function cleanup() {
     },
     async () => browser?.deleteSession(),
     () => {
-      if (containers.length) docker("rm", "-fv", ...containers);
+      if (docker("ps", "-aq", "--filter", `name=^/${networkProbe}$`))
+        docker("rm", "-f", networkProbe);
+    },
+    () => {
+      if (containers.length) docker("rm", "-fv", ...containers.toReversed());
     },
     () => {
       if (volumeCreated) docker("volume", "rm", owned);
@@ -102,6 +125,9 @@ try {
   networkCreated = true;
   docker("volume", "create", owned);
   volumeCreated = true;
+  // Keep the host interface alive when Headscale restarts while Chrome is open.
+  containers.push(ui);
+  docker("run", "-d", "--name", ui, "--network", owned, image);
   containers.push(headscale);
   docker(
     "run",
@@ -109,7 +135,7 @@ try {
     "--name",
     headscale,
     "--network",
-    owned,
+    `container:${ui}`,
     "-v",
     `${root}/e2e/headscale-config.yaml:/etc/headscale/config.yaml:ro`,
     "-v",
@@ -124,14 +150,12 @@ try {
   const apiKey = docker("exec", headscale, "headscale", "apikeys", "create", "--expiration", "30m");
   assert.ok(apiKey, "Lifecycle API key creation failed");
 
-  containers.push(ui);
-  docker("run", "-d", "--name", ui, "--network", owned, image);
   const config = join(temporary, "proxy.conf");
   await Bun.write(
     config,
     `server {
     listen 80;
-    location /api/ { proxy_pass http://${headscale}:8080; }
+    location /api/ { proxy_pass http://${ui}:8080; }
     location / { proxy_pass http://${ui}:80; }
   }\n`,
   );
@@ -294,7 +318,6 @@ try {
   await page.url(origin);
   await click("profile-option-new");
   await element("connect-profile-name").setValue("Lifecycle");
-  await element("connect-mode").selectByAttribute("value", "real");
   await element("connect-server-url").setValue(origin);
   await element("connect-api-key").setValue(apiKey);
   await click("connect-submit");
@@ -329,8 +352,15 @@ try {
   await expectEmpty("empty ACL after full reload");
   await relogin();
   await expectEmpty("empty ACL after logout/login");
+  const networkIdentity = headscaleNetworkIdentity();
   docker("restart", headscale);
   await waitForHeadscale();
+  assert.equal(
+    headscaleNetworkIdentity(),
+    networkIdentity,
+    "Headscale restart must preserve its network namespace and host interface while Chrome is open",
+  );
+  console.log("PASS Headscale restart preserves its network namespace and host interface");
   assert.deepEqual((await readPolicy()).acls, [], "Empty ACL survives Headscale database restart");
   await reload();
   await expectEmpty("empty ACL after Headscale restart and full reload");

@@ -96,7 +96,6 @@ export async function withTransaction(
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(stores, mode);
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error ?? new Error("IDB transaction aborted"));
     try {
       fn(tx);

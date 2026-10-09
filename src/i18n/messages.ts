@@ -18,6 +18,8 @@ export const messageKeys = {
   serverUrl: "Server URL",
   apiKey: "API key",
   apiKeyPlaceholder: "Bearer token created by headscale apikeys create",
+  connectionInvalidUrl: "Enter an absolute HTTP(S) server URL.",
+  connectionApiKeyRequired: "Enter an API key.",
   connectTitle: "Connect to Headscale",
   connectSubtitle:
     "Enter the server address and authorization token before opening the control surface.",
@@ -67,9 +69,6 @@ export const messageKeys = {
   cancel: "Cancel",
   connect: "Connect",
   logout: "Log out",
-  mode: "Mode",
-  mockMode: "Mock",
-  realMode: "Real",
   theme: "Theme",
   language: "Language",
   light: "Light",

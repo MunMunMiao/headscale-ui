@@ -31,7 +31,7 @@ auth keys, approve routes, and design access policy through guided controls.
   `zh-Hant-HK`, `ja-JP`, `ko-KR`, `fr-FR`, `ru-RU`, `es-ES`, `it-IT`, and
   Arabic (`ar`) with RTL document direction.
 - Theme support: light, dark, and system modes.
-- Mock mode for local development and real mode for a Headscale API server.
+- Direct connections to Headscale API servers in development and production.
 
 ## Quick Start
 
@@ -47,11 +47,26 @@ Start the local dev server:
 bun run dev
 ```
 
-Open the printed local URL, then use the default mock profile to explore the
-UI without a live Headscale server.
+Open the printed local URL, add a server profile, and enter the server's
+absolute HTTP(S) URL and an API key created by Headscale. A running Headscale
+server is required; new profiles start with empty fields.
 
-To connect to a real server, create or select a profile, choose `Real`, enter
-the server URL and an API key created by Headscale, then connect.
+Profiles with valid connection details can be saved when the server is
+unavailable, but opening the console requires a successful connection.
+
+### Upgrading from a version with mock mode
+
+On startup, the UI removes saved profiles that previously used the built-in
+mock server: profiles marked `mock` whose URL, after trimming whitespace and
+removing one trailing slash, is exactly `http://127.0.0.1:8080`. Their active
+session references are removed too. Any names or credentials entered in these
+demo profiles are discarded; no data is deleted from a Headscale server.
+
+Existing real connections are preserved, including local servers explicitly
+saved in real mode and legacy mock-labelled profiles whose URLs already caused
+them to use a real server. Their encryption, master password, and UI preferences
+are preserved. If the migration fails, startup reports the error instead of
+attempting to connect using a demo profile.
 
 ## Scripts
 
@@ -173,5 +188,13 @@ This covers Biome, the business-unit coverage gate, the TypeScript production
 build, browser E2E against a disposable Docker Headscale service, policy lifecycle
 tests against the production UI, TCP access checks between real Tailscale clients,
 and production-image deployment tests covering root/subpath routing and local-data reset.
-Docker Compose and Chrome must be available for the browser suites. Deployment
-tests use mock profiles and disposable containers, without a real Headscale API.
+Docker Compose and Chrome must be available for the browser suites. Business
+flows and deployment tests connect to disposable Docker Headscale servers.
+Unit tests run independently of Docker; narrow request-contract tests and
+fault or timing injection cover failures and races without an in-memory
+Headscale implementation.
+
+Known upstream limitation in Headscale v0.28.0: deleting a user with no nodes
+also deletes all pre-authentication keys, including keys belonging to other users.
+This was reproduced against the Docker image and is present in the upstream
+[`DestroyUser` implementation](https://github.com/juanfont/headscale/blob/v0.28.0/hscontrol/db/users.go#L43-L71).

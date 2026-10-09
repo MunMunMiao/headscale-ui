@@ -63,10 +63,10 @@ function placeholders(value: string): string[] {
 }
 
 describe("i18n catalogs", () => {
-  test("keeps 649 explicit leaves and every placeholder aligned with English", () => {
+  test("keeps 648 explicit leaves and every placeholder aligned with English", () => {
     const english = flattenStrings(englishCatalog);
     const englishKeys = [...english.keys()].sort();
-    expect(english.size).toBe(649);
+    expect(english.size).toBe(648);
 
     for (const catalog of Object.values(catalogs)) {
       const localized = flattenStrings(catalog);

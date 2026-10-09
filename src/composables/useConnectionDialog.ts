@@ -24,7 +24,6 @@ export function useConnectionDialog() {
     return JSON.stringify({
       apiKey: connectionForm.apiKey,
       baseUrl: connectionForm.baseUrl,
-      mode: connectionForm.mode,
       profileId: connectionForm.profileId,
       profileName: connectionForm.profileName,
       remember: connectionForm.remember,

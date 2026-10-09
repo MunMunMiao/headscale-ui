@@ -2,7 +2,7 @@ import type { OperationId } from "../src/domain/headscale-operations";
 import type { Locale } from "../src/i18n/locales";
 
 export type E2ERequirementKind = "control" | "rest" | "journey" | "recovery" | "locale";
-export type E2EEnvironment = "browser-mock" | "docker-headscale";
+export type E2EEnvironment = "docker-headscale";
 
 type BaseRequirement = {
   id: string;
@@ -37,7 +37,7 @@ export const E2E_REQUIREMENTS = [
   {
     id: "control.actionable-controls",
     kind: "control",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "uses pointer cursors for buttons, links, menus and tabs",
   },
 
@@ -83,49 +83,49 @@ export const E2E_REQUIREMENTS = [
   {
     id: "journey.profile-lifecycle",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "manages multiple saved connection profiles and supports logout",
   },
   {
     id: "journey.snapshot-refresh",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "refreshes data on every section change and repeated dialog open",
   },
   {
     id: "journey.tailnet-management",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "supports consumer-friendly tailnet management flows",
   },
   {
     id: "journey.device-lifecycle",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "covers dashboard refresh, machine filters, exports and machine lifecycle actions",
   },
   {
     id: "journey.user-lifecycle",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "covers user filters, user export and member deletion",
   },
   {
     id: "journey.auth-key-lifecycle",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "covers auth-key filters, expiration and deletion",
   },
   {
     id: "journey.policy-team",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "creates a team, adds a member, saves and reopens it",
   },
   {
     id: "journey.policy-label",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "creates a device label with an accessor + label manager and saves the rule",
   },
   {
@@ -143,68 +143,68 @@ export const E2E_REQUIREMENTS = [
   {
     id: "journey.policy-member-selection-refresh",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "preserves member group and tag selections while a policy refresh is pending",
   },
   {
     id: "recovery.policy-cold-restore",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "waits for the authenticated policy before exposing editors on a cold restore",
   },
   {
     id: "journey.policy-guard",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "unsaved-changes dialog covers cancel, discard and save-and-close paths",
   },
   {
     id: "journey.server-settings",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "covers server settings API keys and maintenance actions",
   },
   {
     id: "journey.registration",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "covers task navigation and the client-device setup branch",
   },
   {
     id: "journey.mobile",
     kind: "journey",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "keeps every core function usable on mobile",
   },
 
   {
     id: "recovery.bootstrap",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "renders bootstrap error recovery actions",
   },
   {
     id: "recovery.unlock",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "unlocks encrypted profiles and exposes forgotten-passphrase recovery",
   },
   {
     id: "recovery.credentials",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "asks before saving an unreachable profile and validates it before login",
   },
   {
     id: "recovery.snapshot-refresh",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "recovers a failed snapshot refresh without losing the current data",
   },
   {
     id: "recovery.mutation-retry",
     kind: "recovery",
-    environment: "browser-mock",
+    environment: "docker-headscale",
     testTitle: "preserves a failed mutation and succeeds when retried",
   },
 
@@ -225,7 +225,7 @@ export const E2E_REQUIREMENTS = [
   ).map((locale) => ({
     id: `locale.${locale}`,
     kind: "locale" as const,
-    environment: "browser-mock" as const,
+    environment: "docker-headscale" as const,
     testTitle: localeLifecycleTitle,
     locale,
   })),

@@ -10,6 +10,7 @@ process.env.NO_PROXY = process.env.no_proxy = "127.0.0.1,localhost";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const owned = `headscale-deployment-${process.pid}-${Date.now()}`;
 const image = process.env.DEPLOYMENT_IMAGE || owned;
+const headscale = `${owned}-headscale`;
 const containers: string[] = [];
 const temporary = mkdtempSync(join(tmpdir(), `${owned}-`));
 let browser: Awaited<ReturnType<typeof remote>> | undefined;
@@ -38,7 +39,7 @@ async function cleanup() {
       await browser?.deleteSession();
     },
     () => {
-      if (containers.length) docker("rm", "-f", ...containers);
+      if (containers.length) docker("rm", "-fv", ...containers);
     },
     () => {
       if (networkCreated) docker("network", "rm", owned);
@@ -99,6 +100,83 @@ async function start(base: string | undefined): Promise<{ name: string; origin: 
   return { name, origin: await endpoint(name) };
 }
 
+async function startHeadscale() {
+  containers.push(headscale);
+  docker(
+    "run",
+    "-d",
+    "--name",
+    headscale,
+    "--network",
+    owned,
+    "-v",
+    `${root}/e2e/headscale-config.yaml:/etc/headscale/config.yaml:ro`,
+    "-v",
+    `${root}/e2e/headscale-derp.yaml:/etc/headscale/derp.yaml:ro`,
+    "headscale/headscale:0.28.0",
+    "serve",
+  );
+  let healthy = false;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const result = Bun.spawnSync(["docker", "exec", headscale, "headscale", "health"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    if (result.exitCode === 0) {
+      healthy = true;
+      break;
+    }
+    await Bun.sleep(200);
+  }
+  assert.ok(healthy, "Deployment Headscale did not become healthy");
+  docker("exec", headscale, "headscale", "users", "create", "deployment-probe");
+  const apiKey = docker("exec", headscale, "headscale", "apikeys", "create", "--expiration", "30m");
+  assert.ok(apiKey, "Deployment API key creation failed");
+
+  const config = join(temporary, "headscale-proxy.conf");
+  await Bun.write(
+    config,
+    `server {
+    listen 80;
+    add_header Access-Control-Allow-Origin "*" always;
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+    location / {
+      if ($request_method = OPTIONS) { return 204; }
+      proxy_pass http://${headscale}:8080;
+    }
+  }\n`,
+  );
+  const gateway = `${owned}-headscale-proxy`;
+  containers.push(gateway);
+  docker(
+    "run",
+    "-d",
+    "--name",
+    gateway,
+    "--network",
+    owned,
+    "-p",
+    "127.0.0.1::80",
+    "-v",
+    `${config}:/etc/nginx/conf.d/default.conf:ro`,
+    "--entrypoint",
+    "nginx",
+    image,
+    "-g",
+    "daemon off;",
+  );
+  const baseUrl = await endpoint(gateway);
+  const response = await fetch(`${baseUrl}/api/v1/policy`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ policy: JSON.stringify({ acls: [] }) }),
+    signal: AbortSignal.timeout(5000),
+  });
+  assert.equal(response.status, 200, "Seed deployment policy on real Headscale");
+  return { baseUrl, apiKey };
+}
+
 async function checkHttp(origin: string, base: string) {
   const response = await fetch(`${origin}${base}`);
   assert.equal(response.status, 200, `${base} index`);
@@ -150,7 +228,11 @@ async function checkHttp(origin: string, base: string) {
   return [html, ...assets];
 }
 
-async function checkBrowser(origin: string, base: string) {
+async function checkBrowser(
+  origin: string,
+  base: string,
+  connection: { baseUrl: string; apiKey: string },
+) {
   browser = await remote({
     logLevel: "error",
     capabilities: {
@@ -168,7 +250,8 @@ async function checkBrowser(origin: string, base: string) {
   const connect = async () => {
     await click("profile-option-new");
     await element("connect-profile-name").setValue("Probe");
-    await element("connect-mode").selectByAttribute("value", "mock");
+    await element("connect-server-url").setValue(connection.baseUrl);
+    await element("connect-api-key").setValue(connection.apiKey);
     await click("connect-submit");
     await click("profile-option-Probe");
     await element("section-home").waitForDisplayed({ timeout: 15000 });
@@ -233,6 +316,13 @@ async function checkBrowser(origin: string, base: string) {
         { timeout: 10000 },
       );
       assert.ok((await page.$('[data-testid="page-body"]').getText()).length > 0, section);
+      if (section === "members") {
+        await page.waitUntil(
+          async () =>
+            (await page.$('[data-testid="page-body"]').getText()).includes("deployment-probe"),
+          { timeout: 15000, timeoutMsg: "UI must read the seeded user from real Headscale" },
+        );
+      }
     }
     await click("section-devices");
     await page.refresh();
@@ -272,6 +362,7 @@ try {
   }
   docker("network", "create", owned);
   networkCreated = true;
+  const connection = await startHeadscale();
   let pristineBuild: string | undefined;
   for (const value of [
     "/admin",
@@ -333,7 +424,7 @@ try {
       pristine,
     );
     if (value === "/" || value === "/admin/" || value === "/nested/admin/")
-      await checkBrowser(restartedOrigin, base);
+      await checkBrowser(restartedOrigin, base, connection);
     console.log(`PASS runtime BASE_PATH=${JSON.stringify(value)} and restart`);
   }
   for (const base of [
@@ -389,7 +480,7 @@ try {
   );
   const proxyOrigin = await endpoint(proxy);
   await checkHttp(proxyOrigin, "/admin/");
-  await checkBrowser(proxyOrigin, "/admin/");
+  await checkBrowser(proxyOrigin, "/admin/", connection);
   console.log("PASS invalid BASE_PATH rejection and prefix-preserving reverse proxy");
 } finally {
   await cleanup();

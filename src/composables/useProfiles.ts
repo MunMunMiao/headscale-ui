@@ -1,5 +1,5 @@
 import { type ComputedRef, computed, type Ref, reactive, ref } from "vue";
-import type { ConnectionSettings } from "@/api/http";
+import { type ConnectionSettings, connectionSettingsError } from "@/api/http";
 import type { HeadscaleSnapshot } from "@/api/types";
 import { useHeadscaleI18n } from "@/i18n";
 import { isEncryptedApiKey } from "@/lib/api-key-crypto";
@@ -14,7 +14,6 @@ import { useMasterPassword } from "./useMasterPassword";
 import { fetchSnapshot } from "./useSnapshot";
 
 export const newProfileId = "__new__";
-export const localMockBaseUrl = "http://127.0.0.1:8080";
 const profileLoginMinimumMs = 300;
 
 // Explicit state machine for the login lifecycle. Replaces three coupled refs
@@ -72,17 +71,6 @@ export const profilesTestingHandle = {
   },
 };
 
-function normalizedBaseUrl(baseUrl: string) {
-  return baseUrl.trim().replace(/\/$/, "");
-}
-
-function resolveConnectionMode(mode: ConnectionSettings["mode"], baseUrl: string) {
-  if (mode === "mock" && normalizedBaseUrl(baseUrl) !== localMockBaseUrl) {
-    return "real";
-  }
-  return mode;
-}
-
 function createProfileId() {
   return crypto.randomUUID();
 }
@@ -90,10 +78,9 @@ function createProfileId() {
 function defaultConnectionForm(): ConnectionForm {
   return {
     profileId: newProfileId,
-    profileName: "Local mock",
-    mode: "mock",
-    baseUrl: localMockBaseUrl,
-    apiKey: "mock-api-key",
+    profileName: "",
+    baseUrl: "",
+    apiKey: "",
     remember: true,
   };
 }
@@ -110,7 +97,6 @@ async function profileToForm(profile: ConnectionProfile): Promise<ConnectionForm
   return {
     profileId: profile.id,
     profileName: profile.name,
-    mode: profile.mode,
     baseUrl: profile.baseUrl,
     apiKey,
     remember: profileStorage.getProfileScope(profile.id) !== "session",
@@ -118,12 +104,7 @@ async function profileToForm(profile: ConnectionProfile): Promise<ConnectionForm
 }
 
 function normalizeProfile(profile: Partial<ConnectionProfile>): ConnectionProfile | null {
-  if (
-    !profile.id ||
-    !profile.baseUrl ||
-    !isEncryptedApiKey(profile.apiKey) ||
-    (profile.mode !== "mock" && profile.mode !== "real")
-  ) {
+  if (!profile.id || !profile.baseUrl || !isEncryptedApiKey(profile.apiKey)) {
     return null;
   }
 
@@ -132,7 +113,6 @@ function normalizeProfile(profile: Partial<ConnectionProfile>): ConnectionProfil
   return {
     id: profile.id,
     name: profile.name || baseUrl,
-    mode: resolveConnectionMode(profile.mode, baseUrl),
     baseUrl,
     apiKey: profile.apiKey,
     updatedAt: profile.updatedAt || new Date().toISOString(),
@@ -164,7 +144,6 @@ export function useProfiles(): UseProfilesReturn {
   const connectionForm = reactive<ConnectionForm>(defaultConnectionForm());
 
   Object.assign(settings, {
-    mode: connectionForm.mode,
     baseUrl: connectionForm.baseUrl,
     apiKey: connectionForm.apiKey,
   });
@@ -207,11 +186,10 @@ export function useProfiles(): UseProfilesReturn {
 
   function formConnectionSettings(): ConnectionSettings {
     const baseUrl = connectionForm.baseUrl.trim();
-    return {
-      mode: resolveConnectionMode(connectionForm.mode, baseUrl),
-      baseUrl,
-      apiKey: connectionForm.apiKey.trim(),
-    };
+    const next = { baseUrl, apiKey: connectionForm.apiKey.trim() };
+    const error = connectionSettingsError(next);
+    if (error) throw new Error(t(error));
+    return next;
   }
 
   async function loadProfile(profileId: string) {
@@ -245,20 +223,19 @@ export function useProfiles(): UseProfilesReturn {
   }
 
   async function persistConnection(): Promise<string> {
-    const baseUrl = connectionForm.baseUrl.trim();
+    const { baseUrl, apiKey } = formConnectionSettings();
     const name = connectionForm.profileName.trim() || baseUrl;
     const existingProfile =
       connectionForm.profileId === newProfileId
         ? null
         : profiles.value.find((profile) => profile.id === connectionForm.profileId);
 
-    const apiKeySecret = await masterPassword.encryptApiKey(connectionForm.apiKey.trim());
+    const apiKeySecret = await masterPassword.encryptApiKey(apiKey);
     const scope = profileScopeFromForm();
 
     const profile: ConnectionProfile = {
       id: existingProfile?.id ?? createProfileId(),
       name,
-      mode: resolveConnectionMode(connectionForm.mode, baseUrl),
       baseUrl,
       apiKey: apiKeySecret,
       updatedAt: new Date().toISOString(),
@@ -270,7 +247,6 @@ export function useProfiles(): UseProfilesReturn {
       : [...profiles.value, profile];
     connectionForm.profileId = profile.id;
     connectionForm.profileName = profile.name;
-    connectionForm.mode = profile.mode;
     profileStorage.saveProfile(profile, scope);
     reloadProfiles();
     // Persist is always followed by closing the connection dialog — owning the
@@ -282,11 +258,16 @@ export function useProfiles(): UseProfilesReturn {
   }
 
   async function addProfile() {
-    const nextSettings = formConnectionSettings();
+    let nextSettings: ConnectionSettings;
+    try {
+      nextSettings = formConnectionSettings();
+    } catch (error) {
+      lastError.value = error instanceof Error ? error.message : String(error);
+      return;
+    }
     const myGen = ++generation;
     phase.value = { kind: "adding" };
     lastError.value = "";
-    connectionForm.mode = nextSettings.mode;
 
     try {
       await fetchSnapshot(createClient(nextSettings));
@@ -348,7 +329,6 @@ export function useProfiles(): UseProfilesReturn {
 
     const startedAt = performance.now();
     const nextSettings: ConnectionSettings = {
-      mode: profile.mode,
       baseUrl: profile.baseUrl,
       apiKey: plainApiKey,
     };
@@ -403,7 +383,6 @@ export function useProfiles(): UseProfilesReturn {
       ...defaultConnectionForm(),
       profileId: connectionForm.profileId,
       profileName: connectionForm.profileName,
-      mode: settings.mode,
       baseUrl: settings.baseUrl,
       apiKey: settings.apiKey,
       remember: false,

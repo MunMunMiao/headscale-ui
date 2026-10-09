@@ -20,7 +20,13 @@ export function useProfileValidationFlow(syncConnectionFormBaseline: () => void)
 
   async function continueAddingProfile() {
     // persistConnection owns the dialog close — we only clean validation flags.
-    await persistConnection();
+    try {
+      await persistConnection();
+    } catch (error) {
+      lastError.value = error instanceof Error ? error.message : String(error);
+      profileValidationDialogOpen.value = false;
+      return;
+    }
     syncConnectionFormBaseline();
     profileValidationDialogOpen.value = false;
     profileValidationError.value = "";
@@ -29,7 +35,7 @@ export function useProfileValidationFlow(syncConnectionFormBaseline: () => void)
 
   async function submitAddProfile() {
     await addProfile();
-    if (!profileValidationDialogOpen.value) {
+    if (!profileValidationDialogOpen.value && !lastError.value) {
       syncConnectionFormBaseline();
     }
   }

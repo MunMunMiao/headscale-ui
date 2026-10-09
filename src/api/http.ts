@@ -1,21 +1,36 @@
 import axios, { type AxiosError, type AxiosInstance } from "axios";
 
 export interface ConnectionSettings {
-  mode: "mock" | "real";
   baseUrl: string;
   apiKey: string;
 }
 
+export function connectionSettingsError(settings: ConnectionSettings) {
+  const baseUrl = settings.baseUrl.trim();
+  if (!/^https?:\/\//i.test(baseUrl) || !URL.canParse(baseUrl)) {
+    return "connectionInvalidUrl";
+  }
+  if (!settings.apiKey.trim()) return "connectionApiKeyRequired";
+  return null;
+}
+
 export function createHeadscaleHttp(settings: ConnectionSettings): AxiosInstance {
+  const error = connectionSettingsError(settings);
+  if (error) {
+    const message =
+      error === "connectionInvalidUrl"
+        ? "Enter an absolute HTTP(S) server URL."
+        : "Enter an API key.";
+    throw new Error(message);
+  }
+  const apiKey = settings.apiKey.trim();
   const client = axios.create({
-    baseURL: settings.baseUrl.replace(/\/$/, ""),
+    baseURL: settings.baseUrl.trim().replace(/\/$/, ""),
     timeout: 15_000,
   });
 
   client.interceptors.request.use((config) => {
-    if (settings.apiKey) {
-      config.headers.Authorization = `Bearer ${settings.apiKey}`;
-    }
+    config.headers.Authorization = `Bearer ${apiKey}`;
 
     return config;
   });

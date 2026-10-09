@@ -1,12 +1,9 @@
-import type { ConnectionSettings } from "@/api/http";
-import { useHeadscaleI18n } from "@/i18n";
 import type { ConnectionProfile } from "@/lib/profile-storage";
 import { useMasterPassword } from "./useMasterPassword";
 
 export type ProfileVisualState = "device" | "password" | "locked" | "corrupted" | "session";
 
 export function useProfileVisuals() {
-  const { t } = useHeadscaleI18n();
   const masterPassword = useMasterPassword();
 
   // Ordered: corrupted > session > password-scheme > device. The ordering is
@@ -26,9 +23,5 @@ export function useProfileVisuals() {
     return source.trim().slice(0, 2).toUpperCase() || "HS";
   }
 
-  function profileModeLabel(mode: ConnectionSettings["mode"]) {
-    return mode === "mock" ? t("mockMode") : t("realMode");
-  }
-
-  return { profileVisualState, profileAvatarLabel, profileModeLabel };
+  return { profileVisualState, profileAvatarLabel };
 }

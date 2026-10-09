@@ -17,6 +17,7 @@ import {
   removeGroupById,
   removeMemberFromGroup,
   removeOwnerFromTag,
+  removePolicyReferences,
   removeReferencesToValues,
   removeRuleById,
   removeTagOwnerById,
@@ -556,6 +557,109 @@ describe("references", () => {
     );
     const next = removeReferencesToValues(state, []);
     expect(next).toBe(state);
+  });
+});
+
+describe("removePolicyReferences", () => {
+  test.each([
+    "tag:removed",
+    "group:removed",
+  ])("removes deleted %s from all supported policy references without widening access", (principal) => {
+    const state = parsePolicy(
+      JSON.stringify({
+        acls: [
+          {
+            action: "accept",
+            src: [principal, "alice@"],
+            dst: [`${principal}:22`, "tag:keep:443"],
+          },
+          { action: "accept", src: [principal], dst: ["tag:keep:22"] },
+          { action: "accept", src: ["alice@"], dst: [`${principal}:22`] },
+        ],
+        groups: { "group:keep": [principal, "alice@"] },
+        tagOwners: { "tag:keep": [principal, "alice@"] },
+        ssh: [
+          {
+            action: "check",
+            src: [principal, "alice@"],
+            dst: ["tag:keep"],
+            users: ["root"],
+            checkPeriod: "1h",
+            extension: { keep: true },
+          },
+          { action: "accept", src: [principal], dst: ["tag:keep"], users: ["root"] },
+          { action: "accept", src: ["alice@"], dst: [principal], users: ["root"] },
+          { action: "accept", src: ["alice@"], dst: ["tag:keep"], users: ["deploy"] },
+        ],
+        autoApprovers: {
+          routes: { "10.0.0.0/8": [principal, "alice@"], "192.168.0.0/16": [principal] },
+          exitNode: [principal, "alice@"],
+          extension: { keep: true },
+        },
+        hosts: { internal: "100.64.0.1" },
+        extension: { literal: principal },
+      }),
+    );
+    const original = serializePolicy(state);
+    const result = serializePolicy(removePolicyReferences(state, principal));
+
+    expect(result).toEqual({
+      acls: [{ action: "accept", src: ["alice@"], dst: ["tag:keep:443"] }],
+      groups: { "group:keep": ["alice@"] },
+      tagOwners: { "tag:keep": ["alice@"] },
+      ssh: [
+        {
+          action: "check",
+          src: ["alice@"],
+          dst: ["tag:keep"],
+          users: ["root"],
+          checkPeriod: "1h",
+          extension: { keep: true },
+        },
+        { action: "accept", src: ["alice@"], dst: ["tag:keep"], users: ["deploy"] },
+      ],
+      autoApprovers: {
+        routes: { "10.0.0.0/8": ["alice@"], "192.168.0.0/16": [] },
+        exitNode: ["alice@"],
+        extension: { keep: true },
+      },
+      hosts: { internal: "100.64.0.1" },
+      extension: { literal: principal },
+    });
+    expect(serializePolicy(state)).toEqual(original);
+  });
+
+  test("preserves unknown extra shapes and unrelated empty SSH rules", () => {
+    const extras = {
+      ssh: [null, { extension: true }, { src: [], dst: [], users: ["root"] }],
+      autoApprovers: { routes: { future: { extension: true } }, exitNode: "future" },
+      extension: { value: "tag:removed" },
+    };
+    const result = removePolicyReferences({ ...emptyState(), extras }, "tag:removed");
+    expect(result.extras).toEqual(extras);
+    expect(removePolicyReferences(emptyState(), "tag:removed").extras).toEqual({});
+  });
+
+  test("retains SSH references during the primitive remove-and-upsert rename sequence", () => {
+    const state = parsePolicy(
+      JSON.stringify({
+        groups: { "group:old": ["alice@"] },
+        tagOwners: { "tag:old": ["alice@"] },
+        ssh: [{ action: "accept", src: ["group:old"], dst: ["tag:old"], users: ["root"] }],
+      }),
+    );
+    const group = state.groups[0];
+    const tag = state.tagOwners[0];
+    const renamedGroup = upsertGroup(removeGroupById(state, group.id), {
+      ...group,
+      name: "group:new",
+    });
+    const renamedTag = upsertTagOwner(removeTagOwnerById(state, tag.id), {
+      ...tag,
+      tag: "tag:new",
+    });
+    expect(renamedGroup.extras).toEqual(state.extras);
+    expect(renamedTag.extras).toEqual(state.extras);
   });
 });
 

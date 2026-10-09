@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { isolateHttpConnections } from "@/test-utils/headscale.test";
 import { RestHeadscaleClient } from "./headscale-client";
 
 type SeenRequest = {
@@ -97,7 +98,9 @@ function responseFor(path: string) {
   return {};
 }
 
+let restoreHttpAgent: () => void;
 beforeEach(() => {
+  restoreHttpAgent = isolateHttpConnections();
   seenRequests = [];
   server = Bun.serve({
     hostname: "127.0.0.1",
@@ -118,12 +121,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  restoreHttpAgent();
   server.stop(true);
 });
 
 function client() {
   return new RestHeadscaleClient({
-    mode: "real",
     baseUrl: `http://127.0.0.1:${server.port}`,
     apiKey: "test-token",
   });
@@ -136,6 +139,27 @@ function seen(path: string, method?: string) {
 }
 
 describe("RestHeadscaleClient", () => {
+  test.each([
+    "",
+    "/api",
+    "//127.0.0.1",
+    "ftp://127.0.0.1",
+    "http:",
+    "https:headscale.test",
+  ])("rejects an invalid server URL before sending credentials: %s", (baseUrl) => {
+    expect(() => new RestHeadscaleClient({ baseUrl, apiKey: "secret" })).toThrow();
+    expect(seenRequests).toEqual([]);
+  });
+
+  test("rejects blank API keys and trims accepted connection input", async () => {
+    expect(() => new RestHeadscaleClient({ baseUrl: String(server.url), apiKey: "   " })).toThrow();
+    const api = new RestHeadscaleClient({
+      baseUrl: `  ${server.url}  `,
+      apiKey: "  trimmed-key  ",
+    });
+    await api.health();
+    expect(seenRequests[0].token).toBe("Bearer trimmed-key");
+  });
   test("sends the expected Headscale REST calls for every client method", async () => {
     const api = client();
 

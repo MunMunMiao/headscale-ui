@@ -96,7 +96,7 @@ type AddDeviceTask = "server" | "client" | "pending";
 
 const { t } = useHeadscaleI18n();
 const { copy } = useProductCopy();
-const { snapshot, renameDrafts, refreshSnapshot, nodeById: currentNode } = useSnapshot();
+const { snapshot, refreshSnapshot, nodeById: currentNode } = useSnapshot();
 const { isRefreshing: isRefreshingSnapshot, refresh: refreshDevices } = useSegment(
   "fabric",
   "identity",
@@ -124,6 +124,7 @@ const expireDialogOpen = ref(false);
 const removeDialogOpen = ref(false);
 const inviteDialogOpen = ref(false);
 const selectedRenameNode = ref<HeadscaleNode | null>(null);
+const renameDraft = ref("");
 const selectedExpireNode = ref<HeadscaleNode | null>(null);
 const selectedRemoveNode = ref<HeadscaleNode | null>(null);
 const selectedTagsNode = ref<HeadscaleNode | null>(null);
@@ -537,7 +538,7 @@ function openRenameDialog(node: HeadscaleNode) {
   const token = renameDialogGuard.next();
   const draftAtOpen = nodeDisplayName(node);
   selectedRenameNode.value = node;
-  renameDrafts[node.id] = draftAtOpen;
+  renameDraft.value = draftAtOpen;
   renameDialogOpen.value = true;
   void renameDialogGuard.refresh(token, () => {
     if (!renameDialogOpen.value || selectedRenameNode.value?.id !== node.id) return;
@@ -547,8 +548,8 @@ function openRenameDialog(node: HeadscaleNode) {
       return;
     }
     selectedRenameNode.value = nextNode;
-    if (renameDrafts[node.id] === draftAtOpen) {
-      renameDrafts[node.id] = nodeDisplayName(nextNode);
+    if (renameDraft.value === draftAtOpen) {
+      renameDraft.value = nodeDisplayName(nextNode);
     }
   });
 }
@@ -561,6 +562,7 @@ function handleRenameDialogOpen(open: boolean) {
   if (!open) {
     renameDialogGuard.cancel();
     selectedRenameNode.value = null;
+    renameDraft.value = "";
     clearActionFeedback("rename-node");
   }
 }
@@ -648,7 +650,7 @@ async function renameNode(node: HeadscaleNode) {
   return mutate("rename-node", (client) =>
     client.renameNode({
       nodeId: node.id,
-      newName: renameDrafts[node.id] || nodeDisplayName(node),
+      newName: renameDraft.value || nodeDisplayName(node),
     }),
   );
 }
@@ -1141,7 +1143,7 @@ function openUserDetailsExternal(user?: HeadscaleUser) {
           <Label for="rename-node-dialog-input">{{ copy.machineName }}</Label>
           <Input
             id="rename-node-dialog-input"
-            v-model="renameDrafts[selectedRenameNode.id]"
+            v-model="renameDraft"
             data-testid="rename-node-dialog-input"
             @keydown.enter.prevent="confirmRenameNode"
           />

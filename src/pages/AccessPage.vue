@@ -58,6 +58,7 @@ import {
   parseCommaList,
   parsePolicy,
   removeGroupById,
+  removePolicyReferences,
   removeTagOwnerById,
   toMemberRef,
   upsertGroup,
@@ -636,53 +637,21 @@ function confirmRemovePolicyItem() {
     const group = policyGroups.value.find((g) => g.id === target.id);
     if (group) {
       next = removeGroupById(next, group.id);
-      next = stripValueFromRules(next, group.name);
-      next = stripValueFromMembers(next, group.name);
+      next = removePolicyReferences(next, group.name);
     }
   } else if (target.kind === "tagOwner") {
     const entry = policyTagOwners.value.find((o) => o.id === target.id);
     if (entry) {
       next = removeTagOwnerById(next, entry.id);
-      next = stripValueFromRules(next, entry.tag);
+      next = removePolicyReferences(next, entry.tag);
     } else {
       const tagName = withTagPrefix(target.label);
-      next = stripValueFromRules(next, tagName);
+      next = removePolicyReferences(next, tagName);
     }
   }
   commitState(next);
   pendingPolicyRemoval.value = null;
   policyRemovalDialogOpen.value = false;
-}
-
-function stripValueFromRules(state: PolicyDesignerState, value: string): PolicyDesignerState {
-  return {
-    ...state,
-    rules: state.rules
-      .map((rule) => {
-        const sources = parseCommaList(rule.source).filter((s) => s !== value);
-        const destinations = parseCommaList(rule.destination).filter((d) => d !== value);
-        return {
-          ...rule,
-          source: sources.length > 0 ? joinCommaList(sources) : "",
-          destination: destinations.length > 0 ? joinCommaList(destinations) : "",
-        };
-      })
-      .filter((r) => r.source && r.destination),
-  };
-}
-
-function stripValueFromMembers(state: PolicyDesignerState, value: string): PolicyDesignerState {
-  return {
-    ...state,
-    groups: state.groups.map((g) => ({
-      ...g,
-      members: g.members.filter((m) => m.value !== value),
-    })),
-    tagOwners: state.tagOwners.map((t) => ({
-      ...t,
-      owners: t.owners.filter((o) => o.value !== value),
-    })),
-  };
 }
 
 function removeIpRule(ruleId: string) {

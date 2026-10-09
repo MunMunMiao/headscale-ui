@@ -182,7 +182,7 @@ function collectInteractions(source: string) {
   }
 
   const helperInteraction =
-    /(?:clickDomTestId|clickVisibleDomTestId|clickLastByTestIdPrefix|inputDomTestId|inputLastByTestIdPrefix|selectDomTestId|chooseProfileMenuOption)\(\s*("[^"]+"|`[^`]+`)/g;
+    /(?:clickDomTestId|clickVisibleDomTestId|clickLastByTestIdPrefix|inputDomTestId|inputLastByTestIdPrefix|selectDomTestId|selectDomTab|chooseProfileMenuOption)\(\s*("[^"]+"|`[^`]+`)/g;
   for (const match of source.matchAll(helperInteraction)) {
     add(match[1] ?? "");
   }

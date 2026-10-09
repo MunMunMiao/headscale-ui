@@ -15,6 +15,7 @@ import {
   idbGetAll,
   idbPut,
   openHeadscaleDb,
+  STORE_KEYS,
   STORE_META,
   STORE_PROFILES,
 } from "./idb";
@@ -73,7 +74,6 @@ function buildProfile(overrides: Partial<ConnectionProfile> & { apiKey: ApiKeySe
   const base: ConnectionProfile = {
     id: crypto.randomUUID(),
     name: "Test",
-    mode: "real",
     baseUrl: "https://hs.example",
     apiKey: overrides.apiKey,
     updatedAt: new Date().toISOString(),
@@ -149,7 +149,6 @@ describe("hydrate", () => {
     expect(profileStorage.loadProfiles()).toHaveLength(2);
     expect(profileStorage.loadProfiles().find((p) => p.id === "corrupted-defaults")).toMatchObject({
       name: "Profile",
-      mode: "real",
       baseUrl: "",
       scope: "persistent",
       corrupted: true,
@@ -158,7 +157,6 @@ describe("hydrate", () => {
     const mockProfile = profileStorage.loadProfiles().find((p) => p.id === "mock-profile");
     expect(mockProfile).toMatchObject({
       name: "https://mock.example.invalid",
-      mode: "mock",
     });
     expect(mockProfile?.corrupted).toBeUndefined();
   });
@@ -320,6 +318,189 @@ describe("hydrate", () => {
     }
 
     expect(profileStorage.readActiveProfile()).toBeNull();
+  });
+});
+
+describe("legacy connection mode migration", () => {
+  const encrypted: ApiKeySecret = {
+    v: 1,
+    scheme: "password",
+    iv: "preserve-iv-without-unlocking",
+    ct: "preserve-ciphertext-without-unlocking",
+  };
+
+  test.each([
+    ["mock", "http://127.0.0.1:8080", false],
+    ["mock", "  http://127.0.0.1:8080/  ", false],
+    ["mock", "https://hs.example", true],
+    ["real", "http://127.0.0.1:8080", true],
+    [undefined, "http://127.0.0.1:8080", true],
+    ["mock", "http://localhost:8080", true],
+    ["mock", "http://127.0.0.1:8080//", true],
+    ["unexpected", "http://127.0.0.1:8080", true],
+  ])("migrates legacy mode %s at %s", async (mode, baseUrl, preserved) => {
+    const record = {
+      id: "legacy-profile",
+      name: "User-chosen name",
+      baseUrl,
+      apiKey: encrypted,
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      scope: "persistent",
+    };
+    await idbPut(STORE_PROFILES, mode === undefined ? record : { ...record, mode });
+    await idbPut(STORE_META, record.id, "active-profile-id");
+
+    await hydrate();
+
+    expect(await idbGet(STORE_PROFILES, record.id)).toEqual(preserved ? record : undefined);
+    expect(profileStorage.loadProfiles()).toEqual(preserved ? [record] : []);
+    expect(profileStorage.readActiveProfile()).toBe(preserved ? record.id : null);
+    expect(await idbGet(STORE_META, "active-profile-id")).toBe(preserved ? record.id : undefined);
+  });
+
+  test("preserves real credentials, keys, preferences and active reference across repeat hydration", async () => {
+    const real = { ...buildProfile({ id: "real", apiKey: encrypted }), mode: "mock" };
+    const { mode: _mode, ...expected } = real;
+    await idbPut(STORE_PROFILES, real);
+    await idbPut(STORE_PROFILES, {
+      id: "demo",
+      mode: "mock",
+      baseUrl: "http://127.0.0.1:8080",
+      apiKey: "legacy-demo-plaintext",
+    });
+    await idbPut(STORE_META, "real", "active-profile-id");
+    await idbPut(STORE_META, { theme: "dark", locale: "zh-CN" }, "ui-settings");
+    await idbPut(STORE_META, { salt: "saved-salt", canary: encrypted }, "password-canary");
+    await idbPut(STORE_KEYS, "unchanged-device-key", "device-key");
+    const encryptLegacy = async () => {
+      throw new Error("Deleted demo credentials must not be encrypted");
+    };
+
+    await hydrate({ encryptLegacy });
+    await hydrate({ encryptLegacy });
+
+    expect(profileStorage.loadProfiles()).toEqual([expected]);
+    expect(await idbGetAll(STORE_PROFILES)).toEqual([expected]);
+    expect(profileStorage.readActiveProfile()).toBe("real");
+    expect(await idbGet(STORE_META, "ui-settings")).toEqual({ theme: "dark", locale: "zh-CN" });
+    expect(await idbGet(STORE_META, "password-canary")).toEqual({
+      salt: "saved-salt",
+      canary: encrypted,
+    });
+    expect(await idbGet(STORE_KEYS, "device-key")).toBe("unchanged-device-key");
+  });
+
+  test("rolls back profile deletion, mode rewrites and active reference when a write fails", async () => {
+    const demo = {
+      ...buildProfile({ id: "a-demo", apiKey: encrypted }),
+      mode: "mock",
+      baseUrl: "http://127.0.0.1:8080",
+    };
+    const real = { ...buildProfile({ id: "b-real", apiKey: encrypted }), mode: "real" };
+    await idbPut(STORE_PROFILES, demo);
+    await idbPut(STORE_PROFILES, real);
+    await idbPut(STORE_META, demo.id, "active-profile-id");
+    const restore = replaceObjectStoreMethod("put", function (value) {
+      return this.add(value);
+    });
+
+    let failure: unknown;
+    try {
+      await hydrate();
+    } catch (error) {
+      failure = error;
+    } finally {
+      restore();
+    }
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(await idbGetAll(STORE_PROFILES)).toEqual([demo, real]);
+    expect(await idbGet(STORE_META, "active-profile-id")).toBe(demo.id);
+    expect(() => profileStorage.loadProfiles()).toThrow("accessed before hydrate");
+
+    await hydrate();
+    expect(profileStorage.loadProfiles().map((p) => p.id)).toEqual([real.id]);
+    expect(profileStorage.readActiveProfile()).toBeNull();
+  });
+
+  test("invalidates a previously hydrated cache when a profile rewrite throws", async () => {
+    await hydrate();
+    const real = { ...buildProfile({ id: "real", apiKey: encrypted }), mode: "real" };
+    await idbPut(STORE_PROFILES, real);
+    const failure = new Error("Profile migration failed");
+    const restore = replaceObjectStoreMethod("put", () => {
+      throw failure;
+    });
+    let caught: unknown;
+
+    try {
+      await hydrate();
+    } catch (error) {
+      caught = error;
+    } finally {
+      restore();
+    }
+
+    expect(caught).toBe(failure);
+    expect(await idbGet(STORE_PROFILES, real.id)).toEqual(real);
+    expect(() => profileStorage.loadProfiles()).toThrow("accessed before hydrate");
+  });
+
+  test("rolls back demo deletion when reading its active reference fails asynchronously", async () => {
+    const demo = {
+      ...buildProfile({ id: "demo", apiKey: encrypted }),
+      mode: "mock",
+      baseUrl: "http://127.0.0.1:8080",
+    };
+    await idbPut(STORE_PROFILES, demo);
+    await idbPut(STORE_META, demo.id, "active-profile-id");
+    const restore = replaceObjectStoreMethod("get", function (key) {
+      return this.add("duplicate", key as IDBValidKey);
+    });
+    let failure: unknown;
+
+    try {
+      await hydrate();
+    } catch (error) {
+      failure = error;
+    } finally {
+      restore();
+    }
+
+    expect(failure).toHaveProperty("name", "ConstraintError");
+    expect(await idbGet(STORE_PROFILES, demo.id)).toEqual(demo);
+    expect(await idbGet(STORE_META, "active-profile-id")).toBe(demo.id);
+    expect(() => profileStorage.loadProfiles()).toThrow("accessed before hydrate");
+  });
+
+  test("rejects hydration and rolls back when clearing a deleted demo's active reference throws", async () => {
+    const demo = {
+      ...buildProfile({ id: "demo", apiKey: encrypted }),
+      mode: "mock",
+      baseUrl: "http://127.0.0.1:8080",
+    };
+    await idbPut(STORE_PROFILES, demo);
+    await idbPut(STORE_META, demo.id, "active-profile-id");
+    const originalDelete = IDBObjectStore.prototype.delete;
+    const failure = new Error("Active profile migration failed");
+    const restore = replaceObjectStoreMethod("delete", function (key) {
+      if (this.name === STORE_META) throw failure;
+      return originalDelete.call(this, key as IDBValidKey);
+    });
+
+    let caught: unknown;
+    try {
+      await hydrate();
+    } catch (error) {
+      caught = error;
+    } finally {
+      restore();
+    }
+
+    expect(caught).toBe(failure);
+    expect(await idbGet(STORE_PROFILES, demo.id)).toEqual(demo);
+    expect(await idbGet(STORE_META, "active-profile-id")).toBe(demo.id);
+    expect(() => profileStorage.loadProfiles()).toThrow("accessed before hydrate");
   });
 });
 

@@ -1,10 +1,12 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
 import { createRenderer, defineComponent } from "vue";
+import { RestHeadscaleClient } from "@/api/headscale-client";
 import { i18n } from "@/i18n";
 import { __resetForTest } from "@/lib/idb";
 import { hydrate, profileStorageTestingHandle } from "@/lib/profile-storage";
+import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { resetAllSingletons } from "./__testing";
 import { useActionFeedback } from "./useActionFeedback";
 import { useHeadscaleClient } from "./useHeadscaleClient";
@@ -52,10 +54,39 @@ beforeEach(async () => {
   (i18n.global.locale as unknown as { value: string }).value = "en-US";
 });
 
+let fixture: ReturnType<typeof startSnapshotServer>;
+beforeEach(() => {
+  fixture = startSnapshotServer();
+  useHeadscaleClient().setSettings({ baseUrl: fixture.baseUrl, apiKey: "test-key" });
+});
+afterEach(() => {
+  mock.restore();
+  fixture.stop();
+});
+
 describe("useProfileValidationFlow", () => {
+  test("keeps invalid input editable without saving or clearing its dirty baseline", async () => {
+    let syncs = 0;
+    const flow = mountComposable(() => useProfileValidationFlow(() => void syncs++));
+    const profiles = useProfiles();
+    Object.assign(profiles.connectionForm, { baseUrl: "", apiKey: "key" });
+    await flow.submitAddProfile();
+    expect(syncs).toBe(0);
+    expect(profiles.profileValidationDialogOpen.value).toBe(false);
+    expect(useActionFeedback().lastError.value).not.toBe("");
+
+    profiles.profileValidationDialogOpen.value = true;
+    await flow.continueAddingProfile();
+    expect(syncs).toBe(0);
+    expect(profiles.profiles.value).toEqual([]);
+    expect(profiles.profileValidationDialogOpen.value).toBe(false);
+    expect(useActionFeedback().lastError.value).not.toBe("");
+    expect(fixture.requests).toEqual([]);
+  });
   test("returns a failed validation to the connection form", () => {
     const flow = mountComposable(() => useProfileValidationFlow(() => {}));
     const profiles = useProfiles();
+    Object.assign(profiles.connectionForm, { baseUrl: fixture.baseUrl, apiKey: "test-key" });
     const feedback = useActionFeedback();
     profiles.profileValidationError.value = "Unauthorized";
     profiles.profileValidationDialogOpen.value = true;
@@ -70,6 +101,7 @@ describe("useProfileValidationFlow", () => {
     let syncs = 0;
     const flow = mountComposable(() => useProfileValidationFlow(() => void syncs++));
     const profiles = useProfiles();
+    Object.assign(profiles.connectionForm, { baseUrl: fixture.baseUrl, apiKey: "test-key" });
     const feedback = useActionFeedback();
     profiles.profileValidationDialogOpen.value = true;
     profiles.profileValidationError.value = "Offline";
@@ -88,14 +120,15 @@ describe("useProfileValidationFlow", () => {
     let syncs = 0;
     const flow = mountComposable(() => useProfileValidationFlow(() => void syncs++));
     const profiles = useProfiles();
+    Object.assign(profiles.connectionForm, { baseUrl: fixture.baseUrl, apiKey: "test-key" });
 
     await flow.submitAddProfile();
     expect(syncs).toBe(1);
     expect(profiles.profileValidationDialogOpen.value).toBe(false);
 
-    useHeadscaleClient().mockClient.health = async () => {
+    spyOn(RestHeadscaleClient.prototype, "health").mockImplementation(async () => {
       throw new Error("server unavailable");
-    };
+    });
     await flow.submitAddProfile();
     expect(syncs).toBe(1);
     expect(profiles.profileValidationDialogOpen.value).toBe(true);

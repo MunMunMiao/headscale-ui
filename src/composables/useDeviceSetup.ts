@@ -23,7 +23,7 @@ interface UseDeviceSetupReturn {
 function defaultPendingRegistrationForm(): PendingRegistrationForm {
   return {
     user: "",
-    key: "nodekey:pending-demo",
+    key: "",
   };
 }
 

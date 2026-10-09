@@ -1,8 +1,9 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
 import { createRenderer, nextTick } from "vue";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
+import { RestHeadscaleClient } from "@/api/headscale-client";
 import type { PolicyResponse } from "@/api/types";
 import { i18n } from "@/i18n";
 import { __resetForTest } from "@/lib/idb";
@@ -12,6 +13,7 @@ import {
   profileStorage,
   profileStorageTestingHandle,
 } from "@/lib/profile-storage";
+import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { actionFeedbackTestingHandle, useActionFeedback } from "./useActionFeedback";
 import { headscaleClientTestingHandle, useHeadscaleClient } from "./useHeadscaleClient";
 import { masterPasswordTestingHandle, useMasterPassword } from "./useMasterPassword";
@@ -75,8 +77,7 @@ async function saveProfile(id: string) {
   const profile: ConnectionProfile = {
     id,
     name: `Profile ${id}`,
-    mode: "mock",
-    baseUrl: "http://127.0.0.1:8080",
+    baseUrl: fixture.baseUrl,
     apiKey: await useMasterPassword().encryptApiKey(`${id}-key`),
     updatedAt: new Date().toISOString(),
     scope: "persistent",
@@ -141,8 +142,8 @@ async function restorePolicySession(
   await prepareStorage();
   const profile = await saveProfile("policy-session");
   profileStorage.setActiveProfile(profile.id, "persistent");
-  const client = useHeadscaleClient().mockClient;
-  client.snapshot.policy = { policy: policyText };
+  const client = RestHeadscaleClient.prototype;
+  fixture.snapshot.policy = { policy: policyText };
   const router = await createTestRouter("/secure");
   const app = mountSessionRestore(router);
   const snapshot = useSnapshot();
@@ -150,12 +151,72 @@ async function restorePolicySession(
   return { app, client, profile, router, snapshot, policy: usePolicyDesigner() };
 }
 
+let fixture: ReturnType<typeof startSnapshotServer>;
+beforeEach(() => {
+  fixture = startSnapshotServer();
+  useHeadscaleClient().setSettings({ baseUrl: fixture.baseUrl, apiKey: "test-key" });
+  spyOn(RestHeadscaleClient.prototype, "setPolicy").mockImplementation(async ({ policy }) => ({
+    policy: String(policy),
+  }));
+});
+afterEach(() => {
+  mock.restore();
+  fixture.stop();
+});
+
 describe("useSessionRestore", () => {
+  test("preserves policy card identities when a successful refresh returns unchanged policy", async () => {
+    const { app, snapshot, policy } = await restorePolicySession(
+      '{"acls":[{"action":"accept","src":["group:ops"],"dst":["tag:server:443"]}],"groups":{"group:ops":["alice@"]},"tagOwners":{"tag:server":["alice@"]}}',
+    );
+    try {
+      const rule = policy.policyRules.value[0];
+      const group = policy.policyGroups.value[0];
+      const tagOwner = policy.policyTagOwners.value[0];
+      const reads = fixture.requests.filter((request) => request === "GET /api/v1/policy").length;
+      expect(policy.isPolicyDirty.value).toBe(false);
+      expect(policy.isPolicyEditing.value).toBe(false);
+
+      await snapshot.refreshSegments(["policy"]);
+
+      expect(fixture.requests.filter((request) => request === "GET /api/v1/policy")).toHaveLength(
+        reads + 1,
+      );
+      expect(useActionFeedback().lastError.value).toBe("");
+      expect(policy.policyRules.value[0]).toBe(rule);
+      expect(policy.policyGroups.value[0]).toBe(group);
+      expect(policy.policyTagOwners.value[0]).toBe(tagOwner);
+    } finally {
+      app.unmount();
+    }
+  });
+
+  test("resets unsaved editors when switching to a profile with the same policy", async () => {
+    const { app, policy } = await restorePolicySession();
+    try {
+      const baseline = policy.policyDraft.value;
+      policy.removeRule(policy.policyRules.value[0].id);
+      policy.tagDetailOpen.value = true;
+      expect(policy.isPolicyDirty.value).toBe(true);
+      const nextProfile = await saveProfile("same-policy-session");
+
+      await useProfiles().enterProfile(nextProfile);
+
+      expect(policy.policyDraft.value).toBe(baseline);
+      expect(policy.policyRules.value).toHaveLength(1);
+      expect(policy.isPolicyDirty.value).toBe(false);
+      expect(policy.isPolicyEditing.value).toBe(false);
+      expect(policy.tagDetailOpen.value).toBe(false);
+    } finally {
+      app.unmount();
+    }
+  });
+
   test("keeps edits made while a route refresh is pending and saves the edited payload", async () => {
     const { app, client, router, snapshot, policy } = await restorePolicySession();
     const originalDraft = policy.policyDraft.value;
     const response = Promise.withResolvers<PolicyResponse>();
-    client.getPolicy = () => response.promise;
+    spyOn(client, "getPolicy").mockImplementation(() => response.promise);
 
     await router.push({ name: "secure-two" });
     await nextTick();
@@ -176,7 +237,7 @@ describe("useSessionRestore", () => {
     const { app, client, snapshot, policy } = await restorePolicySession();
     const originalDraft = policy.policyDraft.value;
     const response = Promise.withResolvers<PolicyResponse>();
-    client.getPolicy = () => response.promise;
+    spyOn(client, "getPolicy").mockImplementation(() => response.promise);
     const refreshing = snapshot.refreshSnapshot();
     policy.removeRule(policy.policyRules.value[0].id);
     const saved = await client.setPolicy({ policy: JSON.stringify(policy.policyPayload.value) });
@@ -215,7 +276,7 @@ describe("useSessionRestore", () => {
     const baseline = policy.policyDraft.value;
     const rules = policy.policyRules.value;
     const response = Promise.withResolvers<PolicyResponse>();
-    client.getPolicy = () => response.promise;
+    spyOn(client, "getPolicy").mockImplementation(() => response.promise);
     const refreshing = snapshot.refreshSegments(["policy"]);
     policy.tagDetailOpen.value = true;
     expect(policy.isPolicyDirty.value).toBe(false);
@@ -304,7 +365,7 @@ describe("useSessionRestore", () => {
     const { app, client, snapshot, policy } = await restorePolicySession();
     const oldPolicy = policy.policyDraft.value;
     const response = Promise.withResolvers<PolicyResponse>();
-    client.getPolicy = () => response.promise;
+    spyOn(client, "getPolicy").mockImplementation(() => response.promise);
     const refreshing = snapshot.refreshSnapshot();
     policy.removeRule(policy.policyRules.value[0].id);
     policy.editingIpRuleId.value = "previous-rule";
@@ -313,7 +374,7 @@ describe("useSessionRestore", () => {
     policy.pendingHighRiskAction.value = () => policy.addPolicyRule();
     const nextProfile = await saveProfile("next-session");
     const nextPolicy = '{"acls":[],"groups":{"group:next":[]}}';
-    client.getPolicy = async () => ({ policy: nextPolicy });
+    spyOn(client, "getPolicy").mockImplementation(async () => ({ policy: nextPolicy }));
     await useProfiles().enterProfile(nextProfile);
     response.resolve({ policy: oldPolicy });
     await refreshing;
@@ -332,14 +393,14 @@ describe("useSessionRestore", () => {
   test("clears unsaved drafts on logout and reloads the same profile without stale writes", async () => {
     const { app, client, profile, snapshot, policy } = await restorePolicySession();
     const response = Promise.withResolvers<PolicyResponse>();
-    client.getPolicy = () => response.promise;
+    spyOn(client, "getPolicy").mockImplementation(() => response.promise);
     const refreshing = snapshot.refreshSnapshot();
     policy.removeRule(policy.policyRules.value[0].id);
     useProfiles().logout();
 
     expect(policy.policyDraft.value).toBe("");
     expect(policy.policyGroups.value).toEqual([]);
-    client.getPolicy = async () => ({ policy: '{"acls":[]}' });
+    spyOn(client, "getPolicy").mockImplementation(async () => ({ policy: '{"acls":[]}' }));
     await useProfiles().enterProfile(profile);
     response.resolve({ policy: '{"acls":[],"groups":{"group:stale":[]}}' });
     await refreshing;
@@ -361,7 +422,7 @@ describe("useSessionRestore", () => {
     const saving = useMutation().mutateWith("save-policy", () => response.promise);
     const nextProfile = await saveProfile("next-save-session");
     const nextPolicy = '{"acls":[],"groups":{"group:next":[]}}';
-    client.getPolicy = async () => ({ policy: nextPolicy });
+    spyOn(client, "getPolicy").mockImplementation(async () => ({ policy: nextPolicy }));
     await useProfiles().enterProfile(nextProfile);
     const feedback = useActionFeedback();
     feedback.lastError.value = "new session feedback";
@@ -377,7 +438,6 @@ describe("useSessionRestore", () => {
     expect(feedback.lastError.value).toBe("new session feedback");
     expect(feedback.actionError("save-policy")).toBe("");
     expect(snapshot.snapshot.value).toBe(currentSnapshot);
-    if (accepted) expect(client.snapshot.policy?.policy).toBe(submitted);
     app.unmount();
   });
 
@@ -387,7 +447,7 @@ describe("useSessionRestore", () => {
     const previousResponse = Promise.withResolvers<PolicyResponse>();
     const previousSave = mutation.mutateWith("save-policy", () => previousResponse.promise);
     useProfiles().logout();
-    client.getPolicy = async () => ({ policy: '{"acls":[]}' });
+    spyOn(client, "getPolicy").mockImplementation(async () => ({ policy: '{"acls":[]}' }));
     await useProfiles().enterProfile(profile);
     const currentResponse = Promise.withResolvers<PolicyResponse>();
     const currentSave = mutation.mutateWith("save-policy", () => currentResponse.promise);
@@ -418,7 +478,7 @@ describe("useSessionRestore", () => {
     await waitFor(() => snapshot.isAuthorized.value && !profiles.isRestoringSession.value);
 
     expect(profileStorage.readActiveProfile()).toBe(profile.id);
-    expect(snapshot.snapshot.value.users).toHaveLength(3);
+    expect(snapshot.snapshot.value.users).toHaveLength(1);
     expect(policy.policyDraft.value).toContain('"acls"');
 
     snapshot.applyPatch({ policy: null });
@@ -504,9 +564,9 @@ describe("useSessionRestore", () => {
     await prepareStorage();
     const profile = await saveProfile("failing");
     profileStorage.setActiveProfile(profile.id, "persistent");
-    useHeadscaleClient().mockClient.health = async () => {
+    spyOn(RestHeadscaleClient.prototype, "health").mockImplementation(async () => {
       throw "restore failed";
-    };
+    });
     const router = await createTestRouter("/secure");
     const app = mountSessionRestore(router);
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { fetchSnapshot } from "@/composables/useSnapshot";
+import { isolateHttpConnections } from "@/test-utils/headscale.test";
 import { RestHeadscaleClient } from "./headscale-client";
 
 let server: ReturnType<typeof Bun.serve>;
@@ -33,7 +34,9 @@ function policyError(message: string) {
   return Response.json({ code: 2, message, details: [] }, { status: 500 });
 }
 
+let restoreHttpAgent: () => void;
 beforeEach(() => {
+  restoreHttpAgent = isolateHttpConnections();
   policyErrorMessage = "";
   policyRequested = false;
   server = Bun.serve({
@@ -54,12 +57,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  restoreHttpAgent();
   server.stop(true);
 });
 
 function client() {
   return new RestHeadscaleClient({
-    mode: "real",
     baseUrl: `http://127.0.0.1:${server.port}`,
     apiKey: "test-token",
   });

@@ -8,6 +8,8 @@ export const frFRCatalog = {
     serverUrl: "URL du serveur",
     apiKey: "Clé API",
     apiKeyPlaceholder: "Jeton Bearer créé par headscale apikeys create",
+    connectionInvalidUrl: "Saisissez une URL de serveur HTTP(S) absolue.",
+    connectionApiKeyRequired: "Saisissez une clé API.",
     connectTitle: "Se connecter à Headscale",
     connectSubtitle:
       "Saisissez l'adresse du serveur et le jeton d'autorisation avant d'ouvrir la console.",
@@ -59,9 +61,6 @@ export const frFRCatalog = {
     cancel: "Annuler",
     connect: "Se connecter",
     logout: "Déconnexion",
-    mode: "Mode",
-    mockMode: "Simulation",
-    realMode: "Réel",
     theme: "Thème",
     language: "Langue",
     light: "Clair",

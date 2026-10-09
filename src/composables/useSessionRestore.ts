@@ -38,8 +38,14 @@ export function useSessionRestore(): void {
 
   // (2) snapshot → policy designer mirror
   snap.setOnApplySnapshot((next, patch) => {
-    if ("policy" in patch && !policy.isPolicyDirty.value && !policy.isPolicyEditing.value) {
-      policy.load(next.policy?.policy ?? "");
+    const nextPolicy = next.policy?.policy ?? "";
+    if (
+      "policy" in patch &&
+      !policy.isPolicyDirty.value &&
+      !policy.isPolicyEditing.value &&
+      nextPolicy !== policy.policyDraft.value
+    ) {
+      policy.load(nextPolicy);
     }
   });
   watch(policy.policyDraft, snap.invalidatePolicyRefreshes, { flush: "sync" });

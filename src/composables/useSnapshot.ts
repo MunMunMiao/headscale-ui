@@ -1,4 +1,4 @@
-import { type ComputedRef, computed, type Ref, reactive, ref, watch } from "vue";
+import { type ComputedRef, computed, type Ref, ref, watch } from "vue";
 import type {
   HeadscaleClient,
   HeadscaleNode,
@@ -7,7 +7,6 @@ import type {
   PreAuthKey,
 } from "@/api/types";
 import { isTimestampExpired } from "@/domain/node-status";
-import { nodeDisplayName } from "@/utils/node";
 import { useActionFeedback } from "./useActionFeedback";
 import { useHeadscaleClient } from "./useHeadscaleClient";
 
@@ -22,7 +21,6 @@ interface UseSnapshotReturn {
   isAuthorized: Ref<boolean>;
   isRefreshing: ComputedRef<boolean>;
   refreshSnapshotInFlight: Ref<number>;
-  renameDrafts: Record<string, string>;
   onlineNodes: ComputedRef<HeadscaleNode[]>;
   openInvites: ComputedRef<PreAuthKey[]>;
   routeNodes: ComputedRef<HeadscaleNode[]>;
@@ -95,13 +93,20 @@ export async function fetchSnapshot(client: HeadscaleClient): Promise<HeadscaleS
 export function useSnapshot(): UseSnapshotReturn {
   if (instance) return instance;
 
-  const { mockClient, createClient } = useHeadscaleClient();
+  const { createClient } = useHeadscaleClient();
   const { lastError, clearAllActionFeedback } = useActionFeedback();
 
-  const snapshot = ref<HeadscaleSnapshot>(mockClient.snapshot);
+  const snapshot = ref<HeadscaleSnapshot>({
+    health: null,
+    version: null,
+    users: [],
+    preAuthKeys: [],
+    nodes: [],
+    apiKeys: [],
+    policy: null,
+  });
   const isAuthorized = ref(false);
   const refreshSnapshotInFlight = ref(0);
-  const renameDrafts = reactive<Record<string, string>>({});
 
   const isRefreshing = computed(() => refreshSnapshotInFlight.value > 0);
   const onlineNodes = computed(() => snapshot.value.nodes.filter((node) => node.online));
@@ -125,14 +130,6 @@ export function useSnapshot(): UseSnapshotReturn {
 
   function applyPatch(patch: Partial<HeadscaleSnapshot>) {
     snapshot.value = { ...snapshot.value, ...patch };
-    if (patch.nodes) {
-      // Reset rename drafts to the fresh node set: drop entries for deleted nodes
-      // and replace all values in a single reactive flush.
-      for (const key of Object.keys(renameDrafts)) delete renameDrafts[key];
-      for (const node of patch.nodes) {
-        renameDrafts[node.id] = nodeDisplayName(node);
-      }
-    }
     onApplySnapshot?.(snapshot.value, patch);
   }
 
@@ -189,7 +186,6 @@ export function useSnapshot(): UseSnapshotReturn {
     isAuthorized,
     isRefreshing,
     refreshSnapshotInFlight,
-    renameDrafts,
     onlineNodes,
     openInvites,
     routeNodes,

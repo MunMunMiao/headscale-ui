@@ -193,7 +193,7 @@ export const HEADSCALE_OPERATIONS = [
         name: "key",
         label: "Registration Key",
         type: "text",
-        defaultValue: "nodekey:pending-demo",
+        defaultValue: "",
       },
     ],
   },
@@ -207,7 +207,7 @@ export const HEADSCALE_OPERATIONS = [
     coverage: "rest-api",
     fields: [
       { name: "user", label: "Username", type: "text", defaultValue: "alice" },
-      { name: "key", label: "Node key", type: "text", defaultValue: "nodekey:debug-demo" },
+      { name: "key", label: "Node key", type: "text", defaultValue: "" },
       { name: "name", label: "Node name", type: "text", defaultValue: "debug-router" },
       { name: "routes", label: "Advertised routes", type: "list", defaultValue: "10.10.0.0/16" },
     ],
@@ -339,7 +339,7 @@ export const HEADSCALE_OPERATIONS = [
     path: "/api/v1/apikey/expire",
     coverage: "rest-api",
     fields: [
-      { name: "prefix", label: "Prefix", type: "text", defaultValue: "ak_live_demo" },
+      { name: "prefix", label: "Prefix", type: "text", defaultValue: "" },
       { name: "id", label: "ID", type: "text", placeholder: "Optional" },
     ],
   },
@@ -351,7 +351,7 @@ export const HEADSCALE_OPERATIONS = [
     method: "DELETE",
     path: "/api/v1/apikey/{prefix}",
     coverage: "rest-api",
-    fields: [{ name: "prefix", label: "Prefix", type: "text", defaultValue: "ak_old_demo" }],
+    fields: [{ name: "prefix", label: "Prefix", type: "text", defaultValue: "" }],
   },
   {
     id: "policy.get",

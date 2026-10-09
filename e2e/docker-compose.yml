@@ -1,9 +1,20 @@
 services:
+  fixture-network:
+    # Keep host interfaces stable during reset so Chrome does not cancel requests with ERR_NETWORK_CHANGED.
+    image: tailscale/tailscale:v1.94.2
+    init: true
+    entrypoint: sleep
+    command: infinity
+    ports:
+      - "127.0.0.1:${HEADSCALE_E2E_PORT:?runner must reserve a port}:8080"
+    networks:
+      default:
+        aliases: [headscale]
+
   headscale:
     image: headscale/headscale:0.28.0
     command: serve
-    ports:
-      - "127.0.0.1::8080"
+    network_mode: service:fixture-network
     volumes:
       - ./headscale-config.yaml:/etc/headscale/config.yaml:ro
       - ./headscale-derp.yaml:/etc/headscale/derp.yaml:ro
@@ -15,5 +26,23 @@ services:
       timeout: 3s
       retries: 30
 
+  online-device:
+    image: tailscale/tailscale:v1.94.2
+    network_mode: service:fixture-network
+    entrypoint: tailscaled
+    command: ["--tun=userspace-networking", "--state=/var/lib/tailscale/state"]
+    environment:
+      TS_NO_LOGS_NO_SUPPORT: "true"
+    volumes:
+      - tailscale-data:/var/lib/tailscale
+
+  offline-device:
+    image: tailscale/tailscale:v1.94.2
+    entrypoint: tailscaled
+    command: ["--tun=userspace-networking", "--state=mem:"]
+    environment:
+      TS_NO_LOGS_NO_SUPPORT: "true"
+
 volumes:
   headscale-data:
+  tailscale-data:

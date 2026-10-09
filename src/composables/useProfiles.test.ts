@@ -1,7 +1,8 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
 import { createRenderer } from "vue";
+import { RestHeadscaleClient } from "@/api/headscale-client";
 import type { HeadscaleSnapshot, HealthResponse } from "@/api/types";
 import { i18n } from "@/i18n";
 import { __resetForTest } from "@/lib/idb";
@@ -11,10 +12,11 @@ import {
   profileStorage,
   profileStorageTestingHandle,
 } from "@/lib/profile-storage";
+import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { actionFeedbackTestingHandle, useActionFeedback } from "./useActionFeedback";
 import { headscaleClientTestingHandle, useHeadscaleClient } from "./useHeadscaleClient";
 import { masterPasswordTestingHandle, useMasterPassword } from "./useMasterPassword";
-import { localMockBaseUrl, newProfileId, profilesTestingHandle, useProfiles } from "./useProfiles";
+import { newProfileId, profilesTestingHandle, useProfiles } from "./useProfiles";
 
 const timerDelays: number[] = [];
 
@@ -101,8 +103,7 @@ async function saveProfile(
   const profile: ConnectionProfile = {
     id: crypto.randomUUID(),
     name: "Profile",
-    mode: "mock",
-    baseUrl: localMockBaseUrl,
+    baseUrl: fixture.baseUrl,
     apiKey: await masterPassword.encryptApiKey("profile-key"),
     updatedAt: new Date().toISOString(),
     scope,
@@ -129,14 +130,46 @@ async function waitFor(predicate: () => boolean) {
   throw new Error("condition was not reached");
 }
 
+let fixture: ReturnType<typeof startSnapshotServer>;
+beforeEach(() => {
+  fixture = startSnapshotServer();
+  useHeadscaleClient().setSettings({ baseUrl: fixture.baseUrl, apiKey: "test-key" });
+});
+afterEach(() => {
+  mock.restore();
+  fixture.stop();
+});
+
 describe("useProfiles forms and persistence", () => {
+  test("starts with empty user-supplied connection fields", async () => {
+    await prepareStorage();
+    const api = createProfilesApi();
+    expect(api.connectionForm).toMatchObject({ profileName: "", baseUrl: "", apiKey: "" });
+  });
+
+  test.each([
+    { baseUrl: "", apiKey: "key" },
+    { baseUrl: "/api", apiKey: "key" },
+    { baseUrl: "ftp://headscale.test", apiKey: "key" },
+    { baseUrl: "https://headscale.test", apiKey: "   " },
+  ])("blocks invalid connection input before validation or persistence: %j", async (input) => {
+    await prepareStorage();
+    const api = createProfilesApi();
+    Object.assign(api.connectionForm, input);
+    await api.addProfile();
+    expect(api.profileValidationDialogOpen.value).toBe(false);
+    expect(useActionFeedback().lastError.value).not.toBe("");
+    expect(api.profiles.value).toEqual([]);
+    await expect(api.persistConnection()).rejects.toThrow();
+    expect(profileStorage.loadProfiles()).toEqual([]);
+    expect(fixture.requests).toEqual([]);
+  });
   test("normalizes stored records and drives the connection dialog from decrypted profiles", async () => {
     await prepareStorage();
     const session = await saveProfile(
       {
         id: "session-profile",
         name: "",
-        mode: "mock",
         baseUrl: " https://remote.example.test ",
         updatedAt: "",
       },
@@ -145,10 +178,9 @@ describe("useProfiles forms and persistence", () => {
     await saveProfile({ id: "corrupted", corrupted: true });
     const validSecret = await useMasterPassword().encryptApiKey("invalid-record-key");
     for (const invalid of [
-      { id: "", baseUrl: localMockBaseUrl, apiKey: validSecret, mode: "mock" },
-      { id: "no-base", baseUrl: "", apiKey: validSecret, mode: "mock" },
-      { id: "bad-key", baseUrl: localMockBaseUrl, apiKey: {}, mode: "mock" },
-      { id: "bad-mode", baseUrl: localMockBaseUrl, apiKey: validSecret, mode: "other" },
+      { id: "", baseUrl: fixture.baseUrl, apiKey: validSecret },
+      { id: "no-base", baseUrl: "", apiKey: validSecret },
+      { id: "bad-key", baseUrl: fixture.baseUrl, apiKey: {} },
     ]) {
       profileStorage.saveProfile(invalid as ConnectionProfile, "persistent");
     }
@@ -163,7 +195,6 @@ describe("useProfiles forms and persistence", () => {
     ]);
     expect(api.profiles.value[0]).toMatchObject({
       name: "https://remote.example.test",
-      mode: "real",
       baseUrl: "https://remote.example.test",
       scope: "session",
       ownerTabId: profileStorage.currentTabId(),
@@ -171,10 +202,9 @@ describe("useProfiles forms and persistence", () => {
     expect(api.profiles.value[0].updatedAt).not.toBe("");
     expect(api.profiles.value[1].corrupted).toBe(true);
     expect(useHeadscaleClient().settings).toMatchObject({
-      mode: "mock",
-      baseUrl: localMockBaseUrl,
+      baseUrl: "",
     });
-    expect(api.currentProfileLabel.value).toBe("Local mock");
+    expect(api.currentProfileLabel.value).not.toBe("");
     expect(api.selectedProfile.value).toBeUndefined();
 
     await api.loadProfile("missing");
@@ -183,7 +213,6 @@ describe("useProfiles forms and persistence", () => {
     expect(api.connectionForm).toMatchObject({
       profileId: session.id,
       profileName: "https://remote.example.test",
-      mode: "real",
       apiKey: "profile-key",
       remember: false,
     });
@@ -206,9 +235,8 @@ describe("useProfiles forms and persistence", () => {
     await api.loadProfile(newProfileId);
     expect(api.connectionForm).toMatchObject({
       profileId: newProfileId,
-      profileName: "Local mock",
-      mode: "mock",
-      baseUrl: localMockBaseUrl,
+      profileName: "",
+      baseUrl: "",
       remember: true,
     });
   });
@@ -218,8 +246,7 @@ describe("useProfiles forms and persistence", () => {
     const api = createProfilesApi();
     Object.assign(api.connectionForm, {
       profileName: "   ",
-      mode: "mock",
-      baseUrl: ` ${localMockBaseUrl}/ `,
+      baseUrl: ` ${fixture.baseUrl}/ `,
       apiKey: "  saved-key  ",
       remember: false,
     });
@@ -230,9 +257,8 @@ describe("useProfiles forms and persistence", () => {
     expect(api.profiles.value).toHaveLength(1);
     const id = api.profiles.value[0].id;
     expect(api.profiles.value[0]).toMatchObject({
-      name: `${localMockBaseUrl}/`,
-      mode: "mock",
-      baseUrl: `${localMockBaseUrl}/`,
+      name: `${fixture.baseUrl}/`,
+      baseUrl: `${fixture.baseUrl}/`,
       scope: "session",
     });
     expect(profileStorage.getProfileScope(id)).toBe("session");
@@ -252,10 +278,11 @@ describe("useProfiles forms and persistence", () => {
   test("surfaces validation failures and ignores a superseded add attempt", async () => {
     await prepareStorage();
     const api = createProfilesApi();
-    const client = useHeadscaleClient().mockClient;
-    client.health = async () => {
+    Object.assign(api.connectionForm, { baseUrl: fixture.baseUrl, apiKey: "test-key" });
+    const client = RestHeadscaleClient.prototype;
+    spyOn(client, "health").mockImplementation(async () => {
       throw "validation failed";
-    };
+    });
 
     await api.addProfile();
     expect(api.profileValidationDialogOpen.value).toBe(true);
@@ -265,12 +292,12 @@ describe("useProfiles forms and persistence", () => {
     api.profileValidationDialogOpen.value = false;
     const firstHealth = deferred<HealthResponse>();
     let healthCalls = 0;
-    client.health = () => {
+    spyOn(client, "health").mockImplementation(() => {
       healthCalls += 1;
       return healthCalls === 1
         ? firstHealth.promise
         : Promise.resolve({ databaseConnectivity: true, serverReachable: true });
-    };
+    });
 
     const stale = api.addProfile();
     await waitFor(() => healthCalls === 1);
@@ -317,9 +344,9 @@ describe("useProfiles authentication", () => {
     await prepareStorage();
     const profile = await saveProfile({ id: "login-profile" });
     const api = createProfilesApi();
-    const client = useHeadscaleClient().mockClient;
+    const client = RestHeadscaleClient.prototype;
     const health = deferred<HealthResponse>();
-    client.health = () => health.promise;
+    spyOn(client, "health").mockImplementation(() => health.promise);
     let authenticated: HeadscaleSnapshot | null = null;
     api.setOnAuthenticated((snapshot) => {
       authenticated = snapshot;
@@ -335,7 +362,7 @@ describe("useProfiles authentication", () => {
     expect(api.phase.value).toEqual({ kind: "idle" });
     expect(api.isConnecting.value).toBe(false);
     expect(api.authenticatingProfileId.value).toBeNull();
-    expect(authenticated?.users).toHaveLength(3);
+    expect(authenticated?.users).toHaveLength(1);
     expect(profileStorage.readActiveProfile()).toBe(profile.id);
     expect(useHeadscaleClient().settings.apiKey).toBe("profile-key");
     expect(timerDelays[0]).toBeGreaterThan(0);
@@ -348,12 +375,12 @@ describe("useProfiles authentication", () => {
     const masterPassword = await prepareStorage();
     await saveProfile({ id: "known-corrupt", corrupted: true });
     const api = createProfilesApi();
-    const client = useHeadscaleClient().mockClient;
+    const client = RestHeadscaleClient.prototype;
     let healthCalls = 0;
-    client.health = async () => {
+    spyOn(client, "health").mockImplementation(async () => {
       healthCalls += 1;
       return { databaseConnectivity: true };
-    };
+    });
 
     expect(await api.enterProfile(api.profiles.value[0])).toBe(false);
     expect(useActionFeedback().lastError.value).not.toBe("");
@@ -387,9 +414,9 @@ describe("useProfiles authentication", () => {
     await saveProfile({ id: "failing-profile" });
     profileStorage.setActiveProfile("failing-profile", "persistent");
     const api = createProfilesApi();
-    useHeadscaleClient().mockClient.health = async () => {
+    spyOn(RestHeadscaleClient.prototype, "health").mockImplementation(async () => {
       throw new Error("server unavailable");
-    };
+    });
 
     expect(await api.enterProfile(api.profiles.value[0])).toBe(false);
     expect(useActionFeedback().lastError.value).toBe("server unavailable");
@@ -402,7 +429,7 @@ describe("useProfiles authentication", () => {
     const profile = await saveProfile({ id: "late-profile" });
     const api = createProfilesApi();
     const health = deferred<HealthResponse>();
-    useHeadscaleClient().mockClient.health = () => health.promise;
+    spyOn(RestHeadscaleClient.prototype, "health").mockImplementation(() => health.promise);
     let authenticated = 0;
     let loggedOut = 0;
     api.setOnAuthenticated(() => {

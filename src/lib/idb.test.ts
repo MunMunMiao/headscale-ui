@@ -104,11 +104,15 @@ describe("IndexedDB wrapper", () => {
   test("rejects and rolls back an asynchronous transaction error", async () => {
     await idbPut(STORE_META, "original", "duplicate-key");
 
-    await expect(
-      withTransaction([STORE_META], "readwrite", (tx) => {
+    let failure: unknown;
+    try {
+      await withTransaction([STORE_META], "readwrite", (tx) => {
         tx.objectStore(STORE_META).add("replacement", "duplicate-key");
-      }),
-    ).rejects.toBeDefined();
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toHaveProperty("name", "ConstraintError");
     expect(await idbGet(STORE_META, "duplicate-key")).toBe("original");
   });
 });
