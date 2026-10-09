@@ -11,7 +11,7 @@
     "lint": "bun --bun node_modules/@biomejs/biome/bin/biome check .",
     "format": "bun --bun node_modules/@biomejs/biome/bin/biome format --write .",
     "test": "bun test src",
-    "test:coverage": "bun test scripts/check-unit-coverage.test.ts && bun --config=./bunfig.coverage.toml test --coverage src && bun scripts/check-unit-coverage.ts",
+    "test:coverage": "bun test scripts/check-unit-coverage.test.ts scripts/docker-network.test.ts && bun --config=./bunfig.coverage.toml test --coverage src && bun scripts/check-unit-coverage.ts",
     "test:e2e": "bun scripts/run-e2e.ts",
     "test:policy-lifecycle": "bun scripts/check-policy-lifecycle.ts",
     "test:policy-traffic": "bun scripts/check-policy-traffic.ts",

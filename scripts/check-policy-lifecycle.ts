@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { remote } from "webdriverio";
+import { waitForDockerIpv6 } from "./docker-network";
 
 process.env.NO_PROXY = process.env.no_proxy = "127.0.0.1,localhost";
 
@@ -121,7 +122,7 @@ try {
     assert.equal(await build.exited, 0, "Docker production UI build failed");
     imageCreated = true;
   }
-  docker("network", "create", owned);
+  const networkId = docker("network", "create", owned);
   networkCreated = true;
   docker("volume", "create", owned);
   volumeCreated = true;
@@ -212,6 +213,7 @@ try {
   assert.equal(seeded.status, 200, "Seed wildcard policy on isolated Headscale");
   assert.deepEqual((await readPolicy()).acls, openAcl);
 
+  await waitForDockerIpv6(networkId);
   browser = await remote({
     logLevel: "error",
     capabilities: {

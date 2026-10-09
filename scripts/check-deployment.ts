@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { remote } from "webdriverio";
+import { waitForDockerIpv6 } from "./docker-network";
 
 process.env.NO_PROXY = process.env.no_proxy = "127.0.0.1,localhost";
 
@@ -16,6 +17,7 @@ const temporary = mkdtempSync(join(tmpdir(), `${owned}-`));
 let browser: Awaited<ReturnType<typeof remote>> | undefined;
 let build: ReturnType<typeof Bun.spawn> | undefined;
 let networkCreated = false;
+let networkId = "";
 let imageCreated = false;
 let cleaned = false;
 
@@ -233,6 +235,7 @@ async function checkBrowser(
   base: string,
   connection: { baseUrl: string; apiKey: string },
 ) {
+  await waitForDockerIpv6(networkId);
   browser = await remote({
     logLevel: "error",
     capabilities: {
@@ -360,7 +363,7 @@ try {
     assert.equal(await build.exited, 0, "Docker build failed");
     imageCreated = true;
   }
-  docker("network", "create", owned);
+  networkId = docker("network", "create", owned);
   networkCreated = true;
   const connection = await startHeadscale();
   let pristineBuild: string | undefined;

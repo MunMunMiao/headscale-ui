@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resetHeadscaleFixture, seedHeadscaleFixture } from "../e2e/headscale-fixture";
+import { waitForDockerIpv6 } from "./docker-network";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const composeFile = "e2e/docker-compose.yml";
@@ -155,6 +156,14 @@ try {
   process.env.HEADSCALE_E2E_PORT = String(reservation.port);
   reservation.stop(true);
   run([...compose, "up", "-d", "--wait"]);
+  const networkId = capture([
+    "docker",
+    "network",
+    "inspect",
+    `${project}_default`,
+    "--format",
+    "{{.Id}}",
+  ]);
   const apiKey = capture([
     ...compose,
     "exec",
@@ -247,6 +256,7 @@ try {
     "E2E fixture network stability passed: namespaces and host interfaces survived reset.",
   );
 
+  await waitForDockerIpv6(networkId);
   run(
     [
       "bun",
