@@ -441,10 +441,10 @@ export const englishCopy = {
   nAccessors: "{count} accessors",
   noAccessors: "No one can access yet",
   noLabelManagers: "No managers yet",
-  ipRulesSectionTitle: "IP-based rules (advanced)",
+  ipRulesSectionTitle: "IP and all-destination rules (advanced)",
   ipRulesSectionHint:
-    "These entries target raw IP addresses or CIDRs. Prefer device labels so machines can move IPs and still keep their access.",
-  ipRulesSectionEmpty: "No IP-based entries.",
+    "These rules grant access to IP addresses, network ranges, or all destinations. You can edit or delete them here.",
+  ipRulesSectionEmpty: "No rules for IPs or all destinations.",
   editIpRule: "Edit rule",
   saveIpRule: "Save rule",
   cancelIpRuleEdit: "Cancel edit",

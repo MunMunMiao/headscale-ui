@@ -1,8 +1,9 @@
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-vue";
 import { createRouter, createWebHistory } from "vue-router";
 import App from "@/App.vue";
+import { RestHeadscaleClient } from "@/api/headscale-client";
 import ErrorScreen from "@/components/ErrorScreen.vue";
 import { resetAllSingletons } from "@/composables/__testing";
 import { useHeadscaleClient } from "@/composables/useHeadscaleClient";
@@ -1034,6 +1035,52 @@ test("does not flash the login form while restoring a profile route", async () =
   expect(window.location.pathname).toBe("/devices");
 });
 
+test("waits for the authenticated policy before exposing editors on a cold restore", async () => {
+  await seedProfileInIdb(
+    {
+      id: "profile-policy-restore",
+      name: "Policy restore",
+      mode: "mock",
+      baseUrl: "http://127.0.0.1:8080",
+      apiKey: "policy-restore-test-key",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    { active: true },
+  );
+  let releaseRead = () => {};
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  let readCaptured = false;
+  const delayedRead = vi
+    .spyOn(useHeadscaleClient().mockClient, "getPolicy")
+    .mockImplementationOnce(async () => {
+      readCaptured = true;
+      await readGate;
+      return { policy: '{"acls":[]}' };
+    });
+  try {
+    await renderLogin("/access");
+    await expect.poll(() => readCaptured).toBe(true);
+    expect(document.querySelector('[data-testid="save-policy"]')).toBeNull();
+    expect(document.querySelector('[data-testid="app-header"]')).toBeNull();
+    expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
+    await expect.element(page.getByTestId("session-loading")).toBeVisible();
+
+    releaseRead();
+    await expect.element(page.getByTestId("save-policy")).toBeVisible();
+    await expect.element(page.getByTestId("resource-access-empty")).toBeVisible();
+    expect(document.querySelector('[data-testid="session-loading"]')).toBeNull();
+    expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
+    await page.getByTestId("template-apply-self-only").click();
+    await expect.element(page.getByTestId("save-policy-dirty-badge")).toBeVisible();
+  } finally {
+    releaseRead();
+    delayedRead.mockRestore();
+    await expect.poll(() => useSnapshot().isAuthorized.value).toBe(true);
+  }
+});
+
 test("redirects unknown profile routes back to login", async () => {
   await seedProfileInIdb(
     {
@@ -1775,6 +1822,63 @@ test("renames a machine reached from a user detail navigation", async () => {
   await page.getByTestId("rename-node-dialog-input").fill("alice-from-user");
   await page.getByTestId("rename-node-confirm").click();
   await expect.element(page.getByTestId("device-1")).toHaveTextContent("alice-from-user");
+});
+
+test("preserves member group and tag selections while a policy refresh is pending", async () => {
+  await renderLogin();
+  await connectWithDefaults();
+  await page.getByTestId("section-members").click();
+  await expect.element(page.getByTestId("member-charlie")).toBeVisible();
+  await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+  const client = useHeadscaleClient().mockClient;
+
+  for (const kind of ["groups", "tags"]) {
+    let releaseRead = () => {};
+    const readGate = new Promise<void>((resolve) => {
+      releaseRead = resolve;
+    });
+    let readCaptured = false;
+    const getPolicy = client.getPolicy.bind(client);
+    const delayedRead = vi.spyOn(client, "getPolicy").mockImplementationOnce(async () => {
+      const result = await getPolicy();
+      readCaptured = true;
+      await readGate;
+      return result;
+    });
+    const refreshing = useSnapshot().refreshSegments(["policy"]);
+    try {
+      await expect.poll(() => readCaptured).toBe(true);
+      clickDomTestId("member-actions-trigger-charlie");
+      await clickVisibleDomTestId(`assign-member-${kind}-charlie`);
+      const prefix = `assign-user-${kind}`;
+      await expect.element(page.getByTestId(`${prefix}-dialog`)).toBeVisible();
+      const option = lastElementByTestIdPrefix(`${prefix}-option-`);
+      const optionId = option.dataset.testid as string;
+      await page.getByTestId(optionId).click();
+      await expect.element(page.getByTestId(`${prefix}-apply`)).toBeEnabled();
+      const selected = option.querySelector('[role="checkbox"]')?.getAttribute("data-state");
+      expect(selected).toBeTruthy();
+
+      releaseRead();
+      await refreshing;
+      await expect.element(page.getByTestId(`${prefix}-apply`)).toBeEnabled();
+      expect(
+        document
+          .querySelector(`[data-testid="${optionId}"] [role="checkbox"]`)
+          ?.getAttribute("data-state"),
+      ).toBe(selected);
+      const beforeSave = operationCount("policy.set");
+      await page.getByTestId(`${prefix}-apply`).click();
+      await expect.poll(() => operationCount("policy.set")).toBe(beforeSave + 1);
+      await expect
+        .poll(() => document.querySelector(`[data-testid="${prefix}-dialog"]`))
+        .toBeNull();
+    } finally {
+      releaseRead();
+      delayedRead.mockRestore();
+      await refreshing;
+    }
+  }
 });
 
 test("covers user filters, user export and member deletion", async () => {
@@ -3757,4 +3861,131 @@ test("saves a live CLI user without email as a device-label manager against Head
       return persisted.tagOwners?.["tag:issue7-live"]?.join(",") === "issue7-live@";
     })
     .toBe(true);
+}, 120_000);
+
+test("deletes the wildcard allow-all rule and keeps empty ACLs after reloading Headscale", async () => {
+  await renderLogin();
+  const { apiKey, baseUrl } = await connectToDockerHeadscale("Docker issue 10 wildcard rule");
+  const policyUrl = `${baseUrl}/api/v1/policy`;
+  const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
+  const originalResponse = await fetch(policyUrl, { headers });
+  expect(originalResponse.ok).toBe(true);
+  const original = (await originalResponse.json()) as { policy: string };
+
+  try {
+    for (const releaseAt of ["inline-edit", "before-save", "after-save"]) {
+      await page.getByTestId("section-home").click();
+      await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+      const response = await fetch(policyUrl, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          policy: JSON.stringify({ acls: [{ action: "accept", src: ["*"], dst: ["*:*"] }] }),
+        }),
+      });
+      expect(response.ok).toBe(true);
+      await useSnapshot().refreshSnapshot();
+
+      let releaseRead = () => {};
+      const readGate = new Promise<void>((resolve) => {
+        releaseRead = resolve;
+      });
+      let readCaptured = false;
+      const getPolicy = RestHeadscaleClient.prototype.getPolicy;
+      const delayedRead = vi
+        .spyOn(RestHeadscaleClient.prototype, "getPolicy")
+        .mockImplementationOnce(async function (this: RestHeadscaleClient) {
+          const result = await getPolicy.call(this);
+          readCaptured = true;
+          await readGate;
+          return result;
+        });
+
+      try {
+        await openAccessSection();
+        await expect.poll(() => readCaptured).toBe(true);
+        expect(useSnapshot().isRefreshing.value).toBe(true);
+        await expect.element(page.getByTestId("open-access-banner")).toBeVisible();
+        await expect.element(page.getByTestId("ip-rules-section")).toBeVisible();
+        expect(document.querySelectorAll('[data-testid^="ip-rule-remove-"]')).toHaveLength(1);
+
+        if (releaseAt === "inline-edit") {
+          clickLastByTestIdPrefix("ip-rule-edit-");
+          await expect
+            .poll(() => document.querySelector('[data-testid^="ip-rule-source-"]'))
+            .toBeTruthy();
+          await inputLastByTestIdPrefix("ip-rule-source-", "*");
+          await inputLastByTestIdPrefix("ip-rule-destination-", "100.64.0.99");
+          await inputLastByTestIdPrefix("ip-rule-ports-", "443");
+          releaseRead();
+          await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+          for (const [field, expected] of [
+            ["source", "*"],
+            ["destination", "100.64.0.99"],
+            ["ports", "443"],
+          ]) {
+            expect(
+              document.querySelector<HTMLInputElement>(`[data-testid^="ip-rule-${field}-"]`)?.value,
+            ).toBe(expected);
+          }
+          clickLastByTestIdPrefix("ip-rule-save-");
+          await expect.element(page.getByTestId("save-policy-dirty-badge")).toBeVisible();
+        }
+
+        clickLastByTestIdPrefix("ip-rule-remove-");
+        await expect
+          .poll(() => document.querySelector('[data-testid="open-access-banner"]'))
+          .toBeNull();
+        await expect.element(page.getByTestId("save-policy-dirty-badge")).toBeVisible();
+
+        if (releaseAt === "before-save") {
+          releaseRead();
+          await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+          expect(document.querySelector('[data-testid="ip-rules-section"]')).toBeNull();
+          await expect.element(page.getByTestId("save-policy-dirty-badge")).toBeVisible();
+        }
+
+        const policySetsBeforeSave = operationCount("policy.set");
+        await page.getByTestId("save-policy").click();
+        await expect.poll(() => operationCount("policy.set")).toBe(policySetsBeforeSave + 1);
+        expect(latestSavedPolicy().acls).toEqual([]);
+        await expect.element(page.getByTestId("save-policy")).toBeEnabled();
+        expect(document.querySelector('[data-testid="save-policy-error"]')).toBeNull();
+        await expect
+          .poll(() => document.querySelector('[data-testid="save-policy-dirty-badge"]'))
+          .toBeNull();
+
+        releaseRead();
+        await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+        expect(document.querySelector('[data-testid="ip-rules-section"]')).toBeNull();
+        expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
+        expect(document.querySelector('[data-testid="save-policy-dirty-badge"]')).toBeNull();
+
+        await expect
+          .poll(async () => {
+            const persistedResponse = await fetch(policyUrl, { headers });
+            if (!persistedResponse.ok) return null;
+            const body = (await persistedResponse.json()) as { policy: string };
+            return (JSON.parse(body.policy) as { acls?: unknown[] }).acls;
+          })
+          .toEqual([]);
+        await useSnapshot().refreshSnapshot();
+        await expect
+          .poll(() => document.querySelector('[data-testid="ip-rules-section"]'))
+          .toBeNull();
+        expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
+      } finally {
+        releaseRead();
+        delayedRead.mockRestore();
+        await expect.poll(() => useSnapshot().isRefreshing.value).toBe(false);
+      }
+    }
+  } finally {
+    const restored = await fetch(policyUrl, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ policy: original.policy }),
+    });
+    expect(restored.ok).toBe(true);
+  }
 }, 120_000);

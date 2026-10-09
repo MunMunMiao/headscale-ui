@@ -664,10 +664,9 @@ export const zhHantHK = {
     nAccessors: "{count} 個存取者",
     noAccessors: "暫時沒有存取授權",
     noLabelManagers: "暫時沒有管理員",
-    ipRulesSectionTitle: "IP 地址存取規則（進階）",
-    ipRulesSectionHint:
-      "這些規則直接指向 IP/CIDR。建議使用設備標籤，這樣設備更換 IP 後權限仍然有效。",
-    ipRulesSectionEmpty: "沒有 IP 存取規則。",
+    ipRulesSectionTitle: "IP 與全部目標存取規則（進階）",
+    ipRulesSectionHint: "這些規則允許存取指定的 IP 地址、網段或全部目標，可以在此直接編輯或刪除。",
+    ipRulesSectionEmpty: "沒有 IP 或全部目標存取規則。",
     editIpRule: "編輯規則",
     saveIpRule: "儲存規則",
     cancelIpRuleEdit: "取消編輯",

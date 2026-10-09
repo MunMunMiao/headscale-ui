@@ -723,10 +723,10 @@ export const esESCatalog = {
     nAccessors: "{count} usuarios con acceso",
     noAccessors: "Aún no hay usuarios con acceso",
     noLabelManagers: "Aún no hay responsables",
-    ipRulesSectionTitle: "Reglas basadas en IP (avanzadas)",
+    ipRulesSectionTitle: "Reglas para IP o todos los destinos (avanzadas)",
     ipRulesSectionHint:
-      "Estas reglas apuntan directamente a direcciones IP o bloques CIDR. Es preferible usar etiquetas para conservar el acceso aunque cambie la dirección IP del dispositivo.",
-    ipRulesSectionEmpty: "No hay entradas basadas en IP.",
+      "Estas reglas permiten el acceso a direcciones IP, rangos de red o todos los destinos. Puedes editarlas o eliminarlas aquí.",
+    ipRulesSectionEmpty: "No hay reglas para IP o todos los destinos.",
     editIpRule: "Editar regla",
     saveIpRule: "Guardar regla",
     cancelIpRuleEdit: "Cancelar edición",

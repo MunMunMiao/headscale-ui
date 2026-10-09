@@ -16,7 +16,7 @@ import {
   UserX,
   X,
 } from "lucide-vue-next";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onUnmounted, reactive, ref, watch } from "vue";
 import MemberMultiSelect, { type MemberOption } from "@/components/MemberMultiSelect.vue";
 import IpRuleRow from "@/components/policy/IpRuleRow.vue";
 import {
@@ -59,7 +59,6 @@ import {
   parsePolicy,
   removeGroupById,
   removeTagOwnerById,
-  serializePolicy,
   toMemberRef,
   upsertGroup,
   upsertTagOwner,
@@ -102,6 +101,8 @@ const {
   policyDesignerState,
   policyDraft,
   policyPayload,
+  isPolicyDirty,
+  editingIpRuleId,
   tagDetailOpen,
   tagDetailCurrent,
   teamDetailOpen,
@@ -111,7 +112,10 @@ const {
   policyRemovalDialogOpen,
   pendingPolicyRemoval,
   commitState,
+  closeAccessEditors,
 } = usePolicyDesigner();
+
+onUnmounted(closeAccessEditors);
 
 const tagSearchQuery = ref("");
 
@@ -194,7 +198,6 @@ const orphanRefs = computed(() =>
   findOrphanReferences(policyDesignerState.value, knownUserIndex.value),
 );
 const ipRules = computed(() => getIpRules(policyDesignerState.value));
-const editingIpRuleId = ref<string | null>(null);
 
 function isDefaultRule(rule: { source: string; destination: string; ports: string }) {
   return rule.source === "*" && rule.destination === "*" && rule.ports === "*";
@@ -714,26 +717,6 @@ async function savePolicy() {
   // land and `saveAndClose` does not silently dismiss the dialog.
   if (ok) policyDraft.value = nextDraft;
 }
-
-// `policyDraft` originates from the server snapshot in whatever JSON shape the
-// backend chose; `policyPayload` is rebuilt from the in-memory state with our
-// own key ordering. Compare them through one round-trip of parse+serialize so
-// pure formatting/key-order differences don't read as dirty.
-//
-// Important: an empty draft (fresh Headscale instance with no saved policy)
-// still has to participate in the comparison — otherwise users on a blank
-// policy could add a team and never see the unsaved indicator. `parsePolicy`
-// already collapses `""` to `emptyState()`, which canonicalizes identically
-// to a freshly-loaded empty state.
-const isPolicyDirty = computed(() => {
-  try {
-    const draftCanonical = JSON.stringify(serializePolicy(parsePolicy(policyDraft.value)));
-    const currentCanonical = JSON.stringify(serializePolicy(policyDesignerState.value));
-    return draftCanonical !== currentCanonical;
-  } catch {
-    return true;
-  }
-});
 
 type PendingClose = "tag" | "team" | null;
 const pendingDialogClose = ref<PendingClose>(null);

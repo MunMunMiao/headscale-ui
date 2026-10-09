@@ -724,10 +724,10 @@ export const itITCatalog = {
     nAccessors: "{count} soggetti con accesso",
     noAccessors: "Nessuno ha ancora accesso",
     noLabelManagers: "Non ci sono ancora gestori",
-    ipRulesSectionTitle: "Regole basate su IP (avanzate)",
+    ipRulesSectionTitle: "Regole per IP o tutte le destinazioni (avanzate)",
     ipRulesSectionHint:
-      "Queste voci usano indirizzi IP o CIDR. È preferibile usare le etichette dei dispositivi, così l'accesso resta valido anche quando cambia l'IP.",
-    ipRulesSectionEmpty: "Nessuna voce basata su IP.",
+      "Queste regole consentono l'accesso a indirizzi IP, intervalli di rete o tutte le destinazioni. Puoi modificarle o eliminarle qui.",
+    ipRulesSectionEmpty: "Nessuna regola per IP o tutte le destinazioni.",
     editIpRule: "Modifica regola",
     saveIpRule: "Salva regola",
     cancelIpRuleEdit: "Annulla modifica",

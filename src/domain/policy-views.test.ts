@@ -5,6 +5,7 @@ import {
   createRule,
   createTagOwner,
   emptyState,
+  parsePolicy,
   toMemberRef,
   upsertGroup,
   upsertTagOwner,
@@ -344,10 +345,33 @@ describe("getIpRules", () => {
     expect(ipRules.map((r) => r.destination).sort()).toEqual(["10.0.0.1", "192.168.0.0/24"]);
   });
 
-  test("treats wildcard-only destinations as tag-compatible (not IP)", () => {
-    let state = { ...emptyState(), rules: [] };
-    state = addRule(state, createRule("group:ops", "*", "22"));
-    expect(getIpRules(state)).toEqual([]);
+  test("exposes the reported allow-all ACL as an editable rule", () => {
+    const state = parsePolicy(
+      JSON.stringify({ acls: [{ action: "accept", src: ["*"], dst: ["*:*"] }] }),
+    );
+
+    expect(getOpenAccessWarnings(state)).toHaveLength(1);
+    expect(getIpRules(state)).toEqual([
+      { ruleId: state.rules[0].id, source: "*", destination: "*", ports: "*" },
+    ]);
+  });
+
+  test("keeps wildcard targets visible with restricted ports or mixed tag targets", () => {
+    const state = {
+      ...emptyState(),
+      rules: [
+        createRule("group:ops", "*", "22"),
+        createRule("group:ops", "tag:server,*", "443"),
+        createRule("group:ops", "tag:server,tag:db", "22"),
+      ],
+    };
+
+    expect(
+      getIpRules(state).map(({ source, destination, ports }) => ({ source, destination, ports })),
+    ).toEqual([
+      { source: "group:ops", destination: "*", ports: "22" },
+      { source: "group:ops", destination: "tag:server,*", ports: "443" },
+    ]);
   });
 });
 

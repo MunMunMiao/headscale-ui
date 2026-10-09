@@ -37,20 +37,23 @@ export function useSessionRestore(): void {
   feedback.setErrorMapper((error) => mapErrorToCopy(error, copy.value));
 
   // (2) snapshot → policy designer mirror
-  snap.setOnApplySnapshot((next) => {
-    const draft = next.policy?.policy ?? "";
-    policy.policyDraft.value = draft;
-    policy.load(draft);
+  snap.setOnApplySnapshot((next, patch) => {
+    if ("policy" in patch && !policy.isPolicyDirty.value && !policy.isPolicyEditing.value) {
+      policy.load(next.policy?.policy ?? "");
+    }
   });
+  watch(policy.policyDraft, snap.invalidatePolicyRefreshes, { flush: "sync" });
 
   // (3) profiles → snapshot/router bridge
   profilesApi.setOnAuthenticated((snapshot) => {
+    policy.load(snapshot.policy?.policy ?? "");
     snap.applySnapshot(snapshot);
     snap.isAuthorized.value = true;
     profilesApi.isRestoringSession.value = false;
   });
   profilesApi.setOnLogout(() => {
     snap.isAuthorized.value = false;
+    policy.load("");
     snap.applyOfflineHealth();
     void router.push({ name: "login" });
   });

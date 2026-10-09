@@ -730,10 +730,10 @@ export const frFRCatalog = {
     nAccessors: "{count} personnes autorisées",
     noAccessors: "Personne ne peut encore accéder",
     noLabelManagers: "Aucun responsable pour le moment",
-    ipRulesSectionTitle: "Règles basées sur IP (avancées)",
+    ipRulesSectionTitle: "Règles IP et toutes destinations (avancées)",
     ipRulesSectionHint:
-      "Ces règles ciblent directement des adresses IP ou des blocs CIDR. Préférez les étiquettes afin que les appareils conservent leur accès même s’ils changent d’adresse IP.",
-    ipRulesSectionEmpty: "Aucune entrée basée sur IP.",
+      "Ces règles autorisent l’accès à des adresses IP, à des plages réseau ou à toutes les destinations. Vous pouvez les modifier ou les supprimer ici.",
+    ipRulesSectionEmpty: "Aucune règle IP ou toutes destinations.",
     editIpRule: "Modifier la règle",
     saveIpRule: "Enregistrer la règle",
     cancelIpRuleEdit: "Annuler la modification",

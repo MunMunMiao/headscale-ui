@@ -85,11 +85,17 @@ interface UsePolicyDesignerReturn {
   pendingHighRiskAction: Ref<(() => void) | null>;
   policyDesignerState: ComputedRef<PolicyDesignerState>;
   policyPayload: ComputedRef<Record<string, unknown>>;
+  isPolicyDirty: ComputedRef<boolean>;
+  editingIpRuleId: Ref<string | null>;
+  assignMembershipsOpen: Ref<boolean>;
+  assignTagOwnershipsOpen: Ref<boolean>;
+  isPolicyEditing: ComputedRef<boolean>;
   policyExtraSectionKeys: ComputedRef<string[]>;
   policyRiskCount: ComputedRef<number>;
   filteredPolicyGroups: ComputedRef<PolicyGroup[]>;
   filteredPolicyTagOwners: ComputedRef<PolicyTagOwner[]>;
   load(policyText: string): void;
+  closeAccessEditors(): void;
   commitState(next: PolicyDesignerState): void;
   addPolicyRule(): void;
   addPolicyGroup(): void;
@@ -179,6 +185,22 @@ export function usePolicyDesigner(): UsePolicyDesignerReturn {
   const teamDetailCurrent = ref("");
   const highRiskConfirmOpen = ref(false);
   const pendingHighRiskAction = ref<(() => void) | null>(null);
+  const editingIpRuleId = ref<string | null>(null);
+  const assignMembershipsOpen = ref(false);
+  const assignTagOwnershipsOpen = ref(false);
+  const isPolicyEditing = computed(
+    () =>
+      editingIpRuleId.value !== null ||
+      assignMembershipsOpen.value ||
+      assignTagOwnershipsOpen.value ||
+      tagDetailOpen.value ||
+      teamDetailOpen.value ||
+      policyRuleDialogOpen.value ||
+      policyGroupDialogOpen.value ||
+      policyTagOwnerDialogOpen.value ||
+      policyRemovalDialogOpen.value ||
+      highRiskConfirmOpen.value,
+  );
 
   const policyDesignerState = computed<PolicyDesignerState>(() => ({
     rules: policyRules.value,
@@ -187,6 +209,15 @@ export function usePolicyDesigner(): UsePolicyDesignerReturn {
     extras: policyExtraSections.value,
   }));
   const policyPayload = computed(() => serializePolicy(policyDesignerState.value));
+  const isPolicyDirty = computed(() => {
+    try {
+      // Normalize server formatting and key order, including an absent policy.
+      const baseline = JSON.stringify(serializePolicy(parsePolicy(policyDraft.value)));
+      return baseline !== JSON.stringify(policyPayload.value);
+    } catch {
+      return true;
+    }
+  });
   const policyExtraSectionKeys = computed(() => Object.keys(policyExtraSections.value).sort());
   const policyRiskCount = computed(() => {
     let count = 0;
@@ -222,11 +253,32 @@ export function usePolicyDesigner(): UsePolicyDesignerReturn {
   });
 
   function load(policyText: string) {
+    closeAccessEditors();
+    assignMembershipsOpen.value = false;
+    assignTagOwnershipsOpen.value = false;
     const state = parsePolicy(policyText);
     policyRules.value = state.rules;
     policyGroups.value = state.groups;
     policyTagOwners.value = state.tagOwners;
     policyExtraSections.value = state.extras;
+    policyDraft.value = policyText;
+  }
+
+  function closeAccessEditors() {
+    editingIpRuleId.value = null;
+    tagDetailOpen.value = false;
+    tagDetailCurrent.value = "";
+    teamDetailOpen.value = false;
+    teamDetailCurrent.value = "";
+    policyRuleDialogOpen.value = false;
+    policyGroupDialogOpen.value = false;
+    policyTagOwnerDialogOpen.value = false;
+    policyRemovalDialogOpen.value = false;
+    pendingPolicyRemoval.value = null;
+    policyGroupEditing.value = null;
+    policyTagOwnerEditing.value = null;
+    highRiskConfirmOpen.value = false;
+    pendingHighRiskAction.value = null;
   }
 
   function commitState(next: PolicyDesignerState) {
@@ -320,11 +372,17 @@ export function usePolicyDesigner(): UsePolicyDesignerReturn {
     pendingHighRiskAction,
     policyDesignerState,
     policyPayload,
+    isPolicyDirty,
+    editingIpRuleId,
+    assignMembershipsOpen,
+    assignTagOwnershipsOpen,
+    isPolicyEditing,
     policyExtraSectionKeys,
     policyRiskCount,
     filteredPolicyGroups,
     filteredPolicyTagOwners,
     load,
+    closeAccessEditors,
     commitState,
     addPolicyRule,
     addPolicyGroup,

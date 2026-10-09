@@ -111,7 +111,12 @@ const { t, locale, meta, setLocale } = useHeadscaleI18n();
 const { copy } = useProductCopy();
 const { colorMode, themeModes, setTheme } = useTheme();
 const { currentProfileLabel, logout } = useProfiles();
-const { snapshot, isRefreshing: isRefreshingSnapshot, refreshSnapshot } = useSnapshot();
+const {
+  snapshot,
+  isAuthorized,
+  isRefreshing: isRefreshingSnapshot,
+  refreshSnapshot,
+} = useSnapshot();
 const { lastError, isActionPending, actionError, clearActionFeedback } = useActionFeedback();
 
 const route = useRoute();
@@ -313,12 +318,21 @@ watch(profileMenuOpen, (isOpen) => {
   }
 });
 
-watch(activeSection, scrollActiveTabIntoView, { immediate: true });
+watch([activeSection, isAuthorized], scrollActiveTabIntoView, { immediate: true });
 </script>
 
 <template>
   <main class="min-h-screen bg-background">
-    <div class="min-h-screen bg-background text-foreground">
+    <div
+      v-if="!isAuthorized"
+      role="status"
+      class="flex min-h-screen items-center justify-center gap-3 text-sm text-muted-foreground"
+      data-testid="session-loading"
+    >
+      <LoaderCircle class="h-5 w-5 animate-spin" aria-hidden="true" />
+      <span>{{ t("checkingCredentials") }}</span>
+    </div>
+    <div v-else class="min-h-screen bg-background text-foreground">
       <header
         class="sticky top-0 z-20 bg-card/95 shadow-sm backdrop-blur"
         data-testid="app-header"

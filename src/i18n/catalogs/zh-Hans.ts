@@ -663,10 +663,9 @@ export const zhHans = {
     nAccessors: "{count} 个访问者",
     noAccessors: "暂无访问授权",
     noLabelManagers: "暂无管理员",
-    ipRulesSectionTitle: "IP 地址访问规则（高级）",
-    ipRulesSectionHint:
-      "这些规则直接指向 IP/CIDR。建议使用设备标签，这样设备更换 IP 后权限仍然有效。",
-    ipRulesSectionEmpty: "没有 IP 访问规则。",
+    ipRulesSectionTitle: "IP 与全部目标访问规则（高级）",
+    ipRulesSectionHint: "这些规则允许访问指定的 IP 地址、网段或全部目标，可以在此直接编辑或删除。",
+    ipRulesSectionEmpty: "没有 IP 或全部目标访问规则。",
     editIpRule: "编辑规则",
     saveIpRule: "保存规则",
     cancelIpRuleEdit: "取消编辑",

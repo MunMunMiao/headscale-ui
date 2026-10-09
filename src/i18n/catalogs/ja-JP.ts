@@ -692,10 +692,10 @@ export const jaJP = {
     nAccessors: "アクセス可能：{count} 件",
     noAccessors: "アクセスできるユーザーはいません",
     noLabelManagers: "管理者はいません",
-    ipRulesSectionTitle: "IP ベースのルール（上級者向け）",
+    ipRulesSectionTitle: "IP・すべての宛先へのアクセスルール（上級者向け）",
     ipRulesSectionHint:
-      "この項目は IP アドレスまたは CIDR を直接指定します。IP が変わってもアクセスを維持できるよう、デバイスラベルの使用を推奨します。",
-    ipRulesSectionEmpty: "IP ベースの項目はありません。",
+      "これらのルールは、IP アドレス、ネットワーク範囲、またはすべての宛先へのアクセスを許可します。ここで直接編集・削除できます。",
+    ipRulesSectionEmpty: "IP またはすべての宛先へのアクセスルールはありません。",
     editIpRule: "ルールを編集",
     saveIpRule: "ルールを保存",
     cancelIpRuleEdit: "編集をキャンセル",

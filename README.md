@@ -62,8 +62,10 @@ bun run lint      # Run Biome checks
 bun run test           # Run Bun unit tests
 bun run test:coverage  # Require 100% function and line coverage for business modules
 bun run test:e2e       # Run browser E2E against a Docker Headscale service
+bun run test:policy-lifecycle # Test policy edits, reloads, login, deletion, and restart in Docker
+bun run test:policy-traffic # Verify ACL enforcement with real Docker Tailscale clients
 bun run test:deployment # Test the production image and subpath deployment in Chrome
-bun run check          # Lint, covered unit tests, build, and both Docker test suites
+bun run check          # Lint, covered unit tests, build, and all Docker test suites
 ```
 
 The project intentionally avoids Node.js scripts. Use Bun for installation,
@@ -168,7 +170,8 @@ bun run check
 ```
 
 This covers Biome, the business-unit coverage gate, the TypeScript production
-build, browser E2E against a disposable Docker Headscale service, and production
-image deployment tests covering root/subpath routing and local-data reset.
+build, browser E2E against a disposable Docker Headscale service, policy lifecycle
+tests against the production UI, TCP access checks between real Tailscale clients,
+and production-image deployment tests covering root/subpath routing and local-data reset.
 Docker Compose and Chrome must be available for the browser suites. Deployment
 tests use mock profiles and disposable containers, without a real Headscale API.

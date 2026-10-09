@@ -664,10 +664,9 @@ export const zhHantTW = {
     nAccessors: "{count} 個存取者",
     noAccessors: "目前沒有存取授權",
     noLabelManagers: "目前沒有管理員",
-    ipRulesSectionTitle: "IP 地址存取規則（進階）",
-    ipRulesSectionHint:
-      "這些規則直接指向 IP/CIDR。建議使用裝置標籤，這樣裝置更換 IP 後權限仍然有效。",
-    ipRulesSectionEmpty: "沒有 IP 存取規則。",
+    ipRulesSectionTitle: "IP 與全部目標存取規則（進階）",
+    ipRulesSectionHint: "這些規則允許存取指定的 IP 位址、網段或全部目標，可以在此直接編輯或刪除。",
+    ipRulesSectionEmpty: "沒有 IP 或全部目標存取規則。",
     editIpRule: "編輯規則",
     saveIpRule: "儲存規則",
     cancelIpRuleEdit: "取消編輯",

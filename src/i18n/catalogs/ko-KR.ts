@@ -668,10 +668,10 @@ export const koKR = {
     nAccessors: "접근 가능 {count}명",
     noAccessors: "접근할 수 있는 사용자가 없습니다",
     noLabelManagers: "관리자가 없습니다",
-    ipRulesSectionTitle: "IP 기반 규칙(고급)",
+    ipRulesSectionTitle: "IP 및 모든 대상 접근 규칙(고급)",
     ipRulesSectionHint:
-      "이 항목은 IP 주소나 CIDR을 직접 대상으로 합니다. IP가 바뀌어도 접근 권한을 유지할 수 있도록 기기 라벨을 권장합니다.",
-    ipRulesSectionEmpty: "IP 기반 항목이 없습니다.",
+      "이 규칙은 IP 주소, 네트워크 범위 또는 모든 대상에 대한 접근을 허용합니다. 여기에서 직접 편집하거나 삭제할 수 있습니다.",
+    ipRulesSectionEmpty: "IP 또는 모든 대상에 대한 접근 규칙이 없습니다.",
     editIpRule: "규칙 편집",
     saveIpRule: "규칙 저장",
     cancelIpRuleEdit: "편집 취소",

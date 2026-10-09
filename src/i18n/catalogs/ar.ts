@@ -690,10 +690,10 @@ export const arCatalog = {
     nAccessors: "{count} جهات لديها وصول",
     noAccessors: "لم يمنح حق الوصول لأحد بعد",
     noLabelManagers: "لا يوجد مديرون بعد",
-    ipRulesSectionTitle: "قواعد عناوين IP المتقدمة",
+    ipRulesSectionTitle: "قواعد عناوين IP وجميع الوجهات (متقدمة)",
     ipRulesSectionHint:
-      "تستهدف هذه الإدخالات عناوين IP أو نطاقات CIDR مباشرة. يفضل استخدام وسوم الأجهزة كي تحتفظ الأجهزة بوصولها عند تغير عناوينها.",
-    ipRulesSectionEmpty: "لا توجد قواعد لعناوين IP.",
+      "تسمح هذه القواعد بالوصول إلى عناوين IP أو نطاقات الشبكة أو جميع الوجهات. يمكنك تعديلها أو حذفها هنا.",
+    ipRulesSectionEmpty: "لا توجد قواعد لعناوين IP أو جميع الوجهات.",
     editIpRule: "تعديل القاعدة",
     saveIpRule: "حفظ القاعدة",
     cancelIpRuleEdit: "إلغاء التعديل",

@@ -168,4 +168,25 @@ describe("useSnapshot", () => {
     expect(api.refreshSnapshotInFlight.value).toBe(0);
     expect(api.isRefreshing.value).toBe(false);
   });
+
+  test("does not apply a previous session's refresh failure to the current session", async () => {
+    const client = useHeadscaleClient().mockClient;
+    const api = useSnapshot();
+    const feedback = useActionFeedback();
+    api.isAuthorized.value = true;
+    const response = Promise.withResolvers<HealthResponse>();
+    client.health = () => response.promise;
+    const refreshing = api.refreshSegments(["fabric"]);
+
+    api.isAuthorized.value = false;
+    api.isAuthorized.value = true;
+    api.applySnapshot(createInitialSnapshot());
+    feedback.lastError.value = "current session feedback";
+    response.reject(new Error("previous session failed"));
+    await refreshing;
+
+    expect(feedback.lastError.value).toBe("current session feedback");
+    expect(api.snapshot.value.health?.serverReachable).toBe(true);
+    expect(api.isRefreshing.value).toBe(false);
+  });
 });

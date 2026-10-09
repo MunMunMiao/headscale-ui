@@ -292,6 +292,30 @@ describe("parsePolicy / serializePolicy round-trip", () => {
     });
   });
 
+  test("keeps an explicit empty ACL empty after saving and reloading", () => {
+    const state = parsePolicy(JSON.stringify({ acls: [], hosts: { server: "100.64.0.1" } }));
+
+    expect(state.rules).toEqual([]);
+    expect(serializePolicy(state)).toEqual({
+      acls: [],
+      groups: {},
+      tagOwners: {},
+      hosts: { server: "100.64.0.1" },
+    });
+    expect(parsePolicy(JSON.stringify(serializePolicy(state))).rules).toEqual([]);
+  });
+
+  test("does not restore the last deleted allow-all rule after saving and reloading", () => {
+    const state = parsePolicy(
+      JSON.stringify({ acls: [{ action: "accept", src: ["*"], dst: ["*:*"] }] }),
+    );
+    const withoutRule = removeRuleById(state, state.rules[0].id);
+    const saved = serializePolicy(withoutRule);
+
+    expect(saved.acls).toEqual([]);
+    expect(parsePolicy(JSON.stringify(saved)).rules).toEqual([]);
+  });
+
   test("invalid JSON returns empty state with default rule", () => {
     const state = parsePolicy("not-valid-json-{");
     expect(state.groups).toEqual([]);

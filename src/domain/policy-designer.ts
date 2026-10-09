@@ -215,7 +215,7 @@ export function parsePolicy(raw: string): PolicyDesignerState {
     : [];
 
   return {
-    rules: rules.length > 0 ? rules : [defaultRule()],
+    rules: Array.isArray(acls) ? rules : [defaultRule()],
     groups: groupsList,
     tagOwners: tagOwnersList,
     extras,

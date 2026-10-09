@@ -13,7 +13,7 @@ interface UseMutationOptions {
 }
 
 interface UseMutationReturn {
-  /** Run a mutation; returns `true` on success, `false` if it threw or was reentered. */
+  /** Returns false on failure, reentry, or session change; a stale request may still reach the server. */
   mutate(
     key: ActionFeedbackKey,
     action: (client: HeadscaleClient) => Promise<unknown>,
@@ -37,17 +37,22 @@ interface UseMutationReturn {
 export function useMutation(opts: UseMutationOptions = {}): UseMutationReturn {
   const { runAction } = useActionFeedback();
   const { createClient } = useHeadscaleClient();
-  const { refreshSnapshot } = useSnapshot();
+  const { refreshSnapshot, captureSession } = useSnapshot();
 
   async function mutateWith<T>(
     key: ActionFeedbackKey,
     action: (client: HeadscaleClient) => Promise<T>,
   ): Promise<ActionResult<T>> {
-    return runAction(key, async () => {
-      const result = await action(createClient());
-      if (!opts.skipRefresh) await refreshSnapshot();
-      return result;
-    });
+    const isCurrent = captureSession();
+    return runAction(
+      key,
+      async () => {
+        const result = await action(createClient());
+        if (isCurrent() && !opts.skipRefresh) await refreshSnapshot();
+        return result;
+      },
+      isCurrent,
+    );
   }
 
   return {

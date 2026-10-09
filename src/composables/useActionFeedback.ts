@@ -32,7 +32,12 @@ interface UseActionFeedbackReturn {
   isActionPending(key: ActionFeedbackKey): boolean;
   actionError(key: ActionFeedbackKey): string;
   clearActionFeedback(key: ActionFeedbackKey): void;
-  runAction<T>(key: ActionFeedbackKey, action: () => Promise<T>): Promise<ActionResult<T>>;
+  clearAllActionFeedback(): void;
+  runAction<T>(
+    key: ActionFeedbackKey,
+    action: () => Promise<T>,
+    isCurrent?: () => boolean,
+  ): Promise<ActionResult<T>>;
   setErrorMapper(fn: (error: unknown) => string): void;
 }
 
@@ -65,9 +70,15 @@ export function useActionFeedback(): UseActionFeedbackReturn {
   function clearActionFeedback(key: ActionFeedbackKey) {
     delete actionErrors[key];
   }
+  function clearAllActionFeedback() {
+    for (const key of Object.keys(actionPending) as ActionFeedbackKey[]) delete actionPending[key];
+    for (const key of Object.keys(actionErrors) as ActionFeedbackKey[]) delete actionErrors[key];
+    lastError.value = "";
+  }
   async function runAction<T>(
     key: ActionFeedbackKey,
     action: () => Promise<T>,
+    isCurrent: () => boolean = () => true,
   ): Promise<ActionResult<T>> {
     if (isActionPending(key)) {
       return { ok: false as const };
@@ -77,14 +88,16 @@ export function useActionFeedback(): UseActionFeedbackReturn {
     lastError.value = "";
     try {
       const result = await action();
+      if (!isCurrent()) return { ok: false as const };
       return { ok: true as const, result };
     } catch (error) {
+      if (!isCurrent()) return { ok: false as const };
       const message = mapper(error);
       actionErrors[key] = message;
       lastError.value = message;
       return { ok: false as const };
     } finally {
-      actionPending[key] = false;
+      if (isCurrent()) actionPending[key] = false;
     }
   }
 
@@ -95,6 +108,7 @@ export function useActionFeedback(): UseActionFeedbackReturn {
     isActionPending,
     actionError,
     clearActionFeedback,
+    clearAllActionFeedback,
     runAction,
     setErrorMapper(fn: (error: unknown) => string) {
       mapper = fn;

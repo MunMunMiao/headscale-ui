@@ -21,6 +21,36 @@ const state = (): PolicyDesignerState => ({
 });
 
 describe("usePolicyDesigner", () => {
+  test("treats an unserializable draft as dirty so refresh cannot discard it", () => {
+    const designer = usePolicyDesigner();
+    designer.load('{"acls":[]}');
+    const extras: Record<string, unknown> = {};
+    extras.circular = extras;
+    designer.policyExtraSections.value = extras;
+
+    expect(designer.isPolicyDirty.value).toBe(true);
+    expect(designer.policyExtraSections.value.circular).toBe(designer.policyExtraSections.value);
+    expect(designer.policyDraft.value).toBe('{"acls":[]}');
+  });
+
+  test("tracks a canonical saved baseline, including initially empty policies", () => {
+    const designer = usePolicyDesigner();
+    const saved = '{"acls":[], "tagOwners":{}, "groups":{"group:ops":["alice@example.com"]}}';
+    designer.load(saved);
+    expect(designer.policyDraft.value).toBe(saved);
+    expect(designer.isPolicyDirty.value).toBe(false);
+
+    designer.policyGroups.value[0].members.push(toMemberRef("bob@example.com"));
+    expect(designer.isPolicyDirty.value).toBe(true);
+    designer.policyDraft.value = JSON.stringify(designer.policyPayload.value, null, 2);
+    expect(designer.isPolicyDirty.value).toBe(false);
+
+    designer.load("");
+    expect(designer.isPolicyDirty.value).toBe(false);
+    designer.addPolicyGroup();
+    expect(designer.isPolicyDirty.value).toBe(true);
+  });
+
   test("shares initial state and exposes stable choice and risk helpers", () => {
     const designer = usePolicyDesigner();
 

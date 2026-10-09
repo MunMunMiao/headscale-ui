@@ -13,8 +13,10 @@
     "test": "bun test src",
     "test:coverage": "bun test scripts/check-unit-coverage.test.ts && bun --config=./bunfig.coverage.toml test --coverage src && bun scripts/check-unit-coverage.ts",
     "test:e2e": "bun scripts/run-e2e.ts",
+    "test:policy-lifecycle": "bun scripts/check-policy-lifecycle.ts",
+    "test:policy-traffic": "bun scripts/check-policy-traffic.ts",
     "test:deployment": "bun scripts/check-deployment.ts",
-    "check": "bun run lint && bun run test:coverage && bun run build && bun run test:e2e && bun run test:deployment"
+    "check": "bun run lint && bun run test:coverage && bun run build && bun run test:e2e && bun run test:policy-lifecycle && bun run test:policy-traffic && bun run test:deployment"
   },
   "dependencies": {
     "@internationalized/date": "^3.12.1",

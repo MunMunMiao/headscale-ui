@@ -16,7 +16,7 @@ import {
   Trash2,
   Users,
 } from "lucide-vue-next";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { HeadscaleClient, HeadscaleNode, HeadscaleUser, PreAuthKey } from "@/api/types";
 import AssignMemberDialog, { type AssignMemberOption } from "@/components/AssignMemberDialog.vue";
@@ -110,8 +110,15 @@ const {
   policyGroups,
   policyTagOwners,
   policyDesignerState,
+  assignMembershipsOpen,
+  assignTagOwnershipsOpen,
   commitState: commitPolicyState,
 } = usePolicyDesigner();
+
+onUnmounted(() => {
+  assignMembershipsOpen.value = false;
+  assignTagOwnershipsOpen.value = false;
+});
 
 const router = useRouter();
 const intent = useRouteIntent();
@@ -124,8 +131,6 @@ const pendingDeleteUser = ref<HeadscaleUser | null>(null);
 const cleanupPolicyOnDelete = ref(true);
 const selectedDetailUser = ref<HeadscaleUser | null>(null);
 const inviteDialogOpen = ref(false);
-const assignMembershipsOpen = ref(false);
-const assignTagOwnershipsOpen = ref(false);
 const assignMembershipsTarget = ref<HeadscaleUser | null>(null);
 const assignTagOwnershipsTarget = ref<HeadscaleUser | null>(null);
 
@@ -474,13 +479,13 @@ async function confirmDeleteMember() {
     const principals = userPolicyPrincipals(user);
     const cleaned = removeReferencesToValues(policyDesignerState.value, principals);
     commitPolicyState(cleaned);
-    const saved = await mutate("save-policy", (client) =>
+    const saved = await mutateWith("save-policy", (client) =>
       client.setPolicy({ policy: JSON.stringify(serializePolicy(cleaned), null, 2) }),
     );
-    if (!saved) {
+    if (!saved.ok) {
       return;
     }
-    policyDraft.value = saved.policy;
+    policyDraft.value = saved.result.policy;
   }
 
   const deleted = await mutate("delete-member", (client) => client.deleteUser({ id: user.id }));
@@ -501,11 +506,11 @@ async function removeUserFromPolicyReference(user: HeadscaleUser, reference: Use
     }
   }
   commitPolicyState(next);
-  const saved = await mutate("save-policy", (client) =>
+  const saved = await mutateWith("save-policy", (client) =>
     client.setPolicy({ policy: JSON.stringify(serializePolicy(next), null, 2) }),
   );
-  if (saved) {
-    policyDraft.value = saved.policy;
+  if (saved.ok) {
+    policyDraft.value = saved.result.policy;
   }
   void user;
 }
@@ -555,11 +560,11 @@ async function applyAssignMemberships(selectedGroupIds: string[]) {
     }
   }
   commitPolicyState(next);
-  const saved = await mutate("assign-user-groups", (client) =>
+  const saved = await mutateWith("assign-user-groups", (client) =>
     client.setPolicy({ policy: JSON.stringify(serializePolicy(next), null, 2) }),
   );
-  if (saved) {
-    policyDraft.value = saved.policy;
+  if (saved.ok) {
+    policyDraft.value = saved.result.policy;
     handleAssignMembershipsDialogOpen(false);
   }
 }
@@ -585,11 +590,11 @@ async function applyAssignTagOwnerships(selectedTagOwnerIds: string[]) {
     }
   }
   commitPolicyState(next);
-  const saved = await mutate("assign-user-tags", (client) =>
+  const saved = await mutateWith("assign-user-tags", (client) =>
     client.setPolicy({ policy: JSON.stringify(serializePolicy(next), null, 2) }),
   );
-  if (saved) {
-    policyDraft.value = saved.policy;
+  if (saved.ok) {
+    policyDraft.value = saved.result.policy;
     handleAssignTagOwnershipsDialogOpen(false);
   }
 }

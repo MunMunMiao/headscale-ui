@@ -1,4 +1,4 @@
-import { type ComputedRef, computed, type Ref, reactive, ref } from "vue";
+import { type ComputedRef, computed, type Ref, reactive, ref, watch } from "vue";
 import type {
   HeadscaleClient,
   HeadscaleNode,
@@ -11,7 +11,7 @@ import { nodeDisplayName } from "@/utils/node";
 import { useActionFeedback } from "./useActionFeedback";
 import { useHeadscaleClient } from "./useHeadscaleClient";
 
-type ApplySnapshotHook = (next: HeadscaleSnapshot) => void;
+type ApplySnapshotHook = (next: HeadscaleSnapshot, patch: Partial<HeadscaleSnapshot>) => void;
 
 export type SnapshotSegment = "identity" | "fabric" | "policy";
 
@@ -35,6 +35,8 @@ interface UseSnapshotReturn {
   applyOfflineHealth(): void;
   refreshSnapshot(): Promise<void>;
   refreshSegments(segments: readonly SnapshotSegment[]): Promise<void>;
+  invalidatePolicyRefreshes(): void;
+  captureSession(): () => boolean;
   setOnApplySnapshot(hook: ApplySnapshotHook | null): void;
 }
 
@@ -94,7 +96,7 @@ export function useSnapshot(): UseSnapshotReturn {
   if (instance) return instance;
 
   const { mockClient, createClient } = useHeadscaleClient();
-  const { lastError } = useActionFeedback();
+  const { lastError, clearAllActionFeedback } = useActionFeedback();
 
   const snapshot = ref<HeadscaleSnapshot>(mockClient.snapshot);
   const isAuthorized = ref(false);
@@ -113,6 +115,13 @@ export function useSnapshot(): UseSnapshotReturn {
   );
 
   let onApplySnapshot: ApplySnapshotHook | null = null;
+  let sessionRevision = 0;
+  let policyRevision = 0;
+  function changeSession() {
+    ++sessionRevision;
+    clearAllActionFeedback();
+  }
+  watch(isAuthorized, changeSession, { flush: "sync" });
 
   function applyPatch(patch: Partial<HeadscaleSnapshot>) {
     snapshot.value = { ...snapshot.value, ...patch };
@@ -124,10 +133,11 @@ export function useSnapshot(): UseSnapshotReturn {
         renameDrafts[node.id] = nodeDisplayName(node);
       }
     }
-    onApplySnapshot?.(snapshot.value);
+    onApplySnapshot?.(snapshot.value, patch);
   }
 
   function applySnapshot(nextSnapshot: HeadscaleSnapshot) {
+    changeSession();
     applyPatch(nextSnapshot);
   }
 
@@ -148,10 +158,17 @@ export function useSnapshot(): UseSnapshotReturn {
     }
 
     refreshSnapshotInFlight.value += 1;
+    const requestSession = sessionRevision;
+    const requestPolicy = policyRevision;
     try {
-      applyPatch(await fetchSegments(createClient(), segments));
+      const patch = await fetchSegments(createClient(), segments);
+      if (requestSession !== sessionRevision) return;
+      // A save can finish before an older GET; retain its other fresh segments.
+      if (requestPolicy !== policyRevision) delete patch.policy;
+      applyPatch(patch);
       lastError.value = "";
     } catch (error) {
+      if (requestSession !== sessionRevision) return;
       applyOfflineHealth();
       lastError.value = error instanceof Error ? error.message : String(error);
     } finally {
@@ -183,6 +200,11 @@ export function useSnapshot(): UseSnapshotReturn {
     applyOfflineHealth,
     refreshSnapshot,
     refreshSegments,
+    invalidatePolicyRefreshes: () => ++policyRevision,
+    captureSession() {
+      const captured = sessionRevision;
+      return () => captured === sessionRevision;
+    },
     setOnApplySnapshot,
   };
   return instance;

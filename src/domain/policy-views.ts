@@ -275,10 +275,8 @@ export function getIpRules(state: PolicyDesignerState): IpRule[] {
     const destinations = parseCommaList(rule.destination);
     if (destinations.length === 0) continue;
 
-    const allTaggedOrWildcard = destinations.every(
-      (dest) => TAG_PATTERN.test(dest) || dest === "*",
-    );
-    if (!allTaggedOrWildcard) {
+    const allTagged = destinations.every((dest) => TAG_PATTERN.test(dest));
+    if (!allTagged) {
       rules.push({
         ruleId: rule.id,
         source: rule.source,

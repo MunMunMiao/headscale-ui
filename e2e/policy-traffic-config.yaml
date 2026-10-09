@@ -1,0 +1,74 @@
+server_url: https://control
+listen_addr: 0.0.0.0:443
+metrics_listen_addr: ""
+grpc_listen_addr: 127.0.0.1:50443
+grpc_allow_insecure: false
+
+tls_cert_path: /fixtures/control.crt
+tls_key_path: /fixtures/control.key
+
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+  allocation: sequential
+
+derp:
+  server:
+    enabled: true
+    region_id: 999
+    region_code: local-test
+    region_name: Local Test DERP
+    verify_clients: true
+    stun_listen_addr: 0.0.0.0:3478
+    private_key_path: /var/lib/headscale/derp_server_private.key
+    automatically_add_embedded_derp_region: true
+  urls: []
+  paths: []
+  auto_update_enabled: false
+  update_frequency: 24h
+
+disable_check_updates: true
+ephemeral_node_inactivity_timeout: 30m
+
+database:
+  type: sqlite
+  debug: false
+  gorm:
+    prepare_stmt: true
+    parameterized_queries: true
+    skip_err_record_not_found: true
+    slow_threshold: 1000
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+    write_ahead_log: true
+    wal_autocheckpoint: 1000
+
+log:
+  level: warn
+  format: text
+
+policy:
+  mode: database
+
+dns:
+  magic_dns: false
+  base_domain: example.test
+  override_local_dns: false
+  nameservers:
+    global: []
+    split: {}
+  search_domains: []
+  extra_records: []
+
+unix_socket: /var/run/headscale/headscale.sock
+unix_socket_permission: "0770"
+
+logtail:
+  enabled: false
+
+randomize_client_port: false
+taildrop:
+  enabled: false

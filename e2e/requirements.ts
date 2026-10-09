@@ -135,6 +135,24 @@ export const E2E_REQUIREMENTS = [
     testTitle: "saves a live CLI user without email as a device-label manager against Headscale",
   },
   {
+    id: "journey.policy-wildcard-removal",
+    kind: "journey",
+    environment: "docker-headscale",
+    testTitle: "deletes the wildcard allow-all rule and keeps empty ACLs after reloading Headscale",
+  },
+  {
+    id: "journey.policy-member-selection-refresh",
+    kind: "journey",
+    environment: "browser-mock",
+    testTitle: "preserves member group and tag selections while a policy refresh is pending",
+  },
+  {
+    id: "recovery.policy-cold-restore",
+    kind: "recovery",
+    environment: "browser-mock",
+    testTitle: "waits for the authenticated policy before exposing editors on a cold restore",
+  },
+  {
     id: "journey.policy-guard",
     kind: "journey",
     environment: "browser-mock",
