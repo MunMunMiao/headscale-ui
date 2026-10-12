@@ -183,12 +183,11 @@ bun run test           # Vitest unit and Chromium component tests with the Istan
                        # For a subset (`--project unit`, a file filter) add
                        # `--coverage.enabled=false`, since a partial run cannot meet the gate
 bun run i18n:check     # Validate all catalogs, stable extraction, and strict compilation
-bun run test:docker    # All Docker suites below, in order (needs Docker Compose)
-bun run verify:ci      # Static checks, translations, coverage, and build (what CI runs)
-bun run verify         # verify:ci plus the Docker suites
+bun run e2e            # All Docker suites below, in order (needs Docker Compose)
+bun run verify         # Static checks, translations, tests, build, and e2e
 ```
 
-`test:docker` runs four independent harnesses against disposable Docker services.
+`e2e` runs four independent harnesses against disposable Docker services.
 To run one of them, call its script directly:
 
 ```bash
@@ -225,7 +224,7 @@ HTTP requests are declared once in `src/api/requests.ts` with Defjs
 `defineRequest`. Shared response schemas and model types live in
 `src/api/contracts.ts`. The explicit 30-operation command registry in
 `src/api/commands.ts` (all 29 Headscale 0.29.4 RPCs plus `GET /version`, pinned in
-`e2e/headscale-upstream.ts` and checked by `bun run test` and the contract suite in `bun run test:docker`)
+`e2e/headscale-upstream.ts` and checked by `bun run test` and the contract suite in `bun run e2e`)
 crosses the Worker boundary; `src/api/commands.ts` also exports
 these typed page commands. Worker dispatch uses the Defjs middleware,
 error-first tuples, response validation, and native fetch. Errors retain their
@@ -462,8 +461,8 @@ Before shipping a change, run:
 bun run verify
 ```
 
-CI runs `bun run verify:ci`, which omits the Docker suites, so run the full
-command locally before shipping.
+CI runs two parallel jobs: the static checks, `bun run test` and `bun run build`,
+and `bun run e2e`.
 
 This covers Biome, the business-source coverage gate, the TypeScript production
 build, browser E2E against a disposable Docker Headscale service, policy lifecycle
