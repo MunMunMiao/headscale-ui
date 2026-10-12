@@ -118,7 +118,8 @@ function domClick(element: Element) {
   element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 }
 // Removing the focused row makes the dialog take focus back again on the next frame, which
-// would close a picker opened before it.
+// would close a picker opened before it. Remove once https://github.com/mui/base-ui/issues/5980
+// is fixed.
 function nextFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
