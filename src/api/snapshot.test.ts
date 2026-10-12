@@ -163,7 +163,7 @@ test.each(["user.list", "node.list", "policy.get"] as const)(
   },
 );
 
-test("the real Worker dispatcher reads all seven resources through declared Defjs contracts", async () => {
+test("the Worker dispatcher reads all seven resources through declared Defjs contracts", async () => {
   const server = startSnapshotServer();
   const controller = new AbortController();
   const gateway = createHeadscaleGateway((command, options) =>
@@ -190,7 +190,7 @@ test("the real Worker dispatcher reads all seven resources through declared Defj
   }
 });
 
-test("snapshot cancellation reaches all seven real in-flight Defjs requests", async () => {
+test("snapshot cancellation reaches all seven in-flight Defjs requests", async () => {
   const arrived = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let count = 0;

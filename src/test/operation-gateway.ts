@@ -3,7 +3,7 @@ import { createHeadscaleGateway, type OperationTransport } from "@/api/gateway";
 import type { HeadscaleHttp } from "@/api/http";
 import { createHeadscaleClientStore } from "@/composables/useHeadscaleClient";
 
-/** Run the real dispatcher against a test-controlled client so the actual endpoint contracts apply. */
+/** Run the dispatcher against a test-controlled client so the actual endpoint contracts apply. */
 function transport(http: HeadscaleHttp): OperationTransport {
   return (command, options) =>
     executeOperation(

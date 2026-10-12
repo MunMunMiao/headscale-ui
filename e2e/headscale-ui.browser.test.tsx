@@ -68,7 +68,7 @@ async function request<K extends OperationId>(
 }
 
 async function expectHeadscaleGate(upstreamRequests = 1) {
-  // The gate captures only after the real Headscale response arrives; policy writes can exceed the 1 s poll default.
+  // The gate captures only after the Headscale response arrives; policy writes can exceed the 1 s poll default.
   await expect
     .poll(() => commands.headscaleGateState(), { timeout: 10_000 })
     .toMatchObject({
@@ -83,8 +83,8 @@ function session(): Session {
   return activeSession;
 }
 
-const realHeadscaleApiKey = import.meta.env.VITE_HEADSCALE_E2E_API_KEY;
-const realHeadscaleFileModeApiKey = import.meta.env.VITE_HEADSCALE_E2E_FILE_MODE_API_KEY;
+const headscaleApiKey = import.meta.env.VITE_HEADSCALE_E2E_API_KEY;
+const headscaleFileModeApiKey = import.meta.env.VITE_HEADSCALE_E2E_FILE_MODE_API_KEY;
 
 function storedProfiles(): ProfileSummary[] {
   return session().profiles.getSnapshot().profiles;
@@ -172,18 +172,17 @@ beforeEach(async () => {
   document.documentElement.lang = "en-US";
   document.documentElement.dir = "ltr";
   await commands.clearHeadscaleOperationCalls();
-  if (realHeadscaleApiKey) await commands.resetHeadscaleFixture();
+  if (headscaleApiKey) await commands.resetHeadscaleFixture();
 }, 60_000);
 
 /**
  * Historical/invalid records are test fixtures. Writing a record never grants a session;
- * all valid connections use the real save/unlock UI and production Worker protocol.
+ * all valid connections use the save/unlock UI and production Worker protocol.
  */
 async function seedProfileInIdb(
   plain: {
     id: string;
     name: string;
-    mode?: "mock" | "real";
     baseUrl: string;
     apiKey: string;
     updatedAt: string;
@@ -225,7 +224,6 @@ async function seedProfileInIdb(
   await idbPut(STORE_PROFILES, {
     id: plain.id,
     name: plain.name,
-    ...(plain.mode ? { mode: plain.mode } : {}),
     baseUrl: plain.baseUrl,
     apiKey,
     keyEpoch: version.keyEpoch,
@@ -261,18 +259,18 @@ type HeadscaleTarget = "main" | "file-mode";
 
 function dockerSettings(target: HeadscaleTarget = "main") {
   if (target === "file-mode") {
-    if (!realHeadscaleFileModeApiKey)
+    if (!headscaleFileModeApiKey)
       throw new Error("VITE_HEADSCALE_E2E_FILE_MODE_API_KEY is required");
     return {
-      apiKey: realHeadscaleFileModeApiKey,
+      apiKey: headscaleFileModeApiKey,
       baseUrl: `${window.location.origin}/__headscale-e2e-file-mode`,
     };
   }
-  if (!realHeadscaleApiKey) throw new Error("VITE_HEADSCALE_E2E_API_KEY is required");
-  return { apiKey: realHeadscaleApiKey, baseUrl: `${window.location.origin}/__headscale-e2e` };
+  if (!headscaleApiKey) throw new Error("VITE_HEADSCALE_E2E_API_KEY is required");
+  return { apiKey: headscaleApiKey, baseUrl: `${window.location.origin}/__headscale-e2e` };
 }
 
-async function fillRealConnection(target: HeadscaleTarget = "main") {
+async function fillConnection(target: HeadscaleTarget = "main") {
   const settings = dockerSettings(target);
   await page.getByTestId("connect-server-url").fill(settings.baseUrl);
   await page.getByTestId("connect-api-key").fill(settings.apiKey);
@@ -300,7 +298,7 @@ async function connectWithDefaults() {
   if (!dialog) await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-password-confirm")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Docker Headscale");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-save-unlock").click();
   await expect.element(page.getByTestId("profile-menu-trigger")).toBeVisible();
 }
@@ -309,7 +307,7 @@ async function connectToDockerHeadscale(profileName: string) {
   await commands.seedHeadscalePolicyFixture(policyFixture);
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill(profileName);
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId(`profile-option-${profileName}`)).toBeVisible();
   await unlockProfile(profileName);
@@ -1133,10 +1131,9 @@ test("keeps native clicks targeted when preceding layers unmount", async () => {
   expect(clicks).toBe(2);
 });
 
-test("requires real connection details for a new profile", async () => {
+test("requires connection details for a new profile", async () => {
   await renderLogin();
   await page.getByTestId("profile-option-new").click();
-  expect(document.querySelector('[data-testid="connect-mode"]')).toBeNull();
   await expect.element(page.getByTestId("connect-profile-name")).toHaveValue("");
   await expect.element(page.getByTestId("connect-server-url")).toHaveValue("");
   await expect.element(page.getByTestId("connect-api-key")).toHaveValue("");
@@ -1220,7 +1217,7 @@ test("unlocks encrypted profiles and exposes forgotten-passphrase recovery", asy
   await renderLogin("/login?redirect=/home");
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill("Password recovery");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId("profile-option-Password recovery")).toBeVisible();
   await commands.clearHeadscaleOperationCalls();
@@ -1253,7 +1250,7 @@ test("manages multiple saved connection profiles and supports logout", async () 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Office");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-submit").click();
@@ -1277,7 +1274,7 @@ test("manages multiple saved connection profiles and supports logout", async () 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Lab");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-submit").click();
   await expect.poll(() => storedProfilesString()).toContain("HQ");
   await expect.poll(() => storedProfilesString()).toContain("Lab");
@@ -1463,7 +1460,7 @@ test("keeps the dashboard usable when the server version is unreadable or unsupp
   const nodeCount = session().snapshot.getSnapshot().snapshot.nodes.length;
   expect(nodeCount).toBeGreaterThan(0);
 
-  // Holds the real /version answer, then replaces what reaches the Worker, and refreshes the fabric segment.
+  // Holds the /version answer, then replaces what reaches the Worker, and refreshes the fabric segment.
   async function refreshWithVersionReply(reply: { rawBody: string } | { responseBody: unknown }) {
     await commands.interceptHeadscaleRequest("GET", "^/version$", reply);
     const refreshing = session().snapshot.refreshSegments(["fabric"]);
@@ -1493,7 +1490,7 @@ test("keeps the dashboard usable when the server version is unreadable or unsupp
   expect(fabricError()).toBeNull();
   await expect.element(page.getByTestId("recent-device-status-1")).toBeVisible();
 
-  // The real server (v0.29.4) removes the notice again.
+  // The server (v0.29.4) removes the notice again.
   await session().snapshot.refreshSegments(["fabric"]);
   await expect.poll(warning).toBeNull();
   expect(session().snapshot.getSnapshot().snapshot.version?.version).toBe("v0.29.4");
@@ -1554,7 +1551,6 @@ test("validates saved profile credentials before restoring a route", async () =>
     {
       id: "profile-offline",
       name: "Offline",
-      mode: "real",
       baseUrl: "ftp://127.0.0.1",
       apiKey: "offline-api-key",
       updatedAt: "2026-05-04T00:00:00.000Z",
@@ -1578,30 +1574,7 @@ test("validates saved profile credentials before restoring a route", async () =>
   expect(currentProfileId()).toBeNull();
 });
 
-test("normalizes stale mock profiles with remote URLs into real profiles", async () => {
-  await seedProfileInIdb(
-    {
-      id: "profile-office",
-      name: "Office",
-      mode: "mock",
-      baseUrl: "http://office.example.test",
-      apiKey: "office-api-key",
-      updatedAt: "2026-05-04T00:00:00.000Z",
-    },
-    { legacyDevice: true },
-  );
-
-  await renderLogin();
-
-  await page.getByTestId("edit-profile-Office").click();
-  await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
-  expect(document.querySelector('[data-testid="connect-mode"]')).toBeNull();
-  await expect
-    .element(page.getByTestId("connect-server-url"))
-    .toHaveValue("http://office.example.test");
-});
-
-test("migrates a legacy device profile before unlocking its real Headscale connection", async () => {
+test("migrates a legacy device profile before unlocking its Headscale connection", async () => {
   await seedProfileInIdb(
     {
       id: "profile-legacy-device",
@@ -1676,7 +1649,7 @@ test("requires explicit discard of an ordinary draft when the shared server chan
   await renderLogin();
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill("Second server profile");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId("profile-option-Second server profile")).toBeVisible();
   const second = storedProfiles().find((profile) => profile.name === "Second server profile");
@@ -1784,7 +1757,7 @@ test("asks before saving an unreachable profile and validates it before login", 
 });
 
 test("explains a rejected API key in the profile validation dialog", async () => {
-  // The real container answers a plausible but unissued key with the plain-text 401
+  // The container answers a plausible but unissued key with the plain-text 401
   // "Unauthorized" of app.go. An expired key takes the identical path, so no separate expiry
   // fixture is needed. Fails when the 401 surfaces the raw "JSON media type" decode error.
   const rejectedKey = `hskey-api-0000000000000000-${"x".repeat(64)}`;
@@ -1837,7 +1810,7 @@ test("opens the dashboard when Headscale reads its policy from a file without a 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-password-confirm")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Docker file mode");
-  await fillRealConnection("file-mode");
+  await fillConnection("file-mode");
   await page.getByTestId("connect-save-unlock").click();
 
   await expect.element(page.getByTestId("profile-menu-trigger")).toBeVisible();
@@ -1861,7 +1834,7 @@ test("stores non-remembered profiles in session storage", async () => {
 
   await page.getByTestId("profile-option-new").click();
   await page.getByTestId("connect-profile-name").fill("Temporary");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-remember").click();
   await page.getByTestId("connect-submit").click();
 
@@ -2571,7 +2544,7 @@ test("keeps failed destructive member actions busy and error-visible", async () 
 });
 
 test("deletes a node-less referenced member before cleaning its policy references", async () => {
-  // Proves on the real server what delete-first relies on: Headscale accepts DELETE of a user that
+  // Proves on the server what delete-first relies on: Headscale accepts DELETE of a user that
   // the policy still references, and accepts the follow-up PUT that removes the references.
   await renderLogin();
   await connectWithDefaults();
@@ -2645,7 +2618,7 @@ test("deletes a node-less referenced member before cleaning its policy reference
 });
 
 test("renames a referenced member and updates its policy references", async () => {
-  // Measures on the real server what rename-first relies on: the rename is accepted while the
+  // Measures on the server what rename-first relies on: the rename is accepted while the
   // policy still uses the old name, a group listing both names is tolerated, and the one
   // follow-up PUT that retargets the references is accepted.
   await renderLogin();
@@ -2735,7 +2708,7 @@ test("recovers a failed snapshot refresh without losing the current data", async
   }
 });
 
-test("keeps the newest identity fabric and policy after older real responses are released", async () => {
+test("keeps the newest identity fabric and policy after older responses are released", async () => {
   await renderLogin();
   await connectWithDefaults();
   await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
@@ -2784,7 +2757,7 @@ test("keeps the newest identity fabric and policy after older real responses are
   }
 });
 
-test("retains current data and online health when a real refresh response violates its contract", async () => {
+test("retains current data and online health when a refresh response violates its contract", async () => {
   await renderLogin();
   await connectWithDefaults();
   await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
@@ -2811,7 +2784,7 @@ test("retains current data and online health when a real refresh response violat
   }
 });
 
-test("does not replay a successful mutation when its following real refresh fails", async () => {
+test("does not replay a successful mutation when its following refresh fails", async () => {
   await renderLogin();
   await connectWithDefaults();
   await page.getByTestId("section-members").click();
@@ -2877,7 +2850,7 @@ test("reports a committed write whose reply is unusable as unconfirmed and shows
   }
 });
 
-test("accepts a real policy save without replacing edits made while its response was held", async () => {
+test("accepts a policy save without replacing edits made while its response was held", async () => {
   await renderLogin();
   await connectWithDefaults();
   await openAccessSection();
@@ -3484,7 +3457,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
   expect(document.querySelector('[data-testid="invite-2"]')?.textContent).not.toMatch(
     /No tags|无标签/,
   );
-  // A key that is both used and past its expiration keeps reading "Used"; untagged real keys show no tags.
+  // A key that is both used and past its expiration keeps reading "Used"; untagged keys show no tags.
   expect(visibleText("invite-status-2")).toBe(getProductCopy("en-US").used);
   expect(visibleText("invite-tags-2")).toBe("");
   expect(visibleText("invite-tags-3")).toBe("");
@@ -3521,7 +3494,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await page.viewport(1366, 768);
   expectAuthKeyTimePickerPopover();
   // Negative step first: the untouched default is relative, so a past pick must be rejected by
-  // the dialog before any request reaches the real Worker. Fails when a past expiration is
+  // the dialog before any request reaches the Worker. Fails when a past expiration is
   // submitted (Headscale would accept it silently).
   const keyCreatesBeforeRejectedPick = await operationCount("preauthkey.create");
   await pickJuneFirst(new Date().getFullYear() - 1);
@@ -3998,7 +3971,7 @@ test("removes a device label and its policy entries via the card trash button", 
   await page.getByTestId("confirm-remove-policy-item").click();
   await expectPolicyRemovalDialogClosed();
 
-  // tag:server is also referenced by a real fixture node, so the card may still
+  // tag:server is also referenced by a fixture node, so the card may still
   // render — but the saved policy must no longer contain its tagOwner entry.
   await page.getByTestId("save-policy").click();
   await expect
@@ -4075,7 +4048,7 @@ test("empty state renders templates and applies one", async () => {
 test("applying a template replaces the open default rule in the saved Headscale policy", async () => {
   // Fails when the injected open default (*->*:* and its IPv6 twin) survives the template: the
   // saved policy would still let every source reach every destination.
-  // Real assumption confirmed only by the Docker run: Headscale 0.29.4 accepts an empty
+  // Assumption confirmed only by the Docker run: Headscale 0.29.4 accepts an empty
   // group:team together with a tagOwner for tag:shared.
   const observedOperationIds = new Set<OperationId>();
   await renderLogin();
@@ -4380,7 +4353,7 @@ test("encrypts API keys at rest", async () => {
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await page.getByTestId("connect-profile-name").fill("Secure");
-  await fillRealConnection();
+  await fillConnection();
   await page.getByTestId("connect-submit").click();
   await expect.element(page.getByTestId("profile-row-Secure")).toBeVisible();
 
@@ -4974,7 +4947,7 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
 
   await selectSectionTab("routes");
   await expect.element(page.getByTestId("route-node-2")).toBeVisible();
-  // Node 2 advertises 10.42.0.0/16, 0.0.0.0/0 and ::/0 on the real fixture.
+  // Node 2 advertises 10.42.0.0/16, 0.0.0.0/0 and ::/0 on the fixture.
   expectTestIdNetworkTokensLtr("route-node-2", 3);
   await page.getByTestId("approve-route-2-0").click();
   await expect.element(page.getByTestId("approve-route-dialog")).toBeVisible();
@@ -5553,7 +5526,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     })
     .toBe(true);
   expect(lifecycleApiKey?.prefix).toBeTruthy();
-  // The dialog was confirmed untouched, so the real server must hold the 90-day default.
+  // The dialog was confirmed untouched, so the server must hold the 90-day default.
   // Fails when the key keeps a stale absolute date or none at all.
   const lifecycleApiKeyExpiration = Date.parse(lifecycleApiKey?.expiration ?? "");
   expect(lifecycleApiKeyExpiration).toBeGreaterThanOrEqual(Date.now() + 89 * 86_400_000);

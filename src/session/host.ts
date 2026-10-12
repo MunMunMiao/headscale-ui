@@ -2,7 +2,7 @@ import { createHeadscaleGateway } from "@/api/gateway";
 import { fetchSnapshot } from "@/api/snapshot";
 import { decryptProfileKey } from "@/lib/api-key-crypto";
 import { DB_VERSION, openHeadscaleDb } from "@/lib/idb";
-import { readProfileForOwner, removeLegacyDemoProfiles } from "@/lib/profile-storage";
+import { readProfileForOwner } from "@/lib/profile-storage";
 import {
   type CandidateCredential,
   type SessionExecutionContext,
@@ -15,7 +15,6 @@ import { createSessionRuntime } from "./runtime";
 
 export async function createSessionHost(buildId: string) {
   await openHeadscaleDb();
-  await removeLegacyDemoProfiles();
   const workerId = crypto.randomUUID();
   async function validate(context: SessionExecutionContext) {
     await fetchSnapshot(

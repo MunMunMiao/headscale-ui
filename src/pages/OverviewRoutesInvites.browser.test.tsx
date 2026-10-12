@@ -200,7 +200,7 @@ async function setup(path = "/", tweak?: (backend: HeadscaleSnapshot) => void) {
   };
 }
 afterEach(() => vi.restoreAllMocks());
-// Page tests run on the real clock because session and bridge timers read Date.now().
+// Page tests run on the system clock because session and bridge timers read Date.now().
 function expectAboutDaysFromNow(value: unknown, days: number) {
   const delta = Date.parse(String(value)) - (Date.now() + days * 86_400_000);
   expect(delta).toBeGreaterThan(-120_000);

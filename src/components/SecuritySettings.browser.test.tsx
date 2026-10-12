@@ -14,7 +14,7 @@ import SecuritySettings from "./SecuritySettings";
 
 afterEach(() => vi.restoreAllMocks());
 
-test("an aborted reset stays visible after the real router locks and unmounts server settings", async () => {
+test("an aborted reset stays visible after the router locks and unmounts server settings", async () => {
   const snapshot = snapshotFixture();
   const session = await prepareTestSession(async (input, init) => {
     const request = input instanceof Request ? input : new Request(input, init);

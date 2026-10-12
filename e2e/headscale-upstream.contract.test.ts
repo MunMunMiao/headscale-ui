@@ -136,7 +136,7 @@ test("policy.check accepts the tag names the editor accepts", async () => {
   }
 });
 
-// MEASUREMENT: the camelCase `disableExpiry` query binding and its exclusion with `expiry` on the real gateway.
+// MEASUREMENT: the camelCase `disableExpiry` query binding and its exclusion with `expiry` on the gateway.
 // The browser lane resets the fixture; this test still restores node 3 to its original expired state.
 test("node.expire?disableExpiry=true clears the expiry and rejects a simultaneous expiry", async () => {
   const nodeId = "3";

@@ -68,7 +68,7 @@ async function request(port: MessagePort, requestId: number, command: SessionCom
   return result;
 }
 
-test("real MessageChannel handshake exposes a cloneable locked snapshot and checks without unlocking", async () => {
+test("MessageChannel handshake exposes a cloneable locked snapshot and checks without unlocking", async () => {
   const runtime = createSessionRuntime({ auth: auth() });
   const protocol = createSessionProtocol({
     runtime,

@@ -235,7 +235,7 @@ async function setup(kind: "devices" | "members", search = "", policyText?: stri
   };
 }
 afterEach(() => vi.restoreAllMocks());
-// Page tests run on the real clock because session and bridge timers read Date.now().
+// Page tests run on the system clock because session and bridge timers read Date.now().
 function releaseNodes(ctx: Awaited<ReturnType<typeof setup>>, userId: string) {
   ctx.backend.nodes = ctx.backend.nodes.filter((n) => n.user?.id !== userId);
 }
@@ -2086,7 +2086,7 @@ function pushNodes(ctx: Awaited<ReturnType<typeof setup>>) {
 const GETS_OF_NODES = (ctx: Awaited<ReturnType<typeof setup>>) =>
   ctx.calls.filter((c) => c.method === "GET" && c.path === "/api/v1/node").length;
 
-// Catches Go zero timestamps rendering as a real, long-past expiry.
+// Catches Go zero timestamps rendering as a long-past expiry.
 test("a zero expiry reads Never and is neither expired nor exported", async () => {
   const ctx = await setup("devices");
   ctx.backend.nodes.push(spareNode(ctx, { id: "3", name: "zero", expiry: ZERO_TIME }));

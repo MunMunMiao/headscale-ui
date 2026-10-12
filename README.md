@@ -58,20 +58,6 @@ CORS preflights; see [Connecting to Headscale (CORS)](#connecting-to-headscale-c
 Profiles with valid connection details can be saved when the server is
 unavailable, but opening the console requires a successful connection.
 
-### Upgrading from a version with mock mode
-
-On startup, the UI removes saved profiles that previously used the built-in
-mock server: profiles marked `mock` whose URL, after trimming whitespace and
-removing one trailing slash, is exactly `http://127.0.0.1:8080`. Their active
-session references are removed too. Any names or credentials entered in these
-demo profiles are discarded; no data is deleted from a Headscale server.
-
-Existing real connections are preserved, including local servers explicitly
-saved in real mode and legacy mock-labelled profiles whose URLs already caused
-them to use a real server. Their existing encrypted data and UI preferences are preserved. Legacy
-credentials require the per-profile migration described below. If the migration fails, startup reports the error instead of
-attempting to connect using a demo profile.
-
 ### Browser storage and upgrades
 
 Saved credentials use IndexedDB database version 3. New records encrypt each
@@ -240,7 +226,7 @@ HTTP requests are declared once in `src/api/requests.ts` with Defjs
 `src/api/commands.ts` (all 29 Headscale 0.29.4 RPCs plus `GET /version`, pinned in
 `e2e/headscale-upstream.ts` and checked by `bun run test` and the contract suite in `bun run test:docker`)
 crosses the Worker boundary; `src/api/commands.ts` also exports
-these typed page commands. Worker dispatch uses the real Defjs middleware,
+these typed page commands. Worker dispatch uses the Defjs middleware,
 error-first tuples, response validation, and native fetch. Errors retain their
 safe code, status, and server details without exposing connection credentials.
 Effect manages Worker request lifetimes and cancellation; the closure in
@@ -266,9 +252,9 @@ SSH check: choose the request type in the select; a link of the other kind is
 rejected before sending. The request ID is redacted from Worker operation logs.
 
 For behavior changes, first run a failing test, then implement and rerun it.
-Unit and component tests use real session hosts, MessagePorts, and Defjs with
+Unit and component tests use session hosts, MessagePorts, and Defjs with
 controlled native HTTP responses. Docker browser tests put a test-only reverse
-proxy in front of real Headscale to observe and delay Worker HTTP requests;
+proxy in front of Headscale to observe and delay Worker HTTP requests;
 Playwright page/context routing does not intercept SharedWorker fetch. Native
 storage failures are injected into the Worker realm through the browser debugger,
 with explicit hit counts and database readback. Production builds contain no
@@ -434,7 +420,7 @@ server {
 }
 ```
 
-`scripts/check-deployment.ts` (`startHeadscale`) tests this shape against a real
+`scripts/check-deployment.ts` (`startHeadscale`) tests this shape against
 Headscale; it uses `Access-Control-Allow-Origin: *` only because its UI origin is
 ephemeral. In production, set the exact origin and keep `Vary: Origin`.
 
@@ -465,7 +451,7 @@ server copy the `add_header` lines from `docker/nginx.conf` and apply the Worker
 CI gates publication: the GHCR image and the GitHub Pages site are published only after
 the CI workflow succeeds for the release. Base images are `oven/bun:1.4.3-alpine` and
 `nginx:1.30.5-alpine`.
-Real Actions, registry and OIDC runs are not exercised by local tests.
+Actions, registry and OIDC runs are not exercised by local tests.
 
 ## Verification
 
@@ -477,7 +463,7 @@ bun run verify
 
 This covers Biome, the business-source coverage gate, the TypeScript production
 build, browser E2E against a disposable Docker Headscale service, policy lifecycle
-tests against the production UI, TCP access checks between real Tailscale clients,
+tests against the production UI, TCP access checks between Tailscale clients,
 and production-image deployment tests covering root/subpath routing and local-data reset.
 Docker Compose must be available for the browser suites. Run
 `bun run browser:install` once to install Playwright's pinned Chromium. Business
@@ -495,6 +481,6 @@ The separate TSX interaction scanner checks the existing control, REST, recovery
 GitHub workflows use verified Bun binaries, Git checkout commands, and native
 Docker CLI/Buildx. Artifact, Pages, and provenance operations run pinned official
 action bundles in the local Bun Docker action; upstream commits, checksums, and
-licenses are recorded alongside it. Real GitHub artifact, OIDC, cache, Pages,
+licenses are recorded alongside it. GitHub artifact, OIDC, cache, Pages,
 and registry operations still require validation in their authorized remote
 environment; local tests do not prove a deployment succeeded.

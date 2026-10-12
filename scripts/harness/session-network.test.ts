@@ -22,7 +22,7 @@ function fixture(url: string) {
   return network;
 }
 
-test("forwards the original method, base path, query and body to the real upstream once", async () => {
+test("forwards the original method, base path, query and body to the upstream once", async () => {
   const received: unknown[] = [];
   const backend = upstream(async (request) => {
     received.push({
@@ -34,7 +34,7 @@ test("forwards the original method, base path, query and body to the real upstre
     });
     return Response.json(
       { policy: "accepted" },
-      { status: 202, headers: { "x-upstream": "real" } },
+      { status: 202, headers: { "x-upstream": "upstream" } },
     );
   });
   const network = fixture(`${backend.url.origin}/headscale`);
@@ -45,7 +45,7 @@ test("forwards the original method, base path, query and body to the real upstre
   });
   expect(response.status).toBe(202);
   expect(await response.json()).toEqual({ policy: "accepted" });
-  expect(response.headers.get("x-upstream")).toBe("real");
+  expect(response.headers.get("x-upstream")).toBe("upstream");
   expect(received).toEqual([
     {
       method: "PUT",
@@ -87,7 +87,7 @@ test("a one-shot 503 gate matches method and path without sending the failed req
   expect(gate.getSnapshot().released).toBe(true);
 });
 
-test("holds a captured real response while the next request returns newer upstream data", async () => {
+test("holds a captured response while the next request returns newer upstream data", async () => {
   let value = "old";
   let calls = 0;
   const backend = upstream(() => {

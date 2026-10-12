@@ -1090,93 +1090,88 @@ async function checkDatabaseUpgrade(browser: Browser, origin: string, connection
       assert.equal(upgraded.fingerprint, original.fingerprint);
     },
   );
-  await storageCase(
-    browser,
-    origin,
-    "real v1 to v3 migration aborts atomically",
-    async (context) => {
-      const old = await context.newPage();
-      await seedLegacy(old, origin, connection, 1);
-      const original = await vaultSnapshot(old);
-      assert.equal(original.databaseVersion, 1);
-      assert.equal(original.version, undefined, "a v1 database has no vault-state");
-      assert.ok(original.profiles.every((row) => row.keyEpoch === undefined));
-      await old.close();
-      const current = await context.newPage();
-      // Abort after the vault-state write and the first rewritten profile: the real migration order.
-      await current.addInitScript(() => {
-        if (sessionStorage.getItem("deployment-aborted-migration")) return;
-        sessionStorage.setItem("deployment-aborted-migration", "1");
-        const original = IDBObjectStore.prototype.put;
-        IDBObjectStore.prototype.put = function (
-          this: IDBObjectStore,
-          ...args: Parameters<IDBObjectStore["put"]>
+  await storageCase(browser, origin, "v1 to v3 migration aborts atomically", async (context) => {
+    const old = await context.newPage();
+    await seedLegacy(old, origin, connection, 1);
+    const original = await vaultSnapshot(old);
+    assert.equal(original.databaseVersion, 1);
+    assert.equal(original.version, undefined, "a v1 database has no vault-state");
+    assert.ok(original.profiles.every((row) => row.keyEpoch === undefined));
+    await old.close();
+    const current = await context.newPage();
+    // Abort after the vault-state write and the first rewritten profile: the migration order.
+    await current.addInitScript(() => {
+      if (sessionStorage.getItem("deployment-aborted-migration")) return;
+      sessionStorage.setItem("deployment-aborted-migration", "1");
+      const original = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function (
+        this: IDBObjectStore,
+        ...args: Parameters<IDBObjectStore["put"]>
+      ) {
+        const request = Reflect.apply(original, this, args) as IDBRequest;
+        const value: unknown = args[0];
+        if (
+          this.name === "profiles" &&
+          value !== null &&
+          typeof value === "object" &&
+          "keyEpoch" in value
         ) {
-          const request = Reflect.apply(original, this, args) as IDBRequest;
-          const value: unknown = args[0];
-          if (
-            this.name === "profiles" &&
-            value !== null &&
-            typeof value === "object" &&
-            "keyEpoch" in value
-          ) {
-            IDBObjectStore.prototype.put = original;
-            request.addEventListener(
-              "success",
-              () => {
-                (window as LegacyWindow).deploymentMigrationAborts =
-                  ((window as LegacyWindow).deploymentMigrationAborts ?? 0) + 1;
-                request.transaction?.abort();
-              },
-              { once: true },
-            );
-          }
-          return request;
-        };
-      });
-      await current.goto(`${origin}/home`);
-      await current.getByTestId("error-screen").waitFor();
+          IDBObjectStore.prototype.put = original;
+          request.addEventListener(
+            "success",
+            () => {
+              (window as LegacyWindow).deploymentMigrationAborts =
+                ((window as LegacyWindow).deploymentMigrationAborts ?? 0) + 1;
+              request.transaction?.abort();
+            },
+            { once: true },
+          );
+        }
+        return request;
+      };
+    });
+    await current.goto(`${origin}/home`);
+    await current.getByTestId("error-screen").waitFor();
+    assert.equal(
+      await current.evaluate(() => (window as LegacyWindow).deploymentMigrationAborts),
+      1,
+      "the actual v1 migration must reach the mid-migration fault",
+    );
+    assert.equal(await current.getByTestId("error-reset").count(), 0);
+    assert.deepEqual(
+      await vaultSnapshot(current),
+      original,
+      "an aborted migration leaves the version-1 database untouched",
+    );
+    await current.getByTestId("error-reload").click();
+    await current.getByTestId("profile-option-Legacy persistent").waitFor();
+    const upgraded = await vaultSnapshot(current);
+    assert.equal(upgraded.databaseVersion, 3);
+    assert.ok(upgraded.version?.keyEpoch, "migration creates the vault-state");
+    for (const row of upgraded.profiles) {
+      assert.equal(row.keyEpoch, upgraded.version.keyEpoch, `${row.name} key epoch`);
       assert.equal(
-        await current.evaluate(() => (window as LegacyWindow).deploymentMigrationAborts),
-        1,
-        "the actual v1 migration must reach the mid-migration fault",
+        row.core,
+        original.profiles.find((item) => item.id === row.id)?.fingerprint,
+        `${row.name} legacy fields survive the migration`,
       );
-      assert.equal(await current.getByTestId("error-reset").count(), 0);
-      assert.deepEqual(
-        await vaultSnapshot(current),
-        original,
-        "an aborted migration leaves the version-1 database untouched",
-      );
-      await current.getByTestId("error-reload").click();
-      await current.getByTestId("profile-option-Legacy persistent").waitFor();
-      const upgraded = await vaultSnapshot(current);
-      assert.equal(upgraded.databaseVersion, 3);
-      assert.ok(upgraded.version?.keyEpoch, "migration creates the vault-state");
-      for (const row of upgraded.profiles) {
-        assert.equal(row.keyEpoch, upgraded.version.keyEpoch, `${row.name} key epoch`);
-        assert.equal(
-          row.core,
-          original.profiles.find((item) => item.id === row.id)?.fingerprint,
-          `${row.name} legacy fields survive the migration`,
-        );
-      }
-      assert.deepEqual(
-        Object.keys(upgraded.active),
-        ["active-profile-id"],
-        "the plain active id becomes one reference",
-      );
-      assert.deepEqual(Object.keys(upgraded.active["active-profile-id"] as object).sort(), [
-        "operationId",
-        "profileId",
-      ]);
-      assert.equal(
-        (upgraded.active["active-profile-id"] as { profileId: string }).profileId,
-        "legacy-persistent",
-      );
-      assert.ok(upgraded.keys.includes("device-key"));
-      assert.ok(upgraded.metaKeys.includes("password-canary"));
-    },
-  );
+    }
+    assert.deepEqual(
+      Object.keys(upgraded.active),
+      ["active-profile-id"],
+      "the plain active id becomes one reference",
+    );
+    assert.deepEqual(Object.keys(upgraded.active["active-profile-id"] as object).sort(), [
+      "operationId",
+      "profileId",
+    ]);
+    assert.equal(
+      (upgraded.active["active-profile-id"] as { profileId: string }).profileId,
+      "legacy-persistent",
+    );
+    assert.ok(upgraded.keys.includes("device-key"));
+    assert.ok(upgraded.metaKeys.includes("password-canary"));
+  });
   await storageCase(
     browser,
     origin,
@@ -1346,7 +1341,7 @@ export async function checkVaultRecovery(
   await storageCase(
     browser,
     origin,
-    `${base} a blocked then aborted upgrade shows the blocker first, then the real error`,
+    `${base} a blocked then aborted upgrade shows the blocker first, then the error`,
     async (context) => {
       const old = await context.newPage();
       await seedLegacy(old, origin, connection);

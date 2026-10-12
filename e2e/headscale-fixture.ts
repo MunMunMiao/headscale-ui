@@ -197,7 +197,7 @@ export async function seedHeadscaleFixture(
   assert.equal(
     preAuthKeys.find((key: { id: string }) => key.id === "2").used,
     true,
-    "The expired ephemeral invitation must have been used by a real device",
+    "The expired ephemeral invitation must have been used by a device",
   );
   let { nodes } = await request("/api/v1/node");
   for (
@@ -235,7 +235,7 @@ export async function seedHeadscaleFixture(
 }
 
 // Restore only the disposable Compose container owned by this runner; every browser test
-// starts from real persisted Headscale data, including its original API key and stable IDs.
+// starts from persisted Headscale data, including its original API key and stable IDs.
 export async function resetHeadscaleFixture(blankPolicy = false) {
   const container = process.env.HEADSCALE_E2E_CONTAINER;
   const snapshot = process.env.HEADSCALE_E2E_SNAPSHOT;
@@ -351,5 +351,5 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error("Real fixture laptop did not reconnect");
+  throw new Error("Fixture laptop did not reconnect");
 }

@@ -8,7 +8,7 @@ export interface NetworkGateOptions {
   method: string;
   pathPattern: string;
   /**
-   * A string answers 503 without reaching upstream. The objects act after the real upstream
+   * A string answers 503 without reaching upstream. The objects act after the upstream
    * response is captured: replace its body (optionally its status), or break the client read.
    */
   failure?:

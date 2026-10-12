@@ -185,7 +185,7 @@ describe("policy workspace lifecycle", () => {
     { teamDetailOpen: true },
     { policyRemovalDialogOpen: true },
     { highRiskConfirmOpen: true },
-  ])("protects each real active editor from background replacement: %j", (patch) => {
+  ])("protects each active editor from background replacement: %j", (patch) => {
     const designer = createPolicyDesignerStore();
     expect(designer.isPolicyEditing).toBe(false);
     designer.setState(patch);

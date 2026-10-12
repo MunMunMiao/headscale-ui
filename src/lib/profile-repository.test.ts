@@ -24,7 +24,6 @@ import {
   migrateProfile,
   type PasswordStoredProfile,
   readProfileForOwner,
-  removeLegacyDemoProfiles,
   updateProfileMetadata,
 } from "./profile-storage";
 import { clearAllSecureData } from "./secure-storage";
@@ -132,8 +131,8 @@ test("commits an independent-password record and refuses a stale vault revision"
   expect(result.version.profilesRevision).toBe(expected.version.profilesRevision + 1);
 });
 
-test("migrates one historical plaintext row while preserving other records and extra fields, without retaining the obsolete mock mode", async () => {
-  const original = await legacy("migrate", { mode: "mock" });
+test("migrates one historical plaintext row while preserving other records and extra fields", async () => {
+  const original = await legacy("migrate");
   const other = await legacy("other", { scope: "session", ownerTabId: "other-owner" });
   const expected = {
     version: await version(),
@@ -150,7 +149,6 @@ test("migrates one historical plaintext row while preserving other records and e
     opaque: original.opaque,
     keyEpoch: original.keyEpoch,
   });
-  expect(saved).not.toHaveProperty("mode");
   expect(saved?.apiKey).toMatchObject({ v: 2, scheme: "password" });
   expect(
     await decryptProfileKey({
@@ -390,13 +388,17 @@ test.each(["create", "change-password", "reset"])(
   },
 );
 
-test("repository deletion is owner-fenced and atomically removes every active preference for that profile", async () => {
+test("repository deletion is owner-fenced and atomically removes every well-formed active preference for that profile", async () => {
   const profile = await encrypted("delete");
   await idbPut("profiles", { ...profile, scope: "session", ownerTabId: "owner-a" });
   await idbPut("meta", { profileId: profile.id, operationId: "old-a" }, "active-profile:owner-a");
   await idbPut("meta", { profileId: profile.id, operationId: "old-b" }, "active-profile:owner-b");
   const keep = { profileId: "keep", operationId: "keep" };
   await idbPut("meta", keep, "active-profile-id");
+  const malformed = { profileId: profile.id, unknown: true };
+  await idbPut("meta", "not a marker", "active-profile:text");
+  await idbPut("meta", null, "active-profile:empty");
+  await idbPut("meta", malformed, "active-profile:malformed");
   const expected = {
     version: await version(),
     ownerTabId: "owner-a",
@@ -411,6 +413,9 @@ test("repository deletion is owner-fenced and atomically removes every active pr
   expect(await idbGet("meta", "active-profile:owner-a")).toBeUndefined();
   expect(await idbGet("meta", "active-profile:owner-b")).toBeUndefined();
   expect(await idbGet("meta", "active-profile-id")).toEqual(keep);
+  expect(await idbGet("meta", "active-profile:text")).toBe("not a marker");
+  expect(await idbGet("meta", "active-profile:empty")).toBeNull();
+  expect(await idbGet("meta", "active-profile:malformed")).toEqual(malformed);
 });
 
 test("a missing, changed or already-migrated target cannot be overwritten by an old intent", async () => {
@@ -697,24 +702,10 @@ test("a metadata update needs an existing profile reference and drops obsolete l
   expect(await idbGet("profiles", "flagged")).not.toHaveProperty("corrupted");
 });
 
-test("a row that is not a plain record is unreadable, and demo cleanup skips it and malformed active markers", async () => {
+test("a row that is not a plain record is unreadable", async () => {
   await idbPut("profiles", Object.assign([], { id: "array-row" }));
-  await idbPut(
-    "profiles",
-    Object.assign([], { id: "array-demo", mode: "mock", baseUrl: "http://127.0.0.1:8080" }),
-  );
   await expect(readProfileForOwner("array-row", "owner-a")).rejects.toBeInstanceOf(VaultDataError);
-  await idbPut("profiles", { id: "demo", baseUrl: "http://127.0.0.1:8080", mode: "mock" });
-  await idbPut("meta", "not a marker", "active-profile:text");
-  await idbPut("meta", null, "active-profile:empty");
-  await idbPut("meta", { profileId: "demo", operationId: "demo-op" }, "active-profile:demo");
-  await removeLegacyDemoProfiles();
-  expect(await idbGet("profiles", "demo")).toBeUndefined();
-  expect(await idbGet("meta", "active-profile:demo")).toBeUndefined();
-  expect(await idbGet("meta", "active-profile:text")).toBe("not a marker");
-  expect(await idbGet("meta", "active-profile:empty")).toBeNull();
   expect(await idbGet("profiles", "array-row")).toHaveProperty("id", "array-row");
-  expect(await idbGet("profiles", "array-demo")).toHaveProperty("id", "array-demo");
 });
 
 test("renaming a profile to a blank name stores its base URL instead of an empty name", async () => {

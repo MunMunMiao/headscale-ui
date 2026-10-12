@@ -70,7 +70,7 @@ function Controls() {
     </>
   );
 }
-test("StrictMode providers project the real bridge and send business mutations through the Worker host", async () => {
+test("StrictMode providers project the bridge and send business mutations through the Worker host", async () => {
   await clearAllSecureData();
   await hydrateSettings();
   const fixture = snapshotFixture();

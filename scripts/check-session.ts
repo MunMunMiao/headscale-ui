@@ -7,7 +7,7 @@ import { launchNativeBrowser } from "./harness/native-browser";
 
 process.env.NO_PROXY = process.env.no_proxy = "127.0.0.1,localhost";
 
-// The shared session and its storage run in the production build against two real Headscale
+// The shared session and its storage run in the production build against two Headscale
 // servers. A native Chrome drives freeze/resume and BFCache, which Playwright emulation cannot.
 const stack = createDeploymentStack("headscale-session");
 

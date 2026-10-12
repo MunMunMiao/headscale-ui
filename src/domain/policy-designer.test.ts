@@ -138,7 +138,7 @@ describe("parseMemberList", () => {
 describe("parsePolicy / serializePolicy round-trip", () => {
   const samples: Array<{ name: string; raw: unknown }> = [
     {
-      name: "mock default policy with autoApprovers and ssh extras",
+      name: "default policy with autoApprovers and ssh extras",
       raw: {
         acls: [{ action: "accept", src: ["*"], dst: ["*:*"] }],
         groups: { "group:ops": ["alice@example.com"] },

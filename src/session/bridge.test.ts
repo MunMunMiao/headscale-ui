@@ -825,7 +825,7 @@ test("profile commands round-trip cloned inputs and reset notification cannot tu
   }
 });
 
-test("real fault DTOs survive the port while a stale or pre-cancelled call never dispatches", async () => {
+test("fault DTOs survive the port while a stale or pre-cancelled call never dispatches", async () => {
   let calls = 0;
   const f = fixture(async () => {
     calls++;

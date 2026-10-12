@@ -166,7 +166,7 @@ async function checkBrowser(origin: string, base: string, connection: Deployment
       "blocked",
       "Worker fetch must obey the Worker response CSP",
     );
-    // Real Headscale unlock above is the positive evidence; the probes' own console noise is expected.
+    // Headscale unlock above is the positive evidence; the probes' own console noise is expected.
     cspMessages.length = 0;
   };
   const security = async () => {
@@ -239,7 +239,7 @@ async function checkBrowser(origin: string, base: string, connection: Deployment
     );
     if (query) await element("profiles-cleared-notice").waitFor({ state: "visible" });
   };
-  // Each section's stable, always-present element once its real data has loaded.
+  // Each section's stable, always-present element once its data has loaded.
   const ready: Record<string, string> = {
     home: '[data-testid="overview-stats"]',
     devices: '[data-testid="machines-empty"], [data-testid="machine-table-shell"]',
@@ -269,7 +269,7 @@ async function checkBrowser(origin: string, base: string, connection: Deployment
         await waitUntil(
           async () =>
             (await page.locator('[data-testid="page-body"]').innerText()).includes(connection.user),
-          { timeout: 15000, timeoutMsg: "UI must read the seeded user from real Headscale" },
+          { timeout: 15000, timeoutMsg: "UI must read the seeded user from Headscale" },
         );
       }
     }

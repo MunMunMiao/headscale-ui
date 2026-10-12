@@ -27,7 +27,7 @@ function context(baseUrl: string): SessionExecutionContext {
   };
 }
 
-test("dispatches real contracts with base paths, parsed results and request bodies", async () => {
+test("dispatches contracts with base paths, parsed results and request bodies", async () => {
   const seen: { method: string; path: string; body: unknown; bearer: string | null }[] = [];
   const server = Bun.serve({
     hostname: "127.0.0.1",
@@ -98,7 +98,7 @@ test("dispatches real contracts with base paths, parsed results and request bodi
   }
 });
 
-test("preserves real HTTP fault semantics through the typed gateway without serializing request metadata", async () => {
+test("preserves HTTP fault semantics through the typed gateway without serializing request metadata", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,

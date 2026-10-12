@@ -51,7 +51,7 @@ export function createMutation(
         if (!client) throw new ApiError({ kind: "locked" });
         const [error, result] = await client.execute(command, options);
         if (error) {
-          // The write may have been applied: show the real state, never replay it.
+          // The write may have been applied: show the server state, never replay it.
           if (
             error.outcome === "unknown" &&
             !opts.skipRefresh &&

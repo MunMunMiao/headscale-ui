@@ -212,7 +212,7 @@ export async function checkSession(
     assert.equal(
       (await hello(pageB, workerUrl)).workerId,
       sharedA.workerId,
-      "independent pages share one real Worker",
+      "independent pages share one Worker",
     );
     await pageA.bringToFront();
     await pageA.reload();
@@ -233,7 +233,7 @@ export async function checkSession(
     ];
     assertSingleCurrentServer(observations, b);
     console.log(
-      "PASS original two-real-Headscale shared-session assertion",
+      "PASS original two-Headscale shared-session assertion",
       JSON.stringify(observations),
     );
 
@@ -270,7 +270,7 @@ export async function checkSession(
     await pageB.goto(`${origin}/members`);
     await members(pageA, a);
 
-    // Close a real peer, not a BFCache-preserved document, with its own read pending.
+    // Close a peer, not a BFCache-preserved document, with its own read pending.
     const departing = await context.newPage();
     watch(departing);
     await departing.bringToFront();
@@ -676,7 +676,7 @@ export async function checkSession(
         throw error;
       }
     });
-    // A real command observes the silent close through the bounded reply deadline.
+    // A command observes the silent close through the bounded reply deadline.
     await pageA.getByTestId("refresh-users").click();
     await pageA.getByTestId("error-screen").waitFor({ state: "visible", timeout: 25000 });
     assert.equal(await pageA.getByTestId("section-home").count(), 0);

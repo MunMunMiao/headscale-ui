@@ -21,7 +21,7 @@ describe("useRefreshGuard", () => {
     expect(applied).toEqual(["current"]);
   });
 
-  function realStore() {
+  function newStore() {
     // The guard never reads through this client: its refresh is a deferred supplied by the test.
     const http = createFixtureHttp({ baseUrl: "http://127.0.0.1:9", apiKey: "unused" });
     const store = createSnapshotStore(fixtureClientStore(http), createActionFeedbackStore());
@@ -30,11 +30,11 @@ describe("useRefreshGuard", () => {
   }
 
   test.each([
-    ["a server switch", (store: ReturnType<typeof realStore>) => store.resetSnapshot()],
-    ["a lock", (store: ReturnType<typeof realStore>) => store.setAuthorized(false)],
-    ["a same-server rebind", (store: ReturnType<typeof realStore>) => store.rebindSession()],
+    ["a server switch", (store: ReturnType<typeof newStore>) => store.resetSnapshot()],
+    ["a lock", (store: ReturnType<typeof newStore>) => store.setAuthorized(false)],
+    ["a same-server rebind", (store: ReturnType<typeof newStore>) => store.rebindSession()],
   ])("does not apply a refresh that settles across %s", async (_name, change) => {
-    const store = realStore();
+    const store = newStore();
     const reply = Promise.withResolvers<void>();
     const guard = createRefreshGuard(() => reply.promise, store.captureSession);
     const applied: string[] = [];
@@ -47,7 +47,7 @@ describe("useRefreshGuard", () => {
   });
 
   test("applies a refresh when the session did not change", async () => {
-    const store = realStore();
+    const store = newStore();
     const reply = Promise.withResolvers<void>();
     const guard = createRefreshGuard(() => reply.promise, store.captureSession);
     const applied: string[] = [];

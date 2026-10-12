@@ -415,13 +415,13 @@ describe("Headscale endpoint contracts", () => {
     expect(normalizePreAuthKey({ id: "2", key: "k", expiration: zero }).expiration).toBeUndefined();
   });
 
-  test("keeps real dates, absent and empty values as specified and passes garbage through", () => {
-    const real = "2027-01-01T00:00:00Z";
+  test("keeps dates, absent and empty values as specified and passes garbage through", () => {
+    const timestamp = "2027-01-01T00:00:00Z";
     expect(
-      normalizeHeadscaleNode({ id: "1", name: "n", expiry: real, lastSeen: real }),
+      normalizeHeadscaleNode({ id: "1", name: "n", expiry: timestamp, lastSeen: timestamp }),
     ).toMatchObject({
-      expiry: real,
-      lastSeen: real,
+      expiry: timestamp,
+      lastSeen: timestamp,
     });
     const absent = normalizeHeadscaleNode({ id: "1", name: "n" });
     expect(absent.expiry).toBeUndefined();

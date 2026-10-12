@@ -29,7 +29,7 @@ afterEach(async () => {
 /**
  * HTTP-boundary harness on an in-page session host. It validates UI handling and
  * contract validation only; it is NOT SharedWorker fault evidence (see dev.md).
- * Real-Worker fault evidence lives in e2e/.
+ * Worker fault evidence lives in e2e/.
  */
 export async function prepareTestSession(transport?: FetchHandle): Promise<Session> {
   if (transport)

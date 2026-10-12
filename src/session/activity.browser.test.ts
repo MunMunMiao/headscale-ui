@@ -88,7 +88,7 @@ async function fixture() {
 }
 
 test.each(["pointerdown", "keydown", "wheel", "input"])(
-  "Chromium's trusted %s immediately extends the real session deadline",
+  "Chromium's trusted %s immediately extends the session deadline",
   async (type) => {
     const { attach, bridge, clock, session, events } = await fixture();
     attach();
@@ -112,7 +112,7 @@ test.each(["pointerdown", "keydown", "wheel", "input"])(
   },
 );
 
-test("real foreground events share a one-second leading throttle", async () => {
+test("foreground events share a one-second leading throttle", async () => {
   const { attach, bridge, clock, session, events } = await fixture();
   attach();
   await page.getByTestId("activity-button").click();
@@ -158,7 +158,7 @@ test("synthetic activity, native scrolling, movement and focus do not renew", as
   expect(events.some((event) => event.type === "focus" && event.isTrusted)).toBe(true);
   expect(bridge.resume).toHaveBeenCalledTimes(1);
   await bridge.resume.mock.results[0]?.value;
-  // A DOM pageshow delivery checks the listener; real BFCache restoration is a deployment test.
+  // A DOM pageshow delivery checks the listener; BFCache restoration is a deployment test.
   window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
   expect(bridge.resume).toHaveBeenCalledTimes(2);
   await bridge.resume.mock.results[1]?.value;
@@ -188,7 +188,7 @@ test("dispose and reattach leave exactly one activity listener and release lifec
 });
 
 test.each([SESSION_IDLE_MS, SESSION_IDLE_MS + 1])(
-  "a real click at %i ms expires the session without running a timer",
+  "a click at %i ms expires the session without running a timer",
   async (elapsed) => {
     const { attach, bridge, clock, session, events } = await fixture();
     attach();

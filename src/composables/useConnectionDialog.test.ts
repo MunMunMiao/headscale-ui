@@ -71,7 +71,7 @@ test("tracks the form baseline and confirms dirty closes", async () => {
   dialog.handleConnectionDialogOpen(false);
   expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
 });
-// Uses standard Base UI reasons instead of removed Reka custom events; nested Escape is tested with the real page.
+// Uses standard Base UI reasons instead of removed Reka custom events; nested Escape is tested with the page.
 test("blocks outside dismissal and routes Escape through dirty confirmation", async () => {
   const dialog = createConnectionDialog(session.profiles);
   await dialog.openConnectionDialogWithBaseline(newProfileId);

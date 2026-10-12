@@ -41,7 +41,7 @@ describe("relative default expiration", () => {
     },
   );
 
-  test("uses the real clock when no time is given", () => {
+  test("uses the system clock when no time is given", () => {
     const delta = Date.parse(dateTimeLocalToIso(defaultExpirationLocal(1))) - Date.now();
     expect(delta).toBeGreaterThan(86_400_000 - 120_000);
     expect(delta).toBeLessThanOrEqual(86_400_000);
@@ -57,7 +57,7 @@ describe("relative default expiration", () => {
     expect(isFutureExpiration(local(60_000), now)).toBe(true);
   });
 
-  test("accepts a future value against the real clock", () => {
+  test("accepts a future value against the system clock", () => {
     expect(isFutureExpiration(defaultExpirationLocal(1))).toBe(true);
   });
 

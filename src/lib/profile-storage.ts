@@ -83,57 +83,6 @@ export interface ChangeProfilePasswordInput {
   newPassword: string;
 }
 
-export async function removeLegacyDemoProfiles(): Promise<void> {
-  const db = await openHeadscaleDb();
-  const read = db.transaction([STORE_PROFILES, STORE_META], "readonly");
-  const [records, rawVersion] = await Promise.all([
-    read.objectStore(STORE_PROFILES).getAll(),
-    read.objectStore(STORE_META).get(VAULT_STATE_KEY),
-    read.done,
-  ]);
-  const removed = new Set<string>();
-  for (const raw of records) {
-    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) continue;
-    const value = raw as Record<string, unknown>;
-    if (
-      typeof value.id === "string" &&
-      value.id &&
-      value.mode === "mock" &&
-      typeof value.baseUrl === "string" &&
-      normalizedBaseUrl(value.baseUrl) === "http://127.0.0.1:8080"
-    )
-      removed.add(value.id);
-  }
-  if (!removed.size) return;
-  const expected = readVaultState(rawVersion);
-  const tx = db.transaction([STORE_PROFILES, STORE_META], "readwrite");
-  let version: VaultVersion;
-  try {
-    const profiles = tx.objectStore(STORE_PROFILES);
-    const meta = tx.objectStore(STORE_META);
-    const current = readVaultState(await meta.get(VAULT_STATE_KEY));
-    assertVaultVersion(current, expected);
-    for (const id of removed) await profiles.delete(id);
-    for (const key of await meta.getAllKeys()) {
-      if (key !== ACTIVE_PROFILE_META_KEY && !key.startsWith(ACTIVE_PROFILE_PREFIX)) continue;
-      const reference = activeRef(await meta.get(key));
-      if (reference && removed.has(reference.profileId)) await meta.delete(key);
-    }
-    version = advanceVaultState(current);
-    await meta.put(version, VAULT_STATE_KEY);
-    await tx.done;
-  } catch (error) {
-    try {
-      tx.abort();
-    } catch {
-      /* The failed transaction may already be finished. */
-    }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
-  notifyVaultChanged(version);
-}
-
 export async function updateProfileMetadata(
   expected: ProfileWriteExpected,
   patch: { name: string; scope: ProfileStorageScope },
@@ -404,7 +353,6 @@ async function persistProfile(
     saved = { ...(previous === undefined ? {} : recordObject(previous)), ...next };
     if (saved.scope === "session") saved.ownerTabId = expected.ownerTabId;
     if ("corrupted" in saved) delete saved.corrupted;
-    if ("mode" in saved) delete saved.mode;
     await profiles.put(saved);
     if (canRetireLegacyRecords(await profiles.getAll(), current)) {
       await tx.objectStore(STORE_KEYS).delete(DEVICE_KEY_ID);

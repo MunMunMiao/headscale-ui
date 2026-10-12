@@ -160,25 +160,22 @@ test.each([
   expect(getErrorMessage(error)).toBe(body.message);
 });
 
-test.each(["en-US", "zh-Hans"] as const)(
-  "localizes real Headscale phrases in %s",
-  async (locale) => {
-    await hydrateSettings();
-    await setLocale(locale);
-    const copy = getProductCopy(locale);
-    const rows: [number, string, string][] = [
-      [500, "user not found", copy.errorUserNotFound],
-      [500, "user not empty: node(s) found", copy.errorUserStillOwns],
-      [404, "node not found", copy.errorNodeNotFound],
-      [404, "node not found: 5", copy.errorNodeNotFound],
-      [500, "update is disabled for modes other than 'database'", copy.policyUpdateDisabled],
-    ];
-    for (const [status, message, expected] of rows) {
-      const error = await failureFrom(() => Response.json({ code: 2, message }, { status }));
-      expect.soft(getErrorMessage(error), message).toBe(expected);
-    }
-  },
-);
+test.each(["en-US", "zh-Hans"] as const)("localizes Headscale phrases in %s", async (locale) => {
+  await hydrateSettings();
+  await setLocale(locale);
+  const copy = getProductCopy(locale);
+  const rows: [number, string, string][] = [
+    [500, "user not found", copy.errorUserNotFound],
+    [500, "user not empty: node(s) found", copy.errorUserStillOwns],
+    [404, "node not found", copy.errorNodeNotFound],
+    [404, "node not found: 5", copy.errorNodeNotFound],
+    [500, "update is disabled for modes other than 'database'", copy.policyUpdateDisabled],
+  ];
+  for (const [status, message, expected] of rows) {
+    const error = await failureFrom(() => Response.json({ code: 2, message }, { status }));
+    expect.soft(getErrorMessage(error), message).toBe(expected);
+  }
+});
 
 test("never surfaces defjs transport text but keeps internal diagnostics", async () => {
   await hydrateSettings();

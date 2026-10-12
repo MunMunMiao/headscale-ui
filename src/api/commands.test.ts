@@ -49,7 +49,7 @@ test("keeps declared input as data without constructing transport headers or URL
   expect(commands.health()).toEqual({ operation: "health.check", input: undefined });
 });
 
-test("derives operation-specific input and output from the real request registry", () => {
+test("derives operation-specific input and output from the request registry", () => {
   expectTypeOf(commands.setTags)
     .parameter(0)
     .toEqualTypeOf<commands.OperationInput<"node.setTags">>();

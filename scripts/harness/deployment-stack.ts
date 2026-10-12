@@ -205,7 +205,7 @@ export function createDeploymentStack(label: string) {
         }),
         signal: AbortSignal.timeout(5000),
       });
-      assert.equal(response.status, 200, "Seed deployment policy on real Headscale");
+      assert.equal(response.status, 200, "Seed deployment policy on Headscale");
       const network = createSessionNetwork({ upstream: baseUrl });
       networks.push(network);
       return { baseUrl: network.url, apiKey, user, network };

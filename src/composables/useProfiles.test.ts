@@ -600,9 +600,9 @@ test("closing the dialog during a save settles it as cancelled and cannot end a 
     return forward();
   });
   const saveResults: unknown[] = [];
-  const realSave = f.bridge.saveProfile.bind(f.bridge);
+  const originalSave = f.bridge.saveProfile.bind(f.bridge);
   vi.spyOn(f.bridge, "saveProfile").mockImplementation(async (...args) => {
-    const result = await realSave(...args);
+    const result = await originalSave(...args);
     saveResults.push(result);
     return result;
   });
@@ -673,9 +673,9 @@ test("a delete reply older than a synchronized newer vault version never moves t
   );
   const deleted = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
-  const realDelete = f.bridge.deleteProfile.bind(f.bridge);
+  const originalDelete = f.bridge.deleteProfile.bind(f.bridge);
   vi.spyOn(f.bridge, "deleteProfile").mockImplementation(async (...args) => {
-    const result = await realDelete(...args);
+    const result = await originalDelete(...args);
     deleted.resolve();
     await release.promise;
     return result;

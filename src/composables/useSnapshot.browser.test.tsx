@@ -66,22 +66,22 @@ test("pages re-render just after a node expires without fetching again", async (
 test("unmounting clears the pending expiry timer", async () => {
   const session = await prepareTestSession();
   const armed: unknown[] = [];
-  const realSetTimeout = globalThis.setTimeout;
+  const originalSetTimeout = globalThis.setTimeout;
   vi.spyOn(globalThis, "setTimeout").mockImplementation(((
     handler: TimerHandler,
     ms?: number,
     ...args: unknown[]
   ) => {
-    const id = realSetTimeout(handler, ms, ...args);
+    const id = originalSetTimeout(handler, ms, ...args);
     // Only the expiry timer waits about a minute.
     if (ms !== undefined && ms > 59000 && ms < 61000) armed.push(id);
     return id;
   }) as typeof setTimeout);
   const cleared: unknown[] = [];
-  const realClearTimeout = globalThis.clearTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
   vi.spyOn(globalThis, "clearTimeout").mockImplementation((id) => {
     cleared.push(id);
-    realClearTimeout(id);
+    originalClearTimeout(id);
   });
   session.snapshot.applyPatch({ nodes: [node("1", new Date(Date.now() + 60000).toISOString())] });
   const view = await renderSessionPage(session, <Probe />, "/devices");

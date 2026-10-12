@@ -1,7 +1,7 @@
 import type { OperationId } from "../src/domain/headscale-operations";
 
 // Pinned from the Headscale v0.29.4 gRPC gateway (proto/headscale/v1/headscale.proto).
-// Reviewed data: the live swagger check in headscale-upstream.contract.test.ts compares it with a real server.
+// Reviewed data: the live swagger check in headscale-upstream.contract.test.ts compares it with a server.
 export const HEADSCALE_UPSTREAM_VERSION = "0.29.4";
 
 // Routes the UI needs that are not gateway RPCs.

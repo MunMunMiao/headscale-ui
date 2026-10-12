@@ -80,7 +80,7 @@ test("bootstrap waits for the Worker hello and returns only the summary view", a
   expect(JSON.stringify(ready)).not.toContain("deviceKey");
 });
 
-test("bootstrap rejects an incompatible real Worker handshake instead of mounting an empty application", async () => {
+test("bootstrap rejects an incompatible Worker handshake instead of mounting an empty application", async () => {
   const bridge = await installBridge(DB_VERSION - 1);
   const dispose = vi.spyOn(bridge, "dispose");
   await expect(prepareApplication()).rejects.toMatchObject({

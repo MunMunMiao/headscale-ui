@@ -57,7 +57,7 @@ test("switching to the same policy retains edited input until explicit discard",
   expect(policy.isPolicyEditing).toBe(false);
 });
 
-test("edits made during a real route refresh survive and are sent as the saved payload", async () => {
+test("edits made during a route refresh survive and are sent as the saved payload", async () => {
   const { session, server, router } = await fixture();
   const { snapshot, policy } = session;
   const baseline = policy.getSnapshot().policyDraft;

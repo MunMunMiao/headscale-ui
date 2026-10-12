@@ -1,6 +1,6 @@
 import type { OperationId } from "../src/domain/headscale-operations";
 
-// Every Headscale REST operation must be exercised by the real-Headscale lifecycle test, either
+// Every Headscale REST operation must be exercised by the Headscale lifecycle test, either
 // through the UI or as an API contract; the test asserts that this list matches what it observed.
 export type E2ERequirement = {
   id: string;
@@ -12,7 +12,7 @@ export type E2ERequirement = {
   evidence: string;
 };
 
-const realRestLifecycleTitle =
+const restLifecycleTitle =
   "exercises every supported Headscale v0.29.4 REST operation with deterministic readback";
 
 export const E2E_REQUIREMENTS = [
@@ -53,7 +53,7 @@ export const E2E_REQUIREMENTS = [
     id: `rest.${operationId}`,
     kind: "rest" as const,
     environment: "docker-headscale" as const,
-    testTitle: realRestLifecycleTitle,
+    testTitle: restLifecycleTitle,
     operationId,
     driver,
     evidence,

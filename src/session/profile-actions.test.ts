@@ -218,7 +218,7 @@ async function credentials(
   };
 }
 
-test("new server saves independently password-encrypted credentials after seven real validation reads", async () => {
+test("new server saves independently password-encrypted credentials after seven validation reads", async () => {
   const f = fixture();
   const input = await credentials(f);
   const result = await f.actions.save(input, f.context);

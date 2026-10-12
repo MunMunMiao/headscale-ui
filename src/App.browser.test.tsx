@@ -290,7 +290,7 @@ test.each(["en-US", "zh-Hans"] as const)(
   },
 );
 
-test("keeps a committed reset metadata warning visible when the real router returns to login", async () => {
+test("keeps a committed reset metadata warning visible when the router returns to login", async () => {
   const session = await prepareTestSession(transport);
   await setLocale("en-US");
   await authenticateTestSession(session);
