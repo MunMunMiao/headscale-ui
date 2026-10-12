@@ -1,19 +1,16 @@
-import type { OperationId } from "@/domain/headscale-operations";
+const privateField =
+  /^(?:authorization|headers|request|response|cause|stack|apiKey|authId|password|key|secret|token)$/i;
 
-export function recordOperationCall(
-  id: OperationId,
-  method: string,
-  url: string,
-  payload: unknown,
-) {
-  if (!import.meta.env.DEV && import.meta.env.MODE !== "test") {
-    return;
-  }
-
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.__headscaleUiOperationCalls ??= [];
-  window.__headscaleUiOperationCalls.push({ id, method, url, payload });
+export function redactDiagnosticData<T>(value: T, secret: string): T {
+  if (typeof value === "string")
+    return (secret ? value.replaceAll(secret, "[redacted]") : value) as T;
+  if (Array.isArray(value)) return value.map((entry) => redactDiagnosticData(entry, secret)) as T;
+  if (value !== null && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        privateField.test(key) ? "[redacted]" : redactDiagnosticData(entry, secret),
+      ]),
+    ) as T;
+  return value;
 }

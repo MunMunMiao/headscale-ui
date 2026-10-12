@@ -3,14 +3,68 @@ import { execFile, execFileSync } from "node:child_process";
 import { statSync } from "node:fs";
 import { promisify } from "node:util";
 
+export function createHeadscalePolicyFixture(connection: { baseUrl: string; apiKey: string }) {
+  const target = new URL(connection.baseUrl);
+  assert.ok(
+    target.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(target.hostname),
+    "Headscale policy fixture requires an isolated HTTP loopback server",
+  );
+  assert.ok(connection.apiKey, "Headscale policy fixture requires its test API key");
+  async function request(path: string, method = "GET", body?: unknown) {
+    const response = await fetch(`${connection.baseUrl.replace(/\/$/, "")}${path}`, {
+      proxy: false,
+      method,
+      headers: { Authorization: `Bearer ${connection.apiKey}`, "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
+      redirect: "manual",
+    });
+    assert.equal(
+      response.ok,
+      true,
+      `Headscale policy fixture failed: ${method} ${path} (${response.status})`,
+    );
+    try {
+      return await response.json();
+    } catch {
+      throw new Error("Headscale policy fixture returned invalid JSON");
+    }
+  }
+  return {
+    async read(): Promise<string> {
+      const body = await request("/api/v1/policy");
+      assert.equal(
+        typeof body.policy,
+        "string",
+        "Headscale policy fixture returned an invalid policy",
+      );
+      return body.policy;
+    },
+    async write(policy: string): Promise<void> {
+      await request("/api/v1/policy", "PUT", { policy });
+    },
+    async seed(policy: string): Promise<void> {
+      for (const name of ["admin-test", "team-test", "deleted-test"])
+        await request("/api/v1/user", "POST", { name });
+      await request("/api/v1/policy", "PUT", { policy });
+      const body = await request("/api/v1/user?name=deleted-test");
+      const principal = body.users?.find(
+        (user: { id: string; name: string }) => user.name === "deleted-test",
+      );
+      assert.ok(principal?.id, "Headscale policy fixture orphan principal is missing");
+      await request(`/api/v1/user/${encodeURIComponent(principal.id)}`, "DELETE");
+    },
+  };
+}
+
 export async function seedHeadscaleFixture(
   baseUrl: string,
   apiKey: string,
   containers: { headscale: string; online: string; offline: string },
 ) {
-  async function request(path: string, body?: unknown) {
+  async function request(path: string, body?: unknown, method?: string) {
     const response = await fetch(`${baseUrl}${path}`, {
-      method: body === undefined ? "GET" : path === "/api/v1/policy" ? "PUT" : "POST",
+      method: method ?? (body === undefined ? "GET" : path === "/api/v1/policy" ? "PUT" : "POST"),
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(10_000),
@@ -66,7 +120,18 @@ export async function seedHeadscaleFixture(
     expiration,
   });
   const loginKey = await request("/api/v1/preauthkey", { user: "1", expiration });
-  function registerDevice(container: string, key: string, hostname: string, routes = "") {
+  async function registerDevice(container: string, key: string, hostname: string, routes = "") {
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        docker("exec", container, "tailscale", "status", "--json");
+        ready = true;
+        break;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+    assert.ok(ready, "The fixture Tailscale daemon must be ready before registration");
     execFileSync(
       "docker",
       [
@@ -83,16 +148,27 @@ export async function seedHeadscaleFixture(
       { input: `${key}\n`, stdio: ["pipe", "pipe", "pipe"] },
     );
   }
-  registerDevice(containers.online, loginKey.preAuthKey.key, "alice-laptop");
-  const registrationKey = "abcdefghijklmnopqrstuvw0";
-  await request("/api/v1/debug/node", {
-    user: "alice",
-    name: "edge-router",
-    routes: ["10.42.0.0/16", "0.0.0.0/0", "::/0"],
-    key: registrationKey,
+  await registerDevice(containers.online, loginKey.preAuthKey.key, "alice-laptop");
+  const routerKey = await request("/api/v1/preauthkey", {
+    user: "1",
+    expiration,
+    aclTags: ["tag:server"],
   });
-  await request(`/api/v1/node/register?user=alice&key=${registrationKey}`, {});
-  registerDevice(containers.offline, oneTimeKey.preAuthKey.key, "old-phone", "192.168.88.0/24");
+  await registerDevice(
+    containers.offline,
+    routerKey.preAuthKey.key,
+    "edge-router",
+    "10.42.0.0/16,0.0.0.0/0,::/0",
+  );
+  await request(`/api/v1/preauthkey?id=${routerKey.preAuthKey.id}`, undefined, "DELETE");
+  // The in-memory daemon gets a fresh machine identity while the registered router stays offline.
+  docker("restart", containers.offline);
+  await registerDevice(
+    containers.offline,
+    oneTimeKey.preAuthKey.key,
+    "old-phone",
+    "192.168.88.0/24",
+  );
   // An abrupt disconnect retains the ephemeral registration until Headscale's inactivity timeout.
   docker("kill", containers.offline);
   await request("/api/v1/preauthkey/expire", { id: "2" });
@@ -124,7 +200,11 @@ export async function seedHeadscaleFixture(
     "The expired ephemeral invitation must have been used by a real device",
   );
   let { nodes } = await request("/api/v1/node");
-  for (let attempt = 0; attempt < 100 && (!nodes[0]?.online || nodes[2]?.online); attempt++) {
+  for (
+    let attempt = 0;
+    attempt < 100 && (!nodes[0]?.online || nodes[1]?.online || nodes[2]?.online);
+    attempt++
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     ({ nodes } = await request("/api/v1/node"));
   }
@@ -137,6 +217,7 @@ export async function seedHeadscaleFixture(
     ["1", "2", "3"],
   );
   assert.equal(preAuthKeys[0].reusable, true);
+  assert.equal(preAuthKeys[0].used, false, "The reusable invitation fixture must remain unused");
   assert.equal(preAuthKeys[1].ephemeral, true);
   assert.ok(Date.parse(preAuthKeys[1].expiration) <= Date.now());
   assert.equal(nodes[0].online, true);
@@ -144,7 +225,9 @@ export async function seedHeadscaleFixture(
   assert.equal(nodes[1].online, false);
   assert.equal(nodes[1].user.name, "tagged-devices");
   assert.ok(Date.parse(nodes[1].expiry) > Date.now(), "The offline router must not be expired");
+  assert.ok(nodes[1].availableRoutes.includes("10.42.0.0/16"));
   assert.ok(nodes[1].availableRoutes.includes("0.0.0.0/0"));
+  assert.ok(nodes[1].availableRoutes.includes("::/0"));
   assert.equal(nodes[2].online, false);
   assert.equal(nodes[2].user.name, "charlie");
   assert.ok(nodes[2].availableRoutes.includes("192.168.88.0/24"));
@@ -205,7 +288,7 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     container as string,
     "--entrypoint",
     "rm",
-    "tailscale/tailscale:v1.94.2",
+    "tailscale/tailscale:v1.102.5",
     "-f",
     "/var/lib/headscale/db.sqlite-wal",
     "/var/lib/headscale/db.sqlite-shm",
@@ -224,23 +307,6 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     }
   }
   assert.ok(healthy, "Headscale fixture did not become healthy after reset");
-  // shortcut: Headscale 0.28 omits expiry persistence; replay until the test image fixes it.
-  for (const [id, expiry] of [
-    ["2", new Date(Date.now() + 365 * 86_400_000).toISOString()],
-    ["3", new Date(Date.now() - 60_000).toISOString()],
-  ]) {
-    await docker(
-      "exec",
-      container as string,
-      "headscale",
-      "nodes",
-      "expire",
-      "--identifier",
-      id,
-      "--expiry",
-      expiry,
-    );
-  }
   await docker("start", onlineContainer as string);
   for (let attempt = 0; attempt < 100; attempt++) {
     const nodes = JSON.parse(
@@ -252,9 +318,15 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
       const router = nodes.find((node: { id: number }) => Number(node.id) === 2);
       const phone = nodes.find((node: { id: number }) => Number(node.id) === 3);
       assert.equal(Boolean(router.online), false);
-      assert.ok(Number(router.expiry.seconds) * 1000 > Date.now());
+      assert.ok(
+        Number(router.expiry?.seconds) * 1000 > Date.now(),
+        "Headscale must restore the router's persisted expiry without replay after restart",
+      );
       assert.equal(Boolean(phone.online), false);
-      assert.ok(Number(phone.expiry.seconds) * 1000 <= Date.now());
+      assert.ok(
+        Number(phone.expiry?.seconds) * 1000 <= Date.now(),
+        "Headscale must restore the phone's persisted expiry without replay after restart",
+      );
       const keysResponse = await fetch(`${process.env.HEADSCALE_E2E_URL}/api/v1/preauthkey`, {
         headers: { Authorization: `Bearer ${process.env.HEADSCALE_E2E_API_KEY}` },
         signal: AbortSignal.timeout(10_000),

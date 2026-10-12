@@ -1,23 +1,48 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { actionFeedbackTestingHandle, useActionFeedback } from "./useActionFeedback";
-
-beforeEach(() => actionFeedbackTestingHandle.reset());
+import { describe, expect, test } from "vitest";
+import { createActionFeedbackStore } from "./useActionFeedback";
 
 describe("useActionFeedback", () => {
-  test("shares state and exposes empty feedback by default", () => {
-    const feedback = useActionFeedback();
+  test("starts with empty feedback and clears individual action errors", () => {
+    const feedback = createActionFeedbackStore();
 
-    expect(useActionFeedback()).toBe(feedback);
     expect(feedback.isActionPending("create-member")).toBe(false);
     expect(feedback.actionError("create-member")).toBe("");
 
-    feedback.actionErrors["create-member"] = "stale";
+    feedback.setState({ actionErrors: { "create-member": "stale" } });
     feedback.clearActionFeedback("create-member");
     expect(feedback.actionError("create-member")).toBe("");
   });
 
+  test("clearing a key also clears the banner it produced, and only that one", async () => {
+    const feedback = createActionFeedbackStore();
+    await feedback.runAction("create-member", async () => {
+      throw new Error("boom");
+    });
+    expect(feedback.getSnapshot().lastError).toBe("boom");
+    feedback.clearActionFeedback("create-member");
+    expect(feedback.actionError("create-member")).toBe("");
+    expect(feedback.getSnapshot().lastError).toBe("");
+
+    feedback.setState({ lastError: "storage" });
+    feedback.setState({ actionErrors: { "delete-member": "other" } });
+    feedback.clearActionFeedback("create-member");
+    expect(feedback.getSnapshot().lastError).toBe("storage");
+    feedback.clearActionFeedback("delete-member");
+    expect(feedback.getSnapshot().lastError).toBe("storage");
+
+    await feedback.runAction("create-member", async () => {
+      throw new Error("first");
+    });
+    await feedback.runAction("save-policy", async () => {
+      throw new Error("second");
+    });
+    feedback.clearActionFeedback("create-member");
+    expect(feedback.actionError("save-policy")).toBe("second");
+    expect(feedback.getSnapshot().lastError).toBe("second");
+  });
+
   test("returns a result and rejects re-entry while an action is pending", async () => {
-    const feedback = useActionFeedback();
+    const feedback = createActionFeedbackStore();
     let resolveAction!: (value: number) => void;
     const action = new Promise<number>((resolve) => {
       resolveAction = resolve;
@@ -33,7 +58,7 @@ describe("useActionFeedback", () => {
   });
 
   test("maps thrown values, supports a custom mapper, and clears stale errors", async () => {
-    const feedback = useActionFeedback();
+    const feedback = createActionFeedbackStore();
 
     expect(
       await feedback.runAction("create-member", async () => {
@@ -41,7 +66,7 @@ describe("useActionFeedback", () => {
       }),
     ).toEqual({ ok: false });
     expect(feedback.actionError("create-member")).toBe("failed");
-    expect(feedback.lastError.value).toBe("failed");
+    expect(feedback.getSnapshot().lastError).toBe("failed");
 
     await feedback.runAction("delete-member", async () => {
       throw 404;
@@ -59,6 +84,6 @@ describe("useActionFeedback", () => {
       result: "ok",
     });
     expect(feedback.actionError("rename-member")).toBe("");
-    expect(feedback.lastError.value).toBe("");
+    expect(feedback.getSnapshot().lastError).toBe("");
   });
 });

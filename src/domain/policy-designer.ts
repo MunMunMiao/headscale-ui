@@ -1,3 +1,4 @@
+import { getNodeValue, type ParseError, parseTree, printParseErrorCode } from "jsonc-parser";
 import type { PrincipalIndex } from "./principal";
 
 export type PolicyMemberKind = "user" | "group" | "tag" | "host" | "raw";
@@ -25,6 +26,7 @@ export interface PolicyRule {
   source: string;
   destination: string;
   ports: string;
+  extras?: Record<string, unknown>;
 }
 
 export interface PolicyDesignerState {
@@ -32,6 +34,7 @@ export interface PolicyDesignerState {
   groups: PolicyGroup[];
   tagOwners: PolicyTagOwner[];
   extras: Record<string, unknown>;
+  error?: string;
 }
 
 export interface OrphanReference {
@@ -82,32 +85,27 @@ function listFromUnknown(value: unknown): string[] {
   return [];
 }
 
-function listToText(value: unknown): string {
-  if (Array.isArray(value)) {
-    return value.map(String).join(", ");
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return "";
+function isStringList(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((item) => typeof item === "string" && item.length > 0 && item.trim() === item)
+  );
 }
 
-function destinationParts(value: unknown): Array<{ destination: string; ports: string }> {
-  const destinations = Array.isArray(value)
-    ? value.map(String)
-    : typeof value === "string"
-      ? [value]
-      : ["*:*"];
-  return (destinations.length > 0 ? destinations : ["*:*"]).map((destination) => {
-    const separator = destination.lastIndexOf(":");
-    if (separator <= 0) {
-      return { destination, ports: "*" };
+function destinationParts(
+  values: string[],
+): Array<{ destination: string; ports: string }> | undefined {
+  const result: Array<{ destination: string; ports: string }> = [];
+  for (const value of values) {
+    const separator = value.lastIndexOf(":");
+    const destination = value.slice(0, separator);
+    const ports = value.slice(separator + 1);
+    if (separator <= 0 || !ports.trim() || destination.includes(",")) {
+      return;
     }
-    return {
-      destination: destination.slice(0, separator),
-      ports: destination.slice(separator + 1) || "*",
-    };
-  });
+    result.push({ destination, ports });
+  }
+  return result;
 }
 
 export function parseCommaList(value: string): string[] {
@@ -125,12 +123,11 @@ export function joinCommaList(values: readonly string[]): string {
 }
 
 function serializeDestination(destination: string, ports: string): string[] {
-  const resolvedPorts = ports.trim() || "*";
-  return parseCommaList(destination || "*").map((target) => `${target}:${resolvedPorts}`);
+  return parseCommaList(destination).map((target) => `${target}:${ports.trim()}`);
 }
 
 let counter = 0;
-function createPolicyId(): string {
+export function createPolicyId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
@@ -139,11 +136,12 @@ function createPolicyId(): string {
 }
 
 function defaultRule(): PolicyRule {
+  // Headscale 0.29 limits "*" to tailnet addresses; an absent policy allows all IPs.
   return {
     id: createPolicyId(),
     action: "accept",
-    source: "*",
-    destination: "*",
+    source: "0.0.0.0/0, ::/0",
+    destination: "0.0.0.0/0, ::/0",
     ports: "*",
   };
 }
@@ -157,46 +155,82 @@ export function emptyState(): PolicyDesignerState {
   };
 }
 
+function invalidState(error: string): PolicyDesignerState {
+  return { rules: [], groups: [], tagOwners: [], extras: {}, error };
+}
+
+function isMemberMap(value: unknown): boolean {
+  return (
+    value == null ||
+    (isPlainObject(value) &&
+      Object.entries(value).every(
+        ([name, members]) => name.length > 0 && name.trim() === name && isStringList(members),
+      ))
+  );
+}
+
 export function parsePolicy(raw: string): PolicyDesignerState {
   if (!raw?.trim()) {
     return emptyState();
   }
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return emptyState();
+  const errors: ParseError[] = [];
+  const tree = parseTree(raw, errors, { allowTrailingComma: true });
+  if (errors.length > 0) {
+    const first = errors[0];
+    return invalidState(`${printParseErrorCode(first.error)} at offset ${first.offset}`);
+  }
+  const parsed: unknown = tree && getNodeValue(tree);
+  if (!isPlainObject(parsed)) {
+    return invalidState("Policy root must be an object.");
   }
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return emptyState();
+  const { acls, groups, tagOwners, ...extras } = parsed;
+  if (acls != null && !Array.isArray(acls)) {
+    return invalidState("Policy acls cannot be represented safely.");
+  }
+  if (extras.grants != null && !Array.isArray(extras.grants)) {
+    return invalidState("Policy grants cannot be represented safely.");
+  }
+  if (!isMemberMap(groups) || !isMemberMap(tagOwners)) {
+    return invalidState("Policy groups and tagOwners must contain arrays of member strings.");
   }
 
-  const root = parsed as {
-    acls?: unknown;
-    groups?: unknown;
-    tagOwners?: unknown;
-    [key: string]: unknown;
-  };
-  const { acls, groups, tagOwners, ...extras } = root;
-
-  const rules: PolicyRule[] = Array.isArray(acls)
-    ? acls.flatMap((rule) => {
-        const node = (rule && typeof rule === "object" ? rule : {}) as {
-          action?: unknown;
-          src?: unknown;
-          dst?: unknown;
-        };
-        return destinationParts(node.dst).map((dst) => ({
+  const rules: PolicyRule[] = [];
+  for (const node of Array.isArray(acls) ? acls : []) {
+    if (!isPlainObject(node)) {
+      return invalidState("Policy ACL rules must be objects.");
+    }
+    const { action, src, dst, ...ruleExtras } = node;
+    if (
+      action !== "accept" ||
+      !isStringList(src) ||
+      src.length === 0 ||
+      src.some((source) => source.includes(",")) ||
+      !isStringList(dst) ||
+      dst.length === 0
+    ) {
+      return invalidState(
+        "Policy ACL action, sources, or destinations cannot be represented safely.",
+      );
+    }
+    const destinations = destinationParts(dst);
+    if (!destinations) {
+      return invalidState("Policy ACL destinations must include an explicit port selection.");
+    }
+    rules.push(
+      ...destinations.map(
+        (destination): PolicyRule => ({
           id: createPolicyId(),
-          action: "accept" as const,
-          source: listToText(node.src) || "*",
-          destination: dst.destination || "*",
-          ports: dst.ports || "*",
-        }));
-      })
-    : [];
+          action,
+          source: src.join(", "),
+          destination: destination.destination,
+          ports: destination.ports,
+          ...(Object.keys(ruleExtras).length > 0 ? { extras: ruleExtras } : {}),
+        }),
+      ),
+    );
+  }
 
   const groupsList: PolicyGroup[] = isPlainObject(groups)
     ? Object.entries(groups as Record<string, unknown>).map(([name, members]) => ({
@@ -215,7 +249,7 @@ export function parsePolicy(raw: string): PolicyDesignerState {
     : [];
 
   return {
-    rules: Array.isArray(acls) ? rules : [defaultRule()],
+    rules: Array.isArray(acls) || Array.isArray(extras.grants) ? rules : [defaultRule()],
     groups: groupsList,
     tagOwners: tagOwnersList,
     extras,
@@ -227,6 +261,19 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 export function serializePolicy(state: PolicyDesignerState): Record<string, unknown> {
+  if (state.error) {
+    throw new Error(state.error);
+  }
+  if (
+    state.rules.some(
+      (rule) =>
+        parseCommaList(rule.source).length === 0 ||
+        parseCommaList(rule.destination).length === 0 ||
+        !rule.ports.trim(),
+    )
+  ) {
+    throw new Error("Policy ACL sources, destinations, and ports must not be empty.");
+  }
   const groups = Object.fromEntries(
     state.groups
       .filter((group) => group.name.trim())
@@ -237,11 +284,15 @@ export function serializePolicy(state: PolicyDesignerState): Record<string, unkn
       .filter((owner) => owner.tag.trim())
       .map((owner) => [owner.tag.trim(), serializeMembers(owner.owners)]),
   );
-  const acls = state.rules.map((rule) => ({
-    action: rule.action,
-    src: parseCommaList(rule.source),
-    dst: serializeDestination(rule.destination, rule.ports),
-  }));
+  // Match the parser's single-destination rows so a saved policy stays unchanged on reload.
+  const acls = state.rules.flatMap((rule) =>
+    serializeDestination(rule.destination, rule.ports).map((destination) => ({
+      ...rule.extras,
+      action: rule.action,
+      src: parseCommaList(rule.source),
+      dst: [destination],
+    })),
+  );
 
   return {
     ...state.extras,
@@ -309,19 +360,64 @@ export function removeOwnerFromTag(
   };
 }
 
+// The name-keyed variants resolve the container themselves and leave the state unchanged when it is
+// missing or its name is one the editor cannot define (upsertGroup/upsertTagOwner refuse those).
+export function addMemberToGroupByName(
+  state: PolicyDesignerState,
+  groupName: string,
+  member: PolicyMemberRef,
+): PolicyDesignerState {
+  const group = state.groups.find((candidate) => candidate.name === groupName);
+  return group
+    ? upsertGroup(state, { ...group, members: addUniqueMember(group.members, member) })
+    : state;
+}
+
+export function removeMemberFromGroupByName(
+  state: PolicyDesignerState,
+  groupName: string,
+  value: string,
+): PolicyDesignerState {
+  const group = state.groups.find((candidate) => candidate.name === groupName);
+  return group
+    ? upsertGroup(state, { ...group, members: group.members.filter((m) => m.value !== value) })
+    : state;
+}
+
+export function removeOwnerFromTagByName(
+  state: PolicyDesignerState,
+  tag: string,
+  value: string,
+): PolicyDesignerState {
+  const entry = state.tagOwners.find((candidate) => candidate.tag === tag);
+  return entry
+    ? upsertTagOwner(state, { ...entry, owners: entry.owners.filter((o) => o.value !== value) })
+    : state;
+}
+
+// Headscale 0.29.4: Group.Validate checks the "group:" prefix and Tag.Validate checks "tag:" plus an
+// ASCII letter first. Whitespace, ',' (rules are comma-joined), '@' (parseAlias treats any alias with
+// '@' as a user) and ':' (separates the destination port) are excluded on purpose so the editor
+// fails closed; server-valid names using them stay unsupported for rename/delete.
+export function isPolicyIdentityName(name: string, kind: "group" | "tag"): boolean {
+  return kind === "group" ? /^group:[^\s,:@]+$/.test(name) : /^tag:[A-Za-z][^\s,:@]*$/.test(name);
+}
+
 export function upsertGroup(state: PolicyDesignerState, group: PolicyGroup): PolicyDesignerState {
   const name = group.name.trim();
-  if (!name) {
+  if (
+    !isPolicyIdentityName(name, "group") ||
+    state.groups.some((existing) => existing.name === name && existing.id !== group.id)
+  ) {
     return state;
   }
 
   const next: PolicyGroup = { ...group, name };
   return {
     ...state,
-    groups: [
-      ...state.groups.filter((existing) => existing.name !== name && existing.id !== group.id),
-      next,
-    ],
+    groups: state.groups.some((existing) => existing.id === group.id)
+      ? state.groups.map((existing) => (existing.id === group.id ? next : existing))
+      : [...state.groups, next],
   };
 }
 
@@ -330,30 +426,20 @@ export function upsertTagOwner(
   owner: PolicyTagOwner,
 ): PolicyDesignerState {
   const tag = owner.tag.trim();
-  if (!tag) {
+  if (
+    !isPolicyIdentityName(tag, "tag") ||
+    state.tagOwners.some((existing) => existing.tag === tag && existing.id !== owner.id)
+  ) {
     return state;
   }
 
   const next: PolicyTagOwner = { ...owner, tag };
   return {
     ...state,
-    tagOwners: [
-      ...state.tagOwners.filter((existing) => existing.tag !== tag && existing.id !== owner.id),
-      next,
-    ],
+    tagOwners: state.tagOwners.some((existing) => existing.id === owner.id)
+      ? state.tagOwners.map((existing) => (existing.id === owner.id ? next : existing))
+      : [...state.tagOwners, next],
   };
-}
-
-export function removeGroupById(state: PolicyDesignerState, id: string): PolicyDesignerState {
-  return { ...state, groups: state.groups.filter((g) => g.id !== id) };
-}
-
-export function removeTagOwnerById(state: PolicyDesignerState, id: string): PolicyDesignerState {
-  return { ...state, tagOwners: state.tagOwners.filter((t) => t.id !== id) };
-}
-
-export function addRule(state: PolicyDesignerState, rule: PolicyRule): PolicyDesignerState {
-  return { ...state, rules: [...state.rules, rule] };
 }
 
 export function removeRuleById(state: PolicyDesignerState, id: string): PolicyDesignerState {
@@ -376,88 +462,6 @@ export function createGroup(name: string, members: PolicyMemberRef[] = []): Poli
 
 export function createTagOwner(tag: string, owners: PolicyMemberRef[] = []): PolicyTagOwner {
   return { id: createPolicyId(), tag, owners };
-}
-
-export function findReferencesToValues(
-  state: PolicyDesignerState,
-  values: string[],
-): { groupIds: string[]; tagOwnerIds: string[]; groupNames: string[]; tagNames: string[] } {
-  const set = new Set(values);
-  const matchingGroups = state.groups.filter((g) => g.members.some((m) => set.has(m.value)));
-  const matchingTagOwners = state.tagOwners.filter((t) => t.owners.some((o) => set.has(o.value)));
-  return {
-    groupIds: matchingGroups.map((g) => g.id),
-    tagOwnerIds: matchingTagOwners.map((t) => t.id),
-    groupNames: matchingGroups.map((g) => g.name),
-    tagNames: matchingTagOwners.map((t) => t.tag),
-  };
-}
-
-export function removeReferencesToValues(
-  state: PolicyDesignerState,
-  values: string[],
-): PolicyDesignerState {
-  if (values.length === 0) return state;
-  const set = new Set(values);
-  return {
-    ...state,
-    groups: state.groups.map((g) => ({
-      ...g,
-      members: g.members.filter((m) => !set.has(m.value)),
-    })),
-    tagOwners: state.tagOwners.map((t) => ({
-      ...t,
-      owners: t.owners.filter((o) => !set.has(o.value)),
-    })),
-  };
-}
-
-export function removePolicyReferences(
-  state: PolicyDesignerState,
-  value: string,
-): PolicyDesignerState {
-  const extras = { ...state.extras };
-  if (Array.isArray(extras.ssh)) {
-    extras.ssh = extras.ssh.flatMap((rule): unknown[] => {
-      if (!isPlainObject(rule) || !Array.isArray(rule.src) || !Array.isArray(rule.dst)) {
-        return [rule];
-      }
-      const src = rule.src.filter((source) => source !== value);
-      const dst = rule.dst.filter((destination) => destination !== value);
-      if (src.length === rule.src.length && dst.length === rule.dst.length) return [rule];
-      return src.length && dst.length ? [{ ...rule, src, dst }] : [];
-    });
-  }
-  if (isPlainObject(extras.autoApprovers)) {
-    const approvers = { ...extras.autoApprovers };
-    if (isPlainObject(approvers.routes)) {
-      approvers.routes = Object.fromEntries(
-        Object.entries(approvers.routes).map(([route, principals]) => [
-          route,
-          Array.isArray(principals)
-            ? principals.filter((principal) => principal !== value)
-            : principals,
-        ]),
-      );
-    }
-    if (Array.isArray(approvers.exitNode)) {
-      approvers.exitNode = approvers.exitNode.filter((principal) => principal !== value);
-    }
-    extras.autoApprovers = approvers;
-  }
-  return {
-    ...removeReferencesToValues(state, [value]),
-    extras,
-    rules: state.rules
-      .map((rule) => ({
-        ...rule,
-        source: joinCommaList(parseCommaList(rule.source).filter((source) => source !== value)),
-        destination: joinCommaList(
-          parseCommaList(rule.destination).filter((destination) => destination !== value),
-        ),
-      }))
-      .filter((rule) => rule.source && rule.destination),
-  };
 }
 
 // A bare value (no prefix, no CIDR/wildcard) that should be looked up against
@@ -548,6 +552,31 @@ export function findOrphanReferences(
     }
   }
   return orphans;
+}
+
+// Drops every reported reference from its container. Unlike upsertGroup/upsertTagOwner this does not
+// require the container's name to satisfy the editor's naming rule: a stale reference inside an
+// entry the editor cannot define is still removed.
+export function removeOrphanReferences(
+  state: PolicyDesignerState,
+  orphans: readonly OrphanReference[],
+): PolicyDesignerState {
+  const isOrphan = (kind: OrphanReference["kind"], containerId: string, value: string) =>
+    orphans.some(
+      (orphan) =>
+        orphan.kind === kind && orphan.containerId === containerId && orphan.value === value,
+    );
+  return {
+    ...state,
+    groups: state.groups.map((group) => ({
+      ...group,
+      members: group.members.filter((m) => !isOrphan("group-member", group.id, m.value)),
+    })),
+    tagOwners: state.tagOwners.map((tagOwner) => ({
+      ...tagOwner,
+      owners: tagOwner.owners.filter((o) => !isOrphan("tag-owner", tagOwner.id, o.value)),
+    })),
+  };
 }
 
 function addUniqueMember(members: PolicyMemberRef[], member: PolicyMemberRef): PolicyMemberRef[] {

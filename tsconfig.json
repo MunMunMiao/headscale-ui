@@ -1,15 +1,5 @@
 {
   "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ],
-  "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.tools.json" }],
+  "compilerOptions": { "paths": { "@/*": ["./src/*"] } }
 }

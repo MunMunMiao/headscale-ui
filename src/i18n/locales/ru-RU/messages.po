@@ -1,0 +1,2094 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru-RU\n"
+
+#: src/i18n/descriptors.ts
+msgid "plural.devicesTagged"
+msgstr "{count, plural, one {{formattedCount} устройство} few {{formattedCount} устройства} many {{formattedCount} устройств} other {{formattedCount} устройства}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.teamMembers"
+msgstr "{count, plural, one {{formattedCount} участник} few {{formattedCount} участника} many {{formattedCount} участников} other {{formattedCount} участника}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.orphanReferences"
+msgstr "{count, plural, one {{formattedCount} ссылка не соответствует существующей учётной записи, команде или метке устройства.} few {{formattedCount} ссылки не соответствуют существующим учётным записям, командам или меткам устройств.} many {{formattedCount} ссылок не соответствуют существующим учётным записям, командам или меткам устройств.} other {{formattedCount} ссылки не соответствуют существующим учётным записям, командам или меткам устройств.}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.openAccessWarnings"
+msgstr "{count, plural, one {{formattedCount} правило открывает всем доступ ко всем устройствам.} few {{formattedCount} правила открывают всем доступ ко всем устройствам.} many {{formattedCount} правил открывают всем доступ ко всем устройствам.} other {{formattedCount} правила открывают всем доступ ко всем устройствам.}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.cleanupOrphans"
+msgstr "{count, plural, one {Удалить {formattedCount} недействительную ссылку} few {Удалить {formattedCount} недействительные ссылки} many {Удалить {formattedCount} недействительных ссылок} other {Удалить {formattedCount} недействительные ссылки}}"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardSubtitle"
+msgstr "Главная страница для устройств, пользователей и приватных маршрутов."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsRequired"
+msgstr "Ключу без владельца нужна хотя бы одна метка ACL."
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.access"
+msgstr "Управление доступом"
+
+#: src/i18n/descriptors.ts
+msgid "product.actions"
+msgstr "Действия"
+
+#: src/i18n/descriptors.ts
+msgid "product.statusActive"
+msgstr "Активен"
+
+#: src/i18n/descriptors.ts
+msgid "product.activeAuthKeys"
+msgstr "Активные ключи авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableActivity"
+msgstr "Активность"
+
+#: src/i18n/descriptors.ts
+msgid "product.addClientDeviceTitle"
+msgstr "Добавить клиентское устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.addDevice"
+msgstr "Добавить устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLabelManager"
+msgstr "Добавить владельца метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLinuxServerTitle"
+msgstr "Добавить сервер Linux"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMemberToTeam"
+msgstr "Добавить участника"
+
+#: src/i18n/descriptors.ts
+msgid "common.addServerProfile"
+msgstr "Добавить сервер"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionValidationFailedTitle"
+msgstr "Всё равно добавить этот сервер?"
+
+#: src/i18n/descriptors.ts
+msgid "product.addUserToGroup"
+msgstr "Добавить в группы"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMember"
+msgstr "Добавить пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsTitle"
+msgstr "Добавить пользователя в группы"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDevice"
+msgstr "Добавить первое устройство"
+
+#: src/i18n/descriptors.ts
+msgid "common.addingProfile"
+msgstr "Добавляем"
+
+#: src/i18n/descriptors.ts
+msgid "product.addresses"
+msgstr "Адреса"
+
+#: src/i18n/descriptors.ts
+msgid "product.advertisedRoutes"
+msgstr "Объявленные маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeAdvertisers"
+msgstr "Объявляют маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyIdentityRemovalImpact"
+msgstr "Затронутые правила: '{'rules'}'. Затронутые тесты политики: '{'tests'}'."
+
+#: src/i18n/descriptors.ts
+msgid "product.allMachines"
+msgstr "Все устройства"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilesClearedNotice"
+msgstr "Все сохранённые профили удалены. Добавьте сервер, чтобы настроить подключение заново."
+
+#: src/i18n/descriptors.ts
+msgid "product.svcAllLabel"
+msgstr "Все сервисы"
+
+#: src/i18n/descriptors.ts
+msgid "product.allUsers"
+msgstr "Все пользователи"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupReferencesOption"
+msgstr "Также удалить пользователя из этих ссылок в политике"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameUpdateReferencesOption"
+msgstr "Также обновить эти ссылки в политике на новое имя"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedDescription"
+msgstr "Старая страница удерживает локальную базу данных открытой. Закройте другие вкладки Headscale UI, чтобы продолжить. Сохранённые подключения будут сохранены."
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadDescription"
+msgstr "Другая страница обновила локальную базу данных. Перезагрузите эту страницу, прежде чем продолжить. Сохранённые подключения будут сохранены."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionBusy"
+msgstr "Уже выполняется разблокировка или смена сервера. Повторите попытку после завершения."
+
+#: src/i18n/descriptors.ts
+msgid "product.allUsersChoice"
+msgstr "Любой пользователь"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyDescription"
+msgstr "Любой пользователь сможет обращаться к моим личным устройствам через любой сервис."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKey"
+msgstr "API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyExpiration"
+msgstr "Срок действия API-ключа"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeys"
+msgstr "API-ключи"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysTitle"
+msgstr "API-ключи"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysDescription"
+msgstr "API-ключи дают доступ к управлению этим сервером Headscale. Полный ключ показывается один раз."
+
+#: src/i18n/descriptors.ts
+msgid "product.applyAssignment"
+msgstr "Применить"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesTitle"
+msgstr "Подтвердить объявленные маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveAll"
+msgstr "Подтвердить все"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRouteTitle"
+msgstr "Подтвердить выходной маршрут"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesTitle"
+msgstr "Подтвердить выходные маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckDescription"
+msgstr "Подтвердите или отклоните SSH-сеанс, ожидающий проверки. Это действие никогда не регистрирует устройство."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoute"
+msgstr "Подтвердить маршрут"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteTitle"
+msgstr "Подтвердить маршрут"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmApproveRoutes"
+msgstr "Подтвердить маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveSshCheck"
+msgstr "Подтвердить проверку SSH"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesApproved"
+msgstr "Подтверждены"
+
+#: src/i18n/descriptors.ts
+msgid "product.approvedRoutes"
+msgstr "Подтверждённые маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignedBadgeLabel"
+msgstr "Назначено"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteKey"
+msgstr "Ключ авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyCreated"
+msgstr "Ключ авторизации создан"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.invites"
+msgstr "Ключи авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesTitle"
+msgstr "Ключи авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.authSource"
+msgstr "Источник авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.useTagsDescription"
+msgstr "Используйте метки устройств для авторизации и управления доступом. Серверы с метками не требуют частого обновления ключей."
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeralDescription"
+msgstr "Автоматически удалять устройство из tailnet, когда оно отключается."
+
+#: src/i18n/descriptors.ts
+msgid "product.availableRoutes"
+msgstr "Доступные маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.previousStep"
+msgstr "Назад"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIps"
+msgstr "Заполнить IP-адреса устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillResult"
+msgstr "Результат заполнения"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyPlaceholder"
+msgstr "Bearer-токен, созданный командой headscale apikeys create"
+
+#: src/i18n/descriptors.ts
+msgid "common.cancel"
+msgstr "Отмена"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancel"
+msgstr "Отмена"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelAssignment"
+msgstr "Отмена"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelIpRuleEdit"
+msgstr "Отменить редактирование"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionChangePassphrase"
+msgstr "Изменить кодовую фразу"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberDescription"
+msgstr "Изменить имя пользователя Headscale для этой учётной записи."
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineDescription"
+msgstr "Изменить имя устройства, которое отображается в Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "common.securityProfileHint"
+msgstr "Изменение пароля для {name}. Пароли других сохранённых серверов останутся прежними."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoading"
+msgstr "Смена языка…"
+
+#: src/i18n/descriptors.ts
+msgid "product.checkPolicy"
+msgstr "Проверить политику"
+
+#: src/i18n/descriptors.ts
+msgid "common.checkingCredentials"
+msgstr "Проверяем данные для входа"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorTitle"
+msgstr "Выберите профиль сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.expirationMustBeFuture"
+msgstr "Выберите срок действия в будущем."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepAuthKeyDescription"
+msgstr "Выберите параметры ключа авторизации."
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotConfirmTitle"
+msgstr "Удалить все зашифрованные данные?"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionForgottenButton"
+msgstr "Удалить все сохранённые профили"
+
+#: src/i18n/descriptors.ts
+msgid "product.clearFilters"
+msgstr "Сбросить фильтры"
+
+#: src/i18n/descriptors.ts
+msgid "product.changesAutoSaveHint"
+msgstr "Нажмите «Сохранить» вверху страницы, чтобы применить изменения к устройствам."
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDevice"
+msgstr "Клиентское устройство"
+
+#: src/i18n/descriptors.ts
+msgid "common.close"
+msgstr "Закрыть"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedTitle"
+msgstr "Закройте старые вкладки Headscale UI"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesTitle"
+msgstr "Закрыть, не добавляя сервер?"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesCloseAnyway"
+msgstr "Закрыть без сохранения"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirm"
+msgstr "Подтвердить"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionConfirmPassphrase"
+msgstr "Подтвердить кодовую фразу"
+
+#: src/i18n/descriptors.ts
+msgid "common.connect"
+msgstr "Подключиться"
+
+#: src/i18n/descriptors.ts
+msgid "common.connection"
+msgstr "Подключение"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveAnywayButton"
+msgstr "Всё равно добавить"
+
+#: src/i18n/descriptors.ts
+msgid "common.copied"
+msgstr "Скопировано"
+
+#: src/i18n/descriptors.ts
+msgid "product.copied"
+msgstr "Скопировано"
+
+#: src/i18n/descriptors.ts
+msgid "common.copy"
+msgstr "Копировать"
+
+#: src/i18n/descriptors.ts
+msgid "product.copy"
+msgstr "Копировать"
+
+#: src/i18n/descriptors.ts
+msgid "product.copyCommand"
+msgstr "Копировать команду"
+
+#: src/i18n/descriptors.ts
+msgid "common.copyFailed"
+msgstr "Не удалось скопировать. Выделите текст и скопируйте его вручную."
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyOnlyShownOnce"
+msgstr "Скопируйте его сейчас. Headscale больше не вернёт ключ целиком."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCopy"
+msgstr "Сразу скопируйте ключ целиком: Headscale показывает его только один раз."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionCorruptedBadge"
+msgstr "Повреждено"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsHint"
+msgstr "Создайте метку, чтобы вместе управлять доступом к похожим устройствам."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCreate"
+msgstr "Создайте API-ключ с коротким сроком действия через CLI Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamDescription"
+msgstr "Создайте команду и откройте ей общий доступ к устройствам по SSH и через веб."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsHint"
+msgstr "Создайте команду, чтобы выдать доступ сразу нескольким пользователям."
+
+#: src/i18n/descriptors.ts
+msgid "product.createApiKeyTitle"
+msgstr "Создать API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.createInvite"
+msgstr "Создать ключ авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesSubtitle"
+msgstr "Создавайте ключи для подключения устройств, не раскрывая внутренние настройки сервера."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepGenerateDescription"
+msgstr "Создайте ключ и скопируйте команду установки."
+
+#: src/i18n/descriptors.ts
+msgid "product.createMember"
+msgstr "Создать пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.createdApiKey"
+msgstr "Созданный API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "common.currentServerPassword"
+msgstr "Текущий пароль сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomLabel"
+msgstr "Другие порты"
+
+#: src/i18n/descriptors.ts
+msgid "common.dark"
+msgstr "Тёмная"
+
+#: src/i18n/descriptors.ts
+msgid "common.database"
+msgstr "База данных"
+
+#: src/i18n/descriptors.ts
+msgid "product.days"
+msgstr "дней"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessSubtitle"
+msgstr "Определите, каким пользователям и командам доступны устройства. Объединяйте устройства по меткам, а пользователей — в команды."
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyTitle"
+msgstr "Настройте, кто к чему подключается"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogSubtitle"
+msgstr "Укажите владельцев метки и команды, которым доступны устройства с этой меткой. Метки отдельных устройств при этом не меняются."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyTitle"
+msgstr "Удалить API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteApiKey"
+msgstr "Удалить API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteTitle"
+msgstr "Удалить ключ авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeDeviceLabel"
+msgstr "Удалить метку устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInvite"
+msgstr "Удалить ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteInvite"
+msgstr "Удалить ключ"
+
+#: src/i18n/descriptors.ts
+msgid "common.deleteProfile"
+msgstr "Удалить профиль"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeam"
+msgstr "Удалить команду"
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileTitle"
+msgstr "Удалить этот профиль?"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMember"
+msgstr "Удалить пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberTitle"
+msgstr "Удалить пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteMember"
+msgstr "Удалить пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationPlaceholder"
+msgstr "назначение"
+
+#: src/i18n/descriptors.ts
+msgid "product.details"
+msgstr "Сведения"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvTitle"
+msgstr "Разработка и рабочая среда"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogTitle"
+msgstr "Политика метки устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelsSection"
+msgstr "Метки устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupLabels"
+msgstr "Метки устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessView"
+msgstr "Метки устройств, доступные этой команде"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindDevice"
+msgstr "Вход устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.aclTags"
+msgstr "Метки устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceCount"
+msgstr "устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberDevices"
+msgstr "Устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteDescription"
+msgstr "Устройства перестанут использовать этот маршрут через это устройство. Остальные подтверждённые маршруты останутся включёнными. Если политика доступа автоматически подтверждает этот маршрут, он может быть подтверждён снова, когда устройство в следующий раз его объявит."
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsDescription"
+msgstr "Метки этого устройства будут полностью заменены. Чтобы изменить команды, которым доступны устройства с общей меткой, отредактируйте политику метки в разделе управления доступом."
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiry"
+msgstr "Отключить срок действия"
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryTitle"
+msgstr "Отключить срок действия устройства?"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChanges"
+msgstr "Отменить изменения"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsDiscard"
+msgstr "Удалить черновик и продолжить"
+
+#: src/i18n/descriptors.ts
+msgid "product.displayName"
+msgstr "Отображаемое имя"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsLabel"
+msgstr "DNS"
+
+#: src/i18n/descriptors.ts
+msgid "product.finish"
+msgstr "Готово"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleTitle"
+msgstr "Черновик относится к другому серверу"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomPlaceholder"
+msgstr "Например: 8080, 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsTitle"
+msgstr "Изменить метки устройства"
+
+#: src/i18n/descriptors.ts
+msgid "common.editProfile"
+msgstr "Изменить профиль"
+
+#: src/i18n/descriptors.ts
+msgid "product.editIpRule"
+msgstr "Изменить правило"
+
+#: src/i18n/descriptors.ts
+msgid "product.editTags"
+msgstr "Изменить метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.email"
+msgstr "Электронная почта"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionEncryptedBadge"
+msgstr "Зашифровано"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSectionTitle"
+msgstr "Шифрование"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestInvalid"
+msgstr "Введите ID запроса, начинающийся с hskey-authreq-, или вставьте полную ссылку."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceInvalidName"
+msgstr "Введите допустимое имя группы или тега."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionInvalidUrl"
+msgstr "Введите полный адрес сервера с протоколом HTTP(S)."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionApiKeyRequired"
+msgstr "Введите ключ API."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSecretRequired"
+msgstr "Перед отправкой повторно введите ключ API и пароль этого сервера."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectSubtitle"
+msgstr "Введите адрес сервера и токен авторизации, чтобы открыть панель управления."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "Введите пароль сервера."
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeral"
+msgstr "Временное устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmDescription"
+msgstr "Все в этой области получат доступ ко всем выбранным устройствам и сервисам. Продолжить?"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameHint"
+msgstr "Например: ops, dev, security"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelNameHint"
+msgstr "Например: server, workstation, database"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitRoute"
+msgstr "Выходной маршрут"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeExitRouteDescription"
+msgstr "Выходные маршруты отзываются парой: маршруты IPv4 и IPv6 удаляются вместе, и устройства перестают отправлять интернет-трафик через это устройство. Остальные подтверждённые маршруты останутся включёнными. Если политика доступа автоматически подтверждает выходные маршруты, они могут быть подтверждены снова, когда устройство в следующий раз их объявит."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "Выходной маршрут может направлять интернет-трафик через это устройство. Убедитесь, что этому серверу можно доверить такой трафик."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteExpiration"
+msgstr "Срок действия"
+
+#: src/i18n/descriptors.ts
+msgid "product.expire"
+msgstr "Аннулировать"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyTitle"
+msgstr "Аннулировать API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireApiKey"
+msgstr "Аннулировать API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteTitle"
+msgstr "Аннулировать ключ авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInvite"
+msgstr "Аннулировать ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireInvite"
+msgstr "Аннулировать ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineTitle"
+msgstr "Аннулировать устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpire"
+msgstr "Аннулировать устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.expiredOnly"
+msgstr "Просроченные"
+
+#: src/i18n/descriptors.ts
+msgid "product.expires"
+msgstr "Срок действия"
+
+#: src/i18n/descriptors.ts
+msgid "product.exportData"
+msgstr "Экспортировать данные"
+
+#: src/i18n/descriptors.ts
+msgid "product.filters"
+msgstr "Фильтры"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorSearchPlaceholder"
+msgstr "Найти пользователя, команду или метку…"
+
+#: src/i18n/descriptors.ts
+msgid "product.source"
+msgstr "Откуда"
+
+#: src/i18n/descriptors.ts
+msgid "product.generate"
+msgstr "Создать"
+
+#: src/i18n/descriptors.ts
+msgid "product.generateInstallScript"
+msgstr "Создать сценарий установки"
+
+#: src/i18n/descriptors.ts
+msgid "product.addAccessor"
+msgstr "Выдать доступ"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantTagToUser"
+msgstr "Разрешить владение меткой"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsTitle"
+msgstr "Разрешить владение метками"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmTitle"
+msgstr "Разрешить очень широкий доступ?"
+
+#: src/i18n/descriptors.ts
+msgid "product.groupName"
+msgstr "Название группы"
+
+#: src/i18n/descriptors.ts
+msgid "product.groups"
+msgstr "Группы"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideDescription"
+msgstr "Перед подключением UI создайте API-ключ Headscale через CLI на сервере."
+
+#: src/i18n/descriptors.ts
+msgid "common.headscaleDocs"
+msgstr "Документация Headscale"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyCheckPassed"
+msgstr "Headscale не обнаружил проблем в этой политике. Ничего не было сохранено."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyFileModeNoPath"
+msgstr "Headscale настроен читать политику доступа из файла (policy.mode: file), но файл политики не указан (policy.path пуст), поэтому здесь нечего редактировать. Чтобы управлять правилами доступа в этом приложении, установите в конфигурации Headscale policy.mode в database."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUpdateDisabled"
+msgstr "Headscale читает политику доступа из файла (policy.mode: file), поэтому сохранить изменения отсюда нельзя. Отредактируйте файл политики на сервере Headscale или установите policy.mode в database, чтобы управлять правилами доступа в этом приложении."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorRequestFailed"
+msgstr "Запрос Headscale не выполнен. Проверьте URL сервера и API-ключ."
+
+#: src/i18n/descriptors.ts
+msgid "common.appTitle"
+msgstr "Headscale UI"
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorTitle"
+msgstr "В Headscale UI возникла проблема"
+
+#: src/i18n/descriptors.ts
+msgid "product.openAccessBannerTitle"
+msgstr "Высокий риск: обнаружен открытый доступ"
+
+#: src/i18n/descriptors.ts
+msgid "product.hour"
+msgstr "Часы"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideTitle"
+msgstr "Как получить API-ключ"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyAcknowledge"
+msgstr "Я понимаю, что этот сеанс потеряет доступ."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideHint"
+msgstr "Если ключ потерян или просрочен, аннулируйте его на сервере и создайте новый."
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "Если вы забыли пароль этого сервера, удалите его сохранённый профиль и добавьте его снова с API-ключом. Профили остальных серверов можно сохранить."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockFailed"
+msgstr "Неверная кодовая фраза."
+
+#: src/i18n/descriptors.ts
+msgid "product.installCommand"
+msgstr "Команда установки"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDeviceDescription"
+msgstr "Установите Tailscale на другое устройство и подключите его к этому серверу Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionTitle"
+msgstr "Правила для IP или всех адресов назначения (для опытных пользователей)"
+
+#: src/i18n/descriptors.ts
+msgid "product.joined"
+msgstr "Дата добавления"
+
+#: src/i18n/descriptors.ts
+msgid "product.keyExpiryHint"
+msgstr "Не задавайте ключам авторизации долгий срок, если они не нужны для повторной автоматической установки."
+
+#: src/i18n/descriptors.ts
+msgid "common.keepEditingProfile"
+msgstr "Продолжить редактирование"
+
+#: src/i18n/descriptors.ts
+msgid "product.labelManagersLabel"
+msgstr "Владельцы метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelName"
+msgstr "Название метки"
+
+#: src/i18n/descriptors.ts
+msgid "common.language"
+msgstr "Язык"
+
+#: src/i18n/descriptors.ts
+msgid "product.lastSeen"
+msgstr "Последняя активность"
+
+#: src/i18n/descriptors.ts
+msgid "product.learnMore"
+msgstr "Подробнее"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverCredentialEditHint"
+msgstr "Чтобы изменить только имя или место сохранения профиля, оставьте API-ключ и пароль пустыми. Для изменения URL или API-ключа нужно ввести API-ключ и текущий пароль сервера."
+
+#: src/i18n/descriptors.ts
+msgid "common.light"
+msgstr "Светлая"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServer"
+msgstr "Сервер Linux"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionLockedBadge"
+msgstr "Заблокировано"
+
+#: src/i18n/descriptors.ts
+msgid "common.logout"
+msgstr "Выйти"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableMachine"
+msgstr "Устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineDetails"
+msgstr "Сведения об устройстве"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineName"
+msgstr "Имя устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeTags"
+msgstr "Метки устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.devices"
+msgstr "Устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTitle"
+msgstr "Устройства"
+
+#: src/i18n/descriptors.ts
+msgid "common.primaryNavigation"
+msgstr "Основная навигация"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenance"
+msgstr "Обслуживание"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsDescription"
+msgstr "Управляйте данными доступа и служебными операциями всего сервера."
+
+#: src/i18n/descriptors.ts
+msgid "product.manageTags"
+msgstr "Управлять метками в разделе доступа"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamDetailDialogTitle"
+msgstr "Управление командой"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesSubtitle"
+msgstr "Управляйте устройствами, подключёнными к вашему tailnet."
+
+#: src/i18n/descriptors.ts
+msgid "product.membersSubtitle"
+msgstr "Управляйте пользователями сети и их разрешениями."
+
+#: src/i18n/descriptors.ts
+msgid "product.roleMember"
+msgstr "Участник"
+
+#: src/i18n/descriptors.ts
+msgid "product.members"
+msgstr "Участники"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamMembersSection"
+msgstr "Участники"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationTitle"
+msgstr "Перенести {name}"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrateAndUnlock"
+msgstr "Перенести и разблокировать"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrationRequired"
+msgstr "Требуется перенос"
+
+#: src/i18n/descriptors.ts
+msgid "product.minute"
+msgstr "Минуты"
+
+#: src/i18n/descriptors.ts
+msgid "product.mustBeBetweenDays"
+msgstr "Укажите значение от 1 до 90 дней."
+
+#: src/i18n/descriptors.ts
+msgid "product.never"
+msgstr "Никогда"
+
+#: src/i18n/descriptors.ts
+msgid "product.newDeviceLabel"
+msgstr "Новая метка устройства"
+
+#: src/i18n/descriptors.ts
+msgid "common.newProfile"
+msgstr "Новый профиль"
+
+#: src/i18n/descriptors.ts
+msgid "common.newServerPassword"
+msgstr "Новый пароль сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.newTeam"
+msgstr "Новая команда"
+
+#: src/i18n/descriptors.ts
+msgid "product.nextStep"
+msgstr "Далее"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAccessors"
+msgstr "Здесь не указаны разрешения ACL."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamAccess"
+msgstr "Здесь не указаны разрешения ACL этой команды для меток устройств."
+
+#: src/i18n/descriptors.ts
+msgid "product.noRoutes"
+msgstr "Нет объявленных маршрутов, ожидающих проверки."
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeys"
+msgstr "Нет ключей авторизации, подходящих под эти фильтры."
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsYet"
+msgstr "Меток устройств пока нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.noGroupsAvailable"
+msgstr "Групп пока нет. Сначала добавьте группу в разделе управления доступом."
+
+#: src/i18n/descriptors.ts
+msgid "product.noDevices"
+msgstr "Нет устройств, подходящих под эти фильтры."
+
+#: src/i18n/descriptors.ts
+msgid "product.noLabelManagers"
+msgstr "Владельцев пока нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorEmpty"
+msgstr "Совпадений нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerEmpty"
+msgstr "Совпадений нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberEmpty"
+msgstr "Подходящих пользователей нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyGroupMembers"
+msgstr "Участников пока нет."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteNoOwner"
+msgstr "Без владельца (только метки)"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyTagOwnerEntries"
+msgstr "Владельцев пока нет."
+
+#: src/i18n/descriptors.ts
+msgid "product.noPersonalDevices"
+msgstr "Личных устройств нет."
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyReferences"
+msgstr "Ссылок в политике нет."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTagsAvailable"
+msgstr "Настроек доступа по меткам пока нет. Сначала добавьте такую настройку в разделе управления доступом."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsYet"
+msgstr "Команд пока нет"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsers"
+msgstr "Нет доступных пользователей"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsersMatch"
+msgstr "Нет пользователей, подходящих под эти фильтры."
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeId"
+msgstr "ID устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNotFound"
+msgstr "Устройство не найдено"
+
+#: src/i18n/descriptors.ts
+msgid "common.nodes"
+msgstr "Устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.noRouteValues"
+msgstr "Нет"
+
+#: src/i18n/descriptors.ts
+msgid "common.offline"
+msgstr "Не в сети"
+
+#: src/i18n/descriptors.ts
+msgid "product.offlineOnly"
+msgstr "Не в сети"
+
+#: src/i18n/descriptors.ts
+msgid "product.oneTimeKey"
+msgstr "Одноразовый ключ"
+
+#: src/i18n/descriptors.ts
+msgid "common.online"
+msgstr "В сети"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineOnly"
+msgstr "В сети"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineDevices"
+msgstr "Устройства в сети"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantsPreservedHint"
+msgstr "Здесь отображаются и редактируются только правила ACL. Существующие grants сохраняются и могут отдельно разрешать доступ. Перед переименованием или удалением команды или метки обновите ссылки на неё в grants политики Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteDescription"
+msgstr "Будет подтверждён только этот маршрут. Остальные подтверждённые маршруты не изменятся."
+
+#: src/i18n/descriptors.ts
+msgid "product.openInvites"
+msgstr "Доступные ключи"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyTitle"
+msgstr "Открыть доступ к личным устройствам"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.home"
+msgstr "Обзор"
+
+#: src/i18n/descriptors.ts
+msgid "product.owner"
+msgstr "Владелец"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteOwner"
+msgstr "Владелец"
+
+#: src/i18n/descriptors.ts
+msgid "product.roleOwner"
+msgstr "Владелец"
+
+#: src/i18n/descriptors.ts
+msgid "product.owners"
+msgstr "Владельцы"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepPaste"
+msgstr "Вставьте сюда ключ и HTTPS URL сервера Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestHelp"
+msgstr "Вставьте ссылку или ID, показанные командой tailscale up или запросом проверки SSH. ID запросов действуют недолго."
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRoutes"
+msgstr "Ожидающие маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.personalDevices"
+msgstr "Личные устройства"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorDescription"
+msgstr "Выберите сохранённый профиль, как при входе в систему, или добавьте другой сервер Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyHint"
+msgstr "Выберите начальный вариант ниже. Его можно изменить в любое время."
+
+#: src/i18n/descriptors.ts
+msgid "product.dateTimePlaceholder"
+msgstr "Выберите дату и время"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsDescription"
+msgstr "Выберите группы для пользователя. После применения изменения сохранятся в политике."
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsDescription"
+msgstr "Выберите метки, которыми сможет владеть пользователь. После применения изменения сохранятся в политике."
+
+#: src/i18n/descriptors.ts
+msgid "common.policy"
+msgstr "Политика"
+
+#: src/i18n/descriptors.ts
+msgid "product.policy"
+msgstr "Политика"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferences"
+msgstr "Ссылки в политике"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshHint"
+msgstr "Порт 22"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpHint"
+msgstr "Порт 3389"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsHint"
+msgstr "Порт 53"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulePortsPlaceholder"
+msgstr "порты"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebHint"
+msgstr "Порты 80 и 443"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyPrefix"
+msgstr "Префикс"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyPasswordLabel"
+msgstr "Прежний общий пароль"
+
+#: src/i18n/descriptors.ts
+msgid "common.profile"
+msgstr "Профиль"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileName"
+msgstr "Название профиля"
+
+#: src/i18n/descriptors.ts
+msgid "product.unused"
+msgstr "Готов"
+
+#: src/i18n/descriptors.ts
+msgid "product.readyKeys"
+msgstr "Готовые ключи"
+
+#: src/i18n/descriptors.ts
+msgid "product.readyToSave"
+msgstr "Можно сохранять"
+
+#: src/i18n/descriptors.ts
+msgid "product.recentDevices"
+msgstr "Недавние устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.refreshData"
+msgstr "Обновить данные"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethod"
+msgstr "Способ регистрации"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPendingDescription"
+msgstr "Зарегистрируйте или проверьте ожидающее устройство."
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationTitle"
+msgstr "Зарегистрировать ожидающее устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerPendingNode"
+msgstr "Зарегистрировать устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.registeredNode"
+msgstr "Зарегистрированное устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.rejectSshCheck"
+msgstr "Отклонить проверку SSH"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadTitle"
+msgstr "Перезагрузите эту страницу"
+
+#: src/i18n/descriptors.ts
+msgid "common.rememberConnection"
+msgstr "Запомнить подключение в этом браузере"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpLabel"
+msgstr "Удалённый рабочий стол"
+
+#: src/i18n/descriptors.ts
+msgid "product.remove"
+msgstr "Удалить"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeItem"
+msgstr "Удалить"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeRule"
+msgstr "Удалить"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeAccessor"
+msgstr "Отозвать доступ"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirm"
+msgstr "Удалить все недействительные ссылки?"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeFromReference"
+msgstr "Удалить из ссылки"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeLabelManager"
+msgstr "Удалить владельца метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineTitle"
+msgstr "Удалить устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemove"
+msgstr "Удалить устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeamMember"
+msgstr "Удалить участника"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemTitle"
+msgstr "Удалить этот элемент?"
+
+#: src/i18n/descriptors.ts
+msgid "product.rename"
+msgstr "Переименовать"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineTitle"
+msgstr "Переименовать устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMember"
+msgstr "Переименовать пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberTitle"
+msgstr "Переименовать пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestLabel"
+msgstr "Ссылка или ID запроса"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKind"
+msgstr "Тип запроса"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessTitle"
+msgstr "Доступ к ресурсам"
+
+#: src/i18n/descriptors.ts
+msgid "common.result"
+msgstr "Результат"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardResult"
+msgstr "Результат"
+
+#: src/i18n/descriptors.ts
+msgid "product.reusable"
+msgstr "Многоразовый"
+
+#: src/i18n/descriptors.ts
+msgid "common.backToEditConnection"
+msgstr "Проверить данные"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesSubtitle"
+msgstr "Проверьте маршруты подсетей и выходные маршруты, прежде чем открыть их пользователям."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepResultDescription"
+msgstr "Проверьте результат и продолжайте."
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRoute"
+msgstr "Отозвать маршрут"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteTitle"
+msgstr "Отзыв подтверждения маршрута"
+
+#: src/i18n/descriptors.ts
+msgid "product.role"
+msgstr "Роль"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNodeDescription"
+msgstr "Направлять сетевой трафик через это устройство."
+
+#: src/i18n/descriptors.ts
+msgid "common.routes"
+msgstr "Маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.routes"
+msgstr "Маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableRoutes"
+msgstr "Маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.routes"
+msgstr "Маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesTitle"
+msgstr "Маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmBackfillNodeIps"
+msgstr "Запустить заполнение"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIpsDescription"
+msgstr "Запустить общую служебную операцию Headscale по заполнению IP-адресов устройств."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideCommandLabel"
+msgstr "Выполните на сервере Headscale"
+
+#: src/i18n/descriptors.ts
+msgid "product.savePolicy"
+msgstr "Сохранить"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesSaveAndClose"
+msgstr "Сохранить и закрыть"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveAndUnlock"
+msgstr "Сохранить и разблокировать"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveName"
+msgstr "Сохранить имя"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveProfile"
+msgstr "Сохранить профиль"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveIpRule"
+msgstr "Сохранить правило"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveTags"
+msgstr "Сохранить метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveMemberName"
+msgstr "Сохранить имя"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultConflict"
+msgstr "Сохранённые подключения изменились. Перезагрузите страницу и повторите попытку; если пароль изменился, разблокируйте их снова."
+
+#: src/i18n/descriptors.ts
+msgid "common.resetMetadataWarning"
+msgstr "Сохранённые данные удалены, но временные настройки этой вкладки удалить не удалось. Закройте эту вкладку и откройте новую."
+
+#: src/i18n/descriptors.ts
+msgid "product.policySavedNewerEdits"
+msgstr "Отправленная политика сохранена. Более поздние изменения ещё не сохранены."
+
+#: src/i18n/descriptors.ts
+msgid "product.replaceTagsWarning"
+msgstr "При сохранении текущие метки будут заменены, а не дополнены."
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDevices"
+msgstr "Поиск по имени, владельцу, метке, версии…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDeviceLabels"
+msgstr "Поиск меток устройств…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchAuthKeys"
+msgstr "Поиск по ключу, владельцу или метке…"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerSearchPlaceholder"
+msgstr "Поиск пользователей и команд…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchUsers"
+msgstr "Поиск пользователей…"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberSearchPlaceholder"
+msgstr "Поиск пользователей…"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceSetupLead"
+msgstr "Выберите параметры устройства, чтобы получить команду установки."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvDescription"
+msgstr "Разделите команды разработки и эксплуатации, предоставив каждой доступ к своим серверам с метками."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "Пароль сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.openServerSettings"
+msgstr "Настройки сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsTitle"
+msgstr "Настройки сервера"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverUrl"
+msgstr "URL сервера"
+
+#: src/i18n/descriptors.ts
+msgid "product.ports"
+msgstr "Сервис"
+
+#: src/i18n/descriptors.ts
+msgid "product.roleServiceAccount"
+msgstr "Служебная учётная запись"
+
+#: src/i18n/descriptors.ts
+msgid "product.serviceAccounts"
+msgstr "Служебные учётные записи"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServerDescription"
+msgstr "Для служб на виртуальных машинах, в контейнерах и на маршрутизаторах."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSessionOnlyBadge"
+msgstr "Только сеанс"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationHint"
+msgstr "Задайте пароль для этого сервера, чтобы перенести сохранённое подключение. При ошибке переноса исходные данные останутся без изменений."
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyExpirationDescription"
+msgstr "Задайте короткий период, в течение которого можно авторизовать устройство. Срок действия уже подключённых устройств не изменится."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPreferencesDescription"
+msgstr "Настройте метки и жизненный цикл устройства."
+
+#: src/i18n/descriptors.ts
+msgid "product.setupAuthKey"
+msgstr "Настроить ключ авторизации"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupDevice"
+msgstr "Настроить устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamTitle"
+msgstr "Небольшая команда"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanRefBannerTitle"
+msgstr "В политике есть ссылки на отсутствующие объекты"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultData"
+msgstr "Часть сохранённых данных подключений не читается. Имеющиеся данные сохранены."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleSourcePlaceholder"
+msgstr "источник"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleFieldsRequired"
+msgstr "Источник, назначение и порты обязательны."
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupSpecial"
+msgstr "Особые варианты"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshLabel"
+msgstr "SSH"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindSsh"
+msgstr "Проверка SSH"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckApproved"
+msgstr "Проверка SSH подтверждена."
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckRejected"
+msgstr "Проверка SSH отклонена."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepServer"
+msgstr "Подключитесь по SSH к серверу, на котором работает Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceBadge"
+msgstr "Недействительная ссылка"
+
+#: src/i18n/descriptors.ts
+msgid "product.templatesSectionTitle"
+msgstr "Начать с шаблона"
+
+#: src/i18n/descriptors.ts
+msgid "product.status"
+msgstr "Состояние"
+
+#: src/i18n/descriptors.ts
+msgid "common.system"
+msgstr "Системная"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSharedNote"
+msgstr "Вкладки этого браузера используют один разблокированный сервер. Сеанс блокируется после 30 минут бездействия."
+
+#: src/i18n/descriptors.ts
+msgid "product.tagName"
+msgstr "Метка устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwners"
+msgstr "Владельцы метки"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedOnly"
+msgstr "С метками"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedKeys"
+msgstr "Ключи с метками"
+
+#: src/i18n/descriptors.ts
+msgid "product.tags"
+msgstr "Метки устройств"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardTitle"
+msgstr "Обзор tailnet"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamName"
+msgstr "Название команды"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamsSection"
+msgstr "Команды"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupTeams"
+msgstr "Команды"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceNameConflict"
+msgstr "Это имя группы или тега уже используется."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionChanged"
+msgstr "Активный сервер изменился. Проверьте эту страницу перед повторной попыткой."
+
+#: src/i18n/descriptors.ts
+msgid "common.preferencesReloadFailed"
+msgstr "Браузеру не удалось перечитать настройки. Перезагрузите страницу и повторите попытку."
+
+#: src/i18n/descriptors.ts
+msgid "common.storageWrite"
+msgstr "Браузеру не удалось сохранить изменение. Ваши прежние данные сохранены."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageNotSaved"
+msgstr "Язык изменён, но сохранить настройку не удалось. Повторите попытку."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoadFailed"
+msgstr "Не удалось загрузить язык. Повторите попытку."
+
+#: src/i18n/descriptors.ts
+msgid "common.passwordsMismatch"
+msgstr "Пароли не совпадают."
+
+#: src/i18n/descriptors.ts
+msgid "product.policySaveContextChanged"
+msgstr "Политика сохранена. Содержимое редактора изменилось; проверьте его перед повторной попыткой."
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesDescription"
+msgstr "Данные профиля изменены. Если закрыть окно сейчас, несохранённые изменения пропадут."
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnreachable"
+msgstr "Запрос не был выполнен. Проверьте адрес сервера, сетевое подключение и настройки CORS сервера. Если вы сохраняли изменение, проверьте текущее состояние сервера, прежде чем повторять попытку."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionCancelled"
+msgstr "Запрос отменён. Повторите попытку, когда будете готовы."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionOutcomeUnknown"
+msgstr "Не удалось подтвердить результат. Сервер мог сохранить изменение. Проверьте его состояние перед повторной попыткой."
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnexpectedResponse"
+msgstr "Сервер вернул неожиданный ответ (HTTP {status}). Убедитесь, что адрес указывает на Headscale и что обратный прокси-сервер, если он есть, работает."
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "Пароль сервера изменён. При необходимости разблокируйте его снова."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSavedLocked"
+msgstr "Профиль сервера сохранён, но остаётся заблокированным. Введите его пароль для разблокировки."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionUnavailable"
+msgstr "Общий сеанс недоступен. Подключитесь снова и разблокируйте сервер, чтобы продолжить."
+
+#: src/i18n/descriptors.ts
+msgid "common.themeNotSaved"
+msgstr "Тема изменена, но сохранить настройку не удалось. Повторите попытку."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionValidationFailedDescription"
+msgstr "Не удалось проверить URL сервера или API-ключ. Исправьте данные сейчас либо добавьте профиль и отредактируйте его позже. Профиль можно изменить из списка в любое время."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberCleanupPending"
+msgstr "Пользователь удалён, но политика по-прежнему ссылается на него. Повторите попытку или удалите эти ссылки в разделе «Управление доступом»."
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberPolicyPending"
+msgstr "Пользователь переименован, но политика по-прежнему использует старое имя. Повторите попытку или обновите эти ссылки в разделе «Управление доступом»."
+
+#: src/i18n/descriptors.ts
+msgid "common.theme"
+msgstr "Тема"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenanceDescription"
+msgstr "Эти операции затрагивают весь сервер. Используйте их только для восстановления или проверки состояния Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionHint"
+msgstr "Эти правила разрешают доступ к IP-адресам, диапазонам сети или всем адресам назначения. Здесь их можно изменить или удалить."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesDescription"
+msgstr "Подтвердить все маршруты, которые сейчас объявляет это устройство."
+
+#: src/i18n/descriptors.ts
+msgid "common.clearProfilesDescription"
+msgstr "Все сохранённые в этом браузере профили серверов будут удалены, а общий сеанс будет заблокирован. Серверы и API-ключи потребуется добавить заново."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceEntityMissing"
+msgstr "Эта группа или тег больше не существует."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesDescription"
+msgstr "Включает выходные маршруты, способные направлять интернет-трафик через это устройство."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsRegistration"
+msgstr "Это ссылка для входа устройства. Переключите тип запроса на «Вход устройства»: действия проверки SSH не регистрируют устройство."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsSshCheck"
+msgstr "Это ссылка проверки SSH. Переключите тип запроса на «Проверка SSH»: она не может зарегистрировать устройство."
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyWarning"
+msgstr "Этот ключ аутентифицирует ваш текущий сеанс. После истечения срока или удаления сеанс потеряет доступ к серверу, и вам придётся создать новый API-ключ с помощью Headscale CLI."
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteDescription"
+msgstr "Новые устройства больше не смогут подключаться с этим ключом."
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryDescription"
+msgstr "Срок действия этого устройства больше не будет истекать, и оно сохранит доступ без повторного входа, пока вы сами не аннулируете его."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionReloadRequired"
+msgstr "Эта страница несовместима с общим сеансом. Закройте старые вкладки и перезагрузите страницу."
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorDescription"
+msgstr "Не удалось полностью загрузить или отобразить эту страницу. Обычно это временная проблема, например после обновления, в приватном режиме или при устаревших файлах в кеше. Повторите попытку, чтобы перезагрузить страницу. Сохранённые подключения не удаляются."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordHint"
+msgstr "Этот пароль шифрует только API-ключ данного сервера. Восстановить пароль невозможно."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceUnsupported"
+msgstr "Эта политика содержит поля, которые нельзя безопасно обновить."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadOnlyError"
+msgstr "Не удалось безопасно прочитать политику. Изменения отключены. Исправьте политику в Headscale и обновите страницу."
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirmBody"
+msgstr "Все ссылки на отсутствующие объекты будут удалены. Чтобы отправить изменения на сервер, затем нажмите «Сохранить» вверху страницы."
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemDescription"
+msgstr "Элемент будет удалён из настроек доступа."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteDescription"
+msgstr "Ключ авторизации будет удалён из Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineDescription"
+msgstr "Устройство будет удалено из Headscale. Восстановить его через этот UI нельзя."
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileDescription"
+msgstr "Сохранённые URL сервера и API-ключ будут удалены из этого браузера."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberDescription"
+msgstr "Пользователь будет удалён из Headscale. Перед продолжением проверьте его устройства и ключи авторизации."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyTagRenameScope"
+msgstr "Будет переименован тег в политике. Теги устройств и внешняя конфигурация останутся без изменений."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionInvalidRequest"
+msgstr "Не удалось отправить запрос. Перезагрузите страницу и повторите попытку."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyAdvancedRuleHint"
+msgstr "Это правило содержит дополнительные ограничения. Измените разрешённые службы в политике Headscale."
+
+#: src/i18n/descriptors.ts
+msgid "common.unsupportedServerVersion"
+msgstr "Сервер сообщает о версии Headscale {version}, а это приложение рассчитано на 0.29.x. Некоторые страницы могут не загружаться или показывать неполные данные."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverVersionUnreadable"
+msgstr "Сервер сообщает о версии Headscale {version}, которую это приложение не поддерживает, а его ответ не удалось прочитать. Используйте сервер Headscale 0.29.x."
+
+#: src/i18n/descriptors.ts
+msgid "product.userImpactOnDeleteHeading"
+msgstr "На этого пользователя ссылаются следующие элементы политики:"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineDescription"
+msgstr "Для следующего подключения устройству потребуется повторная авторизация."
+
+#: src/i18n/descriptors.ts
+msgid "product.time"
+msgstr "Время"
+
+#: src/i18n/descriptors.ts
+msgid "product.destination"
+msgstr "Куда"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessViewHint"
+msgstr "Чтобы изменить доступ, закройте это окно и откройте нужную метку устройства."
+
+#: src/i18n/descriptors.ts
+msgid "product.totalDevices"
+msgstr "Всего устройств"
+
+#: src/i18n/descriptors.ts
+msgid "common.tryAgain"
+msgstr "Повторить"
+
+#: src/i18n/descriptors.ts
+msgid "product.unknown"
+msgstr "Неизвестно"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockSubmit"
+msgstr "Разблокировать"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileUnlockTitle"
+msgstr "Разблокировать {name}"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultLocked"
+msgstr "Разблокируйте сохранённые подключения, чтобы продолжить."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionLocked"
+msgstr "Разблокируйте этот сервер, чтобы продолжить."
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesBadge"
+msgstr "Не сохранено"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesTitle"
+msgstr "Несохранённые изменения"
+
+#: src/i18n/descriptors.ts
+msgid "common.updatedProfile"
+msgstr "Обновлено"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationDescription"
+msgstr "Используйте регистрационный ключ, показанный на устройстве, которое ожидает подтверждения."
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyAutomationHint"
+msgstr "Подходит для автоматической настройки нескольких устройств."
+
+#: src/i18n/descriptors.ts
+msgid "product.reusableDescription"
+msgstr "Использовать этот ключ для авторизации нескольких устройств."
+
+#: src/i18n/descriptors.ts
+msgid "product.applyTemplate"
+msgstr "Использовать шаблон"
+
+#: src/i18n/descriptors.ts
+msgid "product.used"
+msgstr "Использован"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyBadge"
+msgstr "Используется этим сеансом"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableUser"
+msgstr "Пользователь"
+
+#: src/i18n/descriptors.ts
+msgid "product.userDetails"
+msgstr "Сведения о пользователе"
+
+#: src/i18n/descriptors.ts
+msgid "product.userId"
+msgstr "ID пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberName"
+msgstr "Имя пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNotFound"
+msgstr "Пользователь не найден"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserStillOwns"
+msgstr "У пользователя ещё есть устройства или ключи авторизации. Сначала удалите их."
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDeviceDescription"
+msgstr "Для личных ноутбуков, телефонов и настольных компьютеров."
+
+#: src/i18n/descriptors.ts
+msgid "common.users"
+msgstr "Пользователи"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.members"
+msgstr "Пользователи"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersTitle"
+msgstr "Пользователи"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupUsers"
+msgstr "Пользователи"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewDetails"
+msgstr "Подробнее"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachine"
+msgstr "Показать устройство"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachines"
+msgstr "Показать устройства"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewRoutes"
+msgstr "Показать маршруты"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewUser"
+msgstr "Показать пользователя"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceTooltip"
+msgstr "В списке пользователей нет подходящего адреса почты или имени. Возможно, это опечатка, другое написание или пользователь был удалён. Нажмите ✕ рядом со ссылкой, чтобы убрать её."
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebLabel"
+msgstr "Веб"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagAccessorsSection"
+msgstr "Кто может подключаться к этим устройствам"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwnersSection"
+msgstr "Кто может назначать эту метку устройствам"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleBody"
+msgstr "У вас есть незавершённый черновик для {name}. Его нельзя отправить на текущий сервер. Удалите черновик, чтобы продолжить."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUnsavedBlocked"
+msgstr "На странице «Управление доступом» есть несохранённые изменения политики. Сохраните или отмените их там, прежде чем менять политику отсюда."
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesBody"
+msgstr "Пока вы не нажмёте «Сохранить», изменения хранятся только в этом браузере. Всё равно закрыть?"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionExpired"
+msgstr "Срок действия сеанса истёк. Разблокируйте этот сервер снова."

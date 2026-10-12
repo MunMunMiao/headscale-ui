@@ -1,44 +1,48 @@
-import { useActionFeedback } from "./useActionFeedback";
-import { useProfiles } from "./useProfiles";
-
-/**
- * Coordinates the "connection-validation-failed" recovery flow: a user-facing
- * AlertDialog where the user can either return to editing or save anyway.
- * Lives outside `useConnectionDialog` because the baseline-sync function is
- * the only thing this flow borrows — keeping it parameterised avoids creating
- * a second `useConnectionDialog` instance with its own baseline.
- */
-export function useProfileValidationFlow(syncConnectionFormBaseline: () => void) {
-  const { lastError } = useActionFeedback();
-  const { profileValidationError, profileValidationDialogOpen, addProfile, persistConnection } =
-    useProfiles();
-
+import { storageErrorMessage } from "@/utils/storage-error";
+import { type Session, useSession } from "./session-context";
+export function createProfileValidationFlow(
+  session: Session,
+  syncConnectionFormBaseline: () => void,
+) {
+  const { feedback, profiles } = session;
   function reviewProfileConnection() {
-    lastError.value = profileValidationError.value;
-    profileValidationDialogOpen.value = false;
+    feedback.setState({ lastError: profiles.getSnapshot().profileValidationError });
+    profiles.setState({ profileValidationDialogOpen: false });
   }
-
   async function continueAddingProfile() {
-    // persistConnection owns the dialog close — we only clean validation flags.
-    try {
-      await persistConnection();
-    } catch (error) {
-      lastError.value = error instanceof Error ? error.message : String(error);
-      profileValidationDialogOpen.value = false;
+    const { apiKey, password } = profiles.getSnapshot().connectionForm;
+    if (!apiKey || !password) {
+      feedback.setState({ lastError: t("sessionSecretRequired") });
       return;
     }
-    syncConnectionFormBaseline();
-    profileValidationDialogOpen.value = false;
-    profileValidationError.value = "";
-    lastError.value = "";
-  }
-
-  async function submitAddProfile() {
-    await addProfile();
-    if (!profileValidationDialogOpen.value && !lastError.value) {
-      syncConnectionFormBaseline();
+    const ticket = profiles.connectionFormGeneration;
+    try {
+      await profiles.persistConnection();
+    } catch (error) {
+      if (ticket !== profiles.connectionFormGeneration) return;
+      feedback.setState({ lastError: storageErrorMessage(error) });
+      profiles.setState({ profileValidationDialogOpen: false });
+      return;
     }
+    if (ticket !== profiles.connectionFormGeneration) return;
+    syncConnectionFormBaseline();
+    profiles.setState({ profileValidationDialogOpen: false, profileValidationError: "" });
+    feedback.setState({ lastError: "" });
   }
-
+  async function submitAddProfile(activate = false) {
+    const ticket = profiles.connectionFormGeneration;
+    await profiles.addProfile(activate);
+    if (
+      ticket === profiles.connectionFormGeneration &&
+      !profiles.getSnapshot().profileValidationDialogOpen &&
+      !feedback.getSnapshot().lastError
+    )
+      syncConnectionFormBaseline();
+  }
   return { reviewProfileConnection, continueAddingProfile, submitAddProfile };
 }
+export function useProfileValidationFlow(syncConnectionFormBaseline: () => void) {
+  return createProfileValidationFlow(useSession(), syncConnectionFormBaseline);
+}
+
+import { t } from "@/i18n";

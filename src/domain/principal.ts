@@ -1,4 +1,4 @@
-import type { HeadscaleUser } from "@/api/types";
+import type { HeadscaleUser } from "@/api/contracts";
 
 export type Principal = string & { readonly __brand: "Principal" };
 
@@ -6,10 +6,9 @@ export function toPrincipal(raw: string): Principal {
   return raw.trim().toLowerCase() as Principal;
 }
 
+// Callers pass a trimmed, non-empty identifier.
 function withUserSuffix(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  return trimmed.includes("@") ? trimmed : `${trimmed}@`;
+  return value.includes("@") ? value : `${value}@`;
 }
 
 export function policyPrincipalForUser(

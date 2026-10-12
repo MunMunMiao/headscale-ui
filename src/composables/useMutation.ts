@@ -1,65 +1,85 @@
-import type { HeadscaleClient } from "@/api/types";
-import { type ActionFeedbackKey, type ActionResult, useActionFeedback } from "./useActionFeedback";
-import { useHeadscaleClient } from "./useHeadscaleClient";
-import { useSnapshot } from "./useSnapshot";
+import { useMemo } from "react";
+import type { OperationCommand, OperationOutput } from "@/api/commands";
+import { ApiError, type GatewayExecuteOptions } from "@/api/gateway";
+import type { OperationId } from "@/domain/headscale-operations";
+import { type Session, useSession, useStore } from "./session-context";
+import type { ActionFeedbackKey, ActionResult } from "./useActionFeedback";
 
 interface UseMutationOptions {
-  /**
-   * Skip the post-action `refreshSnapshot()`. Use when the mutation's response
-   * is self-contained (e.g. `savePolicy`) or when the caller orchestrates its
-   * own refresh.
-   */
+  /** The caller handles response adoption or its own refresh. */
   skipRefresh?: boolean;
 }
-
 interface UseMutationReturn {
-  /** Returns false on failure, reentry, or session change; a stale request may still reach the server. */
-  mutate(
+  /**
+   * A write whose answer was lost or discarded rejects with `outcome: "unknown"` (including a
+   * stale draft after success); unless skipRefresh, the page then refreshes once. Never replayed.
+   */
+  mutate<K extends OperationId>(
     key: ActionFeedbackKey,
-    action: (client: HeadscaleClient) => Promise<unknown>,
+    command: OperationCommand<K>,
+    options?: GatewayExecuteOptions,
   ): Promise<boolean>;
-  /** Run a mutation and surface its typed result via `ActionResult<T>`. */
-  mutateWith<T>(
+  mutateWith<K extends OperationId>(
     key: ActionFeedbackKey,
-    action: (client: HeadscaleClient) => Promise<T>,
-  ): Promise<ActionResult<T>>;
+    command: OperationCommand<K>,
+    options?: GatewayExecuteOptions,
+  ): Promise<ActionResult<OperationOutput<K>>>;
 }
 
-/**
- * Run a mutation against the live client and surface its progress/error via
- * `useActionFeedback`; by default the snapshot is refreshed afterwards so the
- * UI reflects server state.
- *
- * Use `mutate` when you only care whether the action succeeded; use
- * `mutateWith<T>` when you need the server response (e.g. the freshly-minted
- * pre-auth key from `createPreAuthKey`).
- */
-export function useMutation(opts: UseMutationOptions = {}): UseMutationReturn {
-  const { runAction } = useActionFeedback();
-  const { createClient } = useHeadscaleClient();
-  const { refreshSnapshot, captureSession } = useSnapshot();
-
-  async function mutateWith<T>(
+export function createMutation(
+  session: Pick<Session, "client" | "snapshot" | "feedback" | "drafts">,
+  opts: UseMutationOptions = {},
+): UseMutationReturn {
+  const { runAction } = session.feedback;
+  const { refreshSnapshot, captureSession } = session.snapshot;
+  const client = session.client.getSnapshot().http;
+  const ownsSession = captureSession();
+  const viewEpoch = session.drafts.getSnapshot().viewEpoch;
+  const ownsView = () => viewEpoch === session.drafts.getSnapshot().viewEpoch;
+  async function mutateWith<K extends OperationId>(
     key: ActionFeedbackKey,
-    action: (client: HeadscaleClient) => Promise<T>,
-  ): Promise<ActionResult<T>> {
-    const isCurrent = captureSession();
+    command: OperationCommand<K>,
+    options?: GatewayExecuteOptions,
+  ): Promise<ActionResult<OperationOutput<K>>> {
+    if (!ownsSession() || !ownsView()) return { ok: false };
+    const isCurrentSession = captureSession();
+    const isCurrent = () => isCurrentSession() && ownsView();
     return runAction(
       key,
       async () => {
-        const result = await action(createClient());
+        if (!session.drafts.isCurrent()) throw new ApiError({ kind: "stale" });
+        if (!client) throw new ApiError({ kind: "locked" });
+        const [error, result] = await client.execute(command, options);
+        if (error) {
+          // The write may have been applied: show the real state, never replay it.
+          if (
+            error.outcome === "unknown" &&
+            !opts.skipRefresh &&
+            isCurrent() &&
+            session.drafts.isCurrent()
+          )
+            await refreshSnapshot();
+          throw error;
+        }
+        if (!session.drafts.isCurrent()) throw new ApiError({ kind: "stale", outcome: "unknown" });
         if (isCurrent() && !opts.skipRefresh) await refreshSnapshot();
         return result;
       },
       isCurrent,
     );
   }
-
   return {
     mutateWith,
-    async mutate(key, action) {
-      const completed = await mutateWith(key, action);
+    async mutate(key, command, options) {
+      const completed = await mutateWith(key, command, options);
       return completed.ok;
     },
   };
+}
+
+export function useMutation({ skipRefresh = false }: UseMutationOptions = {}): UseMutationReturn {
+  const session = useSession();
+  const { http } = useStore(session.client);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The factory captures the external store's current gateway.
+  return useMemo(() => createMutation(session, { skipRefresh }), [session, skipRefresh, http]);
 }

@@ -1,7 +1,7 @@
 services:
   fixture-network:
     # Keep host interfaces stable during reset so Chrome does not cancel requests with ERR_NETWORK_CHANGED.
-    image: tailscale/tailscale:v1.94.2
+    image: tailscale/tailscale:v1.102.5
     init: true
     entrypoint: sleep
     command: infinity
@@ -12,7 +12,7 @@ services:
         aliases: [headscale]
 
   headscale:
-    image: headscale/headscale:0.28.0
+    image: headscale/headscale:0.29.4
     command: serve
     network_mode: service:fixture-network
     volumes:
@@ -26,8 +26,26 @@ services:
       timeout: 3s
       retries: 30
 
+  # Independent Headscale in policy.mode=file with no path (M1). No fixture network, no devices.
+  headscale-file-mode:
+    image: headscale/headscale:0.29.4
+    command: serve
+    environment:
+      HEADSCALE_POLICY_MODE: file
+    ports:
+      - "127.0.0.1::8080"
+    volumes:
+      - ./headscale-config.yaml:/etc/headscale/config.yaml:ro
+      - ./headscale-derp.yaml:/etc/headscale/derp.yaml:ro
+      - headscale-file-mode-data:/var/lib/headscale
+    healthcheck:
+      test: ["CMD", "headscale", "health"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
   online-device:
-    image: tailscale/tailscale:v1.94.2
+    image: tailscale/tailscale:v1.102.5
     network_mode: service:fixture-network
     entrypoint: tailscaled
     command: ["--tun=userspace-networking", "--state=/var/lib/tailscale/state"]
@@ -37,7 +55,7 @@ services:
       - tailscale-data:/var/lib/tailscale
 
   offline-device:
-    image: tailscale/tailscale:v1.94.2
+    image: tailscale/tailscale:v1.102.5
     entrypoint: tailscaled
     command: ["--tun=userspace-networking", "--state=mem:"]
     environment:
@@ -45,4 +63,5 @@ services:
 
 volumes:
   headscale-data:
+  headscale-file-mode-data:
   tailscale-data:

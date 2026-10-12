@@ -16,3 +16,19 @@ export function shortSecret(value: string | undefined, fallback: string): string
   if (value.length <= 18) return value;
   return `${value.slice(0, 12)}...${value.slice(-4)}`;
 }
+
+export function parseList(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function tailscaleUpCommand(
+  baseUrl: string,
+  authKey: string,
+  advertiseExitNode = false,
+): string {
+  const command = `tailscale up --login-server ${normalizedBaseUrl(baseUrl)} --authkey ${authKey}`;
+  return advertiseExitNode ? `${command} --advertise-exit-node` : command;
+}

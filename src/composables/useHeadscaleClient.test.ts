@@ -1,28 +1,43 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { RestHeadscaleClient } from "@/api/headscale-client";
-import { headscaleClientTestingHandle, useHeadscaleClient } from "./useHeadscaleClient";
+import { expect, test, vi } from "vitest";
+import { version } from "@/api/commands";
+import type { PublicSessionSnapshot, SessionResult } from "@/session/types";
+import { createHeadscaleClientStore } from "./useHeadscaleClient";
 
-beforeEach(() => headscaleClientTestingHandle.reset());
-
-describe("useHeadscaleClient", () => {
-  test("starts unconfigured and cannot accidentally connect to the UI origin", () => {
-    const api = useHeadscaleClient();
-    expect(api.settings).toEqual({ baseUrl: "", apiKey: "" });
-    expect(() => api.createClient()).toThrow();
-    expect(useHeadscaleClient()).toBe(api);
-    headscaleClientTestingHandle.reset();
-    expect(useHeadscaleClient()).not.toBe(api);
-  });
-
-  test("uses REST for local and remote live or override settings", () => {
-    const api = useHeadscaleClient();
-    const live = { baseUrl: "http://127.0.0.1:8080", apiKey: "local-key" };
-    api.setSettings(live);
-    expect(api.settings).toEqual(live);
-    expect(api.createClient()).toBeInstanceOf(RestHeadscaleClient);
-    expect(
-      api.createClient({ baseUrl: "https://headscale.example.test/path", apiKey: "key" }),
-    ).toBeInstanceOf(RestHeadscaleClient);
-    expect(api.settings).toEqual(live);
-  });
+function unlocked(id: string, revision = 1): PublicSessionSnapshot {
+  return {
+    status: "unlocked",
+    identity: { workerId: "worker", sessionId: id },
+    profile: { id, name: id, baseUrl: `https://${id}.example` },
+    expiresAt: Date.now() + 1000,
+    pendingProfileId: null,
+    reason: null,
+    revision,
+    apiKeyPrefix: null,
+  };
+}
+test("a page gateway is permanently bound to the identity it adopted", async () => {
+  const execute = vi.fn(
+    async (): Promise<SessionResult<unknown>> => ({ ok: true, value: { version: "0.29.4" } }),
+  );
+  const client = createHeadscaleClientStore({ execute });
+  client.adopt(unlocked("a"));
+  const previous = client.createClient();
+  client.adopt(unlocked("b", 2));
+  await previous.execute(version());
+  expect(execute.mock.calls[0]).toEqual([unlocked("a").identity, version(), undefined]);
+  await client.createClient().execute(version());
+  expect(execute.mock.calls[1]).toEqual([unlocked("b").identity, version(), undefined]);
+  expect(client.getSnapshot().settings).toEqual({ baseUrl: "https://b.example" });
+  expect(JSON.stringify(client.getSnapshot())).not.toContain("apiKey");
+});
+test("activity snapshots retain the gateway while a lock removes it", () => {
+  const execute = vi.fn();
+  const client = createHeadscaleClientStore({ execute });
+  client.adopt(unlocked("a"));
+  const gateway = client.createClient();
+  client.adopt({ ...unlocked("a", 2), expiresAt: Date.now() + 30_000 });
+  expect(client.createClient()).toBe(gateway);
+  client.clear();
+  expect(client.getSnapshot().settings).toEqual({ baseUrl: "" });
+  expect(() => client.createClient()).toThrow();
 });

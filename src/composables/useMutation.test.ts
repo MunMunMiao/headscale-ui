@@ -1,52 +1,126 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { RestHeadscaleClient } from "@/api/headscale-client";
-import { startSnapshotServer } from "@/test-utils/headscale.test";
-import { resetAllSingletons } from "./__testing";
-import { useHeadscaleClient } from "./useHeadscaleClient";
-import { useMutation } from "./useMutation";
-import { useSnapshot } from "./useSnapshot";
+import { createClient, withEndpoint, withHTTPHandle } from "@defjs/core";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createUser, setPolicy } from "@/api/commands";
+import { createFixtureHttp, fixtureClientStore } from "@/test/operation-gateway";
+import { snapshotFixture, startSnapshotServer } from "@/test-utils/headscale.test";
+import { createSessionDrafts } from "./session-drafts";
+import { createActionFeedbackStore } from "./useActionFeedback";
+import type { createHeadscaleClientStore } from "./useHeadscaleClient";
+import { createMutation } from "./useMutation";
+import { createSnapshotStore } from "./useSnapshot";
 
-beforeEach(resetAllSingletons);
+let session: {
+  feedback: ReturnType<typeof createActionFeedbackStore>;
+  client: ReturnType<typeof createHeadscaleClientStore>;
+  snapshot: ReturnType<typeof createSnapshotStore>;
+  drafts: ReturnType<typeof createSessionDrafts>;
+};
 
 let fixture: ReturnType<typeof startSnapshotServer>;
 beforeEach(() => {
+  const feedback = createActionFeedbackStore();
   fixture = startSnapshotServer();
-  useHeadscaleClient().setSettings({ baseUrl: fixture.baseUrl, apiKey: "test-key" });
+  const client = fixtureClientStore(
+    createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
+    fixture.baseUrl,
+  );
+  session = {
+    feedback,
+    client,
+    snapshot: createSnapshotStore(client, feedback),
+    drafts: createSessionDrafts(),
+  };
 });
 afterEach(() => {
-  mock.restore();
+  vi.restoreAllMocks();
   fixture.stop();
 });
 
 describe("useMutation", () => {
   test("runs against the active client and refreshes after success", async () => {
-    const snapshot = useSnapshot();
-    snapshot.isAuthorized.value = true;
-    let refreshes = 0;
-    snapshot.setOnApplySnapshot(() => void refreshes++);
+    const snapshot = session.snapshot;
+    snapshot.setAuthorized(true);
 
-    const result = await useMutation().mutateWith("create-member", async (client) => {
-      expect(client).toBeInstanceOf(RestHeadscaleClient);
-      return 42;
-    });
+    const result = await createMutation(session).mutateWith(
+      "save-policy",
+      setPolicy({ policy: '{"acls":[]}' }),
+    );
 
-    expect(result).toEqual({ ok: true, result: 42 });
-    expect(refreshes).toBe(1);
+    expect(result).toEqual({ ok: true, result: { policy: '{"acls":[]}' } });
+    expect(fixture.requests).toContain("PUT /api/v1/policy");
+    expect(snapshot.getSnapshot().snapshot.policy).toEqual({ policy: '{"acls":[]}' });
+    expect(snapshot.getSnapshot().snapshot.users).toHaveLength(1);
+    expect(snapshot.getSnapshot().snapshot.nodes).toHaveLength(2);
+  });
+
+  test("a committed mutation remains successful when its refresh fails and is never replayed", async () => {
+    let writes = 0;
+    let failRefresh = true;
+    const fixture = snapshotFixture();
+    const savedUser = { id: "2", name: "committed" };
+    const http = createClient(
+      withEndpoint("https://headscale.test"),
+      withHTTPHandle(async (input, init) => {
+        const request = new Request(input, init);
+        const path = new URL(request.url).pathname;
+        if (request.method === "POST") {
+          writes++;
+          return Response.json({ user: savedUser });
+        }
+        if (path === "/api/v1/user")
+          return failRefresh
+            ? Response.json({ users: "invalid" })
+            : Response.json({ users: [savedUser] });
+        const responses: Record<string, unknown> = {
+          "/api/v1/node": { nodes: fixture.nodes },
+          "/api/v1/health": fixture.health,
+          "/version": fixture.version,
+          "/api/v1/apikey": { apiKeys: [] },
+          "/api/v1/preauthkey": { preAuthKeys: [] },
+          "/api/v1/policy": fixture.policy,
+        };
+        return Response.json(responses[path]);
+      }),
+    );
+    session.client = fixtureClientStore(http);
+    session.snapshot = createSnapshotStore(session.client, session.feedback);
+    session.snapshot.setAuthorized(true);
+    session.snapshot.applyPatch(fixture);
+    expect(
+      await createMutation(session).mutate("create-member", createUser({ name: "committed" })),
+    ).toBe(true);
+    expect(writes).toBe(1);
+    expect(session.feedback.actionError("create-member")).toBe("");
+    expect(session.snapshot.getSnapshot().snapshot.users).toEqual(fixture.users);
+    expect(session.snapshot.getSnapshot().refreshErrors.identity).toBeTruthy();
+    failRefresh = false;
+    await session.snapshot.refreshSegments(["identity"]);
+    expect(session.snapshot.getSnapshot().snapshot.users).toEqual([savedUser]);
+    expect(writes).toBe(1);
   });
 
   test("can skip refresh and reports mutation failures as false", async () => {
-    const snapshot = useSnapshot();
-    snapshot.isAuthorized.value = true;
+    const snapshot = session.snapshot;
+    snapshot.setAuthorized(true);
     let refreshes = 0;
     snapshot.setOnApplySnapshot(() => void refreshes++);
-    const mutation = useMutation({ skipRefresh: true });
+    const mutation = createMutation(session, { skipRefresh: true });
 
-    expect(await mutation.mutate("rename-member", async () => undefined)).toBe(true);
+    expect(await mutation.mutate("save-policy", setPolicy({ policy: '{"acls":[]}' }))).toBe(true);
     expect(refreshes).toBe(0);
     expect(
-      await mutation.mutate("delete-member", async () => {
-        throw new Error("denied");
-      }),
+      await createMutation(
+        {
+          ...session,
+          client: fixtureClientStore(
+            createClient(
+              withEndpoint("https://headscale.example.test"),
+              withHTTPHandle(async () => Response.json({ message: "denied" }, { status: 403 })),
+            ),
+          ),
+        },
+        { skipRefresh: true },
+      ).mutate("save-policy", setPolicy({ policy: '{"acls":[]}' })),
     ).toBe(false);
   });
 });

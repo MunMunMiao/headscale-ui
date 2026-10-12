@@ -1,46 +1,42 @@
 name: GitHub Pages
-
-on:
+"on":
   release:
-    types: [published]
-  workflow_dispatch:
-
+    types:
+      - published
+  workflow_dispatch: null
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: false
-
 jobs:
+  verify:
+    if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
+    needs: verify
+    if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+      url: "${{ steps.deployment.outputs.page_url }}"
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-
+          bun-version: 1.4.3
       - run: bun install --frozen-lockfile
-
       - run: bun run build
-
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
-
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
-
+          retention-days: 1
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -22,21 +22,21 @@ export function useDisplayHelpers() {
   const { copy } = useProductCopy();
   const { t, locale } = useHeadscaleI18n();
   return {
-    formatDate: (value: string | undefined) => rawFormatDate(value, locale.value, copy.value.never),
-    userLabel: (user: Parameters<typeof rawUserLabel>[0]) => rawUserLabel(user, copy.value.unknown),
+    formatDate: (value: string | null | undefined) => rawFormatDate(value, locale, copy.never),
+    userLabel: (user: Parameters<typeof rawUserLabel>[0]) => rawUserLabel(user, copy.unknown),
     nodeDisplayName: (node: Parameters<typeof rawNodeDisplayName>[0]) => rawNodeDisplayName(node),
-    nodeOwner: (node: Parameters<typeof rawNodeOwner>[0]) => rawNodeOwner(node, copy.value.unknown),
+    nodeOwner: (node: Parameters<typeof rawNodeOwner>[0]) => rawNodeOwner(node, copy.unknown),
     nodeStatusLabel: (node: Parameters<typeof rawNodeStatusLabel>[0]) =>
       rawNodeStatusLabel(node, {
         online: t("online"),
         offline: t("offline"),
-        expired: copy.value.expiredOnly,
+        expired: copy.expiredOnly,
       }),
-    shortSecret: (value: string | undefined) => rawShortSecret(value, copy.value.unknown),
-    keyStatus: (key: { used: boolean; expiration?: string }) => {
-      if (key.used) return copy.value.used;
-      if (isTimestampExpired(key.expiration)) return t("disconnected");
-      return copy.value.unused;
+    shortSecret: (value: string | undefined) => rawShortSecret(value, copy.unknown),
+    keyStatus: (key: { used: boolean; expiration?: string | null }) => {
+      if (key.used) return copy.used;
+      if (isTimestampExpired(key.expiration)) return copy.expiredOnly;
+      return copy.unused;
     },
     hasVisibleUser,
     isTagManagedDeviceUser,

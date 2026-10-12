@@ -1,5 +1,6 @@
-import type { HeadscaleNode } from "@/api/types";
+import type { HeadscaleNode } from "@/api/contracts";
 import { nodeConnectionStatus } from "@/domain/node-status";
+import { isExitRoute } from "./status-class";
 import { hasVisibleUser, userLabel } from "./user";
 
 export function nodeDisplayName(node: HeadscaleNode): string {
@@ -9,6 +10,14 @@ export function nodeDisplayName(node: HeadscaleNode): string {
 /** Routes the node has advertised but the admin hasn't approved yet. */
 export function nodePendingRoutes(node: HeadscaleNode): string[] {
   return node.availableRoutes.filter((route) => !node.approvedRoutes.includes(route));
+}
+
+/**
+ * Approved routes to submit when revoking `route`. Headscale's SetApprovedRoutes re-adds both
+ * exit prefixes when either is submitted, so exit routes can only be revoked as a pair.
+ */
+export function nodeRevocationTargets(node: HeadscaleNode, route: string): string[] {
+  return node.approvedRoutes.filter((r) => r === route || (isExitRoute(route) && isExitRoute(r)));
 }
 
 /**

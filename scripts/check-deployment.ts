@@ -1,182 +1,26 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { remote } from "webdriverio";
-import { waitForDockerIpv6 } from "./docker-network";
+import { type Browser, chromium } from "playwright";
+import { checkVaultRecovery } from "../e2e/session/storage";
+import { assertSecurityHeaders } from "./deployment/headers";
+import { checkLocales } from "./deployment/locales";
+import { createDeploymentStack, type DeploymentConnection } from "./harness/deployment-stack";
+import { docker } from "./harness/docker";
+import { waitForDockerIpv6 } from "./harness/docker-network";
+import { evaluateSharedWorker } from "./harness/shared-worker-probe";
+import { waitUntil } from "./harness/wait-until";
 
 process.env.NO_PROXY = process.env.no_proxy = "127.0.0.1,localhost";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
-const owned = `headscale-deployment-${process.pid}-${Date.now()}`;
-const image = process.env.DEPLOYMENT_IMAGE || owned;
-const headscale = `${owned}-headscale`;
-const containers: string[] = [];
-const temporary = mkdtempSync(join(tmpdir(), `${owned}-`));
-let browser: Awaited<ReturnType<typeof remote>> | undefined;
-let build: ReturnType<typeof Bun.spawn> | undefined;
-let networkCreated = false;
-let networkId = "";
-let imageCreated = false;
-let cleaned = false;
+const stack = createDeploymentStack("headscale-deployment");
+const { endpoint, start, temporary } = stack;
+let browser: Browser | undefined;
+stack.onCleanup(() => browser?.close());
 
-function docker(...args: string[]): string {
-  const result = Bun.spawnSync(["docker", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
-  assert.equal(result.exitCode, 0, `docker ${args.join(" ")}\n${result.stderr}`);
-  return `${result.stdout}${args[0] === "logs" ? result.stderr : ""}`.trim();
-}
-
-async function cleanup() {
-  if (cleaned) return;
-  cleaned = true;
-  const actions = [
-    async () => {
-      if (build && build.exitCode === null) {
-        build.kill();
-        await build.exited;
-      }
-    },
-    async () => {
-      await browser?.deleteSession();
-    },
-    () => {
-      if (containers.length) docker("rm", "-fv", ...containers);
-    },
-    () => {
-      if (networkCreated) docker("network", "rm", owned);
-    },
-    () => {
-      if (imageCreated || (build && docker("image", "ls", "--quiet", image))) {
-        docker("image", "rm", image);
-      }
-    },
-    () => rmSync(temporary, { recursive: true }),
-  ];
-  for (const action of actions) {
-    try {
-      await action();
-    } catch (error) {
-      console.error("Deployment cleanup failed:", error);
-      process.exitCode = 1;
-    }
-  }
-}
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, async () => {
-    await cleanup();
-    process.exit(signal === "SIGINT" ? 130 : 143);
-  });
-}
-
-async function endpoint(name: string): Promise<string> {
-  const port = docker("port", name, "80/tcp").match(/127\.0\.0\.1:(\d+)/)?.[1];
-  assert.ok(port, `Missing loopback port: ${name}`);
-  const origin = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      await fetch(origin, { signal: AbortSignal.timeout(1000) });
-      return origin;
-    } catch {
-      await Bun.sleep(100);
-    }
-  }
-  throw new Error(`Container did not become ready: ${docker("logs", name)}`);
-}
-
-async function start(base: string | undefined): Promise<{ name: string; origin: string }> {
-  const name = `${owned}-${containers.length}`;
-  containers.push(name);
-  docker(
-    "run",
-    "-d",
-    "--name",
-    name,
-    "--network",
-    owned,
-    "-p",
-    "127.0.0.1::80",
-    ...(base === undefined ? [] : ["-e", `BASE_PATH=${base}`]),
-    image,
-  );
-  return { name, origin: await endpoint(name) };
-}
-
-async function startHeadscale() {
-  containers.push(headscale);
-  docker(
-    "run",
-    "-d",
-    "--name",
-    headscale,
-    "--network",
-    owned,
-    "-v",
-    `${root}/e2e/headscale-config.yaml:/etc/headscale/config.yaml:ro`,
-    "-v",
-    `${root}/e2e/headscale-derp.yaml:/etc/headscale/derp.yaml:ro`,
-    "headscale/headscale:0.28.0",
-    "serve",
-  );
-  let healthy = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const result = Bun.spawnSync(["docker", "exec", headscale, "headscale", "health"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    if (result.exitCode === 0) {
-      healthy = true;
-      break;
-    }
-    await Bun.sleep(200);
-  }
-  assert.ok(healthy, "Deployment Headscale did not become healthy");
-  docker("exec", headscale, "headscale", "users", "create", "deployment-probe");
-  const apiKey = docker("exec", headscale, "headscale", "apikeys", "create", "--expiration", "30m");
-  assert.ok(apiKey, "Deployment API key creation failed");
-
-  const config = join(temporary, "headscale-proxy.conf");
-  await Bun.write(
-    config,
-    `server {
-    listen 80;
-    add_header Access-Control-Allow-Origin "*" always;
-    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-    add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-    location / {
-      if ($request_method = OPTIONS) { return 204; }
-      proxy_pass http://${headscale}:8080;
-    }
-  }\n`,
-  );
-  const gateway = `${owned}-headscale-proxy`;
-  containers.push(gateway);
-  docker(
-    "run",
-    "-d",
-    "--name",
-    gateway,
-    "--network",
-    owned,
-    "-p",
-    "127.0.0.1::80",
-    "-v",
-    `${config}:/etc/nginx/conf.d/default.conf:ro`,
-    "--entrypoint",
-    "nginx",
-    image,
-    "-g",
-    "daemon off;",
-  );
-  const baseUrl = await endpoint(gateway);
-  const response = await fetch(`${baseUrl}/api/v1/policy`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ policy: JSON.stringify({ acls: [] }) }),
-    signal: AbortSignal.timeout(5000),
-  });
-  assert.equal(response.status, 200, "Seed deployment policy on real Headscale");
-  return { baseUrl, apiKey };
+async function assertIdentity(url: string, label: string) {
+  const plain = await fetch(url, { headers: { "Accept-Encoding": "identity" } });
+  assert.equal(plain.headers.get("content-encoding"), null, `${label}: identity encoding`);
+  assert.match(plain.headers.get("vary") || "", /Accept-Encoding/i, `${label}: identity Vary`);
 }
 
 async function checkHttp(origin: string, base: string) {
@@ -184,7 +28,11 @@ async function checkHttp(origin: string, base: string) {
   assert.equal(response.status, 200, `${base} index`);
   assert.match(response.headers.get("content-type") || "", /text\/html/);
   assert.match(response.headers.get("cache-control") || "", /no-cache/);
+  assertSecurityHeaders(response, `${base} index`);
+  assert.match(response.headers.get("vary") || "", /Accept-Encoding/i, `${base} index Vary`);
+  await assertIdentity(`${origin}${base}`, `${base} index`);
   const html = await response.text();
+  assert.match(html, /<html[^>]*\slang="en-US"/, `${base} index declares the default language`);
   const links = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
   assert.ok(
     links.some((link) => link.endsWith(".js")),
@@ -195,6 +43,7 @@ async function checkHttp(origin: string, base: string) {
     assert.ok(link.startsWith(base), `${base}: unprefixed index link ${link}`);
     const asset = await fetch(`${origin}${link}`);
     assert.equal(asset.status, 200, link);
+    assertSecurityHeaders(asset, link);
     if (link.startsWith(`${base}assets/`)) {
       assert.match(asset.headers.get("cache-control") || "", /immutable/, link);
     }
@@ -204,18 +53,41 @@ async function checkHttp(origin: string, base: string) {
       link.endsWith(".js") ? /javascript/ : link.endsWith(".css") ? /text\/css/ : /image\//,
       link,
     );
+    if (/\.(js|css)$/.test(link)) {
+      assert.match(asset.headers.get("vary") || "", /Accept-Encoding/i, `${link} Vary`);
+      await assertIdentity(`${origin}${link}`, link);
+    }
     assets.push(
       `${link}:${new Bun.CryptoHasher("sha256").update(await asset.arrayBuffer()).digest("hex")}`,
     );
   }
+  const worker = await fetch(`${origin}${base}shared-session-worker.js`);
+  assert.equal(worker.status, 200, "stable SharedWorker entry");
+  assert.match(worker.headers.get("content-type") || "", /javascript/);
+  assert.match(worker.headers.get("cache-control") || "", /no-cache/);
+  // The Worker's own response CSP governs its fetches, and users supply the Headscale URL.
+  assertSecurityHeaders(worker, "Worker entry", "http: https:");
+  const etag = worker.headers.get("etag");
+  assert.ok(etag, "Worker entry has a revalidation token");
+  const revalidated = await fetch(`${origin}${base}shared-session-worker.js`, {
+    headers: { "If-None-Match": etag },
+  });
+  assert.equal(revalidated.status, 304);
+  assertSecurityHeaders(revalidated, "Worker entry 304", "http: https:");
+  assets.push(
+    `worker:${new Bun.CryptoHasher("sha256").update(await worker.arrayBuffer()).digest("hex")}`,
+  );
   for (const path of ["login", "devices", "nested/deep/link", "index.html"]) {
     const deep = await fetch(`${origin}${base}${path}`);
     assert.equal(deep.status, 200, path);
     assert.match(deep.headers.get("cache-control") || "", /no-cache/, path);
+    assertSecurityHeaders(deep, path);
     assert.equal(await deep.text(), html, path);
   }
   for (const path of ["assets/missing.js", "assets/missing.css"]) {
-    assert.equal((await fetch(`${origin}${base}${path}`)).status, 404, path);
+    const missing = await fetch(`${origin}${base}${path}`);
+    assert.equal(missing.status, 404, path);
+    assertSecurityHeaders(missing, `missing ${path}`);
   }
   if (base !== "/") {
     for (const path of ["/", "/login", "/assets/missing.js", `${base.slice(0, -1)}-outside/`]) {
@@ -225,147 +97,217 @@ async function checkHttp(origin: string, base: string) {
       redirect: "manual",
     });
     assert.equal(redirect.status, 308);
+    assertSecurityHeaders(redirect, "308 redirect");
     assert.equal(redirect.headers.get("location"), `${base}?probe=1&next=%2Fhome`);
   }
   return [html, ...assets];
 }
 
-async function checkBrowser(
-  origin: string,
-  base: string,
-  connection: { baseUrl: string; apiKey: string },
-) {
-  await waitForDockerIpv6(networkId);
-  browser = await remote({
-    logLevel: "error",
-    capabilities: {
-      browserName: "chrome",
-      "wdio:enforceWebDriverClassic": true,
-      "goog:chromeOptions": { args: ["--headless=new", "--window-size=1440,1000"] },
-    },
+async function checkBrowser(origin: string, base: string, connection: DeploymentConnection) {
+  await waitForDockerIpv6(stack.networkId);
+  browser = await chromium.launch({ headless: true });
+  await checkLocales(browser, origin, base);
+  const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const pageErrors: string[] = [];
+  page
+    .context()
+    .on("page", (peer) => peer.on("pageerror", (error) => pageErrors.push(error.message)));
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  const cspMessages: string[] = [];
+  page.on("console", (message) => {
+    if (/Content[ -]Security[ -]Policy/.test(message.text())) cspMessages.push(message.text());
   });
-  const page = browser;
-  const element = (id: string) => page.$(`[data-testid="${id}"]`);
+  const element = (id: string) => page.locator(`[data-testid="${id}"]`);
   const click = async (id: string) => {
-    await element(id).waitForDisplayed({ timeout: 15000 });
+    await element(id).waitFor({ state: "visible", timeout: 15000 });
     await element(id).click();
   };
   const connect = async () => {
     await click("profile-option-new");
-    await element("connect-profile-name").setValue("Probe");
-    await element("connect-server-url").setValue(connection.baseUrl);
-    await element("connect-api-key").setValue(connection.apiKey);
-    await click("connect-submit");
-    await click("profile-option-Probe");
-    await element("section-home").waitForDisplayed({ timeout: 15000 });
+    await element("connect-profile-name").fill("Probe");
+    await element("connect-server-url").fill(connection.baseUrl);
+    await element("connect-api-key").fill(connection.apiKey);
+    await element("connect-password").fill("deployment-passphrase");
+    await element("connect-password-confirm").fill("deployment-passphrase");
+    await click("connect-save-unlock");
+    await element("section-home").waitFor({ state: "visible", timeout: 15000 });
+  };
+  const checkCsp = async () => {
+    const result = await page.evaluate(async () => {
+      const violated: string[] = [];
+      document.addEventListener("securitypolicyviolation", (event) =>
+        violated.push(event.violatedDirective),
+      );
+      const script = document.createElement("script");
+      script.textContent = "window.__cspProbe = true";
+      document.head.append(script);
+      await fetch("http://127.0.0.1:9").catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return { violated, executed: "__cspProbe" in window };
+    });
+    assert.equal(result.executed, false, "injected inline script must not run");
+    assert.ok(
+      result.violated.some((directive) => directive.startsWith("script-src")),
+      `inline script must violate script-src: ${result.violated}`,
+    );
+    assert.ok(
+      result.violated.some((directive) => directive.startsWith("connect-src")),
+      `foreign page fetch must violate connect-src: ${result.violated}`,
+    );
+    // The Worker runs under its own response CSP, which allows only http: and https: fetches.
+    assert.equal(
+      await evaluateSharedWorker<string>(
+        page,
+        workerUrl,
+        `fetch("data:text/plain,probe").then(() => "allowed", () => "blocked")`,
+      ),
+      "blocked",
+      "Worker fetch must obey the Worker response CSP",
+    );
+    // Real Headscale unlock above is the positive evidence; the probes' own console noise is expected.
+    cspMessages.length = 0;
   };
   const security = async () => {
     await click("profile-menu-trigger");
     await click("open-server-settings");
     await click("server-tab-security");
   };
-  // Throw before any IDB clear runs; the production clear handler must retain this document.
+  const workerUrl = `${origin}${base}shared-session-worker.js`;
+  const unlock = async () => {
+    await click("profile-option-Probe");
+    await element("unlock-passphrase").fill("deployment-passphrase");
+    await click("unlock-submit");
+    await element("section-home").waitFor({ state: "visible" });
+  };
+  // The operation runs in the Worker; a page prototype patch would prove nothing.
   const failClear = async (trigger: string, confirm: string) => {
-    const before = await page.getUrl();
-    const epoch = await page.execute(() => performance.timeOrigin);
-    await page.execute(() => {
-      IDBObjectStore.prototype.clear = () => {
-        throw new Error("deployment injected clear failure");
-      };
-    });
-    await click(trigger);
-    await click(confirm);
-    await element(trigger).waitForEnabled({ timeout: 10000 });
-    await page.waitUntil(
-      async () =>
-        (await page.$('[role="alert"]').getText()).includes("deployment injected clear failure"),
-      { timeout: 10000 },
+    const epoch = await page.evaluate(() => performance.timeOrigin);
+    await evaluateSharedWorker(
+      page,
+      workerUrl,
+      `self.__clearProbe = { original: IDBObjectStore.prototype.clear, hits: 0 }; IDBObjectStore.prototype.clear = function () { self.__clearProbe.hits++; throw new Error("deployment clear failure"); }; true`,
     );
-    assert.equal(await page.getUrl(), before, "failed clear must not navigate");
-    assert.equal(
-      await page.execute(() => performance.timeOrigin),
-      epoch,
-      "failed clear must not reload",
-    );
-    await page.refresh();
+    try {
+      await click(trigger);
+      await click(confirm);
+      await element("profile-option-Probe").waitFor({ state: "visible" });
+      const errorId = trigger === "unlock-forgot" ? "unlock-error" : "login-error";
+      await element(errorId).waitFor({ state: "visible" });
+      assert.match(await element(errorId).innerText(), /save|storage|failed|data/i);
+      assert.ok(
+        (await evaluateSharedWorker<number>(page, workerUrl, "self.__clearProbe.hits")) > 0,
+        "native Worker clear fault was exercised",
+      );
+      assert.equal(
+        await page.evaluate(() => performance.timeOrigin),
+        epoch,
+        "failed clear must not reload",
+      );
+      assert.equal(
+        await element("section-home").count(),
+        0,
+        "failed reset still locks the session",
+      );
+    } finally {
+      await evaluateSharedWorker(
+        page,
+        workerUrl,
+        "IDBObjectStore.prototype.clear = self.__clearProbe.original; delete self.__clearProbe; true",
+      );
+    }
+    if (trigger === "unlock-forgot") await click("unlock-cancel");
   };
   const clear = async (trigger: string, confirm: string, query: string) => {
-    const epoch = await page.execute(() => performance.timeOrigin);
+    const epoch = await page.evaluate(() => performance.timeOrigin);
     await click(trigger);
     await click(confirm);
-    await page.waitUntil(async () => (await page.getUrl()) === `${origin}${base}login${query}`, {
+    await waitUntil(async () => (await page.url()) === `${origin}${base}login${query}`, {
       timeout: 15000,
     });
-    await element("profile-option-new").waitForExist({ timeout: 15000 });
+    await element("profile-option-new").waitFor({ state: "attached", timeout: 15000 });
     assert.notEqual(
-      await page.execute(() => performance.timeOrigin),
+      await page.evaluate(() => performance.timeOrigin),
       epoch,
       "clear must fully reload",
     );
     assert.equal(
-      await element("profile-option-Probe").isExisting(),
+      (await element("profile-option-Probe").count()) > 0,
       false,
       "saved profile cleared",
     );
-    if (query) await element("profiles-cleared-notice").waitForDisplayed();
+    if (query) await element("profiles-cleared-notice").waitFor({ state: "visible" });
+  };
+  // Each section's stable, always-present element once its real data has loaded.
+  const ready: Record<string, string> = {
+    home: '[data-testid="overview-stats"]',
+    devices: '[data-testid="machines-empty"], [data-testid="machine-table-shell"]',
+    members: '[data-testid="user-table-shell"]',
+    invites: '[data-testid="invite-table-shell"]',
+    routes: '[data-testid="refresh-routes"]',
+    access: '[data-testid="check-policy"]',
   };
   try {
-    await page.url(`${origin}${base}`);
+    await page.goto(`${origin}${base}`);
     await connect();
-    for (const section of ["home", "devices", "members", "invites", "routes", "access"]) {
+    await checkCsp();
+    for (const section of Object.keys(ready)) {
       await click(`section-${section}`);
-      await page.waitUntil(
-        async () => new URL(await page.getUrl()).pathname === `${base}${section}`,
-        { timeout: 10000 },
+      await waitUntil(async () => new URL(await page.url()).pathname === `${base}${section}`, {
+        timeout: 10000,
+      });
+      await page.locator(ready[section]).first().waitFor({ state: "visible", timeout: 15000 });
+      assert.equal(
+        await page
+          .locator('[data-testid="error-screen"], [data-testid="page-body"] [role="alert"]')
+          .count(),
+        0,
+        `${section} shows an error instead of its content`,
       );
-      assert.ok((await page.$('[data-testid="page-body"]').getText()).length > 0, section);
       if (section === "members") {
-        await page.waitUntil(
+        await waitUntil(
           async () =>
-            (await page.$('[data-testid="page-body"]').getText()).includes("deployment-probe"),
+            (await page.locator('[data-testid="page-body"]').innerText()).includes(connection.user),
           { timeout: 15000, timeoutMsg: "UI must read the seeded user from real Headscale" },
         );
       }
     }
     await click("section-devices");
-    await page.refresh();
-    await element("section-devices").waitForDisplayed({ timeout: 15000 });
-    assert.equal(new URL(await page.getUrl()).pathname, `${base}devices`);
+    const peer = await page.context().newPage();
+    await peer.goto(`${origin}${base}home`);
+    await peer.getByTestId("section-home").waitFor({ state: "visible" });
+    await page.reload();
+    await element("section-devices").waitFor({ state: "visible", timeout: 15000 });
+    await peer.close();
+    assert.equal(new URL(await page.url()).pathname, `${base}devices`);
     await security();
     await failClear("security-clear-all", "security-clear-all-confirm");
+    await unlock();
     await security();
     await clear("security-clear-all", "security-clear-all-confirm", "");
     await connect();
     await security();
-    await click("security-enable-passphrase");
-    await click("security-acknowledge");
-    await element("security-new-passphrase").setValue("deployment-passphrase");
-    await element("security-confirm-passphrase").setValue("deployment-passphrase");
-    await click("security-enable-submit");
-    await element("security-change-passphrase").waitForDisplayed({ timeout: 15000 });
-    await page.refresh();
-    await element("unlock-overlay").waitForDisplayed({ timeout: 15000 });
+    await page.keyboard.press("Escape");
+    await click("profile-menu-trigger");
+    await click("logout");
+    await click("profile-option-Probe");
+    await element("unlock-dialog").waitFor({ state: "visible" });
     await failClear("unlock-forgot", "unlock-forgot-confirm");
+    await click("profile-option-Probe");
     await clear("unlock-forgot", "unlock-forgot-confirm", "?cleared=1");
+    if (base !== "/") await checkVaultRecovery(browser, origin, base, connection);
+    assert.deepEqual(pageErrors, [], "deployment pages have no unhandled browser errors");
+    assert.deepEqual(cspMessages, [], "the application itself triggers no CSP violation");
   } finally {
-    await page.deleteSession();
+    await browser.close();
     browser = undefined;
   }
 }
 
-try {
-  if (!process.env.DEPLOYMENT_IMAGE) {
-    build = Bun.spawn(["docker", "build", "-t", image, "."], {
-      cwd: root,
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    assert.equal(await build.exited, 0, "Docker build failed");
-    imageCreated = true;
-  }
-  networkId = docker("network", "create", owned);
-  networkCreated = true;
-  const connection = await startHeadscale();
+async function main() {
+  await stack.prepare();
+  const connection = await stack.startHeadscale("a");
   let pristineBuild: string | undefined;
   for (const value of [
     "/admin",
@@ -386,6 +328,12 @@ try {
       404,
       "missing favicon must not return HTML",
     );
+    docker("exec", name, "rm", `/usr/share/headscale-ui${base}shared-session-worker.js`);
+    assert.equal(
+      (await fetch(`${origin}${base}shared-session-worker.js`)).status,
+      404,
+      "missing Worker entry must not fall back to HTML",
+    );
     const pristine = docker(
       "exec",
       name,
@@ -395,15 +343,14 @@ try {
     );
     assert.ok(pristine.length > 0);
     if (pristineBuild === undefined) {
-      const original = `${owned}-${containers.length}`;
-      containers.push(original);
+      const original = stack.reserveName();
       pristineBuild = docker(
         "run",
         "--name",
         original,
         "--entrypoint",
         "sh",
-        image,
+        stack.image,
         "-c",
         "find /opt/headscale-ui/dist -type f -exec sha256sum {} \\; | sort",
       );
@@ -426,35 +373,43 @@ try {
       ),
       pristine,
     );
-    if (value === "/" || value === "/admin/" || value === "/nested/admin/")
-      await checkBrowser(restartedOrigin, base, connection);
+    await checkBrowser(restartedOrigin, base, connection);
     console.log(`PASS runtime BASE_PATH=${JSON.stringify(value)} and restart`);
   }
-  for (const base of [
-    "https://example.com/admin",
-    "admin",
-    "/a/../b",
-    "/./",
-    "/a//b",
-    "/a b",
-    "/a?b",
-    "/a#b",
-    "/a%20b",
-    "/__HEADSCALE_UI_BASE__/",
-  ]) {
-    const name = `${owned}-${containers.length}`;
-    containers.push(name);
-    docker("run", "-d", "--name", name, "-e", `BASE_PATH=${base}`, image);
+  const invalid: [string, string][] = [
+    ...[
+      "https://example.com/admin",
+      "admin",
+      "/a/../b",
+      "/./",
+      "/a//b",
+      "/a b",
+      "/a?b",
+      "/a#b",
+      "/a%20b",
+      "/__HEADSCALE_UI_BASE__/",
+    ].map((value): [string, string] => ["BASE_PATH", value]),
+  ];
+  const rejected = async (flags: string[], pattern: RegExp, label: string) => {
+    const name = stack.reserveName();
+    docker("run", "-d", "--name", name, ...flags, stack.image);
     const wait = Bun.spawn(["docker", "wait", name], { stdout: "pipe", stderr: "pipe" });
     const timer = setTimeout(() => wait.kill(), 10000);
     try {
       const code = (await new Response(wait.stdout).text()).trim();
-      assert.equal(await wait.exited, 0, `invalid BASE_PATH did not terminate: ${base}`);
-      assert.notEqual(code, "0", `accepted invalid BASE_PATH ${base}`);
-      assert.match(docker("logs", name), /Invalid BASE_PATH/, base);
+      assert.equal(await wait.exited, 0, `${label} did not terminate`);
+      assert.notEqual(code, "0", `accepted ${label}`);
+      assert.match(docker("logs", name), pattern, label);
     } finally {
       clearTimeout(timer);
     }
+  };
+  for (const [variable, value] of invalid) {
+    await rejected(
+      ["-e", `${variable}=${value}`],
+      new RegExp(`Invalid ${variable}`),
+      `invalid ${variable} ${JSON.stringify(value)}`,
+    );
   }
   const upstream = await start("/admin/");
   const config = join(temporary, "proxy.conf");
@@ -462,29 +417,18 @@ try {
     config,
     `server { listen 80; absolute_redirect off; location /admin { proxy_pass http://${upstream.name}:80; } location / { return 404; } }\n`,
   );
-  const proxy = `${owned}-${containers.length}`;
-  containers.push(proxy);
-  docker(
-    "run",
-    "-d",
-    "--name",
-    proxy,
-    "--network",
-    owned,
-    "-p",
-    "127.0.0.1::80",
-    "-v",
-    `${config}:/etc/nginx/conf.d/default.conf:ro`,
-    "--entrypoint",
-    "nginx",
-    image,
-    "-g",
-    "daemon off;",
-  );
-  const proxyOrigin = await endpoint(proxy);
+  const proxyOrigin = await stack.startProxy(config);
   await checkHttp(proxyOrigin, "/admin/");
   await checkBrowser(proxyOrigin, "/admin/", connection);
   console.log("PASS invalid BASE_PATH rejection and prefix-preserving reverse proxy");
+}
+
+try {
+  await main();
+} catch (error) {
+  const diagnostic = error instanceof Error ? error.stack || error.message : String(error);
+  console.error(stack.redact(diagnostic));
+  process.exitCode = 1;
 } finally {
-  await cleanup();
+  await stack.cleanup();
 }

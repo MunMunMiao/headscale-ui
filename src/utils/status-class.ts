@@ -1,4 +1,4 @@
-import type { HeadscaleNode, PreAuthKey } from "@/api/types";
+import type { HeadscaleNode, PreAuthKey } from "@/api/contracts";
 import { isTimestampExpired as isExpired, nodeConnectionStatus } from "@/domain/node-status";
 
 export function isExitRoute(route: string): boolean {
@@ -46,6 +46,10 @@ export function keyStatusClass(key: PreAuthKey): string {
   if (key.used) return PALETTES.sky;
   if (isExpired(key.expiration)) return PALETTES.rose;
   return PALETTES.emerald;
+}
+
+export function apiKeyStatusClass(key: { expiration?: string | null }): string {
+  return isExpired(key.expiration) ? PALETTES.rose : PALETTES.emerald;
 }
 
 export function keyKindClass(key: PreAuthKey): string {

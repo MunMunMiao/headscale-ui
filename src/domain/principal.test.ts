@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import type { HeadscaleUser } from "@/api/types";
+import { describe, expect, test } from "vitest";
+import type { HeadscaleUser } from "@/api/contracts";
 import { hasVisibleUser, isTagManagedDeviceUser } from "@/utils/user";
 import {
   createGroup,
@@ -103,7 +103,7 @@ describe("PrincipalIndex", () => {
     expect(index.has("ghost@")).toBe(false);
   });
 
-  test("fromUsers mirrors Headscale v0.28 suffix resolution and exact provider identifiers", () => {
+  test("fromUsers mirrors Headscale suffix resolution and exact provider identifiers", () => {
     const index = PrincipalIndex.fromUsers([
       makeUser({
         email: "alice@example.com",
@@ -147,6 +147,11 @@ describe("policyPrincipalForUser", () => {
     );
   });
 
+  test("skips blank fields and trims the chosen identifier", () => {
+    expect(policyPrincipalForUser(makeUser({ email: "   ", name: "  alice  " }))).toBe("alice@");
+    expect(policyPrincipalForUser(makeUser({ email: " ", name: " ", providerId: " " }))).toBe("");
+  });
+
   test("falls back to providerId when name and email are empty", () => {
     expect(
       policyPrincipalForUser(
@@ -165,6 +170,19 @@ describe("policyPrincipalForUser", () => {
 });
 
 describe("userPolicyPrincipals / userMatchesPolicyValue", () => {
+  test("recognizes provider-only identities and deduplicates shared aliases without changing case", () => {
+    const providerOnly = makeUser({ providerId: " https://idp.example/Subject " });
+    expect(userPolicyPrincipals(providerOnly)).toEqual([
+      "https://idp.example/Subject",
+      "https://idp.example/Subject@",
+    ]);
+    expect(userMatchesPolicyValue(providerOnly, "https://idp.example/Subject@")).toBe(true);
+    expect(userMatchesPolicyValue(providerOnly, "https://idp.example/subject@")).toBe(false);
+    expect(userPolicyPrincipals(makeUser({ name: "alice", providerId: "alice" }))).toEqual([
+      "alice",
+      "alice@",
+    ]);
+  });
   test("includes name and name@ so existing tagOwners round-trip", () => {
     expect(userPolicyPrincipals(makeUser({ name: "test-user", email: "" }))).toEqual([
       "test-user",

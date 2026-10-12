@@ -5,6 +5,7 @@ import {
   type PolicyDesignerState,
   toMemberRef,
 } from "./policy-designer";
+import { hasOnlyDefaultAccess } from "./policy-views";
 
 export type PolicyTemplateId = "self-only" | "small-team" | "split-env";
 
@@ -74,10 +75,14 @@ export function applyTemplate(
   template: PolicyTemplate,
 ): PolicyDesignerState {
   const built = template.build();
+  const added = built.rules ?? [];
+  // Headscale ACLs are an allow-list: scoped rules after the open default would enforce nothing.
+  const rules =
+    added.length > 0 && hasOnlyDefaultAccess(state) ? added : [...state.rules, ...added];
   return {
-    rules: [...state.rules, ...(built.rules ?? [])],
+    ...state,
+    rules,
     groups: [...state.groups, ...(built.groups ?? [])],
     tagOwners: [...state.tagOwners, ...(built.tagOwners ?? [])],
-    extras: state.extras,
   };
 }

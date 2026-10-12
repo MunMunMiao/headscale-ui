@@ -1,122 +1,90 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, test } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
-import { __resetForTest, idbGet, idbPut, openHeadscaleDb, STORE_META } from "./idb";
+import { beforeEach, expect, test, vi } from "vitest";
+import { idbGet, idbPut } from "@/test-utils/storage";
+import { __resetForTest } from "./idb";
+import { clearAllSecureData } from "./secure-storage";
 import {
+  captureSettingsWriteEpoch,
   hydrateSettings,
+  isSettingsHydrated,
   readSetting,
   settingsStorageTestingHandle,
   writeSetting,
 } from "./settings-storage";
 
 beforeEach(() => {
-  globalThis.indexedDB = new IDBFactory();
   __resetForTest();
+  globalThis.indexedDB = new IDBFactory();
   settingsStorageTestingHandle.reset();
 });
-
-function replaceObjectStoreMethod(
-  method: "get" | "put",
-  replacement: (this: IDBObjectStore, ...args: unknown[]) => unknown,
-): () => void {
-  const descriptor = Object.getOwnPropertyDescriptor(IDBObjectStore.prototype, method);
-  Object.defineProperty(IDBObjectStore.prototype, method, {
-    configurable: true,
-    value: replacement,
-  });
-  return () => {
-    if (descriptor) Object.defineProperty(IDBObjectStore.prototype, method, descriptor);
-  };
-}
-
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-describe("settings storage", () => {
-  test("rejects synchronous access before hydration", () => {
-    expect(() => readSetting("theme")).toThrow("accessed before hydrateSettings");
-    expect(() => writeSetting("theme", "dark")).toThrow("accessed before hydrateSettings");
-  });
-
-  test("hydrates string settings, ignores invalid values, and persists snapshots", async () => {
-    await idbPut(STORE_META, { theme: "dark", locale: "test-locale", invalid: 42 }, "ui-settings");
+test("reports hydration without throwing and forgets it after the testing reset", async () => {
+  expect(isSettingsHydrated()).toBe(false);
+  await hydrateSettings();
+  expect(isSettingsHydrated()).toBe(true);
+  settingsStorageTestingHandle.reset();
+  expect(isSettingsHydrated()).toBe(false);
+});
+test("requires hydration before reads, epoch capture or writes", async () => {
+  expect(() => readSetting("locale")).toThrow("before hydrateSettings");
+  expect(captureSettingsWriteEpoch).toThrow("before hydrateSettings");
+  await expect(writeSetting("locale", "en-US", "unknown")).rejects.toThrow(
+    "before hydrateSettings",
+  );
+});
+test("hydrates only strings, merges independent writes and publishes committed values", async () => {
+  await idbPut("meta", { locale: "en-US", invalid: 3 }, "ui-settings");
+  await hydrateSettings();
+  expect(readSetting("invalid")).toBeNull();
+  const epoch = captureSettingsWriteEpoch();
+  await Promise.all([writeSetting("locale", "fr-FR", epoch), writeSetting("theme", "dark", epoch)]);
+  await hydrateSettings();
+  expect(readSetting("locale")).toBe("fr-FR");
+  expect(readSetting("theme")).toBe("dark");
+  expect(await idbGet("meta", "ui-settings")).toEqual({ locale: "fr-FR", theme: "dark" });
+});
+test("ignores malformed preference containers without inventing values", async () => {
+  for (const raw of [undefined, null, true, 5]) {
+    await idbPut("meta", raw, "ui-settings");
     await hydrateSettings();
-
-    expect(readSetting("theme")).toBe("dark");
-    expect(readSetting("locale")).toBe("test-locale");
-    expect(readSetting("invalid")).toBeNull();
-    expect(readSetting("missing")).toBeNull();
-
-    writeSetting("theme", "light");
-    await settle();
-    expect(await idbGet(STORE_META, "ui-settings")).toEqual({
-      theme: "light",
-      locale: "test-locale",
-    });
+    expect(readSetting("locale")).toBeNull();
+  }
+});
+test("failed writes preserve both old disk state and the old projection", async () => {
+  await hydrateSettings();
+  const epoch = captureSettingsWriteEpoch();
+  await writeSetting("locale", "en-US", epoch);
+  const original = IDBObjectStore.prototype.put;
+  const interception = vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
+    this: IDBObjectStore,
+    ...args
+  ) {
+    if (args[1] === "ui-settings") throw new DOMException("settings quota", "QuotaExceededError");
+    return original.apply(this, args);
   });
-
-  test("falls back to memory when IndexedDB is unavailable", async () => {
-    const warnings: unknown[][] = [];
-    const errors: unknown[][] = [];
-    const originalWarn = console.warn;
-    const originalError = console.error;
-    console.warn = (...args) => void warnings.push(args);
-    console.error = (...args) => void errors.push(args);
-    Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: undefined });
-    __resetForTest();
-
-    try {
-      await hydrateSettings();
-      writeSetting("theme", "dark");
-      await settle();
-    } finally {
-      console.warn = originalWarn;
-      console.error = originalError;
-    }
-
-    expect(readSetting("theme")).toBe("dark");
-    expect(warnings[0]?.[0]).toContain("settings kept in-memory only");
-    expect(errors[0]?.[0]).toContain("writeSetting theme failed");
-  });
-
-  test("keeps an empty cache when the settings read fails", async () => {
-    await openHeadscaleDb();
-    const restore = replaceObjectStoreMethod("get", () => {
-      throw new Error("simulated settings read failure");
-    });
-    const warnings: unknown[][] = [];
-    const originalWarn = console.warn;
-    console.warn = (...args) => void warnings.push(args);
-
-    try {
-      await hydrateSettings();
-    } finally {
-      restore();
-      console.warn = originalWarn;
-    }
-
+  await expect(writeSetting("locale", "fr-FR", epoch)).rejects.toThrow("settings quota");
+  interception.mockRestore();
+  expect(readSetting("locale")).toBe("en-US");
+  expect(await idbGet("meta", "ui-settings")).toEqual({ locale: "en-US" });
+});
+test("reset invalidates previously captured preference writes", async () => {
+  await hydrateSettings();
+  const oldEpoch = captureSettingsWriteEpoch();
+  await clearAllSecureData();
+  await expect(writeSetting("locale", "fr-FR", oldEpoch)).rejects.toThrow("changed");
+  expect(await idbGet("meta", "ui-settings")).toBeUndefined();
+  expect(readSetting("locale")).toBeNull();
+});
+test("unavailable IndexedDB is reported instead of treating an unsaved setting as saved", async () => {
+  await hydrateSettings();
+  const epoch = captureSettingsWriteEpoch();
+  __resetForTest();
+  vi.stubGlobal("indexedDB", undefined);
+  try {
+    await expect(writeSetting("theme", "dark", epoch)).rejects.toThrow("not available");
+    await expect(hydrateSettings()).rejects.toThrow("not available");
     expect(readSetting("theme")).toBeNull();
-    expect(warnings[0]?.[0]).toContain("settings hydrate read failed");
-  });
-
-  test("keeps the in-memory value when a persistence write fails", async () => {
-    await hydrateSettings();
-    const restore = replaceObjectStoreMethod("put", () => {
-      throw new Error("simulated settings write failure");
-    });
-    const errors: unknown[][] = [];
-    const originalError = console.error;
-    console.error = (...args) => void errors.push(args);
-
-    try {
-      writeSetting("theme", "dark");
-      await settle();
-    } finally {
-      restore();
-      console.error = originalError;
-    }
-
-    expect(readSetting("theme")).toBe("dark");
-    expect(errors[0]?.[0]).toContain("writeSetting theme failed");
-    expect(await idbGet(STORE_META, "ui-settings")).toBeUndefined();
-  });
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

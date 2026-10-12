@@ -1,40 +1,45 @@
-import { reactive } from "vue";
-import { RestHeadscaleClient } from "@/api/headscale-client";
-import type { ConnectionSettings } from "@/api/http";
-import type { HeadscaleClient } from "@/api/types";
+import { ApiError, createHeadscaleGateway, type HeadscaleGateway } from "@/api/gateway";
+import { createStore } from "@/lib/store";
+import type { SessionBridge } from "@/session/bridge";
+import type { PublicSessionSnapshot, SessionIdentity } from "@/session/types";
+import { useSession, useStore } from "./session-context";
 
-export interface UseHeadscaleClientReturn {
-  settings: ConnectionSettings;
-  setSettings(next: ConnectionSettings): void;
-  createClient(override?: ConnectionSettings): HeadscaleClient;
+export function createHeadscaleClientStore(bridge: Pick<SessionBridge, "execute">) {
+  const state = createStore<{
+    settings: { baseUrl: string };
+    identity: SessionIdentity | null;
+    http: HeadscaleGateway | null;
+  }>({ settings: { baseUrl: "" }, identity: null, http: null });
+  function clear() {
+    state.setState({ settings: { baseUrl: "" }, identity: null, http: null });
+  }
+  return {
+    getSnapshot: state.getSnapshot,
+    subscribe: state.subscribe,
+    clear,
+    adopt(snapshot: PublicSessionSnapshot) {
+      const identity = snapshot.identity;
+      if (!identity || !snapshot.profile || snapshot.status !== "unlocked") return clear();
+      const previous = state.getSnapshot().identity;
+      if (previous?.workerId === identity.workerId && previous.sessionId === identity.sessionId)
+        return;
+      const expected = Object.freeze({
+        workerId: identity.workerId,
+        sessionId: identity.sessionId,
+      });
+      const http = createHeadscaleGateway((command, options) =>
+        bridge.execute(expected, command, options),
+      );
+      state.setState({ settings: { baseUrl: snapshot.profile.baseUrl }, identity: expected, http });
+    },
+    createClient(): HeadscaleGateway {
+      const client = state.getSnapshot().http;
+      if (!client) throw new ApiError({ kind: "locked" });
+      return client;
+    },
+  };
 }
 
-let instance: UseHeadscaleClientReturn | null = null;
-
-/** Internal: invoked by `__testing.ts` only. */
-export const headscaleClientTestingHandle = {
-  reset() {
-    instance = null;
-  },
-};
-
-export function useHeadscaleClient(): UseHeadscaleClientReturn {
-  if (instance) return instance;
-  const settings = reactive<ConnectionSettings>({
-    baseUrl: "",
-    apiKey: "",
-  });
-  function createClient(override?: ConnectionSettings): HeadscaleClient {
-    const target = override ?? settings;
-    return new RestHeadscaleClient(target);
-  }
-  instance = {
-    settings,
-    setSettings(next: ConnectionSettings) {
-      settings.baseUrl = next.baseUrl;
-      settings.apiKey = next.apiKey;
-    },
-    createClient,
-  };
-  return instance;
+export function useHeadscaleClient() {
+  return useStore(useSession().client);
 }

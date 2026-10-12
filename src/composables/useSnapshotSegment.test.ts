@@ -1,16 +1,25 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { resetAllSingletons } from "./__testing";
-import { useSegment } from "./useSnapshotSegment";
+import { expect, test } from "vitest";
+import { createSegmentStore } from "./useSnapshotSegment";
 
-beforeEach(resetAllSingletons);
-
-describe("useSegment", () => {
-  test("tracks a segment refresh until the snapshot request settles", async () => {
-    const segment = useSegment("identity", "policy");
-
-    const pending = segment.refresh();
-    expect(segment.isRefreshing.value).toBe(true);
-    await pending;
-    expect(segment.isRefreshing.value).toBe(false);
+test("tracks overlapping segment refreshes through success and failure", async () => {
+  const first = Promise.withResolvers<void>();
+  const second = Promise.withResolvers<void>();
+  const calls: string[][] = [];
+  const segment = createSegmentStore((segments) => {
+    calls.push([...segments]);
+    return calls.length === 1 ? first.promise : second.promise;
   });
+  const a = segment.refresh(["identity", "policy"]);
+  const b = segment.refresh(["identity", "policy"]);
+  expect(segment.getSnapshot().inFlight).toBe(2);
+  first.resolve();
+  await a;
+  expect(segment.getSnapshot().inFlight).toBe(1);
+  second.reject(new Error("failed refresh"));
+  await expect(b).rejects.toThrow("failed refresh");
+  expect(segment.getSnapshot().inFlight).toBe(0);
+  expect(calls).toEqual([
+    ["identity", "policy"],
+    ["identity", "policy"],
+  ]);
 });

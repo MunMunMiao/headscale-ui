@@ -1,0 +1,2094 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko-KR\n"
+
+#: src/i18n/descriptors.ts
+msgid "plural.devicesTagged"
+msgstr "{count, plural, other {기기 {formattedCount}대}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.teamMembers"
+msgstr "{count, plural, other {멤버 {formattedCount}명}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.orphanReferences"
+msgstr "{count, plural, other {기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 {formattedCount}개 있습니다.}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.openAccessWarnings"
+msgstr "{count, plural, other {모든 사용자가 모든 기기에 접근할 수 있는 규칙이 {formattedCount}개 있습니다.}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.cleanupOrphans"
+msgstr "{count, plural, other {유효하지 않은 참조 {formattedCount}개 정리}}"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardSubtitle"
+msgstr "기기, 사용자, 비공개 경로를 한곳에서 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsRequired"
+msgstr "소유자가 없는 키에는 ACL 태그가 하나 이상 필요합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.access"
+msgstr "접근 제어"
+
+#: src/i18n/descriptors.ts
+msgid "product.actions"
+msgstr "작업"
+
+#: src/i18n/descriptors.ts
+msgid "product.statusActive"
+msgstr "활성"
+
+#: src/i18n/descriptors.ts
+msgid "product.activeAuthKeys"
+msgstr "활성 인증 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableActivity"
+msgstr "활동"
+
+#: src/i18n/descriptors.ts
+msgid "product.addClientDeviceTitle"
+msgstr "클라이언트 기기 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addDevice"
+msgstr "기기 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLabelManager"
+msgstr "라벨 관리자 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLinuxServerTitle"
+msgstr "Linux 서버 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMemberToTeam"
+msgstr "구성원 추가"
+
+#: src/i18n/descriptors.ts
+msgid "common.addServerProfile"
+msgstr "서버 추가"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionValidationFailedTitle"
+msgstr "확인할 수 없지만 이 서버를 추가할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.addUserToGroup"
+msgstr "그룹에 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMember"
+msgstr "사용자 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsTitle"
+msgstr "사용자를 그룹에 추가"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDevice"
+msgstr "첫 기기 추가"
+
+#: src/i18n/descriptors.ts
+msgid "common.addingProfile"
+msgstr "추가 중"
+
+#: src/i18n/descriptors.ts
+msgid "product.addresses"
+msgstr "주소"
+
+#: src/i18n/descriptors.ts
+msgid "product.advertisedRoutes"
+msgstr "알려진 경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeAdvertisers"
+msgstr "경로 알림 있음"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyIdentityRemovalImpact"
+msgstr "영향을 받는 규칙: '{'rules'}'. 영향을 받는 정책 테스트: '{'tests'}'."
+
+#: src/i18n/descriptors.ts
+msgid "product.allMachines"
+msgstr "모든 기기"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilesClearedNotice"
+msgstr "저장된 프로필을 모두 지웠습니다. 서버를 추가해 새로 설정하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.svcAllLabel"
+msgstr "모든 서비스"
+
+#: src/i18n/descriptors.ts
+msgid "product.allUsers"
+msgstr "모든 사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupReferencesOption"
+msgstr "해당 정책 참조에서도 이 사용자 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameUpdateReferencesOption"
+msgstr "해당 정책 참조도 새 이름으로 업데이트"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedDescription"
+msgstr "이전 페이지가 로컬 데이터베이스를 열어 두고 있습니다. 계속하려면 다른 Headscale UI 탭을 닫으세요. 저장된 연결은 유지됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadDescription"
+msgstr "다른 페이지가 로컬 데이터베이스를 업그레이드했습니다. 계속하기 전에 이 페이지를 새로고침하세요. 저장된 연결은 유지됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionBusy"
+msgstr "다른 잠금 해제 또는 서버 전환이 진행 중입니다. 완료된 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.allUsersChoice"
+msgstr "누구나"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyDescription"
+msgstr "누구나 모든 서비스에서 내 개인 기기에 접근할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKey"
+msgstr "API 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyExpiration"
+msgstr "API 키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeys"
+msgstr "API 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysTitle"
+msgstr "API 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysDescription"
+msgstr "API 키로 이 Headscale 서버를 제어할 수 있습니다. 전체 키는 한 번만 표시됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.applyAssignment"
+msgstr "적용"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesTitle"
+msgstr "알려진 경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveAll"
+msgstr "모두 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRouteTitle"
+msgstr "출구 경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesTitle"
+msgstr "출구 경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckDescription"
+msgstr "확인을 기다리는 SSH 세션을 승인하거나 거부합니다. 이 작업으로 기기가 등록되는 일은 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoute"
+msgstr "경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteTitle"
+msgstr "경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmApproveRoutes"
+msgstr "경로 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveSshCheck"
+msgstr "SSH 확인 승인"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesApproved"
+msgstr "승인됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.approvedRoutes"
+msgstr "승인된 경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignedBadgeLabel"
+msgstr "할당됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteKey"
+msgstr "인증 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyCreated"
+msgstr "인증 키가 생성되었습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.invites"
+msgstr "인증 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesTitle"
+msgstr "인증 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.authSource"
+msgstr "인증 방식"
+
+#: src/i18n/descriptors.ts
+msgid "product.useTagsDescription"
+msgstr "태그로 기기를 인증하고 접근을 제어합니다. 태그가 있는 서버는 키를 자주 만료시킬 필요가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeralDescription"
+msgstr "기기가 오프라인이 되면 tailnet에서 자동으로 제거합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.availableRoutes"
+msgstr "사용 가능한 경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.previousStep"
+msgstr "이전"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIps"
+msgstr "기기 IP 채우기"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillResult"
+msgstr "채우기 결과"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyPlaceholder"
+msgstr "headscale apikeys create로 만든 Bearer 토큰"
+
+#: src/i18n/descriptors.ts
+msgid "common.cancel"
+msgstr "취소"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancel"
+msgstr "취소"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelAssignment"
+msgstr "취소"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelIpRuleEdit"
+msgstr "편집 취소"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionChangePassphrase"
+msgstr "암호 변경"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberDescription"
+msgstr "이 계정에 사용하는 Headscale 사용자 이름을 변경합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineDescription"
+msgstr "Headscale에 표시되는 기기 이름을 변경합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.securityProfileHint"
+msgstr "{name}의 비밀번호를 변경합니다. 다른 저장된 서버의 비밀번호는 유지됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoading"
+msgstr "언어 변경 중…"
+
+#: src/i18n/descriptors.ts
+msgid "product.checkPolicy"
+msgstr "정책 검사"
+
+#: src/i18n/descriptors.ts
+msgid "common.checkingCredentials"
+msgstr "인증 정보 확인 중"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorTitle"
+msgstr "서버 프로필 선택"
+
+#: src/i18n/descriptors.ts
+msgid "product.expirationMustBeFuture"
+msgstr "만료 일시를 미래로 선택하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepAuthKeyDescription"
+msgstr "인증 키의 동작 방식을 선택합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotConfirmTitle"
+msgstr "암호화된 데이터를 모두 지울까요?"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionForgottenButton"
+msgstr "저장된 프로필 모두 지우기"
+
+#: src/i18n/descriptors.ts
+msgid "product.clearFilters"
+msgstr "필터 지우기"
+
+#: src/i18n/descriptors.ts
+msgid "product.changesAutoSaveHint"
+msgstr "변경 사항을 기기에 반영하려면 화면 위쪽의 ‘저장’을 누르세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDevice"
+msgstr "클라이언트 기기"
+
+#: src/i18n/descriptors.ts
+msgid "common.close"
+msgstr "닫기"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedTitle"
+msgstr "이전 Headscale UI 탭을 닫으세요"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesTitle"
+msgstr "이 서버를 추가하지 않고 닫을까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesCloseAnyway"
+msgstr "저장하지 않고 닫기"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirm"
+msgstr "확인"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionConfirmPassphrase"
+msgstr "암호 확인"
+
+#: src/i18n/descriptors.ts
+msgid "common.connect"
+msgstr "연결"
+
+#: src/i18n/descriptors.ts
+msgid "common.connection"
+msgstr "연결"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveAnywayButton"
+msgstr "그대로 추가"
+
+#: src/i18n/descriptors.ts
+msgid "common.copied"
+msgstr "복사됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.copied"
+msgstr "복사됨"
+
+#: src/i18n/descriptors.ts
+msgid "common.copy"
+msgstr "복사"
+
+#: src/i18n/descriptors.ts
+msgid "product.copy"
+msgstr "복사"
+
+#: src/i18n/descriptors.ts
+msgid "product.copyCommand"
+msgstr "명령 복사"
+
+#: src/i18n/descriptors.ts
+msgid "common.copyFailed"
+msgstr "복사하지 못했습니다. 텍스트를 선택해 직접 복사하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyOnlyShownOnce"
+msgstr "지금 복사하세요. Headscale은 전체 키를 다시 반환하지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCopy"
+msgstr "전체 키를 즉시 복사하세요. Headscale에서는 한 번만 표시됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionCorruptedBadge"
+msgstr "손상됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsHint"
+msgstr "기기 라벨을 만들면 비슷한 기기의 접근 권한을 한 번에 관리할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCreate"
+msgstr "Headscale CLI로 유효 기간이 짧은 API 키를 만듭니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamDescription"
+msgstr "팀을 만들고 SSH와 웹으로 기기를 함께 사용합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsHint"
+msgstr "팀을 만들면 여러 사용자에게 한 번에 접근 권한을 줄 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.createApiKeyTitle"
+msgstr "API 키 만들기"
+
+#: src/i18n/descriptors.ts
+msgid "product.createInvite"
+msgstr "인증 키 만들기"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesSubtitle"
+msgstr "서버 내부를 노출하지 않고 기기를 참여시킬 수 있는 키를 만듭니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepGenerateDescription"
+msgstr "키를 만들고 설치 명령을 복사합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.createMember"
+msgstr "사용자 만들기"
+
+#: src/i18n/descriptors.ts
+msgid "product.createdApiKey"
+msgstr "생성된 API 키"
+
+#: src/i18n/descriptors.ts
+msgid "common.currentServerPassword"
+msgstr "현재 서버 비밀번호"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomLabel"
+msgstr "사용자 지정 포트"
+
+#: src/i18n/descriptors.ts
+msgid "common.dark"
+msgstr "다크"
+
+#: src/i18n/descriptors.ts
+msgid "common.database"
+msgstr "데이터베이스"
+
+#: src/i18n/descriptors.ts
+msgid "product.days"
+msgstr "일"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessSubtitle"
+msgstr "어떤 사용자와 팀이 어떤 기기에 접근할 수 있는지 정하세요. 기기는 라벨, 사용자는 팀으로 묶을 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyTitle"
+msgstr "누가 무엇에 접근할지 설정"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogSubtitle"
+msgstr "이 라벨의 관리자와 라벨이 붙은 기기에 접근할 수 있는 팀을 정합니다. 개별 기기의 태그는 변경하지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyTitle"
+msgstr "API 키 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteApiKey"
+msgstr "API 키 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteTitle"
+msgstr "인증 키 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeDeviceLabel"
+msgstr "기기 라벨 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInvite"
+msgstr "키 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteInvite"
+msgstr "키 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "common.deleteProfile"
+msgstr "프로필 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeam"
+msgstr "팀 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileTitle"
+msgstr "이 프로필을 삭제할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMember"
+msgstr "사용자 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberTitle"
+msgstr "사용자 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteMember"
+msgstr "사용자 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationPlaceholder"
+msgstr "접근 대상"
+
+#: src/i18n/descriptors.ts
+msgid "product.details"
+msgstr "상세 정보"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvTitle"
+msgstr "개발 + 운영 환경"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogTitle"
+msgstr "기기 라벨 · 정책"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelsSection"
+msgstr "기기 라벨"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupLabels"
+msgstr "기기 라벨"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessView"
+msgstr "이 팀이 접근할 수 있는 기기 라벨"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindDevice"
+msgstr "기기 로그인"
+
+#: src/i18n/descriptors.ts
+msgid "product.aclTags"
+msgstr "기기 태그"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceCount"
+msgstr "대"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberDevices"
+msgstr "기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteDescription"
+msgstr "기기들이 이 기기를 통한 이 경로를 더 이상 사용하지 않습니다. 승인된 다른 경로는 계속 활성 상태로 유지됩니다. 접근 정책이 이 경로를 자동 승인하는 경우, 기기가 다음에 이 경로를 광고할 때 다시 승인될 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsDescription"
+msgstr "이 기기에 지정된 태그를 직접 덮어씁니다. 같은 라벨을 공유하는 기기에 접근할 수 있는 팀을 바꾸려면 접근 제어에서 라벨 정책을 편집하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiry"
+msgstr "만료 비활성화"
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryTitle"
+msgstr "기기 만료를 비활성화할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChanges"
+msgstr "변경 사항 취소"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsDiscard"
+msgstr "초안을 삭제하고 계속"
+
+#: src/i18n/descriptors.ts
+msgid "product.displayName"
+msgstr "표시 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsLabel"
+msgstr "DNS"
+
+#: src/i18n/descriptors.ts
+msgid "product.finish"
+msgstr "완료"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleTitle"
+msgstr "초안이 다른 서버에 속해 있습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomPlaceholder"
+msgstr "예: 8080, 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsTitle"
+msgstr "기기 태그 편집"
+
+#: src/i18n/descriptors.ts
+msgid "common.editProfile"
+msgstr "프로필 편집"
+
+#: src/i18n/descriptors.ts
+msgid "product.editIpRule"
+msgstr "규칙 편집"
+
+#: src/i18n/descriptors.ts
+msgid "product.editTags"
+msgstr "태그 편집"
+
+#: src/i18n/descriptors.ts
+msgid "product.email"
+msgstr "이메일"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionEncryptedBadge"
+msgstr "암호화됨"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSectionTitle"
+msgstr "암호화"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestInvalid"
+msgstr "hskey-authreq-로 시작하는 요청 ID를 입력하거나 전체 링크를 붙여넣으세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceInvalidName"
+msgstr "유효한 그룹 또는 태그 이름을 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionInvalidUrl"
+msgstr "HTTP(S)로 시작하는 전체 서버 URL을 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionApiKeyRequired"
+msgstr "API 키를 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSecretRequired"
+msgstr "제출하기 전에 API 키와 이 서버의 비밀번호를 다시 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectSubtitle"
+msgstr "관리 화면을 열기 전에 서버 주소와 인증 토큰을 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "서버 비밀번호를 입력하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeral"
+msgstr "임시 기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmDescription"
+msgstr "이 범위의 모든 사용자가 선택한 모든 기기의 모든 서비스에 접근할 수 있게 됩니다. 계속할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameHint"
+msgstr "예: ops, dev, security"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelNameHint"
+msgstr "예: server, workstation, database"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitRoute"
+msgstr "출구 경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeExitRouteDescription"
+msgstr "출구 경로는 쌍으로 취소됩니다. IPv4와 IPv6 경로가 함께 제거되며, 기기들은 이 기기를 통해 인터넷 트래픽을 보내지 않게 됩니다. 승인된 다른 경로는 계속 활성 상태로 유지됩니다. 접근 정책이 출구 경로를 자동 승인하는 경우, 기기가 다음에 해당 경로를 광고할 때 다시 승인될 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "출구 경로를 사용하면 인터넷 트래픽을 이 기기를 통해 전달할 수 있습니다. 이 경로에 이 서버를 신뢰해도 되는지 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteExpiration"
+msgstr "만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expire"
+msgstr "만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyTitle"
+msgstr "API 키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireApiKey"
+msgstr "API 키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteTitle"
+msgstr "인증 키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInvite"
+msgstr "키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireInvite"
+msgstr "키 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineTitle"
+msgstr "기기 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpire"
+msgstr "기기 만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.expiredOnly"
+msgstr "만료됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.expires"
+msgstr "만료"
+
+#: src/i18n/descriptors.ts
+msgid "product.exportData"
+msgstr "데이터 내보내기"
+
+#: src/i18n/descriptors.ts
+msgid "product.filters"
+msgstr "필터"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorSearchPlaceholder"
+msgstr "사용자, 팀 또는 라벨 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.source"
+msgstr "접근 주체"
+
+#: src/i18n/descriptors.ts
+msgid "product.generate"
+msgstr "만들기"
+
+#: src/i18n/descriptors.ts
+msgid "product.generateInstallScript"
+msgstr "설치 스크립트 만들기"
+
+#: src/i18n/descriptors.ts
+msgid "product.addAccessor"
+msgstr "접근 권한 부여"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantTagToUser"
+msgstr "태그 소유권 부여"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsTitle"
+msgstr "태그 소유권 부여"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmTitle"
+msgstr "매우 넓은 접근 권한을 부여할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.groupName"
+msgstr "그룹 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.groups"
+msgstr "그룹"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideDescription"
+msgstr "UI에서 연결하려면 먼저 서버 CLI에서 Headscale API 키를 만들어야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.headscaleDocs"
+msgstr "Headscale 문서"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyCheckPassed"
+msgstr "Headscale이 이 정책에서 문제를 찾지 못했습니다. 저장된 내용은 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyFileModeNoPath"
+msgstr "Headscale가 접근 정책을 파일(policy.mode: file)에서 읽도록 설정되어 있지만 정책 파일이 지정되지 않아(policy.path가 비어 있음) 여기서 편집할 내용이 없습니다. 이 앱에서 접근 규칙을 관리하려면 Headscale 설정에서 policy.mode를 database로 지정하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUpdateDisabled"
+msgstr "Headscale가 접근 정책을 파일(policy.mode: file)에서 읽기 때문에 여기서는 변경 사항을 저장할 수 없습니다. Headscale 서버의 정책 파일을 수정하거나 policy.mode를 database로 지정해 이 앱에서 접근 규칙을 관리하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorRequestFailed"
+msgstr "Headscale 요청에 실패했습니다. 서버 URL과 API 키를 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.appTitle"
+msgstr "Headscale UI"
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorTitle"
+msgstr "Headscale UI에서 문제가 발생했습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.openAccessBannerTitle"
+msgstr "높은 위험: 전체 접근이 감지됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.hour"
+msgstr "시"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideTitle"
+msgstr "API 키 발급 방법"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyAcknowledge"
+msgstr "이 세션이 접근 권한을 잃는다는 것을 이해했습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideHint"
+msgstr "키를 잃어버렸거나 만료되었다면 서버에서 기존 키를 만료시키고 새로 만드세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "이 서버의 비밀번호를 잊었다면 저장된 프로필을 삭제하고 API 키로 다시 추가하세요. 다른 서버의 프로필은 유지할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockFailed"
+msgstr "암호가 올바르지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.installCommand"
+msgstr "설치 명령"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDeviceDescription"
+msgstr "다른 기기에 Tailscale을 설치하고 이 Headscale 서버에 연결하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionTitle"
+msgstr "IP 및 모든 대상 접근 규칙(고급)"
+
+#: src/i18n/descriptors.ts
+msgid "product.joined"
+msgstr "가입일"
+
+#: src/i18n/descriptors.ts
+msgid "product.keyExpiryHint"
+msgstr "반복 설치 자동화에 사용하는 경우가 아니라면 인증 키 유효 기간을 짧게 설정하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.keepEditingProfile"
+msgstr "계속 편집"
+
+#: src/i18n/descriptors.ts
+msgid "product.labelManagersLabel"
+msgstr "라벨 관리자"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelName"
+msgstr "라벨 이름"
+
+#: src/i18n/descriptors.ts
+msgid "common.language"
+msgstr "언어"
+
+#: src/i18n/descriptors.ts
+msgid "product.lastSeen"
+msgstr "마지막 접속"
+
+#: src/i18n/descriptors.ts
+msgid "product.learnMore"
+msgstr "자세히 알아보기"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverCredentialEditHint"
+msgstr "이름이나 저장 위치만 변경하려면 API 키와 비밀번호를 비워 두세요. URL 또는 API 키를 변경하려면 API 키와 현재 서버 비밀번호를 모두 입력해야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.light"
+msgstr "라이트"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServer"
+msgstr "Linux 서버"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionLockedBadge"
+msgstr "잠김"
+
+#: src/i18n/descriptors.ts
+msgid "common.logout"
+msgstr "로그아웃"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableMachine"
+msgstr "기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineDetails"
+msgstr "기기 상세"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineName"
+msgstr "기기 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeTags"
+msgstr "기기 태그"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.devices"
+msgstr "기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTitle"
+msgstr "기기"
+
+#: src/i18n/descriptors.ts
+msgid "common.primaryNavigation"
+msgstr "기본 탐색"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenance"
+msgstr "유지 관리"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsDescription"
+msgstr "서버 범위 인증 정보와 유지 관리 작업을 관리합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.manageTags"
+msgstr "접근 제어에서 태그 관리"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamDetailDialogTitle"
+msgstr "팀 관리"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesSubtitle"
+msgstr "tailnet에 연결된 기기를 관리합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.membersSubtitle"
+msgstr "네트워크 사용자와 권한을 관리합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.roleMember"
+msgstr "구성원"
+
+#: src/i18n/descriptors.ts
+msgid "product.members"
+msgstr "구성원"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamMembersSection"
+msgstr "구성원"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationTitle"
+msgstr "{name} 마이그레이션"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrateAndUnlock"
+msgstr "마이그레이션 및 잠금 해제"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrationRequired"
+msgstr "마이그레이션 필요"
+
+#: src/i18n/descriptors.ts
+msgid "product.minute"
+msgstr "분"
+
+#: src/i18n/descriptors.ts
+msgid "product.mustBeBetweenDays"
+msgstr "1일에서 90일 사이여야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.never"
+msgstr "없음"
+
+#: src/i18n/descriptors.ts
+msgid "product.newDeviceLabel"
+msgstr "새 기기 라벨"
+
+#: src/i18n/descriptors.ts
+msgid "common.newProfile"
+msgstr "새 프로필"
+
+#: src/i18n/descriptors.ts
+msgid "common.newServerPassword"
+msgstr "새 서버 비밀번호"
+
+#: src/i18n/descriptors.ts
+msgid "product.newTeam"
+msgstr "새 팀"
+
+#: src/i18n/descriptors.ts
+msgid "product.nextStep"
+msgstr "다음"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAccessors"
+msgstr "여기에 표시된 ACL 허용 규칙이 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamAccess"
+msgstr "여기에 표시된 이 팀의 기기 라벨 대상 ACL 허용 규칙이 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noRoutes"
+msgstr "검토를 기다리는 경로가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeys"
+msgstr "조건에 맞는 인증 키가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsYet"
+msgstr "아직 기기 라벨이 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.noGroupsAvailable"
+msgstr "그룹이 없습니다. 먼저 접근 제어에서 그룹을 추가하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.noDevices"
+msgstr "조건에 맞는 기기가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noLabelManagers"
+msgstr "관리자가 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorEmpty"
+msgstr "일치하는 항목 없음"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerEmpty"
+msgstr "일치하는 항목 없음"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberEmpty"
+msgstr "일치하는 사용자 없음"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyGroupMembers"
+msgstr "구성원이 아직 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteNoOwner"
+msgstr "소유자 없음(태그만)"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyTagOwnerEntries"
+msgstr "소유자가 아직 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noPersonalDevices"
+msgstr "개인 기기가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyReferences"
+msgstr "정책 참조가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTagsAvailable"
+msgstr "태그 접근 항목이 없습니다. 먼저 접근 제어에서 추가하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsYet"
+msgstr "아직 팀이 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsers"
+msgstr "사용 가능한 사용자가 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsersMatch"
+msgstr "조건에 맞는 사용자가 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeId"
+msgstr "기기 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNotFound"
+msgstr "기기를 찾을 수 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "common.nodes"
+msgstr "기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.noRouteValues"
+msgstr "없음"
+
+#: src/i18n/descriptors.ts
+msgid "common.offline"
+msgstr "오프라인"
+
+#: src/i18n/descriptors.ts
+msgid "product.offlineOnly"
+msgstr "오프라인"
+
+#: src/i18n/descriptors.ts
+msgid "product.oneTimeKey"
+msgstr "일회용 키"
+
+#: src/i18n/descriptors.ts
+msgid "common.online"
+msgstr "온라인"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineOnly"
+msgstr "온라인"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineDevices"
+msgstr "온라인 기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantsPreservedHint"
+msgstr "여기서는 ACL 규칙만 표시하고 편집합니다. 기존 grants는 보존되며 별도로 접근을 허용할 수 있습니다. 팀이나 라벨의 이름을 바꾸거나 삭제하기 전에 Headscale 정책에서 해당 grants 참조를 수정하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteDescription"
+msgstr "이 경로만 승인합니다. 기존 승인 경로는 계속 활성 상태로 유지됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.openInvites"
+msgstr "사용 가능한 인증 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyTitle"
+msgstr "개인 기기 공개"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.home"
+msgstr "개요"
+
+#: src/i18n/descriptors.ts
+msgid "product.owner"
+msgstr "소유자"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteOwner"
+msgstr "소유자"
+
+#: src/i18n/descriptors.ts
+msgid "product.roleOwner"
+msgstr "소유자"
+
+#: src/i18n/descriptors.ts
+msgid "product.owners"
+msgstr "소유자"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepPaste"
+msgstr "키와 HTTPS Headscale URL을 여기에 붙여 넣습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestHelp"
+msgstr "tailscale up 또는 SSH 확인 프롬프트에 표시된 링크나 ID를 붙여넣으세요. 요청 ID는 유효 기간이 짧습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRoutes"
+msgstr "대기 중인 경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.personalDevices"
+msgstr "개인 기기"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorDescription"
+msgstr "운영체제 로그인처럼 저장된 프로필을 선택하거나 다른 Headscale 서버를 추가하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyHint"
+msgstr "아래에서 시작 방법을 선택하세요. 언제든 변경할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.dateTimePlaceholder"
+msgstr "날짜와 시간 선택"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsDescription"
+msgstr "이 사용자가 속할 그룹을 선택하세요. 적용하면 변경 사항이 정책에 저장됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsDescription"
+msgstr "이 사용자가 소유할 수 있는 태그를 선택하세요. 적용하면 변경 사항이 정책에 저장됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.policy"
+msgstr "정책"
+
+#: src/i18n/descriptors.ts
+msgid "product.policy"
+msgstr "정책"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferences"
+msgstr "정책 참조"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshHint"
+msgstr "포트 22"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpHint"
+msgstr "포트 3389"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsHint"
+msgstr "포트 53"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulePortsPlaceholder"
+msgstr "포트"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebHint"
+msgstr "포트 80 및 443"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyPrefix"
+msgstr "접두사"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyPasswordLabel"
+msgstr "이전 공용 비밀번호"
+
+#: src/i18n/descriptors.ts
+msgid "common.profile"
+msgstr "프로필"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileName"
+msgstr "프로필 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.unused"
+msgstr "사용 가능"
+
+#: src/i18n/descriptors.ts
+msgid "product.readyKeys"
+msgstr "사용 가능한 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.readyToSave"
+msgstr "저장 가능"
+
+#: src/i18n/descriptors.ts
+msgid "product.recentDevices"
+msgstr "최근 기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.refreshData"
+msgstr "데이터 새로고침"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethod"
+msgstr "등록 방식"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPendingDescription"
+msgstr "승인 대기 중인 기기를 등록하거나 검토합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationTitle"
+msgstr "대기 중인 기기 등록"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerPendingNode"
+msgstr "대기 중인 기기 등록"
+
+#: src/i18n/descriptors.ts
+msgid "product.registeredNode"
+msgstr "등록된 기기"
+
+#: src/i18n/descriptors.ts
+msgid "product.rejectSshCheck"
+msgstr "SSH 확인 거부"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadTitle"
+msgstr "이 페이지를 새로고침하세요"
+
+#: src/i18n/descriptors.ts
+msgid "common.rememberConnection"
+msgstr "이 브라우저에 연결 정보 저장"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpLabel"
+msgstr "원격 데스크톱"
+
+#: src/i18n/descriptors.ts
+msgid "product.remove"
+msgstr "삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeItem"
+msgstr "삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeRule"
+msgstr "삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeAccessor"
+msgstr "접근 권한 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirm"
+msgstr "끊어진 참조를 모두 삭제할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeFromReference"
+msgstr "참조에서 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeLabelManager"
+msgstr "라벨 관리자 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineTitle"
+msgstr "기기 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemove"
+msgstr "기기 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeamMember"
+msgstr "구성원 삭제"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemTitle"
+msgstr "삭제할까요?"
+
+#: src/i18n/descriptors.ts
+msgid "product.rename"
+msgstr "이름 변경"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineTitle"
+msgstr "기기 이름 변경"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMember"
+msgstr "사용자 이름 변경"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberTitle"
+msgstr "사용자 이름 변경"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestLabel"
+msgstr "요청 링크 또는 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKind"
+msgstr "요청 유형"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessTitle"
+msgstr "리소스 접근"
+
+#: src/i18n/descriptors.ts
+msgid "common.result"
+msgstr "결과"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardResult"
+msgstr "결과"
+
+#: src/i18n/descriptors.ts
+msgid "product.reusable"
+msgstr "재사용 가능"
+
+#: src/i18n/descriptors.ts
+msgid "common.backToEditConnection"
+msgstr "내용 다시 확인"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesSubtitle"
+msgstr "서브넷 및 출구 경로를 사용자에게 공개하기 전에 검토합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepResultDescription"
+msgstr "결과를 확인하고 계속 진행합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRoute"
+msgstr "경로 승인 취소"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteTitle"
+msgstr "경로 승인 취소"
+
+#: src/i18n/descriptors.ts
+msgid "product.role"
+msgstr "역할"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNodeDescription"
+msgstr "네트워크 트래픽을 이 기기를 통해 라우팅합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.routes"
+msgstr "경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.routes"
+msgstr "경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableRoutes"
+msgstr "경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.routes"
+msgstr "경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesTitle"
+msgstr "경로"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmBackfillNodeIps"
+msgstr "채우기 실행"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIpsDescription"
+msgstr "Headscale 전체 기기 IP 채우기 유지 관리 작업을 실행합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideCommandLabel"
+msgstr "Headscale 서버에서 실행"
+
+#: src/i18n/descriptors.ts
+msgid "product.savePolicy"
+msgstr "저장"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesSaveAndClose"
+msgstr "저장하고 닫기"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveAndUnlock"
+msgstr "저장 및 잠금 해제"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveName"
+msgstr "이름 저장"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveProfile"
+msgstr "프로필 저장"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveIpRule"
+msgstr "규칙 저장"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveTags"
+msgstr "태그 저장"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveMemberName"
+msgstr "사용자 이름 저장"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultConflict"
+msgstr "저장된 연결이 변경되었습니다. 새로고침 후 다시 시도하세요. 비밀번호가 변경되었다면 다시 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.resetMetadataWarning"
+msgstr "저장된 데이터는 삭제되었지만 이 탭의 임시 설정을 제거할 수 없습니다. 이 탭을 닫고 새 탭을 여세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policySavedNewerEdits"
+msgstr "제출한 정책을 저장했습니다. 이후의 수정 사항은 아직 저장되지 않았습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.replaceTagsWarning"
+msgstr "저장하면 현재 태그에 추가되지 않고 새 태그로 교체됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDevices"
+msgstr "이름, 소유자, 태그, 버전으로 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDeviceLabels"
+msgstr "기기 라벨 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchAuthKeys"
+msgstr "키, 소유자 또는 태그 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerSearchPlaceholder"
+msgstr "사용자 또는 팀 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchUsers"
+msgstr "사용자 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberSearchPlaceholder"
+msgstr "사용자 검색…"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceSetupLead"
+msgstr "기기 설정을 선택하고 설치 명령을 만드세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvDescription"
+msgstr "개발팀과 운영팀을 분리하고 각 팀의 라벨이 붙은 서버에 접근할 수 있게 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "서버 비밀번호"
+
+#: src/i18n/descriptors.ts
+msgid "product.openServerSettings"
+msgstr "서버 설정"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsTitle"
+msgstr "서버 설정"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverUrl"
+msgstr "서버 URL"
+
+#: src/i18n/descriptors.ts
+msgid "product.ports"
+msgstr "서비스"
+
+#: src/i18n/descriptors.ts
+msgid "product.roleServiceAccount"
+msgstr "서비스 계정"
+
+#: src/i18n/descriptors.ts
+msgid "product.serviceAccounts"
+msgstr "서비스 계정"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServerDescription"
+msgstr "VM, 컨테이너, 라우터에서 실행되는 서비스용입니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSessionOnlyBadge"
+msgstr "현재 세션만"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationHint"
+msgstr "이 서버의 비밀번호를 설정하여 저장된 연결을 마이그레이션하세요. 마이그레이션이 실패하면 기존 데이터는 변경되지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyExpirationDescription"
+msgstr "이 기기를 인증할 수 있는 기간을 짧게 설정합니다. 이미 등록된 기기의 만료 시각에는 영향을 주지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPreferencesDescription"
+msgstr "기기의 태그와 수명 주기 동작을 설정합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.setupAuthKey"
+msgstr "인증 키 설정"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupDevice"
+msgstr "기기 설정"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamTitle"
+msgstr "소규모 팀"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanRefBannerTitle"
+msgstr "정책 참조가 기존 사용자와 일치하지 않습니다"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultData"
+msgstr "저장된 연결 데이터 일부를 읽을 수 없습니다. 기존 데이터는 보존되었습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleSourcePlaceholder"
+msgstr "접근 주체"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleFieldsRequired"
+msgstr "접근 주체, 접근 대상, 포트는 모두 필수입니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupSpecial"
+msgstr "특수"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshLabel"
+msgstr "SSH"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindSsh"
+msgstr "SSH 확인"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckApproved"
+msgstr "SSH 확인을 승인했습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckRejected"
+msgstr "SSH 확인을 거부했습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepServer"
+msgstr "Headscale이 실행 중인 서버에 SSH로 접속합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceBadge"
+msgstr "끊어진 참조"
+
+#: src/i18n/descriptors.ts
+msgid "product.templatesSectionTitle"
+msgstr "템플릿으로 시작"
+
+#: src/i18n/descriptors.ts
+msgid "product.status"
+msgstr "상태"
+
+#: src/i18n/descriptors.ts
+msgid "common.system"
+msgstr "시스템"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSharedNote"
+msgstr "이 브라우저의 탭은 잠금 해제된 서버를 공유합니다. 30분 동안 활동이 없으면 세션이 잠깁니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.tagName"
+msgstr "태그"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwners"
+msgstr "태그 소유자"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedOnly"
+msgstr "태그 있음"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedKeys"
+msgstr "태그 키"
+
+#: src/i18n/descriptors.ts
+msgid "product.tags"
+msgstr "태그"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardTitle"
+msgstr "tailnet 개요"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamName"
+msgstr "팀 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamsSection"
+msgstr "팀"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupTeams"
+msgstr "팀"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceNameConflict"
+msgstr "해당 그룹 또는 태그 이름이 이미 사용 중입니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionChanged"
+msgstr "활성 서버가 변경되었습니다. 이 페이지를 확인한 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.preferencesReloadFailed"
+msgstr "브라우저가 환경설정을 다시 불러올 수 없습니다. 페이지를 새로고침한 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.storageWrite"
+msgstr "브라우저가 변경 사항을 저장할 수 없습니다. 이전 데이터는 보존되었습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageNotSaved"
+msgstr "언어가 변경되었지만 환경설정을 저장할 수 없습니다. 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoadFailed"
+msgstr "언어를 불러올 수 없습니다. 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.passwordsMismatch"
+msgstr "비밀번호가 일치하지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.policySaveContextChanged"
+msgstr "정책을 저장했습니다. 편집기 내용이 변경되었으니 확인한 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesDescription"
+msgstr "프로필 정보가 변경되었습니다. 지금 닫으면 저장하지 않은 내용이 사라집니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnreachable"
+msgstr "요청이 완료되지 않았습니다. 서버 URL, 네트워크 연결, 서버의 CORS 설정을 확인하세요. 변경 사항을 저장하던 중이었다면 다시 시도하기 전에 서버의 현재 상태를 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionCancelled"
+msgstr "요청이 취소되었습니다. 준비가 되면 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionOutcomeUnknown"
+msgstr "결과를 확인할 수 없습니다. 서버에 변경 사항이 저장되었을 수 있습니다. 상태를 확인한 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnexpectedResponse"
+msgstr "서버가 예상하지 못한 응답(HTTP {status})을 반환했습니다. URL이 Headscale을 가리키는지, 리버스 프록시가 정상 작동하는지 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "서버 비밀번호가 변경되었습니다. 필요할 때 다시 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSavedLocked"
+msgstr "서버 프로필이 저장되었지만 아직 잠겨 있습니다. 비밀번호를 입력하여 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionUnavailable"
+msgstr "공유 세션을 사용할 수 없습니다. 다시 연결하고 서버의 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.themeNotSaved"
+msgstr "테마가 변경되었지만 환경설정을 저장할 수 없습니다. 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionValidationFailedDescription"
+msgstr "서버 URL 또는 API 키를 확인하지 못했습니다. 내용을 계속 편집하거나 먼저 프로필을 추가한 뒤 수정할 수 있습니다. 프로필은 목록에서 언제든 편집할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberCleanupPending"
+msgstr "사용자가 삭제되었지만 정책에 아직 해당 사용자에 대한 참조가 남아 있습니다. 다시 시도하거나 접근 제어에서 해당 참조를 제거하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberPolicyPending"
+msgstr "사용자 이름은 변경되었지만 정책에서 아직 이전 이름을 사용하고 있습니다. 다시 시도하거나 접근 제어에서 해당 참조를 업데이트하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.theme"
+msgstr "테마"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenanceDescription"
+msgstr "이 작업은 서버 전체에 적용됩니다. Headscale 상태를 복구하거나 검증할 때만 사용하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionHint"
+msgstr "이 규칙은 IP 주소, 네트워크 범위 또는 모든 대상에 대한 접근을 허용합니다. 여기에서 직접 편집하거나 삭제할 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesDescription"
+msgstr "이 기기가 현재 알리는 모든 경로를 승인합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.clearProfilesDescription"
+msgstr "이 브라우저에 저장된 모든 서버 프로필을 삭제하고 공유 세션을 잠급니다. 서버와 API 키를 다시 추가해야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceEntityMissing"
+msgstr "이 그룹 또는 태그가 더 이상 존재하지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesDescription"
+msgstr "이 기기를 통해 인터넷 트래픽을 전달할 수 있는 출구 경로가 포함됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsRegistration"
+msgstr "기기 로그인 링크입니다. 요청 유형을 기기 로그인으로 바꾸세요. SSH 확인 작업으로는 기기가 등록되지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsSshCheck"
+msgstr "SSH 확인 링크입니다. 요청 유형을 SSH 확인으로 바꾸세요. 기기를 등록할 수 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyWarning"
+msgstr "이 키는 현재 세션을 인증합니다. 만료되거나 삭제되면 이 세션은 서버에 대한 접근 권한을 잃으며, Headscale CLI로 새 API 키를 만들어야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteDescription"
+msgstr "이 키로는 새 기기를 인증할 수 없게 됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryDescription"
+msgstr "이 기기는 더 이상 만료되지 않으며, 직접 만료시키기 전까지 다시 로그인하지 않아도 접근 권한을 유지합니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionReloadRequired"
+msgstr "이 페이지와 공유 세션이 호환되지 않습니다. 이전 탭을 닫고 이 페이지를 새로고침하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorDescription"
+msgstr "이 페이지의 로드 또는 표시를 완료하지 못했습니다. 업데이트 후, 사생활 보호 모드, 오래된 캐시 파일 등으로 인해 일시적으로 발생하는 경우가 많습니다. 다시 시도하여 새로 고치세요. 저장된 연결은 삭제되지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordHint"
+msgstr "이 비밀번호는 이 서버의 API 키만 암호화하며 복구할 수 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceUnsupported"
+msgstr "이 정책에는 안전하게 업데이트할 수 없는 필드가 포함되어 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadOnlyError"
+msgstr "이 정책을 안전하게 읽을 수 없어 변경이 비활성화되었습니다. Headscale에서 정책을 수정한 후 새로고침하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirmBody"
+msgstr "끊어진 것으로 표시된 참조를 모두 삭제합니다. 반영하려면 화면 위쪽의 ‘저장’을 눌러야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemDescription"
+msgstr "접근 설정에서 이 항목을 삭제합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteDescription"
+msgstr "Headscale에서 인증 키를 삭제합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineDescription"
+msgstr "Headscale에서 기기를 제거합니다. 이 UI에서는 되돌릴 수 없습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileDescription"
+msgstr "저장된 서버 URL과 API 키가 이 브라우저에서 삭제됩니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberDescription"
+msgstr "Headscale에서 사용자를 제거합니다. 계속하기 전에 해당 사용자의 기기와 인증 키를 확인하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyTagRenameScope"
+msgstr "정책에서 태그 이름을 변경합니다. 장치 태그와 외부 설정은 변경되지 않습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionInvalidRequest"
+msgstr "이 요청을 보낼 수 없습니다. 페이지를 새로고침한 후 다시 시도하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyAdvancedRuleHint"
+msgstr "이 규칙에는 추가 제한이 있습니다. 허용할 서비스는 Headscale 정책에서 수정하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.unsupportedServerVersion"
+msgstr "이 서버는 Headscale {version}으로 보고되지만 이 앱은 0.29.x를 대상으로 합니다. 일부 페이지가 로드되지 않거나 불완전한 데이터가 표시될 수 있습니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverVersionUnreadable"
+msgstr "이 서버는 Headscale {version}으로 보고되며 이 앱은 해당 버전을 지원하지 않고 응답도 읽을 수 없습니다. Headscale 0.29.x 서버를 사용하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.userImpactOnDeleteHeading"
+msgstr "이 사용자는 다음 정책 항목에서 참조됩니다:"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineDescription"
+msgstr "이 기기는 다시 연결하기 전에 재인증해야 합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.time"
+msgstr "시간"
+
+#: src/i18n/descriptors.ts
+msgid "product.destination"
+msgstr "접근 대상"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessViewHint"
+msgstr "접근 권한을 변경하려면 이 창을 닫고 기기 라벨을 여세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.totalDevices"
+msgstr "전체 기기"
+
+#: src/i18n/descriptors.ts
+msgid "common.tryAgain"
+msgstr "다시 시도"
+
+#: src/i18n/descriptors.ts
+msgid "product.unknown"
+msgstr "알 수 없음"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockSubmit"
+msgstr "잠금 해제"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileUnlockTitle"
+msgstr "{name} 잠금 해제"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultLocked"
+msgstr "계속하려면 저장된 연결의 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionLocked"
+msgstr "계속하려면 이 서버의 잠금을 해제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesBadge"
+msgstr "저장 안 됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesTitle"
+msgstr "저장하지 않은 변경 사항"
+
+#: src/i18n/descriptors.ts
+msgid "common.updatedProfile"
+msgstr "업데이트됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationDescription"
+msgstr "승인 대기 중인 기기에 표시된 등록 키를 사용하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyAutomationHint"
+msgstr "여러 기기 설정을 자동화할 때 사용하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.reusableDescription"
+msgstr "이 키로 여러 기기를 인증합니다."
+
+#: src/i18n/descriptors.ts
+msgid "product.applyTemplate"
+msgstr "이 템플릿 사용"
+
+#: src/i18n/descriptors.ts
+msgid "product.used"
+msgstr "사용됨"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyBadge"
+msgstr "현재 세션에서 사용 중"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableUser"
+msgstr "사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.userDetails"
+msgstr "사용자 상세"
+
+#: src/i18n/descriptors.ts
+msgid "product.userId"
+msgstr "사용자 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberName"
+msgstr "사용자 이름"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNotFound"
+msgstr "사용자를 찾을 수 없습니다"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserStillOwns"
+msgstr "이 사용자가 소유한 기기 또는 인증 키가 남아 있습니다. 먼저 제거하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDeviceDescription"
+msgstr "사용자 소유 노트북, 휴대전화, 데스크톱용입니다."
+
+#: src/i18n/descriptors.ts
+msgid "common.users"
+msgstr "사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.members"
+msgstr "사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersTitle"
+msgstr "사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupUsers"
+msgstr "사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewDetails"
+msgstr "상세 보기"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachine"
+msgstr "기기 보기"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachines"
+msgstr "기기 보기"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewRoutes"
+msgstr "경로 보기"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewUser"
+msgstr "사용자 보기"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceTooltip"
+msgstr "사용자 목록에서 일치하는 이메일이나 이름을 찾지 못했습니다. 오타, 표기 차이 또는 삭제된 사용자일 수 있습니다. 항목 옆의 ✕를 눌러 정리하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebLabel"
+msgstr "웹"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagAccessorsSection"
+msgstr "이 기기에 접근할 수 있는 사용자"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwnersSection"
+msgstr "기기에 이 라벨을 붙일 수 있는 사용자"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleBody"
+msgstr "{name}에 대한 미완성 초안이 있습니다. 현재 서버에는 제출할 수 없습니다. 계속하려면 초안을 삭제하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUnsavedBlocked"
+msgstr "접근 제어 페이지에 저장하지 않은 정책 변경 사항이 있습니다. 여기에서 정책을 변경하기 전에 해당 페이지에서 저장하거나 취소하세요."
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesBody"
+msgstr "‘저장’을 누르기 전까지 변경 사항은 이 브라우저에만 남습니다. 그래도 닫을까요?"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionExpired"
+msgstr "세션이 만료되었습니다. 이 서버의 잠금을 다시 해제하세요."

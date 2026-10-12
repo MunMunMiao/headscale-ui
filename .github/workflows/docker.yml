@@ -1,25 +1,30 @@
 name: Docker
-
-on:
+"on":
   release:
-    types: [published]
-  workflow_dispatch:
+    types:
+      - published
+  workflow_dispatch: null
   pull_request:
     paths:
       - Dockerfile
       - .dockerignore
       - docker/**
       - .github/workflows/docker.yml
-
 permissions:
   contents: read
-
 env:
   REGISTRY: ghcr.io
-
 jobs:
+  verify:
+    if: "github.event_name != 'pull_request'"
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
   build:
-    runs-on: ubuntu-latest
+    needs: verify
+    # Fail closed: publishing needs a successful verify, while PR builds (no verify) keep running.
+    if: "${{ !cancelled() && (github.event_name == 'pull_request' || needs.verify.result == 'success') }}"
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -27,25 +32,20 @@ jobs:
       attestations: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set image name
         run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         if: github.event_name != 'pull_request'
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: github.event_name != 'pull_request'
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -53,9 +53,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
             type=sha
-
       - id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: ./Dockerfile
@@ -65,8 +64,7 @@ jobs:
           platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         if: github.event_name != 'pull_request'
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}

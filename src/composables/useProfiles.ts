@@ -1,425 +1,560 @@
-import { type ComputedRef, computed, type Ref, reactive, ref } from "vue";
-import { type ConnectionSettings, connectionSettingsError } from "@/api/http";
-import type { HeadscaleSnapshot } from "@/api/types";
-import { useHeadscaleI18n } from "@/i18n";
-import { isEncryptedApiKey } from "@/lib/api-key-crypto";
-import {
-  type ConnectionProfile,
-  type ProfileStorageScope,
-  profileStorage,
+import { connectionSettingsError } from "@/api/connection";
+import { ApiError } from "@/api/gateway";
+import { t } from "@/i18n";
+import type {
+  ProfileList,
+  ProfileSummary,
+  ProfileWriteExpected,
+  StoredProfileCommit,
+  VaultVersion,
 } from "@/lib/profile-storage";
-import { useActionFeedback } from "./useActionFeedback";
-import { useHeadscaleClient } from "./useHeadscaleClient";
-import { useMasterPassword } from "./useMasterPassword";
-import { fetchSnapshot } from "./useSnapshot";
+import { clearSessionMetadata } from "@/lib/secure-storage";
+import { createStore } from "@/lib/store";
+import type { SessionBridge } from "@/session/bridge";
+import type { ProfileSaveInput } from "@/session/profile-actions";
+import type { SessionIdentity } from "@/session/types";
+import { storageErrorMessage } from "@/utils/storage-error";
+import { normalizedBaseUrl } from "@/utils/strings";
+import { useSession, useStore } from "./session-context";
+import type { createActionFeedbackStore } from "./useActionFeedback";
 
 export const newProfileId = "__new__";
-const profileLoginMinimumMs = 300;
-
-// Explicit state machine for the login lifecycle. Replaces three coupled refs
-// (isConnecting/isRestoringSession/authenticatingProfileId) whose Cartesian
-// product contained semantically ambiguous combinations.
-export type LoginPhase =
-  | { kind: "idle" }
-  | { kind: "restoring"; profileId: string }
-  | { kind: "authenticating"; profileId: string }
-  | { kind: "adding" };
-
-type ConnectionForm = ConnectionSettings & {
+export interface ConnectionForm {
   profileId: string;
   profileName: string;
+  baseUrl: string;
+  apiKey: string;
+  password: string;
   remember: boolean;
-};
-
-type AuthenticatedHook = (snapshot: HeadscaleSnapshot) => void;
-type LogoutHook = () => void;
-
-interface UseProfilesReturn {
-  profiles: Ref<ConnectionProfile[]>;
+}
+export type LoginPhase =
+  | { kind: "idle" }
+  | { kind: "adding" }
+  | { kind: "authenticating"; profileId: string };
+interface ProfilesState {
+  profiles: ProfileSummary[];
+  version: VaultVersion | null;
+  unreadableRecords: number;
   connectionForm: ConnectionForm;
-  phase: Ref<LoginPhase>;
-  isConnecting: ComputedRef<boolean>;
-  isRestoringSession: Ref<boolean>;
-  authenticatingProfileId: ComputedRef<string | null>;
-  selectedProfile: ComputedRef<ConnectionProfile | undefined>;
-  currentProfileLabel: ComputedRef<string>;
-  connectionDialogOpen: Ref<boolean>;
-  connectionCloseConfirmOpen: Ref<boolean>;
-  profileValidationDialogOpen: Ref<boolean>;
-  profileValidationError: Ref<string>;
-  pendingDeleteProfile: Ref<ConnectionProfile | null>;
-  loadProfile(profileId: string): Promise<void>;
-  openConnectionDialog(profileId: string): Promise<void>;
-  closeConnectionDialog(): void;
-  addProfile(): Promise<void>;
-  persistConnection(): Promise<string>;
-  editProfile(profile: ConnectionProfile): Promise<void>;
-  deleteProfile(profile: ConnectionProfile): void;
-  confirmDeleteProfile(): void;
-  enterProfile(profile: ConnectionProfile, mode?: "authenticating" | "restoring"): Promise<boolean>;
-  logout(): void;
-  setOnAuthenticated(hook: AuthenticatedHook | null): void;
-  setOnLogout(hook: LogoutHook | null): void;
+  phase: LoginPhase;
+  connectionDialogOpen: boolean;
+  connectionCloseConfirmOpen: boolean;
+  profileValidationDialogOpen: boolean;
+  profileValidationError: string;
+  pendingDeleteProfile: ProfileSummary | null;
+  unlockProfile: ProfileSummary | null;
 }
-
-let instance: UseProfilesReturn | null = null;
-
-/** Internal: invoked by `__testing.ts` only. */
-export const profilesTestingHandle = {
-  reset() {
-    instance = null;
-  },
-};
-
-function createProfileId() {
-  return crypto.randomUUID();
-}
-
 function defaultConnectionForm(): ConnectionForm {
   return {
     profileId: newProfileId,
     profileName: "",
     baseUrl: "",
     apiKey: "",
+    password: "",
     remember: true,
   };
 }
 
-async function profileToForm(profile: ConnectionProfile): Promise<ConnectionForm> {
-  const mp = useMasterPassword();
-  let apiKey = "";
-  try {
-    apiKey = await mp.decryptApiKey(profile.apiKey);
-  } catch (err) {
-    console.error("[headscale-ui] failed to decrypt profile, marking corrupted", err);
-    profileStorage.markCorrupted(profile.id);
-  }
-  return {
-    profileId: profile.id,
-    profileName: profile.name,
-    baseUrl: profile.baseUrl,
-    apiKey,
-    remember: profileStorage.getProfileScope(profile.id) !== "session",
-  };
-}
-
-function normalizeProfile(profile: Partial<ConnectionProfile>): ConnectionProfile | null {
-  if (!profile.id || !profile.baseUrl || !isEncryptedApiKey(profile.apiKey)) {
-    return null;
-  }
-
-  const baseUrl = profile.baseUrl.trim();
-
-  return {
-    id: profile.id,
-    name: profile.name || baseUrl,
-    baseUrl,
-    apiKey: profile.apiKey,
-    updatedAt: profile.updatedAt || new Date().toISOString(),
-    scope: profile.scope ?? "persistent",
-    ...(profile.ownerTabId ? { ownerTabId: profile.ownerTabId } : {}),
-    ...(profile.corrupted ? { corrupted: true as const } : {}),
-  };
-}
-
-function normalizeProfiles(profileRecords: Partial<ConnectionProfile>[]) {
-  return profileRecords
-    .map((profile) => normalizeProfile(profile))
-    .filter((profile): profile is ConnectionProfile => profile !== null);
-}
-
-function loadConnectionProfiles(): ConnectionProfile[] {
-  return normalizeProfiles(profileStorage.loadProfiles());
-}
-
-export function useProfiles(): UseProfilesReturn {
-  if (instance) return instance;
-
-  const { settings, createClient, setSettings } = useHeadscaleClient();
-  const { lastError } = useActionFeedback();
-  const { t } = useHeadscaleI18n();
-  const masterPassword = useMasterPassword();
-
-  const profiles = ref<ConnectionProfile[]>(loadConnectionProfiles());
-  const connectionForm = reactive<ConnectionForm>(defaultConnectionForm());
-
-  Object.assign(settings, {
-    baseUrl: connectionForm.baseUrl,
-    apiKey: connectionForm.apiKey,
+export function createProfilesStore(
+  bridge: SessionBridge,
+  feedback: ReturnType<typeof createActionFeedbackStore>,
+  initial: ProfileList | null,
+) {
+  const store = createStore<ProfilesState>({
+    profiles: initial?.profiles ?? [],
+    version: initial?.version ?? null,
+    unreadableRecords: initial?.unreadableRecords ?? 0,
+    connectionForm: defaultConnectionForm(),
+    phase: { kind: "idle" },
+    connectionDialogOpen: false,
+    connectionCloseConfirmOpen: false,
+    profileValidationDialogOpen: false,
+    profileValidationError: "",
+    pendingDeleteProfile: null,
+    unlockProfile: null,
   });
-
-  // Phase is the single source of truth for "what's happening in the login flow."
-  // generation guards against concurrent authorize calls: when the user switches
-  // profiles or logs out mid-flight, the stale promise must not write back state.
-  const phase = ref<LoginPhase>({ kind: "idle" });
-  let generation = 0;
-  const isConnecting = computed(() => phase.value.kind !== "idle");
-  const authenticatingProfileId = computed(() => {
-    const p = phase.value;
-    return p.kind === "authenticating" || p.kind === "restoring" ? p.profileId : null;
-  });
-  // isRestoringSession stays a writable ref because useSessionRestore owns its
-  // lifecycle externally (set true at the start of restoration, false once the
-  // first navigation/cold-start decision settles).
-  const isRestoringSession = ref(true);
-  const connectionDialogOpen = ref(false);
-  const connectionCloseConfirmOpen = ref(false);
-  const profileValidationDialogOpen = ref(false);
-  const profileValidationError = ref("");
-  const pendingDeleteProfile = ref<ConnectionProfile | null>(null);
-
-  const selectedProfile = computed(() =>
-    profiles.value.find((profile) => profile.id === connectionForm.profileId),
-  );
-  const currentProfileLabel = computed(() => connectionForm.profileName || t("profile"));
-
-  let onAuthenticated: AuthenticatedHook | null = null;
-  let onLogout: LogoutHook | null = null;
-
-  function reloadProfiles() {
-    profiles.value = normalizeProfiles(profileStorage.loadProfiles());
+  let formGeneration = 0;
+  let submissionGeneration = 0;
+  let reloadGeneration = 0;
+  let draftId: string | null = null;
+  let draftIdentity: SessionIdentity | null = bridge.getSessionSnapshot()?.identity ?? null;
+  let controller: AbortController | null = null;
+  function setConnectionForm(patch: Partial<ConnectionForm>) {
+    ++formGeneration;
+    store.setState((state) => ({ connectionForm: { ...state.connectionForm, ...patch } }));
   }
-
-  function profileScopeFromForm(): ProfileStorageScope {
-    return connectionForm.remember ? "persistent" : "session";
+  function clearSecrets() {
+    store.setState((state) => ({
+      connectionForm: { ...state.connectionForm, apiKey: "", password: "" },
+    }));
   }
-
-  function formConnectionSettings(): ConnectionSettings {
-    const baseUrl = connectionForm.baseUrl.trim();
-    const next = { baseUrl, apiKey: connectionForm.apiKey.trim() };
-    const error = connectionSettingsError(next);
-    if (error) throw new Error(t(error));
-    return next;
-  }
-
-  async function loadProfile(profileId: string) {
-    connectionForm.profileId = profileId;
-
-    if (profileId === newProfileId) {
-      Object.assign(connectionForm, defaultConnectionForm());
-      return;
-    }
-
-    const profile = profiles.value.find((item) => item.id === profileId);
-    if (!profile) {
-      return;
-    }
-
-    Object.assign(connectionForm, await profileToForm(profile));
-  }
-
-  async function openConnectionDialog(profileId: string) {
-    lastError.value = "";
-    await loadProfile(profileId);
-    connectionDialogOpen.value = true;
-  }
-
-  function closeConnectionDialog() {
-    connectionDialogOpen.value = false;
-    connectionCloseConfirmOpen.value = false;
-    lastError.value = "";
-    profileValidationDialogOpen.value = false;
-    profileValidationError.value = "";
-  }
-
-  async function persistConnection(): Promise<string> {
-    const { baseUrl, apiKey } = formConnectionSettings();
-    const name = connectionForm.profileName.trim() || baseUrl;
-    const existingProfile =
-      connectionForm.profileId === newProfileId
-        ? null
-        : profiles.value.find((profile) => profile.id === connectionForm.profileId);
-
-    const apiKeySecret = await masterPassword.encryptApiKey(apiKey);
-    const scope = profileScopeFromForm();
-
-    const profile: ConnectionProfile = {
-      id: existingProfile?.id ?? createProfileId(),
-      name,
-      baseUrl,
-      apiKey: apiKeySecret,
-      updatedAt: new Date().toISOString(),
-      scope,
+  function expected(profile: ProfileSummary | null): ProfileWriteExpected {
+    const version = store.getSnapshot().version;
+    if (!version) throw new ApiError({ kind: "unavailable" });
+    return {
+      version,
+      ownerTabId: "",
+      profile: profile ? { id: profile.id, credentialVersion: profile.credentialVersion } : null,
     };
-
-    profiles.value = existingProfile
-      ? profiles.value.map((item) => (item.id === existingProfile.id ? profile : item))
-      : [...profiles.value, profile];
-    connectionForm.profileId = profile.id;
-    connectionForm.profileName = profile.name;
-    profileStorage.saveProfile(profile, scope);
-    reloadProfiles();
-    // Persist is always followed by closing the connection dialog — owning the
-    // close here keeps both success paths (addProfile + force-save after
-    // validation failure) symmetric.
-    closeConnectionDialog();
-
-    return profile.id;
   }
-
-  async function addProfile() {
-    let nextSettings: ConnectionSettings;
-    try {
-      nextSettings = formConnectionSettings();
-    } catch (error) {
-      lastError.value = error instanceof Error ? error.message : String(error);
+  async function reloadProfiles() {
+    const ticket = ++reloadGeneration;
+    const result = await bridge.listProfiles();
+    if (ticket !== reloadGeneration) return;
+    if (!result.ok) throw new ApiError(result.error);
+    store.setState(result.value);
+  }
+  function adoptCommittedProfile(commit: StoredProfileCommit) {
+    const current = store.getSnapshot();
+    if (
+      current.version?.keyEpoch !== commit.version.keyEpoch ||
+      current.version.profilesRevision > commit.version.profilesRevision
+    )
       return;
-    }
-    const myGen = ++generation;
-    phase.value = { kind: "adding" };
-    lastError.value = "";
-
-    try {
-      await fetchSnapshot(createClient(nextSettings));
-      if (myGen !== generation) return;
-      await persistConnection();
-    } catch (error) {
-      // Surface the failure locally regardless of generation — the validation
-      // dialog is per-attempt and writing it back never overrides committed state.
-      profileValidationError.value = error instanceof Error ? error.message : String(error);
-      profileValidationDialogOpen.value = true;
-    } finally {
-      if (myGen === generation) phase.value = { kind: "idle" };
-    }
-  }
-
-  async function editProfile(profile: ConnectionProfile) {
-    await openConnectionDialog(profile.id);
-  }
-
-  function deleteProfile(profile: ConnectionProfile) {
-    pendingDeleteProfile.value = profile;
-  }
-
-  function confirmDeleteProfile() {
-    const profileId = pendingDeleteProfile.value?.id;
-    pendingDeleteProfile.value = null;
-    if (!profileId || profileId === newProfileId) {
-      return;
-    }
-
-    profiles.value = profiles.value.filter((profile) => profile.id !== profileId);
-    profileStorage.deleteProfile(profileId);
-    reloadProfiles();
-
-    if (connectionForm.profileId === profileId) {
-      void loadProfile(profiles.value[0]?.id ?? newProfileId);
-    }
-  }
-
-  async function authorizeProfile(
-    profile: ConnectionProfile,
-    mode: "authenticating" | "restoring",
-  ): Promise<boolean> {
-    Object.assign(connectionForm, await profileToForm(profile));
-    if (profile.corrupted) {
-      lastError.value = t("encryptionProfileCorrupted");
-      return false;
-    }
-    let plainApiKey = "";
-    try {
-      plainApiKey = await masterPassword.decryptApiKey(profile.apiKey);
-    } catch (err) {
-      console.error("[headscale-ui] decrypt failed during authorize; marking corrupted", err);
-      profileStorage.markCorrupted(profile.id);
-      reloadProfiles();
-      lastError.value = t("encryptionProfileCorrupted");
-      return false;
-    }
-
-    const startedAt = performance.now();
-    const nextSettings: ConnectionSettings = {
-      baseUrl: profile.baseUrl,
-      apiKey: plainApiKey,
-    };
-
-    const myGen = ++generation;
-    phase.value = { kind: mode, profileId: profile.id };
-    lastError.value = "";
-
-    let succeeded = false;
-    try {
-      const nextSnapshot = await fetchSnapshot(createClient(nextSettings));
-      if (myGen !== generation) return false;
-      setSettings(nextSettings);
-      onAuthenticated?.(nextSnapshot);
-      profileStorage.setActiveProfile(
-        profile.id,
-        profileStorage.getProfileScope(profile.id) ?? "session",
-      );
-      succeeded = true;
-    } catch (error) {
-      // Always surface the local error; clearActiveProfile is guarded so a
-      // superseded flow doesn't clobber state owned by the newer flow.
-      lastError.value = error instanceof Error ? error.message : String(error);
-      if (myGen === generation) profileStorage.clearActiveProfile();
-    } finally {
-      const remainingMs = profileLoginMinimumMs - (performance.now() - startedAt);
-      if (remainingMs > 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, remainingMs));
-      }
-      if (myGen === generation) phase.value = { kind: "idle" };
-    }
-    return succeeded;
-  }
-
-  async function enterProfile(
-    profile: ConnectionProfile,
-    mode: "authenticating" | "restoring" = "authenticating",
-  ): Promise<boolean> {
-    connectionDialogOpen.value = false;
-    return await authorizeProfile(profile, mode);
-  }
-
-  function logout() {
-    // Bump generation so any in-flight authorize promise cannot resurrect the
-    // active-profile state after we've cleared it.
-    ++generation;
-    phase.value = { kind: "idle" };
-    profileStorage.clearActiveProfile();
-    connectionDialogOpen.value = false;
-    lastError.value = "";
-    Object.assign(connectionForm, {
-      ...defaultConnectionForm(),
-      profileId: connectionForm.profileId,
-      profileName: connectionForm.profileName,
-      baseUrl: settings.baseUrl,
-      apiKey: settings.apiKey,
-      remember: false,
+    store.setState({
+      version: commit.version,
+      profiles: [
+        ...current.profiles.filter((profile) => profile.id !== commit.profile.id),
+        commit.profile,
+      ],
     });
-    onLogout?.();
   }
-
-  instance = {
-    profiles,
-    connectionForm,
-    phase,
-    isConnecting,
-    isRestoringSession,
-    authenticatingProfileId,
-    selectedProfile,
-    currentProfileLabel,
-    connectionDialogOpen,
-    connectionCloseConfirmOpen,
-    profileValidationDialogOpen,
-    profileValidationError,
-    pendingDeleteProfile,
+  async function loadProfile(profileId: string) {
+    ++formGeneration;
+    draftId = null;
+    draftIdentity = bridge.getSessionSnapshot()?.identity ?? null;
+    const profile = store.getSnapshot().profiles.find((item) => item.id === profileId);
+    store.setState({
+      connectionForm: profile
+        ? {
+            profileId: profile.id,
+            profileName: profile.name,
+            baseUrl: profile.baseUrl,
+            apiKey: "",
+            password: "",
+            remember: profile.scope === "persistent",
+          }
+        : defaultConnectionForm(),
+    });
+  }
+  async function openConnectionDialog(profileId: string) {
+    const ticket = formGeneration + 1;
+    await loadProfile(profileId);
+    if (ticket !== formGeneration) return;
+    feedback.setState({ lastError: "" });
+    store.setState({ connectionDialogOpen: true });
+  }
+  function closeConnectionDialog() {
+    ++formGeneration;
+    ++submissionGeneration;
+    controller?.abort();
+    controller = null;
+    clearSecrets();
+    store.setState({
+      connectionDialogOpen: false,
+      connectionCloseConfirmOpen: false,
+      profileValidationDialogOpen: false,
+      profileValidationError: "",
+      unlockProfile: null,
+      phase: { kind: "idle" },
+    });
+    feedback.setState({ lastError: "" });
+  }
+  async function save(validation: "required" | "skip", activate: boolean): Promise<string> {
+    if (store.getSnapshot().phase.kind !== "idle") throw new ApiError({ kind: "busy" });
+    const form = { ...store.getSnapshot().connectionForm };
+    const formTicket = formGeneration;
+    const ticket = ++submissionGeneration;
+    const profile = store.getSnapshot().profiles.find((item) => item.id === form.profileId) ?? null;
+    const scope = form.remember ? "persistent" : "session";
+    const metadataOnly =
+      !!profile && normalizedBaseUrl(form.baseUrl) === profile.baseUrl && !form.apiKey;
+    if (validation === "skip" && (!form.apiKey.trim() || !form.password))
+      throw new Error(t("sessionSecretRequired"));
+    let input: ProfileSaveInput;
+    if (metadataOnly)
+      input = { kind: "metadata", expected: expected(profile), name: form.profileName, scope };
+    else {
+      const error = connectionSettingsError(form);
+      if (error) throw new Error(t(error));
+      if (!form.password) throw new Error(t("serverPasswordRequired"));
+      if (!profile) draftId ??= crypto.randomUUID();
+      input = {
+        kind: "credentials",
+        expected: expected(profile),
+        profile: {
+          id: profile?.id ?? (draftId as string),
+          name: form.profileName,
+          baseUrl: form.baseUrl,
+          scope,
+        },
+        apiKey: form.apiKey,
+        password: form.password,
+        validation,
+        activate,
+        expectedWorkerId: bridge.getSnapshot().workerId ?? "",
+        expectedIdentity: draftIdentity,
+      };
+    }
+    // Local failures above keep the typed secrets; they are cleared only once dispatched.
+    clearSecrets();
+    controller = new AbortController();
+    const saving = bridge.saveProfile(input, { signal: controller.signal });
+    form.apiKey = form.password = "";
+    if (input.kind === "credentials") input.apiKey = input.password = "";
+    store.setState({ phase: { kind: "adding" } });
+    feedback.setState({ lastError: "" });
+    try {
+      const result = await saving;
+      if (!result.ok) throw new ApiError(result.error);
+      // Superseding aborts the request, so an ok reply is always for a commit that is now stored.
+      adoptCommittedProfile(result.value.commit);
+      await reloadProfiles().catch((error: unknown) => {
+        if (ticket === submissionGeneration && formTicket === formGeneration)
+          feedback.setState({ lastError: storageErrorMessage(error) });
+      });
+      if (ticket === submissionGeneration && formTicket === formGeneration) {
+        draftId = null;
+        store.setState((state) => ({
+          connectionForm: {
+            ...state.connectionForm,
+            profileId: result.value.commit.profile.id,
+            profileName: result.value.commit.profile.name,
+          },
+          connectionDialogOpen: false,
+          connectionCloseConfirmOpen: false,
+          profileValidationDialogOpen: false,
+          profileValidationError: "",
+        }));
+        if (result.value.activation && !result.value.activation.ok)
+          feedback.setState({ lastError: t("sessionSavedLocked") });
+      }
+      return result.value.commit.profile.id;
+    } catch (error) {
+      if (
+        ticket === submissionGeneration &&
+        error instanceof ApiError &&
+        error.kind === "storage-conflict"
+      ) {
+        // Keep the write failure if refreshing its recovery metadata also fails.
+        await reloadProfiles().catch(() => undefined);
+      }
+      if (ticket === submissionGeneration && formTicket === formGeneration) {
+        if (validation === "required" && error instanceof ApiError && error.kind === "api")
+          store.setState({
+            profileValidationDialogOpen: true,
+            profileValidationError: storageErrorMessage(error),
+          });
+        else feedback.setState({ lastError: storageErrorMessage(error) });
+      }
+      throw error;
+    } finally {
+      if (ticket === submissionGeneration) {
+        controller = null;
+        store.setState({ phase: { kind: "idle" } });
+      }
+    }
+  }
+  async function enterProfile(profile: ProfileSummary, password?: string): Promise<boolean> {
+    if (password === undefined) {
+      feedback.setState({ lastError: "" });
+      store.setState({ unlockProfile: profile });
+      return false;
+    }
+    if (store.getSnapshot().phase.kind !== "idle") return false;
+    const ticket = ++submissionGeneration;
+    controller = new AbortController();
+    store.setState({ phase: { kind: "authenticating", profileId: profile.id } });
+    feedback.setState({ lastError: "" });
+    const unlocking = bridge.unlock(
+      {
+        profileId: profile.id,
+        password,
+        expectedWorkerId: bridge.getSnapshot().workerId ?? "",
+        expectedIdentity: bridge.getSessionSnapshot()?.identity ?? null,
+        expectedCredentialVersion: profile.credentialVersion ?? "",
+      },
+      { signal: controller.signal },
+    );
+    password = "";
+    try {
+      const result = await unlocking;
+      if (ticket !== submissionGeneration) return false;
+      if (!result.ok) throw new ApiError(result.error);
+      const current = bridge.getSessionSnapshot()?.identity;
+      if (
+        current?.workerId !== result.value.identity?.workerId ||
+        current?.sessionId !== result.value.identity?.sessionId
+      )
+        return false;
+      store.setState({ unlockProfile: null });
+      return true;
+    } catch (error) {
+      // bridge.unlock never rejects, so only the synchronous steps after the ticket check can throw.
+      feedback.setState({ lastError: storageErrorMessage(error) });
+      return false;
+    } finally {
+      if (ticket === submissionGeneration) {
+        controller = null;
+        store.setState({ phase: { kind: "idle" } });
+      }
+    }
+  }
+  async function migrateAndEnterProfile(
+    profile: ProfileSummary,
+    password: string,
+    legacyPassword?: string,
+  ) {
+    if (store.getSnapshot().phase.kind !== "idle") return false;
+    const ticket = ++submissionGeneration;
+    const initialIdentity = bridge.getSessionSnapshot()?.identity;
+    controller = new AbortController();
+    store.setState({ phase: { kind: "authenticating", profileId: profile.id } });
+    feedback.setState({ lastError: "" });
+    let committed = false;
+    try {
+      const migrating = bridge.migrateProfile(
+        { expected: expected(profile), password, legacyPassword },
+        { signal: controller.signal },
+      );
+      legacyPassword = "";
+      const migrated = await migrating;
+      if (ticket !== submissionGeneration) return false;
+      if (!migrated.ok) throw new ApiError(migrated.error);
+      committed = true;
+      adoptCommittedProfile(migrated.value);
+      await reloadProfiles();
+      if (ticket !== submissionGeneration) return false;
+      const current = bridge.getSessionSnapshot()?.identity;
+      if (
+        initialIdentity?.workerId !== current?.workerId ||
+        initialIdentity?.sessionId !== current?.sessionId
+      ) {
+        feedback.setState({ lastError: t("sessionSavedLocked") });
+        return false;
+      }
+      store.setState({ phase: { kind: "idle" } });
+      const entering = enterProfile(migrated.value.profile, password);
+      password = "";
+      return await entering;
+    } catch (error) {
+      if (ticket === submissionGeneration)
+        feedback.setState({
+          lastError: committed ? t("sessionSavedLocked") : storageErrorMessage(error),
+        });
+      return false;
+    } finally {
+      password = legacyPassword = "";
+      if (ticket === submissionGeneration) {
+        controller = null;
+        store.setState({ phase: { kind: "idle" } });
+      }
+    }
+  }
+  function resetProjection(version: VaultVersion) {
+    ++formGeneration;
+    ++submissionGeneration;
+    ++reloadGeneration;
+    controller?.abort();
+    controller = null;
+    draftId = null;
+    draftIdentity = null;
+    store.setState({
+      profiles: [],
+      version,
+      unreadableRecords: 0,
+      connectionForm: defaultConnectionForm(),
+      phase: { kind: "idle" },
+      connectionDialogOpen: false,
+      connectionCloseConfirmOpen: false,
+      profileValidationDialogOpen: false,
+      profileValidationError: "",
+      pendingDeleteProfile: null,
+      unlockProfile: null,
+    });
+    feedback.setState({ lastError: "" });
+  }
+  return {
+    ...store,
+    setConnectionForm,
     loadProfile,
     openConnectionDialog,
     closeConnectionDialog,
-    addProfile,
-    persistConnection,
-    editProfile,
-    deleteProfile,
-    confirmDeleteProfile,
-    enterProfile,
-    logout,
-    setOnAuthenticated(hook: AuthenticatedHook | null) {
-      onAuthenticated = hook;
+    reloadProfiles,
+    resetProjection,
+    get connectionFormGeneration() {
+      return formGeneration;
     },
-    setOnLogout(hook: LogoutHook | null) {
-      onLogout = hook;
+    get authorizationGeneration() {
+      return submissionGeneration;
+    },
+    get isConnecting() {
+      return store.getSnapshot().phase.kind !== "idle";
+    },
+    get authenticatingProfileId() {
+      const phase = store.getSnapshot().phase;
+      return phase.kind === "authenticating" ? phase.profileId : null;
+    },
+    get selectedProfile() {
+      return store
+        .getSnapshot()
+        .profiles.find((profile) => profile.id === store.getSnapshot().connectionForm.profileId);
+    },
+    get currentProfileLabel() {
+      return bridge.getSessionSnapshot()?.profile?.name || t("profile");
+    },
+    editProfile: (profile: ProfileSummary) => openConnectionDialog(profile.id),
+    async addProfile(activate = false) {
+      const formTicket = formGeneration;
+      const ticket = submissionGeneration + 1;
+      try {
+        await save("required", activate);
+      } catch (error) {
+        if (
+          ticket === submissionGeneration &&
+          formTicket === formGeneration &&
+          !store.getSnapshot().profileValidationDialogOpen
+        )
+          feedback.setState({ lastError: storageErrorMessage(error) });
+      }
+    },
+    persistConnection: () => save("skip", false),
+    enterProfile,
+    migrateAndEnterProfile,
+    closeUnlockDialog() {
+      ++submissionGeneration;
+      controller?.abort();
+      controller = null;
+      store.setState({ unlockProfile: null, phase: { kind: "idle" } });
+      feedback.setState({ lastError: "" });
+    },
+    async changeProfilePassword(
+      profile: ProfileSummary,
+      password: string,
+      newPassword: string,
+    ): Promise<boolean> {
+      if (store.getSnapshot().phase.kind !== "idle") return false;
+      const ticket = ++submissionGeneration;
+      const formTicket = formGeneration;
+      controller = new AbortController();
+      store.setState({ phase: { kind: "authenticating", profileId: profile.id } });
+      feedback.setState({ lastError: "" });
+      try {
+        const changing = bridge.changeProfilePassword(
+          { expected: expected(profile), password, newPassword },
+          { signal: controller.signal },
+        );
+        password = newPassword = "";
+        const result = await changing;
+        if (ticket !== submissionGeneration) return false;
+        if (!result.ok) throw new ApiError(result.error);
+        adoptCommittedProfile(result.value);
+        await reloadProfiles().catch((error: unknown) => {
+          if (ticket === submissionGeneration && formTicket === formGeneration)
+            feedback.setState({ lastError: storageErrorMessage(error) });
+        });
+        return true;
+      } catch (error) {
+        if (
+          ticket === submissionGeneration &&
+          error instanceof ApiError &&
+          error.kind === "storage-conflict"
+        )
+          await reloadProfiles().catch(() => undefined);
+        if (ticket === submissionGeneration && formTicket === formGeneration)
+          feedback.setState({ lastError: storageErrorMessage(error) });
+        return false;
+      } finally {
+        password = newPassword = "";
+        if (ticket === submissionGeneration) {
+          controller = null;
+          store.setState({ phase: { kind: "idle" } });
+        }
+      }
+    },
+    deleteProfile(profile: ProfileSummary) {
+      store.setState({ pendingDeleteProfile: profile });
+    },
+    async confirmDeleteProfile() {
+      const profile = store.getSnapshot().pendingDeleteProfile;
+      if (!profile || store.getSnapshot().phase.kind !== "idle") return;
+      const ticket = ++submissionGeneration;
+      const formTicket = formGeneration;
+      controller = new AbortController();
+      store.setState({ phase: { kind: "adding" } });
+      feedback.setState({ lastError: "" });
+      try {
+        const result = await bridge.deleteProfile(expected(profile), { signal: controller.signal });
+        if (ticket !== submissionGeneration) return;
+        if (!result.ok) throw new ApiError(result.error);
+        const current = store.getSnapshot();
+        if (
+          current.version?.keyEpoch === result.value.version.keyEpoch &&
+          current.version.profilesRevision <= result.value.version.profilesRevision
+        )
+          store.setState({
+            version: result.value.version,
+            profiles: current.profiles.filter((item) => item.id !== profile.id),
+          });
+        await reloadProfiles().catch((error: unknown) => {
+          if (
+            ticket === submissionGeneration &&
+            store.getSnapshot().pendingDeleteProfile === profile
+          )
+            feedback.setState({ lastError: storageErrorMessage(error) });
+        });
+        if (ticket !== submissionGeneration) return;
+        if (store.getSnapshot().pendingDeleteProfile === profile)
+          store.setState({ pendingDeleteProfile: null });
+        if (
+          formTicket === formGeneration &&
+          store.getSnapshot().connectionForm.profileId === profile.id
+        )
+          await loadProfile(newProfileId);
+      } catch (error) {
+        if (
+          ticket === submissionGeneration &&
+          error instanceof ApiError &&
+          error.kind === "storage-conflict"
+        )
+          await reloadProfiles().catch(() => undefined);
+        if (ticket === submissionGeneration && store.getSnapshot().pendingDeleteProfile === profile)
+          feedback.setState({ lastError: storageErrorMessage(error) });
+      } finally {
+        if (ticket === submissionGeneration) {
+          controller = null;
+          store.setState({ phase: { kind: "idle" } });
+        }
+      }
+    },
+    async logout() {
+      closeConnectionDialog();
+      const ticket = submissionGeneration;
+      const formTicket = formGeneration;
+      const result = await bridge.lock(bridge.getSessionSnapshot()?.identity ?? null);
+      if (!result.ok && ticket === submissionGeneration && formTicket === formGeneration)
+        feedback.setState({ lastError: storageErrorMessage(new ApiError(result.error)) });
+    },
+    async resetLocalData() {
+      const result = await bridge.resetStorage(expected(null).version);
+      if (!result.ok) throw new ApiError(result.error);
+      resetProjection(result.value.version);
+      return { ...result.value, sessionMetadataCleared: clearSessionMetadata() };
+    },
+    startVaultSync() {
+      const stop = bridge.subscribeProfiles(() => {
+        // Stopping bumps reloadGeneration, so a reload in flight then returns before it can throw.
+        void reloadProfiles().catch((error: unknown) =>
+          feedback.setState({ lastError: storageErrorMessage(error) }),
+        );
+      });
+      return () => {
+        ++reloadGeneration;
+        stop();
+      };
     },
   };
-  return instance;
+}
+export function useProfiles() {
+  return useStore(useSession().profiles);
 }

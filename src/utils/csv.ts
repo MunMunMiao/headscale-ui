@@ -1,15 +1,22 @@
-export function csvCell(value: string | number | boolean | undefined) {
-  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+type CsvCell = string | number | boolean | null | undefined;
+
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
+export function csvCell(value: CsvCell) {
+  const text = String(value ?? "");
+  // OWASP CSV-injection mitigation; the visible apostrophe is an accepted trade-off.
+  const safe = typeof value === "string" && FORMULA_PREFIX.test(text) ? `'${text}` : text;
+  return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function downloadCsv(
+export function downloadCsv<K extends string>(
   fileName: string,
-  rows: Array<Record<string, string | number | boolean | undefined>>,
+  columns: readonly K[],
+  rows: Array<Record<K, CsvCell>>,
 ) {
-  const headers = Object.keys(rows[0] ?? { empty: "" });
   const csv = [
-    headers.map(csvCell).join(","),
-    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(",")),
+    columns.map(csvCell).join(","),
+    ...rows.map((row) => columns.map((column) => csvCell(row[column])).join(",")),
   ].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");

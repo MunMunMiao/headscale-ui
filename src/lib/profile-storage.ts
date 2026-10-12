@@ -1,365 +1,493 @@
 import { normalizedBaseUrl } from "../utils/strings";
-import { type ApiKeySecret, isEncryptedApiKey } from "./api-key-crypto";
 import {
-  idbDelete,
-  idbPut,
+  type ApiKeySecret,
+  CANARY_KEY_ID,
+  DEVICE_KEY_ID,
+  decryptProfileKey,
+  encryptProfileKey,
+  isEncryptedApiKey,
+  type PasswordApiKeySecretV2,
+  parsePasswordApiKeySecret,
+} from "./api-key-crypto";
+import {
+  bindTransactionAbort,
   openHeadscaleDb,
+  STORE_KEYS,
   STORE_META,
   STORE_PROFILES,
-  withTransaction,
 } from "./idb";
+import { readLegacyProfileKey } from "./legacy-profile-crypto";
+import {
+  advanceVaultState,
+  assertVaultVersion,
+  notifyVaultChanged,
+  readVaultState,
+  VAULT_STATE_KEY,
+  VaultConflictError,
+  VaultDataError,
+  type VaultVersion,
+} from "./vault-state";
 
+export type { VaultVersion } from "./vault-state";
+export { VaultConflictError, VaultDataError, VaultLockedError } from "./vault-state";
 export type ProfileStorageScope = "persistent" | "session";
-
-export type ConnectionProfile = {
+interface StoredProfileFields {
   id: string;
   name: string;
   baseUrl: string;
-  apiKey: ApiKeySecret;
+  keyEpoch: string;
   updatedAt: string;
   scope: ProfileStorageScope;
   ownerTabId?: string;
-  corrupted?: true;
-};
-
-const ACTIVE_PROFILE_META_KEY = "active-profile-id";
-const SESSION_TAB_ID_KEY = "headscale-ui-tab-id";
-
-type CacheState = {
-  profiles: Map<string, ConnectionProfile>;
-  activeProfileId: string | null;
-  tabId: string;
-  isPersistentAvailable: boolean;
-};
-
-const cache: CacheState = {
-  profiles: new Map(),
-  activeProfileId: null,
-  tabId: "",
-  isPersistentAvailable: false,
-};
-
-let hydrated = false;
-
-function obtainTabId(): string {
-  if (typeof sessionStorage === "undefined") return crypto.randomUUID();
-  const existing = sessionStorage.getItem(SESSION_TAB_ID_KEY);
-  if (existing) return existing;
-  const fresh = crypto.randomUUID();
-  sessionStorage.setItem(SESSION_TAB_ID_KEY, fresh);
-  return fresh;
+}
+export interface PasswordStoredProfile extends StoredProfileFields {
+  apiKey: PasswordApiKeySecretV2;
+  credentialVersion: string;
+}
+export interface LegacyStoredProfile extends StoredProfileFields {
+  apiKey: ApiKeySecret | string;
+  credentialVersion?: string;
+}
+export type StoredProfile = PasswordStoredProfile | LegacyStoredProfile;
+export interface ProfileSummary extends StoredProfileFields {
+  credentialVersion: string | null;
+  credentialKind:
+    | "password"
+    | "legacy-device"
+    | "legacy-password"
+    | "legacy-plaintext"
+    | "unreadable";
+}
+export interface ProfileWriteExpected {
+  version: VaultVersion;
+  ownerTabId: string;
+  profile: { id: string; credentialVersion: string | null } | null;
+}
+export interface StoredProfileCommit {
+  profile: ProfileSummary;
+  version: VaultVersion;
+}
+export interface ProfileList {
+  profiles: ProfileSummary[];
+  version: VaultVersion;
+  unreadableRecords: number;
+}
+export interface MigrateProfileInput {
+  expected: ProfileWriteExpected;
+  password: string;
+  legacyPassword?: string;
+}
+export interface ChangeProfilePasswordInput {
+  expected: ProfileWriteExpected;
+  password: string;
+  newPassword: string;
 }
 
-function ensureHydrated() {
-  if (!hydrated) {
-    throw new Error("profileStorage accessed before hydrate(); call hydrate() in main.ts first");
+export async function removeLegacyDemoProfiles(): Promise<void> {
+  const db = await openHeadscaleDb();
+  const read = db.transaction([STORE_PROFILES, STORE_META], "readonly");
+  const [records, rawVersion] = await Promise.all([
+    read.objectStore(STORE_PROFILES).getAll(),
+    read.objectStore(STORE_META).get(VAULT_STATE_KEY),
+    read.done,
+  ]);
+  const removed = new Set<string>();
+  for (const raw of records) {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) continue;
+    const value = raw as Record<string, unknown>;
+    if (
+      typeof value.id === "string" &&
+      value.id &&
+      value.mode === "mock" &&
+      typeof value.baseUrl === "string" &&
+      normalizedBaseUrl(value.baseUrl) === "http://127.0.0.1:8080"
+    )
+      removed.add(value.id);
   }
-}
-
-export type HydrateOptions = {
-  /**
-   * Re-encrypt a legacy plaintext apiKey. Supplied by main.ts as a closure bound to the
-   * current device key; keeps profile-storage free of crypto policy decisions.
-   */
-  encryptLegacy?: (plain: string) => Promise<ApiKeySecret>;
-};
-
-async function readMigratedProfiles(): Promise<unknown[]> {
-  const profiles: unknown[] = [];
-  let migrationError: unknown;
-
+  if (!removed.size) return;
+  const expected = readVaultState(rawVersion);
+  const tx = db.transaction([STORE_PROFILES, STORE_META], "readwrite");
+  let version: VaultVersion;
   try {
-    await withTransaction([STORE_PROFILES, STORE_META], "readwrite", (tx) => {
-      const store = tx.objectStore(STORE_PROFILES);
-      const request = store.getAll();
-      request.onsuccess = () => {
-        try {
-          const removedIds = new Set<string>();
-          for (const record of request.result) {
-            if (
-              record.mode === "mock" &&
-              typeof record.baseUrl === "string" &&
-              normalizedBaseUrl(record.baseUrl) === "http://127.0.0.1:8080"
-            ) {
-              store.delete(record.id);
-              removedIds.add(record.id);
-              continue;
-            }
-            if (Object.hasOwn(record, "mode")) {
-              delete record.mode;
-              store.put(record);
-            }
-            profiles.push(record);
-          }
-          if (removedIds.size > 0) {
-            const meta = tx.objectStore(STORE_META);
-            const active = meta.get(ACTIVE_PROFILE_META_KEY);
-            active.onsuccess = () => {
-              try {
-                if (removedIds.has(active.result)) meta.delete(ACTIVE_PROFILE_META_KEY);
-              } catch (error) {
-                migrationError = error;
-                tx.abort();
-              }
-            };
-          }
-        } catch (error) {
-          migrationError = error;
-          tx.abort();
-        }
-      };
-    });
+    const profiles = tx.objectStore(STORE_PROFILES);
+    const meta = tx.objectStore(STORE_META);
+    const current = readVaultState(await meta.get(VAULT_STATE_KEY));
+    assertVaultVersion(current, expected);
+    for (const id of removed) await profiles.delete(id);
+    for (const key of await meta.getAllKeys()) {
+      if (key !== ACTIVE_PROFILE_META_KEY && !key.startsWith(ACTIVE_PROFILE_PREFIX)) continue;
+      const reference = activeRef(await meta.get(key));
+      if (reference && removed.has(reference.profileId)) await meta.delete(key);
+    }
+    version = advanceVaultState(current);
+    await meta.put(version, VAULT_STATE_KEY);
+    await tx.done;
   } catch (error) {
-    throw migrationError ?? error;
+    try {
+      tx.abort();
+    } catch {
+      /* The failed transaction may already be finished. */
+    }
+    await tx.done.catch(() => undefined);
+    throw error;
   }
-  return profiles;
+  notifyVaultChanged(version);
 }
 
-export async function hydrate(options: HydrateOptions = {}): Promise<void> {
-  hydrated = false;
-  cache.tabId = obtainTabId();
-  cache.profiles.clear();
-  cache.activeProfileId = null;
-  cache.isPersistentAvailable = false;
+export async function updateProfileMetadata(
+  expected: ProfileWriteExpected,
+  patch: { name: string; scope: ProfileStorageScope },
+  signal?: AbortSignal,
+): Promise<StoredProfileCommit> {
+  signal?.throwIfAborted();
+  const reference = expected.profile;
+  if (!reference) throw new VaultConflictError();
+  const read = await readProfileForOwner(reference.id, expected.ownerTabId);
+  if (!read) throw new VaultConflictError();
+  assertVaultVersion(read.version, expected.version);
+  assertProfileExpectation(read.profile, reference.id, expected);
+  return persistProfile(
+    expected,
+    {
+      ...read.profile,
+      name: patch.name.trim() || read.profile.baseUrl,
+      scope: patch.scope,
+      updatedAt: new Date().toISOString(),
+    },
+    signal,
+  );
+}
 
+export async function deleteStoredProfile(
+  expected: ProfileWriteExpected,
+  signal?: AbortSignal,
+): Promise<{ version: VaultVersion; profileId: string }> {
+  signal?.throwIfAborted();
+  const reference = expected.profile;
+  if (!reference) throw new VaultConflictError();
+  const db = await openHeadscaleDb();
+  const tx = db.transaction([STORE_PROFILES, STORE_META, STORE_KEYS], "readwrite");
+  const stopAbort = bindTransactionAbort(tx, signal);
+  let version: VaultVersion;
   try {
-    await openHeadscaleDb();
-    cache.isPersistentAvailable = true;
-  } catch (err) {
-    console.warn("[headscale-ui] IndexedDB unavailable; persistent profiles disabled", err);
-    hydrated = true;
+    const profiles = tx.objectStore(STORE_PROFILES);
+    const meta = tx.objectStore(STORE_META);
+    const current = readVaultState(await meta.get(VAULT_STATE_KEY));
+    assertVaultVersion(current, expected.version);
+    assertProfileExpectation(await profiles.get(reference.id), reference.id, expected);
+    await profiles.delete(reference.id);
+    for (const key of await meta.getAllKeys()) {
+      if (
+        (key === ACTIVE_PROFILE_META_KEY || key.startsWith(ACTIVE_PROFILE_PREFIX)) &&
+        activeRef(await meta.get(key))?.profileId === reference.id
+      )
+        await meta.delete(key);
+    }
+    if (canRetireLegacyRecords(await profiles.getAll(), current)) {
+      await tx.objectStore(STORE_KEYS).delete(DEVICE_KEY_ID);
+      await meta.delete(CANARY_KEY_ID);
+    }
+    version = advanceVaultState(current);
+    await meta.put(version, VAULT_STATE_KEY);
+    await tx.done;
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      /* The failed transaction may already be finished. */
+    }
+    await tx.done.catch(() => undefined);
+    throw error;
+  } finally {
+    stopAbort();
+  }
+  notifyVaultChanged(version);
+  return { version, profileId: reference.id };
+}
+
+export async function changeProfilePassword(
+  input: ChangeProfilePasswordInput,
+  signal?: AbortSignal,
+): Promise<StoredProfileCommit> {
+  signal?.throwIfAborted();
+  const reference = input.expected.profile;
+  if (!reference) throw new VaultConflictError();
+  const read = await readProfileForOwner(reference.id, input.expected.ownerTabId);
+  if (!read) throw new VaultConflictError();
+  assertVaultVersion(read.version, input.expected.version);
+  assertProfileExpectation(read.profile, reference.id, input.expected);
+  const profile = read.profile;
+  if (
+    profileSummary(profile, read.version).credentialKind !== "password" ||
+    !profile.credentialVersion
+  )
+    throw new VaultDataError();
+  const apiKey = await decryptProfileKey({
+    profileId: profile.id,
+    canonicalBaseUrl: profile.baseUrl,
+    credentialVersion: profile.credentialVersion,
+    secret: profile.apiKey,
+    password: input.password,
+  });
+  const credentialVersion = crypto.randomUUID();
+  const secret = await encryptProfileKey({
+    profileId: profile.id,
+    canonicalBaseUrl: profile.baseUrl,
+    credentialVersion,
+    apiKey,
+    password: input.newPassword,
+  });
+  return commitProfile(
+    input.expected,
+    {
+      ...profile,
+      apiKey: secret,
+      credentialVersion,
+      updatedAt: new Date().toISOString(),
+    },
+    signal,
+  );
+}
+
+function visibleToOwner(value: Record<string, unknown>, ownerTabId: string): boolean {
+  return value.scope !== "session" || value.ownerTabId === ownerTabId;
+}
+
+function profileSummary(raw: unknown, version: VaultVersion): ProfileSummary {
+  const value = recordObject(raw);
+  if (typeof value.id !== "string" || !value.id) throw new VaultDataError();
+  const fields: StoredProfileFields = {
+    id: value.id,
+    name: typeof value.name === "string" ? value.name : value.id,
+    baseUrl: typeof value.baseUrl === "string" ? value.baseUrl : "",
+    keyEpoch: typeof value.keyEpoch === "string" ? value.keyEpoch : "",
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : "",
+    scope: value.scope === "session" ? "session" : "persistent",
+  };
+  if (typeof value.ownerTabId === "string") fields.ownerTabId = value.ownerTabId;
+  let credentialKind: ProfileSummary["credentialKind"] = "unreadable";
+  const credentialVersion =
+    typeof value.credentialVersion === "string" && value.credentialVersion
+      ? value.credentialVersion
+      : null;
+  if (
+    fields.baseUrl &&
+    fields.keyEpoch === version.keyEpoch &&
+    (value.scope === undefined || value.scope === "persistent" || value.scope === "session") &&
+    (fields.scope !== "session" || fields.ownerTabId)
+  ) {
+    if (typeof value.apiKey === "string") credentialKind = "legacy-plaintext";
+    else if (isEncryptedApiKey(value.apiKey))
+      credentialKind = value.apiKey.scheme === "device" ? "legacy-device" : "legacy-password";
+    else if (credentialVersion) {
+      try {
+        parsePasswordApiKeySecret(value.apiKey);
+        credentialKind = "password";
+      } catch {
+        /* Keep malformed rows visible without interpreting them as usable credentials. */
+      }
+    }
+  }
+  return { ...fields, credentialVersion, credentialKind };
+}
+
+function storedProfile(raw: unknown, version: VaultVersion): StoredProfile {
+  const summary = profileSummary(raw, version);
+  if (summary.credentialKind === "unreadable") throw new VaultDataError();
+  const { credentialKind: _kind, credentialVersion, ...fields } = summary;
+  return {
+    ...recordObject(raw),
+    ...fields,
+    ...(credentialVersion === null ? {} : { credentialVersion }),
+  } as StoredProfile;
+}
+
+export async function listProfileSummaries(ownerTabId: string): Promise<ProfileList> {
+  const db = await openHeadscaleDb();
+  const tx = db.transaction([STORE_PROFILES, STORE_META], "readonly");
+  const [records, rawVersion] = await Promise.all([
+    tx.objectStore(STORE_PROFILES).getAll(),
+    tx.objectStore(STORE_META).get(VAULT_STATE_KEY),
+    tx.done,
+  ]);
+  const version = readVaultState(rawVersion);
+  const profiles: ProfileSummary[] = [];
+  let unreadableRecords = 0;
+  for (const raw of records) {
+    try {
+      if (!visibleToOwner(recordObject(raw), ownerTabId)) continue;
+      const summary = profileSummary(raw, version);
+      profiles.push(summary);
+      if (summary.credentialKind === "unreadable") unreadableRecords++;
+    } catch {
+      unreadableRecords++;
+    }
+  }
+  return { profiles, version, unreadableRecords };
+}
+
+export async function readProfileForOwner(
+  id: string,
+  ownerTabId: string,
+): Promise<{ profile: StoredProfile; version: VaultVersion } | null> {
+  const db = await openHeadscaleDb();
+  const tx = db.transaction([STORE_PROFILES, STORE_META], "readonly");
+  const [raw, rawVersion] = await Promise.all([
+    tx.objectStore(STORE_PROFILES).get(id),
+    tx.objectStore(STORE_META).get(VAULT_STATE_KEY),
+    tx.done,
+  ]);
+  if (raw === undefined || !visibleToOwner(recordObject(raw), ownerTabId)) return null;
+  const version = readVaultState(rawVersion);
+  return { profile: storedProfile(raw, version), version };
+}
+
+function assertProfileExpectation(raw: unknown, id: string, expected: ProfileWriteExpected): void {
+  if (expected.profile === null) {
+    if (raw !== undefined) throw new VaultConflictError();
     return;
   }
-
-  const raw = await readMigratedProfiles();
-  let migratedPlaintextCount = 0;
-  const migratedIds: string[] = [];
-
-  for (const r of raw) {
-    const candidate = r as Partial<ConnectionProfile> & { apiKey?: unknown };
-    if (!candidate.id || typeof candidate.id !== "string") continue;
-
-    let apiKey: ApiKeySecret | undefined;
-    let corrupted: true | undefined = candidate.corrupted === true ? true : undefined;
-
-    if (typeof candidate.apiKey === "string") {
-      if (!options.encryptLegacy) {
-        console.warn(
-          "[headscale-ui] plaintext apiKey in IDB but no encryptLegacy callback provided; marking profile corrupted",
-        );
-        corrupted = true;
-        apiKey = { v: 1, scheme: "device", iv: "", ct: "" };
-      } else {
-        try {
-          apiKey = await options.encryptLegacy(candidate.apiKey);
-          migratedPlaintextCount++;
-          migratedIds.push(candidate.id);
-        } catch (err) {
-          console.error("[headscale-ui] failed to encrypt legacy plaintext profile", err);
-          corrupted = true;
-          apiKey = { v: 1, scheme: "device", iv: "", ct: "" };
-        }
-      }
-    } else if (isEncryptedApiKey(candidate.apiKey)) {
-      apiKey = candidate.apiKey;
-    } else {
-      corrupted = true;
-      apiKey = { v: 1, scheme: "device", iv: "", ct: "" };
-    }
-
-    const scope: ProfileStorageScope = candidate.scope === "session" ? "session" : "persistent";
-    const ownerTabId = scope === "session" ? candidate.ownerTabId : undefined;
-
-    if (scope === "session" && ownerTabId !== cache.tabId) {
-      try {
-        await idbDelete(STORE_PROFILES, candidate.id);
-      } catch (err) {
-        console.error("[headscale-ui] failed to discard stale session profile", err);
-      }
-      continue;
-    }
-
-    const profile: ConnectionProfile = {
-      id: candidate.id,
-      name: candidate.name ?? candidate.baseUrl ?? "Profile",
-      baseUrl: candidate.baseUrl ?? "",
-      apiKey,
-      updatedAt: candidate.updatedAt ?? new Date().toISOString(),
-      scope,
-      ownerTabId,
-      ...(corrupted ? { corrupted: true as const } : {}),
-    };
-    cache.profiles.set(profile.id, profile);
-  }
-
-  if (migratedIds.length > 0) {
-    console.info(
-      `[headscale-ui] migrated ${migratedPlaintextCount} plaintext profile(s) in IndexedDB`,
-    );
-    for (const id of migratedIds) {
-      const p = cache.profiles.get(id);
-      if (!p) continue;
-      try {
-        await idbPut(STORE_PROFILES, p);
-      } catch (err) {
-        console.error("[headscale-ui] failed to write migrated profile", err);
-      }
-    }
-  }
-
-  cache.activeProfileId = await readActiveProfileFromMeta();
-  hydrated = true;
+  if (raw === undefined || expected.profile.id !== id) throw new VaultConflictError();
+  const value = recordObject(raw);
+  if (
+    !visibleToOwner(value, expected.ownerTabId) ||
+    (value.credentialVersion ?? null) !== expected.profile.credentialVersion
+  )
+    throw new VaultConflictError();
 }
 
-async function readActiveProfileFromMeta(): Promise<string | null> {
-  try {
-    const db = await openHeadscaleDb();
-    return await new Promise<string | null>((resolve, reject) => {
-      const tx = db.transaction(STORE_META, "readonly");
-      const req = tx.objectStore(STORE_META).get(ACTIVE_PROFILE_META_KEY);
-      req.onsuccess = () => resolve((req.result as string | undefined) ?? null);
-      req.onerror = () => reject(req.error);
-    });
-  } catch {
-    return null;
-  }
-}
-
-export type ProfileStorageProvider = {
-  loadProfiles(): ConnectionProfile[];
-  saveProfile(profile: ConnectionProfile, scope: ProfileStorageScope): void;
-  deleteProfile(profileId: string): void;
-  getProfileScope(profileId: string): ProfileStorageScope | null;
-  setActiveProfile(profileId: string, scope: ProfileStorageScope): void;
-  clearActiveProfile(): void;
-  readActiveProfile(): string | null;
-  hasAnyProfile(): boolean;
-  hasProfile(profileId: string): boolean;
-  markCorrupted(profileId: string): void;
-  isPersistentAvailable(): boolean;
-  currentTabId(): string;
-};
-
-export const profileStorage: ProfileStorageProvider = {
-  loadProfiles() {
-    ensureHydrated();
-    return Array.from(cache.profiles.values());
-  },
-  saveProfile(profile, scope) {
-    ensureHydrated();
-    const stored: ConnectionProfile = {
-      ...profile,
-      scope,
-      ownerTabId: scope === "session" ? cache.tabId : undefined,
-    };
-    cache.profiles.set(stored.id, stored);
-    void idbPut(STORE_PROFILES, stored).catch((err) => {
-      console.error("[headscale-ui] saveProfile idbPut failed", err);
-    });
-  },
-  deleteProfile(profileId) {
-    ensureHydrated();
-    cache.profiles.delete(profileId);
-    if (cache.activeProfileId === profileId) {
-      cache.activeProfileId = null;
-      void idbDelete(STORE_META, ACTIVE_PROFILE_META_KEY).catch((err) => {
-        console.error("[headscale-ui] clearActiveProfile idbDelete failed", err);
-      });
+function canRetireLegacyRecords(records: unknown[], version: VaultVersion): boolean {
+  return records.every((raw) => {
+    try {
+      return profileSummary(raw, version).credentialKind === "password";
+    } catch {
+      return false;
     }
-    void idbDelete(STORE_PROFILES, profileId).catch((err) => {
-      console.error("[headscale-ui] deleteProfile idbDelete failed", err);
-    });
-  },
-  getProfileScope(profileId) {
-    ensureHydrated();
-    return cache.profiles.get(profileId)?.scope ?? null;
-  },
-  setActiveProfile(profileId, _scope) {
-    ensureHydrated();
-    cache.activeProfileId = profileId;
-    void idbPut(STORE_META, profileId, ACTIVE_PROFILE_META_KEY).catch((err) => {
-      console.error("[headscale-ui] setActiveProfile idbPut failed", err);
-    });
-  },
-  clearActiveProfile() {
-    ensureHydrated();
-    cache.activeProfileId = null;
-    void idbDelete(STORE_META, ACTIVE_PROFILE_META_KEY).catch((err) => {
-      console.error("[headscale-ui] clearActiveProfile idbDelete failed", err);
-    });
-  },
-  readActiveProfile() {
-    ensureHydrated();
-    return cache.activeProfileId;
-  },
-  hasAnyProfile() {
-    ensureHydrated();
-    return cache.profiles.size > 0;
-  },
-  hasProfile(profileId) {
-    ensureHydrated();
-    return cache.profiles.has(profileId);
-  },
-  markCorrupted(profileId) {
-    ensureHydrated();
-    const profile = cache.profiles.get(profileId);
-    if (!profile || profile.corrupted) return;
-    const updated: ConnectionProfile = { ...profile, corrupted: true };
-    cache.profiles.set(profileId, updated);
-    void idbPut(STORE_PROFILES, updated).catch((err) => {
-      console.error("[headscale-ui] markCorrupted idbPut failed", err);
-    });
-  },
-  isPersistentAvailable() {
-    return cache.isPersistentAvailable;
-  },
-  currentTabId() {
-    return cache.tabId;
-  },
-};
-
-export type ReencryptAllOptions = {
-  /** Translate the current secret into the next one. Run for every persistent profile. */
-  transform: (current: ApiKeySecret) => Promise<ApiKeySecret>;
-  /** Synchronous hook inside the same IDB write transaction (write/clear canary, etc.). */
-  withinTransaction?: (tx: IDBTransaction) => void;
-};
-
-/**
- * Two-phase atomic re-encryption:
- *   1) memory phase — decrypt+encrypt every persistent profile via `transform`. Any throw
- *      aborts with cache untouched.
- *   2) persistence phase — commit all writes (and the optional canary update) inside a single
- *      readwrite transaction. IDB rolls back on partial failure.
- */
-export async function reencryptAll(options: ReencryptAllOptions): Promise<void> {
-  ensureHydrated();
-  const persistent = Array.from(cache.profiles.values()).filter(
-    (p) => p.scope === "persistent" && !p.corrupted,
-  );
-
-  const rewritten: ConnectionProfile[] = [];
-  for (const p of persistent) {
-    const nextSecret = await options.transform(p.apiKey);
-    rewritten.push({ ...p, apiKey: nextSecret });
-  }
-
-  const stores = options.withinTransaction ? [STORE_PROFILES, STORE_META] : [STORE_PROFILES];
-  await withTransaction(stores, "readwrite", (tx) => {
-    const profilesStore = tx.objectStore(STORE_PROFILES);
-    for (const p of rewritten) profilesStore.put(p);
-    options.withinTransaction?.(tx);
   });
-
-  for (const p of rewritten) cache.profiles.set(p.id, p);
 }
 
-export const profileStorageTestingHandle = {
-  reset() {
-    cache.profiles.clear();
-    cache.activeProfileId = null;
-    cache.tabId = "";
-    cache.isPersistentAvailable = false;
-    hydrated = false;
-  },
-};
+export async function commitProfile(
+  expected: ProfileWriteExpected,
+  next: PasswordStoredProfile,
+  signal?: AbortSignal,
+): Promise<StoredProfileCommit> {
+  signal?.throwIfAborted();
+  if (next.keyEpoch !== expected.version.keyEpoch) throw new VaultConflictError();
+  const summary = profileSummary(next, expected.version);
+  if (
+    summary.credentialKind !== "password" ||
+    !next.credentialVersion ||
+    next.baseUrl !== normalizedBaseUrl(next.baseUrl)
+  )
+    throw new VaultDataError();
+  return persistProfile(expected, next, signal);
+}
+
+async function persistProfile(
+  expected: ProfileWriteExpected,
+  next: StoredProfile,
+  signal?: AbortSignal,
+): Promise<StoredProfileCommit> {
+  signal?.throwIfAborted();
+  const db = await openHeadscaleDb();
+  const tx = db.transaction([STORE_PROFILES, STORE_META, STORE_KEYS], "readwrite");
+  const stopAbort = bindTransactionAbort(tx, signal);
+  let version: VaultVersion;
+  let saved: StoredProfile;
+  try {
+    const meta = tx.objectStore(STORE_META);
+    const profiles = tx.objectStore(STORE_PROFILES);
+    const current = readVaultState(await meta.get(VAULT_STATE_KEY));
+    assertVaultVersion(current, expected.version);
+    const previous = await profiles.get(next.id);
+    assertProfileExpectation(previous, next.id, expected);
+    saved = { ...(previous === undefined ? {} : recordObject(previous)), ...next };
+    if (saved.scope === "session") saved.ownerTabId = expected.ownerTabId;
+    if ("corrupted" in saved) delete saved.corrupted;
+    if ("mode" in saved) delete saved.mode;
+    await profiles.put(saved);
+    if (canRetireLegacyRecords(await profiles.getAll(), current)) {
+      await tx.objectStore(STORE_KEYS).delete(DEVICE_KEY_ID);
+      await meta.delete(CANARY_KEY_ID);
+    }
+    version = advanceVaultState(current);
+    await meta.put(version, VAULT_STATE_KEY);
+    await tx.done;
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      /* The failed transaction may already be finished. */
+    }
+    await tx.done.catch(() => undefined);
+    throw error;
+  } finally {
+    stopAbort();
+  }
+  notifyVaultChanged(version);
+  return { profile: profileSummary(saved, version), version };
+}
+
+export async function migrateProfile(
+  input: MigrateProfileInput,
+  signal?: AbortSignal,
+): Promise<StoredProfileCommit> {
+  signal?.throwIfAborted();
+  const reference = input.expected.profile;
+  if (!reference) throw new VaultConflictError();
+  const db = await openHeadscaleDb();
+  const tx = db.transaction([STORE_PROFILES, STORE_META, STORE_KEYS], "readonly");
+  const [raw, rawVersion, deviceKey, canary] = await Promise.all([
+    tx.objectStore(STORE_PROFILES).get(reference.id),
+    tx.objectStore(STORE_META).get(VAULT_STATE_KEY),
+    tx.objectStore(STORE_KEYS).get(DEVICE_KEY_ID),
+    tx.objectStore(STORE_META).get(CANARY_KEY_ID),
+    tx.done,
+  ]);
+  const version = readVaultState(rawVersion);
+  assertVaultVersion(version, input.expected.version);
+  assertProfileExpectation(raw, reference.id, input.expected);
+  const profile = storedProfile(raw, version);
+  if (profileSummary(profile, version).credentialKind === "password")
+    throw new VaultConflictError();
+  const apiKey = await readLegacyProfileKey({
+    secret: profile.apiKey,
+    deviceKey,
+    canary,
+    password: input.legacyPassword,
+  });
+  const credentialVersion = crypto.randomUUID();
+  const baseUrl = normalizedBaseUrl(profile.baseUrl);
+  const secret = await encryptProfileKey({
+    profileId: profile.id,
+    canonicalBaseUrl: baseUrl,
+    credentialVersion,
+    apiKey,
+    password: input.password,
+  });
+  return commitProfile(
+    input.expected,
+    {
+      ...profile,
+      baseUrl,
+      apiKey: secret,
+      credentialVersion,
+      updatedAt: new Date().toISOString(),
+    },
+    signal,
+  );
+}
+
+const ACTIVE_PROFILE_META_KEY = "active-profile-id";
+const ACTIVE_PROFILE_PREFIX = "active-profile:";
+function recordObject(raw: unknown): Record<string, unknown> {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new VaultDataError();
+  return raw as Record<string, unknown>;
+}
+function activeRef(raw: unknown): { profileId: string; operationId: string } | null {
+  if (raw === null || typeof raw !== "object") return null;
+  const value = raw as { profileId?: unknown; operationId?: unknown };
+  return typeof value.profileId === "string" && typeof value.operationId === "string"
+    ? { profileId: value.profileId, operationId: value.operationId }
+    : null;
+}

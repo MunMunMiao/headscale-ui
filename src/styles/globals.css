@@ -39,7 +39,12 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root {
+  color-scheme: light;
+}
+
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -72,6 +77,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/*
+ * Before the theme classes exist (the first frame), follow the OS. An explicit
+ * choice that differs from the OS still shows one blank OS-coloured frame.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light, .dark) {
+    color-scheme: dark;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+  }
 }
 
 @theme inline {
@@ -114,6 +131,11 @@
 }
 
 @layer base {
+  html {
+    /* sticky header is 5.5rem (pt-2 + min-h-11 + h-9) */
+    scroll-padding-top: 6rem;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

@@ -1,151 +1,128 @@
 import "fake-indexeddb/auto";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
-import { createRenderer, defineComponent } from "vue";
-import { i18n } from "@/i18n";
-import { __resetForTest } from "@/lib/idb";
-import {
-  type ConnectionProfile,
-  hydrate,
-  profileStorageTestingHandle,
-} from "@/lib/profile-storage";
-import { resetAllSingletons } from "./__testing";
-import { useConnectionDialog } from "./useConnectionDialog";
-import { masterPasswordTestingHandle } from "./useMasterPassword";
-import { newProfileId, useProfiles } from "./useProfiles";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { __resetForTest, DB_VERSION } from "@/lib/idb";
+import type { ProfileSummary } from "@/lib/profile-storage";
+import { hydrateSettings, settingsStorageTestingHandle } from "@/lib/settings-storage";
+import { createSessionBridge } from "@/session/bridge";
+import { createSessionHost } from "@/session/host";
+import { createSession, type Session } from "./session-context";
+import { createConnectionDialog } from "./useConnectionDialog";
+import { newProfileId } from "./useProfiles";
 
-class TestElement {
-  constructor(private readonly nested: boolean) {}
-
-  closest() {
-    return this.nested ? this : null;
-  }
-}
-
-const htmlElementDescriptor = Object.getOwnPropertyDescriptor(globalThis, "HTMLElement");
-
-function mountComposable<T>(setup: () => T): T {
-  let result: T | undefined;
-  const renderer = createRenderer({
-    patchProp() {},
-    insert() {},
-    remove() {},
-    createElement: () => ({}),
-    createText: () => ({}),
-    createComment: () => ({}),
-    setText() {},
-    setElementText() {},
-    parentNode: () => null,
-    nextSibling: () => null,
-  });
-  const app = renderer.createApp(
-    defineComponent({
-      setup() {
-        result = setup();
-        return () => null;
-      },
-    }),
-  );
-  app.use(i18n);
-  app.mount({});
-  if (result === undefined) throw new Error("Composable setup did not run");
-  return result;
-}
-
-function event(target: unknown, originalTarget?: unknown) {
-  let prevented = false;
-  return {
-    target,
-    detail:
-      originalTarget === undefined ? undefined : { originalEvent: { target: originalTarget } },
-    preventDefault() {
-      prevented = true;
-    },
-    get defaultPrevented() {
-      return prevented;
-    },
-  } as unknown as Event & { readonly defaultPrevented: boolean };
-}
-
-function unsavedProfile(): ConnectionProfile {
-  return {
-    id: "missing-profile",
-    name: "Missing",
-    baseUrl: "https://headscale.example",
-    apiKey: { v: 1, scheme: "device", iv: "iv", ct: "ct" },
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    scope: "persistent",
-  };
-}
-
+let session: Session;
+const cleanup: (() => void | Promise<void>)[] = [];
+afterEach(async () => {
+  vi.restoreAllMocks();
+  for (const stop of cleanup.splice(0).reverse()) await stop();
+});
 beforeEach(async () => {
-  globalThis.indexedDB = new IDBFactory();
   __resetForTest();
-  profileStorageTestingHandle.reset();
-  masterPasswordTestingHandle.reset();
-  resetAllSingletons();
-  await hydrate();
-  (i18n.global.locale as unknown as { value: string }).value = "en-US";
-  Object.defineProperty(globalThis, "HTMLElement", {
-    configurable: true,
-    value: TestElement,
+  globalThis.indexedDB = new IDBFactory();
+  settingsStorageTestingHandle.reset();
+  await hydrateSettings();
+  const host = await createSessionHost("connection-dialog-test");
+  cleanup.push(() => host.dispose());
+  const channel = new MessageChannel();
+  host.connect(channel.port2);
+  const bridge = createSessionBridge({
+    openPort: () => channel.port1,
+    ownerTabId: () => "dialog-owner",
+    buildId: "connection-dialog-test",
+    storageVersion: DB_VERSION,
   });
+  cleanup.push(() => {
+    bridge.dispose();
+    channel.port1.close();
+    channel.port2.close();
+  });
+  expect((await bridge.connect()).ok).toBe(true);
+  const profiles = await bridge.listProfiles();
+  if (!profiles.ok) throw new Error("Profile list failed");
+  session = createSession({ bridge, profiles: profiles.value });
+});
+const missing: ProfileSummary = {
+  id: "missing-profile",
+  name: "Missing",
+  baseUrl: "https://headscale.example",
+  keyEpoch: "fixture-epoch",
+  credentialVersion: "credential-version",
+  credentialKind: "password",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  scope: "persistent",
+};
+// Catches lost dirty-close confirmation and discard/clean close behavior.
+test("tracks the form baseline and confirms dirty closes", async () => {
+  const dialog = createConnectionDialog(session.profiles);
+  await dialog.openConnectionDialogWithBaseline(newProfileId);
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(true);
+  session.profiles.setConnectionForm({ profileName: "Changed" });
+  dialog.requestConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionCloseConfirmOpen).toBe(true);
+  dialog.handleConnectionCloseConfirmOpen(false);
+  dialog.confirmConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
+  await dialog.editProfileWithBaseline(missing);
+  dialog.requestConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
+  dialog.handleConnectionDialogOpen(true);
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(true);
+  dialog.syncConnectionFormBaseline();
+  dialog.handleConnectionDialogOpen(false);
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
+});
+// Uses standard Base UI reasons instead of removed Reka custom events; nested Escape is tested with the real page.
+test("blocks outside dismissal and routes Escape through dirty confirmation", async () => {
+  const dialog = createConnectionDialog(session.profiles);
+  await dialog.openConnectionDialogWithBaseline(newProfileId);
+  let canceled = false;
+  dialog.handleConnectionDialogOpen(false, {
+    reason: "outside-press",
+    cancel() {
+      canceled = true;
+    },
+  });
+  expect(canceled).toBe(true);
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(true);
+  dialog.handleConnectionDialogOpen(false, { reason: "escape-key", cancel() {} });
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
+  await dialog.openConnectionDialogWithBaseline(newProfileId);
+  session.profiles.setConnectionForm({ apiKey: "edited" });
+  dialog.handleConnectionDialogOpen(false, { reason: "escape-key", cancel() {} });
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(true);
+  expect(session.profiles.getSnapshot().connectionCloseConfirmOpen).toBe(true);
 });
 
-afterEach(() => {
-  if (htmlElementDescriptor) {
-    Object.defineProperty(globalThis, "HTMLElement", htmlElementDescriptor);
-  } else {
-    Reflect.deleteProperty(globalThis, "HTMLElement");
-  }
+test("opening an existing profile does not mark later user input as clean", async () => {
+  const dialog = createConnectionDialog(session.profiles);
+  session.profiles.setState({ profiles: [missing] });
+  const opening = dialog.openConnectionDialogWithBaseline(missing.id);
+  session.profiles.setConnectionForm({ profileName: "Unsaved later input" });
+  await opening;
+  dialog.requestConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionCloseConfirmOpen).toBe(true);
 });
 
-describe("useConnectionDialog", () => {
-  test("tracks the form baseline and confirms dirty closes", async () => {
-    const dialog = mountComposable(useConnectionDialog);
-    const profiles = useProfiles();
+test("password-only input is dirty and confirming discard clears both secret fields", async () => {
+  const dialog = createConnectionDialog(session.profiles);
+  await dialog.openConnectionDialogWithBaseline(newProfileId);
+  session.profiles.setConnectionForm({ password: "unsaved server password" });
+  dialog.requestConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionCloseConfirmOpen).toBe(true);
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(true);
+  dialog.confirmConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionForm).toMatchObject({ apiKey: "", password: "" });
+  expect(session.profiles.getSnapshot().connectionDialogOpen).toBe(false);
+});
 
-    await dialog.openConnectionDialogWithBaseline(newProfileId);
-    expect(profiles.connectionDialogOpen.value).toBe(true);
-    profiles.connectionForm.profileName = "Changed";
-    dialog.requestConnectionDialogClose();
-    expect(profiles.connectionCloseConfirmOpen.value).toBe(true);
-
-    dialog.handleConnectionCloseConfirmOpen(false);
-    dialog.confirmConnectionDialogClose();
-    expect(profiles.connectionDialogOpen.value).toBe(false);
-
-    await dialog.editProfileWithBaseline(unsavedProfile());
-    dialog.requestConnectionDialogClose();
-    expect(profiles.connectionDialogOpen.value).toBe(false);
-
-    dialog.handleConnectionDialogOpen(true);
-    expect(profiles.connectionDialogOpen.value).toBe(true);
-    dialog.syncConnectionFormBaseline();
-    dialog.handleConnectionDialogOpen(false);
-    expect(profiles.connectionDialogOpen.value).toBe(false);
+test("synchronizing the ordinary draft never treats entered secrets as clean saved data", async () => {
+  const dialog = createConnectionDialog(session.profiles);
+  await dialog.openConnectionDialogWithBaseline(newProfileId);
+  session.profiles.setConnectionForm({
+    apiKey: "pending credential",
+    password: "pending password",
   });
-
-  test("keeps nested dialogs open and blocks genuine outside or escape closes", () => {
-    const dialog = mountComposable(useConnectionDialog);
-    const profiles = useProfiles();
-    const nested = event(new TestElement(true));
-    dialog.preventConnectionDialogOutsideClose(nested);
-    expect(nested.defaultPrevented).toBe(false);
-
-    const outside = event({}, new TestElement(false));
-    dialog.preventConnectionDialogOutsideClose(outside);
-    expect(outside.defaultPrevented).toBe(true);
-
-    const unknownTarget = event({});
-    dialog.preventConnectionDialogOutsideClose(unknownTarget);
-    expect(unknownTarget.defaultPrevented).toBe(true);
-
-    profiles.connectionDialogOpen.value = true;
-    dialog.syncConnectionFormBaseline();
-    const escapeEvent = event(new TestElement(false));
-    dialog.handleConnectionDialogEscape(escapeEvent);
-    expect(escapeEvent.defaultPrevented).toBe(true);
-    expect(profiles.connectionDialogOpen.value).toBe(false);
-  });
+  dialog.syncConnectionFormBaseline();
+  dialog.requestConnectionDialogClose();
+  expect(session.profiles.getSnapshot().connectionCloseConfirmOpen).toBe(true);
 });

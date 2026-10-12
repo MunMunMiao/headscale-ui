@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { describe, expect, test } from "vitest";
 import {
   DEFAULT_LOCALE,
   LOCALE_META,
@@ -6,6 +7,11 @@ import {
   resolveLocale,
   SUPPORTED_LOCALES,
 } from "./locales";
+
+test("the static document language matches the default locale", () => {
+  const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+  expect(/<html[^>]*\slang="([^"]+)"/.exec(html)?.[1]).toBe(DEFAULT_LOCALE);
+});
 
 describe("locale registry", () => {
   test("uses the canonical BCP47 locale list and default", () => {

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
@@ -7,7 +7,15 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!node_modules", "!playwright-report"]
+    "includes": [
+      "**",
+      "!!.superpowers",
+      "!dist",
+      "!node_modules",
+      "!playwright-report",
+      "!coverage",
+      "!src/i18n/locales/**/messages.ts"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,7 +26,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "javascript": {
@@ -32,17 +40,5 @@
       "tailwindDirectives": true
     }
   },
-  "overrides": [
-    {
-      "includes": ["**/*.vue"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedImports": "off",
-            "noUnusedVariables": "off"
-          }
-        }
-      }
-    }
-  ]
+  "overrides": []
 }

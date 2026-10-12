@@ -1,124 +1,134 @@
-/**
- * IndexedDB Promise wrapper for the headscale-ui DB.
- *
- * Internal: only profile-storage / api-key-crypto / secure-storage may import this module.
- * Application code must go through profile-storage's API.
- */
+import { type DBSchema, type IDBPDatabase, openDB } from "idb";
+import { createStore } from "./store";
+import { newVaultState, VAULT_STATE_KEY } from "./vault-state";
 
 export const DB_NAME = "headscale-ui";
-export const DB_VERSION = 1;
+export const DB_VERSION = 3;
 export const STORE_PROFILES = "profiles";
 export const STORE_KEYS = "keys";
 export const STORE_META = "meta";
 
-let dbPromise: Promise<IDBDatabase> | null = null;
-let openedDb: IDBDatabase | null = null;
+// Validate persisted values at their read boundaries, including historical data.
+export interface HeadscaleDb extends DBSchema {
+  profiles: { key: IDBValidKey; value: unknown };
+  keys: { key: string; value: CryptoKey };
+  meta: { key: string; value: unknown };
+}
 
-export function openHeadscaleDb(): Promise<IDBDatabase> {
-  if (typeof indexedDB === "undefined") {
-    return Promise.reject(new Error("IndexedDB is not available in this environment"));
-  }
+let dbPromise: Promise<IDBPDatabase<HeadscaleDb>> | null = null;
+let openedDb: IDBPDatabase<HeadscaleDb> | null = null;
+let reloadRequired = false;
+export type DatabaseStatus = "opening" | "ready" | "blocked" | "reload-required";
+const status = createStore<{ status: DatabaseStatus }>({ status: "opening" });
+export const getDatabaseStatus = () => status.getSnapshot().status;
+export const subscribeDatabaseStatus = status.subscribe;
+
+export async function openHeadscaleDb(): Promise<IDBPDatabase<HeadscaleDb>> {
+  if (typeof indexedDB === "undefined")
+    throw new Error("IndexedDB is not available in this environment");
+  if (reloadRequired)
+    throw new Error("The local database was upgraded. Reload this page before continuing.");
   if (!dbPromise) {
-    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(STORE_PROFILES)) {
+    status.setState({ status: "opening" });
+    let upgradeError: unknown;
+    dbPromise = openDB<HeadscaleDb>(DB_NAME, DB_VERSION, {
+      upgrade(db, oldVersion, _newVersion, tx) {
+        // openDB reports the upgrade failure; consume its parallel transaction promise.
+        void tx.done.catch(() => undefined);
+        if (!db.objectStoreNames.contains(STORE_PROFILES))
           db.createObjectStore(STORE_PROFILES, { keyPath: "id" });
+        if (!db.objectStoreNames.contains(STORE_KEYS)) db.createObjectStore(STORE_KEYS);
+        if (!db.objectStoreNames.contains(STORE_META)) db.createObjectStore(STORE_META);
+        if (oldVersion < 2) {
+          const migrate = async () => {
+            const version = newVaultState();
+            const profiles = tx.objectStore(STORE_PROFILES);
+            const meta = tx.objectStore(STORE_META);
+            await meta.put(version, VAULT_STATE_KEY);
+            const records = await profiles.getAll();
+            for (const raw of records) {
+              if (raw !== null && typeof raw === "object" && !("keyEpoch" in raw)) {
+                await profiles.put({ ...raw, keyEpoch: version.keyEpoch });
+              }
+            }
+            const active = await meta.get("active-profile-id");
+            if (typeof active === "string") {
+              const target = await profiles.get(active);
+              if (target !== null && typeof target === "object" && "id" in target) {
+                const ref = { profileId: active, operationId: crypto.randomUUID() };
+                if ("scope" in target && target.scope === "session") {
+                  if ("ownerTabId" in target && typeof target.ownerTabId === "string") {
+                    await meta.put(ref, `active-profile:${target.ownerTabId}`);
+                  }
+                  await meta.delete("active-profile-id");
+                } else {
+                  await meta.put(ref, "active-profile-id");
+                }
+              } else {
+                await meta.delete("active-profile-id");
+              }
+            }
+          };
+          void migrate().catch((error: unknown) => {
+            upgradeError = error;
+            try {
+              tx.abort();
+            } catch {
+              /* An external abort may already have finished the transaction. */
+            }
+          });
         }
-        if (!db.objectStoreNames.contains(STORE_KEYS)) {
-          db.createObjectStore(STORE_KEYS);
-        }
-        if (!db.objectStoreNames.contains(STORE_META)) {
-          db.createObjectStore(STORE_META);
-        }
-      };
-      req.onsuccess = () => {
-        openedDb = req.result;
-        resolve(req.result);
-      };
-      req.onerror = () => reject(req.error);
-    });
+      },
+      blocking() {
+        reloadRequired = true;
+        openedDb?.close();
+        openedDb = null;
+        dbPromise = null;
+        status.setState({ status: "reload-required" });
+      },
+      blocked() {
+        status.setState({ status: "blocked" });
+      },
+      terminated() {
+        openedDb = null;
+        dbPromise = null;
+      },
+    })
+      .then((db) => {
+        openedDb = db;
+        status.setState({ status: "ready" });
+        return db;
+      })
+      .catch((error: unknown) => {
+        // A failed open is no longer blocked; reload-required is never overwritten.
+        if (status.getSnapshot().status === "blocked") status.setState({ status: "opening" });
+        dbPromise = null;
+        throw upgradeError ?? error;
+      });
   }
   return dbPromise;
 }
 
-function reqToPromise<T>(req: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-export async function idbGet<T>(store: string, key: IDBValidKey): Promise<T | undefined> {
-  const db = await openHeadscaleDb();
-  const tx = db.transaction(store, "readonly");
-  return reqToPromise(tx.objectStore(store).get(key) as IDBRequest<T | undefined>);
-}
-
-export async function idbPut(store: string, value: unknown, key?: IDBValidKey): Promise<void> {
-  const db = await openHeadscaleDb();
-  const tx = db.transaction(store, "readwrite");
-  await reqToPromise(
-    key !== undefined ? tx.objectStore(store).put(value, key) : tx.objectStore(store).put(value),
-  );
-}
-
-export async function idbDelete(store: string, key: IDBValidKey): Promise<void> {
-  const db = await openHeadscaleDb();
-  const tx = db.transaction(store, "readwrite");
-  await reqToPromise(tx.objectStore(store).delete(key));
-}
-
-export async function idbGetAll<T>(store: string): Promise<T[]> {
-  const db = await openHeadscaleDb();
-  const tx = db.transaction(store, "readonly");
-  return reqToPromise(tx.objectStore(store).getAll() as IDBRequest<T[]>);
-}
-
-export async function idbClear(store: string): Promise<void> {
-  const db = await openHeadscaleDb();
-  const tx = db.transaction(store, "readwrite");
-  await reqToPromise(tx.objectStore(store).clear());
-}
-
-/**
- * Run a callback inside a single transaction across the given stores. Any synchronous
- * put/delete requests dispatched by `fn` are part of the same atomic transaction.
- * Used by reencryptAll to ensure all profiles flip schemes (and the canary updates) in one go.
- */
-export async function withTransaction(
-  stores: string[],
-  mode: IDBTransactionMode,
-  fn: (tx: IDBTransaction) => void,
-): Promise<void> {
-  const db = await openHeadscaleDb();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(stores, mode);
-    tx.oncomplete = () => resolve();
-    tx.onabort = () => reject(tx.error ?? new Error("IDB transaction aborted"));
-    try {
-      fn(tx);
-    } catch (err) {
-      try {
-        tx.abort();
-      } catch {
-        // already failed; ignore
-      }
-      reject(err);
-    }
-  });
-}
-
-/**
- * Test only: close the live db connection and drop the cached promise so the next
- * call reopens against the current indexedDB. Closing is required before
- * `indexedDB.deleteDatabase` will succeed without `onblocked`.
- */
+/** Existing test isolation boundary; production connections close on versionchange. */
 export function __resetForTest(): void {
-  if (openedDb) {
-    openedDb.close();
-    openedDb = null;
-  }
+  openedDb?.close();
+  openedDb = null;
   dbPromise = null;
+  reloadRequired = false;
+  status.setState({ status: "opening" });
+}
+export function bindTransactionAbort(
+  transaction: { abort(): void },
+  signal?: AbortSignal,
+): () => void {
+  const abort = () => {
+    try {
+      transaction.abort();
+    } catch {
+      // A completed transaction cannot be rolled back by a later cancellation.
+    }
+  };
+  signal?.addEventListener("abort", abort, { once: true });
+  if (signal?.aborted) abort();
+  return () => signal?.removeEventListener("abort", abort);
 }

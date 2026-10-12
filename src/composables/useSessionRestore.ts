@@ -1,101 +1,75 @@
-import { watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { profileStorage as storage } from "@/lib/profile-storage";
-import { mapErrorToCopy } from "@/utils/error-mapping";
-import { useActionFeedback } from "./useActionFeedback";
-import { usePolicyDesigner } from "./usePolicyDesigner";
-import { useProductCopy } from "./useProductCopy";
-import { useProfiles } from "./useProfiles";
-import { useRouteIntent } from "./useRouteIntent";
-import { useSnapshot } from "./useSnapshot";
+import { type AnyRouter, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
+import { type Session, useSession } from "./session-context";
 
-/**
- * Cross-cutting bootstrap that turns `App.vue` into a one-liner.
- *
- * Responsibilities, all wired in setup-time order:
- *   1. Plug the i18n-aware error mapper into `useActionFeedback`.
- *   2. Mirror snapshot writes into the policy designer draft.
- *   3. Bridge `useProfiles` auth lifecycle to `useSnapshot` + router.
- *   4. Refresh the snapshot on every authenticated route change.
- *   5. Restore the active profile on cold start (or redirect to /login).
- *
- * Call exactly once from `App.vue`'s `<script setup>`.
- */
-export function useSessionRestore(): void {
-  const router = useRouter();
-  const route = useRoute();
-  const intent = useRouteIntent();
-  const snap = useSnapshot();
-  const profilesApi = useProfiles();
-  const policy = usePolicyDesigner();
-  const feedback = useActionFeedback();
-  const { copy } = useProductCopy();
-
-  const redirectToLogin = () => router.replace({ name: "login" });
-
-  // (1) i18n-aware error translation
-  feedback.setErrorMapper((error) => mapErrorToCopy(error, copy.value));
-
-  // (2) snapshot → policy designer mirror
-  snap.setOnApplySnapshot((next, patch) => {
-    const nextPolicy = next.policy?.policy ?? "";
-    if (
-      "policy" in patch &&
-      !policy.isPolicyDirty.value &&
-      !policy.isPolicyEditing.value &&
-      nextPolicy !== policy.policyDraft.value
-    ) {
-      policy.load(nextPolicy);
+export function createSessionRestoration(session: Session, router: AnyRouter) {
+  let generation = 0;
+  const requiresAuth = () => router.state.matches.some((match) => match.staticData.requiresAuth);
+  async function reconcile() {
+    if (session.auth.getSnapshot().status !== "ready-unlocked" && requiresAuth()) {
+      const location = router.state.location;
+      await router.navigate({
+        to: "/login",
+        replace: true,
+        search: {
+          ...(typeof location.search.profile === "string"
+            ? { profile: location.search.profile }
+            : {}),
+          redirect: location.href,
+        },
+      });
     }
-  });
-  watch(policy.policyDraft, snap.invalidatePolicyRefreshes, { flush: "sync" });
-
-  // (3) profiles → snapshot/router bridge
-  profilesApi.setOnAuthenticated((snapshot) => {
-    policy.load(snapshot.policy?.policy ?? "");
-    snap.applySnapshot(snapshot);
-    snap.isAuthorized.value = true;
-    profilesApi.isRestoringSession.value = false;
-  });
-  profilesApi.setOnLogout(() => {
-    snap.isAuthorized.value = false;
-    policy.load("");
-    snap.applyOfflineHealth();
-    void router.push({ name: "login" });
-  });
-
-  // (4) refresh on every authenticated route change so per-section data is fresh
-  watch(
-    () => route.name,
-    (next, prev) => {
-      if (next && next !== prev && route.meta.requiresAuth && snap.isAuthorized.value) {
-        void snap.refreshSnapshot();
-      }
-    },
-  );
-
-  // (5) cold-start active-profile restoration
-  async function restoreActiveProfile() {
-    // Wait for the first navigation (and its guards) to settle so we don't race the
-    // auth guard's clearActiveProfile path on unknown-profile redirects.
-    await router.isReady();
-    if (snap.isAuthorized.value) return;
-    const requestedFromUrl = intent.profileId.value;
-    const activeId = requestedFromUrl ?? storage.readActiveProfile();
-    if (!activeId) {
-      profilesApi.isRestoringSession.value = false;
-      return;
-    }
-    const profile = profilesApi.profiles.value.find((p) => p.id === activeId);
-    if (!profile) {
-      profilesApi.isRestoringSession.value = false;
-      if (route.meta.requiresAuth || requestedFromUrl) await redirectToLogin();
-      return;
-    }
-    profilesApi.isRestoringSession.value = true;
-    const ok = await profilesApi.enterProfile(profile, "restoring");
-    profilesApi.isRestoringSession.value = false;
-    if (!ok && route.meta.requiresAuth) await redirectToLogin();
   }
-  void restoreActiveProfile();
+  async function restore() {
+    const ticket = ++generation;
+    await session.auth.check();
+    if (ticket === generation) await reconcile();
+  }
+  function start() {
+    let previousPath = router.state.location.pathname;
+    let previous = session.auth.getSessionSnapshot()?.identity;
+    let previousStatus = session.auth.getSnapshot().status;
+    const stopRoute = router.subscribe("onLoad", ({ toLocation }) => {
+      const changed = previousPath !== toLocation.pathname;
+      previousPath = toLocation.pathname;
+      if (changed && requiresAuth() && session.snapshot.getSnapshot().isAuthorized)
+        void session.snapshot.refreshSnapshot();
+    });
+    const stopAuth = session.auth.subscribe(() => {
+      const current = session.auth.getSessionSnapshot()?.identity;
+      const status = session.auth.getSnapshot().status;
+      if (
+        previous?.workerId === current?.workerId &&
+        previous?.sessionId === current?.sessionId &&
+        previousStatus === status
+      )
+        return;
+      ++generation;
+      const switched = previous && current;
+      previous = current;
+      previousStatus = status;
+      if (switched && router.state.location.search.profile) {
+        const { profile: _profile, ...search } = router.state.location.search;
+        void router.navigate({
+          to: router.state.location.pathname,
+          search,
+          hash: router.state.location.hash,
+          replace: true,
+        });
+      } else void reconcile();
+    });
+    void restore();
+    return () => {
+      ++generation;
+      stopRoute();
+      stopAuth();
+    };
+  }
+  return { restore, start };
+}
+export function useSessionRestore(): void {
+  const session = useSession();
+  const router = useRouter();
+  const restoration = useMemo(() => createSessionRestoration(session, router), [session, router]);
+  useEffect(() => restoration.start(), [restoration]);
 }

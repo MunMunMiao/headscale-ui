@@ -1,11 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
+import { addRule } from "@/test/policy-state";
+import type { PolicyDesignerState } from "./policy-designer";
 import {
-  addRule,
   createGroup,
   createRule,
   createTagOwner,
   emptyState,
+  parseCommaList,
   parsePolicy,
+  serializePolicy,
   toMemberRef,
   upsertGroup,
   upsertTagOwner,
@@ -14,8 +17,8 @@ import {
   getGroupAccess,
   getIpRules,
   getOpenAccessWarnings,
-  getServicePresets,
   getTagAccessors,
+  hasOnlyDefaultAccess,
   listTagsFromState,
   parsePortsToServices,
   removeTagAccessor,
@@ -27,16 +30,6 @@ import {
   withGroupPrefix,
   withTagPrefix,
 } from "./policy-views";
-
-test("service presets expose the supported built-in port groups", () => {
-  expect(getServicePresets()).toEqual([
-    { id: "all", ports: ["*"] },
-    { id: "ssh", ports: ["22"] },
-    { id: "web", ports: ["80", "443"] },
-    { id: "rdp", ports: ["3389"] },
-    { id: "dns", ports: ["53"] },
-  ]);
-});
 
 describe("parsePortsToServices", () => {
   test("identifies SSH preset", () => {
@@ -107,6 +100,11 @@ describe("servicesToPortsString", () => {
   test("Duplicates collapsed", () => {
     expect(servicesToPortsString(["ssh"], "22,8080")).toBe("22,8080");
   });
+
+  test("ids without a preset contribute no ports", () => {
+    expect(servicesToPortsString(["ping"], "")).toBe("");
+    expect(servicesToPortsString(["ping", "ssh"], "8080")).toBe("22,8080");
+  });
 });
 
 describe("round-trip parsePortsToServices ↔ servicesToPortsString", () => {
@@ -122,6 +120,25 @@ describe("round-trip parsePortsToServices ↔ servicesToPortsString", () => {
 });
 
 describe("getTagAccessors", () => {
+  test("marks every aggregate containing an extended rule as read-only", () => {
+    const state = parsePolicy(
+      JSON.stringify({
+        acls: [
+          { action: "accept", src: ["alice@"], dst: ["tag:server:22"] },
+          { action: "accept", src: ["alice@"], dst: ["tag:server:443"], proto: "tcp" },
+          { action: "accept", src: ["bob@"], dst: ["tag:server:53"], proto: "udp" },
+          { action: "accept", src: ["bob@"], dst: ["tag:server:80"] },
+          { action: "accept", src: ["carol@"], dst: ["tag:server:22"] },
+        ],
+      }),
+    );
+
+    const accessors = getTagAccessors(state, "tag:server");
+    expect(accessors.find((accessor) => accessor.who === "alice@")?.readOnly).toBe(true);
+    expect(accessors.find((accessor) => accessor.who === "bob@")?.readOnly).toBe(true);
+    expect(accessors.find((accessor) => accessor.who === "carol@")?.readOnly).not.toBe(true);
+  });
+
   test("returns accessors with their services for a tag", () => {
     let state = emptyState();
     state = { ...state, rules: [] };
@@ -209,7 +226,7 @@ describe("getGroupAccess", () => {
   });
 
   test("merges services and custom ports for repeated group-to-tag rules", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:testers", "tag:service", "22,8080"));
     state = addRule(state, createRule("group:testers", "tag:service", "80,443,8443"));
 
@@ -224,6 +241,26 @@ describe("getGroupAccess", () => {
 });
 
 describe("setTagAccessor", () => {
+  test.each(["80,443", ""])(
+    "refuses aggregate edits that would drop protocol constraints: %s",
+    (ports) => {
+      const state = parsePolicy(
+        JSON.stringify({
+          acls: [
+            { action: "accept", src: ["alice@"], dst: ["tag:server:22"], proto: "tcp" },
+            { action: "accept", src: ["alice@"], dst: ["tag:server:53"], proto: "udp" },
+          ],
+        }),
+      );
+
+      expect(() => setTagAccessor(state, "tag:server", "alice@", ports)).toThrow();
+      expect(serializePolicy(state).acls).toEqual([
+        { action: "accept", src: ["alice@"], dst: ["tag:server:22"], proto: "tcp" },
+        { action: "accept", src: ["alice@"], dst: ["tag:server:53"], proto: "udp" },
+      ]);
+    },
+  );
+
   test("creates a new rule when accessor doesn't exist", () => {
     const state = { ...emptyState(), rules: [] };
     const next = setTagAccessor(state, "tag:server", "alice@example.com", "22");
@@ -234,7 +271,7 @@ describe("setTagAccessor", () => {
   });
 
   test("replaces existing accessor rule (idempotent on services change)", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = setTagAccessor(state, "tag:server", "alice@example.com", "22");
     state = setTagAccessor(state, "tag:server", "alice@example.com", "80,443");
 
@@ -243,7 +280,7 @@ describe("setTagAccessor", () => {
   });
 
   test("setTagAccessor with empty ports removes the accessor", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = setTagAccessor(state, "tag:server", "alice@example.com", "22");
     state = setTagAccessor(state, "tag:server", "alice@example.com", "");
 
@@ -257,7 +294,7 @@ describe("setTagAccessor", () => {
   });
 
   test("preserves rules for other (who, tag) pairs", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = setTagAccessor(state, "tag:server", "alice@example.com", "22");
     state = setTagAccessor(state, "tag:db", "alice@example.com", "5432");
     state = setTagAccessor(state, "tag:server", "alice@example.com", "80,443");
@@ -271,15 +308,41 @@ describe("setTagAccessor", () => {
 });
 
 describe("removeTagAccessor", () => {
+  test("revokes an extended rule for one source without dropping restrictions for other sources", () => {
+    const state = parsePolicy(
+      JSON.stringify({
+        acls: [
+          {
+            action: "accept",
+            src: ["alice@", "bob@"],
+            dst: ["tag:server:443"],
+            proto: "tcp",
+            srcPosture: ["posture:managed"],
+          },
+        ],
+      }),
+    );
+
+    expect(serializePolicy(removeTagAccessor(state, "tag:server", "alice@")).acls).toEqual([
+      {
+        action: "accept",
+        src: ["bob@"],
+        dst: ["tag:server:443"],
+        proto: "tcp",
+        srcPosture: ["posture:managed"],
+      },
+    ]);
+  });
+
   test("removes rule cleanly when single source and destination", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = setTagAccessor(state, "tag:server", "alice@example.com", "22");
     state = removeTagAccessor(state, "tag:server", "alice@example.com");
     expect(state.rules).toHaveLength(0);
   });
 
   test("trims source when rule has multiple sources", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("alice@example.com,bob@example.com", "tag:server", "22"));
     state = removeTagAccessor(state, "tag:server", "alice@example.com");
 
@@ -288,7 +351,7 @@ describe("removeTagAccessor", () => {
   });
 
   test("trims destination when rule has multiple destinations and one source", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("alice@example.com", "tag:server,tag:db", "22"));
     state = removeTagAccessor(state, "tag:server", "alice@example.com");
 
@@ -296,8 +359,8 @@ describe("removeTagAccessor", () => {
     expect(state.rules[0]?.destination).toBe("tag:db");
   });
 
-  test("preserves a multi-source, multi-destination rule to avoid changing its cross-product", () => {
-    let state = { ...emptyState(), rules: [] };
+  test("splits a multi-source, multi-destination rule so only the removed pair is revoked", () => {
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     const sharedRule = createRule(
       "user@example.test,group:testers",
       "tag:service,tag:database",
@@ -307,35 +370,197 @@ describe("removeTagAccessor", () => {
 
     const next = removeTagAccessor(state, "tag:service", "user@example.test");
 
-    expect(next.rules).toEqual([sharedRule]);
+    expect(next.rules).toHaveLength(2);
+    expect(next.rules[0]).toEqual({
+      ...sharedRule,
+      source: "user@example.test,group:testers",
+      destination: "tag:database",
+    });
+    expect(next.rules[1]).toMatchObject({
+      source: "group:testers",
+      destination: "tag:service",
+      ports: "22",
+      action: "accept",
+    });
+    expect(next.rules[1]?.id).not.toBe(sharedRule.id);
+    expect(getTagAccessors(next, "tag:service").map((a) => a.who)).toEqual(["group:testers"]);
+    expect(getTagAccessors(next, "tag:database").map((a) => a.who)).toEqual([
+      "user@example.test",
+      "group:testers",
+    ]);
+  });
+
+  const pairs = (state: PolicyDesignerState) =>
+    state.rules
+      .flatMap((rule) =>
+        parseCommaList(rule.source).flatMap((source) =>
+          parseCommaList(rule.destination).map(
+            (destination) => `${source}|${destination}|${rule.ports}`,
+          ),
+        ),
+      )
+      .sort();
+
+  test.each([
+    ["1x1", "alice@", "tag:server"],
+    ["1xN", "alice@", "tag:server,tag:db"],
+    ["Nx1", "alice@,bob@", "tag:server"],
+    ["NxN", "alice@,bob@", "tag:server,tag:db"],
+    ["only source is who", "alice@", "tag:server,tag:db,10.0.0.0/8"],
+    ["no match", "bob@", "tag:db"],
+  ])("removing one pair keeps every other pair (%s)", (_name, source, destination) => {
+    const state = addRule(
+      { ...emptyState(), rules: [] },
+      createRule(source, destination, "22,443"),
+    );
+    const before = pairs(state);
+
+    const after = pairs(removeTagAccessor(state, "tag:server", "alice@"));
+
+    expect(after).toEqual(before.filter((pair) => !pair.startsWith("alice@|tag:server|")));
+  });
+
+  test("keeps extension fields on both parts of a split rule", () => {
+    const parsed = parsePolicy(
+      JSON.stringify({
+        acls: [
+          {
+            action: "accept",
+            src: ["carol@"],
+            dst: ["10.0.0.1:443"],
+            proto: "tcp",
+            srcPosture: ["posture:managed"],
+          },
+        ],
+      }),
+    );
+    const state = updateIpRule(parsed, parsed.rules[0].id, {
+      source: "alice@,bob@",
+      destination: "tag:server,10.0.0.0/8",
+    });
+
+    const next = removeTagAccessor(state, "tag:server", "alice@");
+
+    expect(next.rules).toHaveLength(2);
+    for (const rule of next.rules) {
+      expect(rule.extras).toEqual({ proto: "tcp", srcPosture: ["posture:managed"] });
+      expect(rule.ports).toBe("443");
+    }
+    expect(pairs(next)).not.toContain("alice@|tag:server|443");
+    expect(pairs(next)).toContain("bob@|tag:server|443");
+    expect(pairs(next)).toContain("alice@|10.0.0.0/8|443");
+  });
+
+  test("replacing an accessor on an NxN rule leaves exactly one rule for that pair", () => {
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
+    state = addRule(state, createRule("alice@,bob@", "tag:server,tag:db", "22"));
+
+    const next = setTagAccessor(
+      removeTagAccessor(state, "tag:server", "alice@"),
+      "tag:server",
+      "alice@",
+      "22",
+    );
+
+    expect(pairs(next).filter((pair) => pair.startsWith("alice@|tag:server|"))).toEqual([
+      "alice@|tag:server|22",
+    ]);
+    expect(getTagAccessors(next, "tag:server").filter((a) => a.who === "alice@")).toHaveLength(1);
+    const replaced = setTagAccessor(state, "tag:server", "alice@", "80");
+    expect(pairs(replaced).filter((pair) => pair.startsWith("alice@|tag:server|"))).toEqual([
+      "alice@|tag:server|80",
+    ]);
   });
 });
 
 describe("getOpenAccessWarnings", () => {
+  test.each(["0.0.0.0/0", "::/0"])("flags all-address source or destination %s", (cidr) => {
+    const state = {
+      ...emptyState(),
+      rules: [createRule(cidr, "tag:server", "22"), createRule("alice@", cidr, "443")],
+    };
+    expect(getOpenAccessWarnings(state)).toHaveLength(2);
+  });
+
   test("flags rules with wildcard source", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("*", "tag:server", "22"));
     const warnings = getOpenAccessWarnings(state);
     expect(warnings).toHaveLength(1);
   });
 
   test("flags rules with wildcard destination", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:ops", "*", "22"));
     const warnings = getOpenAccessWarnings(state);
     expect(warnings).toHaveLength(1);
   });
 
   test("ignores rules without wildcards", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:ops", "tag:server", "22"));
     expect(getOpenAccessWarnings(state)).toEqual([]);
   });
 });
 
+describe("hasOnlyDefaultAccess", () => {
+  test.each(["*", "0.0.0.0/0, ::/0"])(
+    "does not hide protocol-restricted all-address access: %s",
+    (target) => {
+      const state = {
+        ...emptyState(),
+        rules: [{ ...createRule(target, target, "*"), extras: { proto: "tcp" } }],
+      };
+      expect(hasOnlyDefaultAccess(state)).toBe(false);
+    },
+  );
+
+  test("recognizes the default before and after splitting its destinations on reload", () => {
+    const state = emptyState();
+    expect(hasOnlyDefaultAccess(state)).toBe(true);
+    expect(hasOnlyDefaultAccess(parsePolicy(JSON.stringify(serializePolicy(state))))).toBe(true);
+  });
+
+  test("recognizes an existing explicit wildcard rule", () => {
+    expect(hasOnlyDefaultAccess({ ...emptyState(), rules: [createRule("*", "*", "*")] })).toBe(
+      true,
+    );
+  });
+
+  test("does not hide additional or restricted rules as the default", () => {
+    expect(
+      hasOnlyDefaultAccess(addRule(emptyState(), createRule("alice@", "tag:server", "443"))),
+    ).toBe(false);
+    expect(
+      hasOnlyDefaultAccess({
+        ...emptyState(),
+        rules: [createRule("0.0.0.0/0, ::/0", "0.0.0.0/0", "*")],
+      }),
+    ).toBe(false);
+    expect(
+      hasOnlyDefaultAccess({
+        ...emptyState(),
+        rules: [createRule("0.0.0.0/0, ::/0", "0.0.0.0/0, ::/0", "443")],
+      }),
+    ).toBe(false);
+    expect(hasOnlyDefaultAccess({ ...emptyState(), rules: [] })).toBe(false);
+  });
+});
+
+// Characterization: only applyTemplate replaces the open default. A single accessor
+// checkbox must not silently turn an open tailnet into deny-all; the open-access
+// banner and the IP-rule Remove button are the explicit way to close it.
+test("setTagAccessor keeps the open default rule", () => {
+  const state = setTagAccessor(parsePolicy("{}"), "tag:server", "group:ops", "22");
+
+  expect(state.rules).toHaveLength(2);
+  expect(hasOnlyDefaultAccess(state)).toBe(false);
+  expect(getOpenAccessWarnings(state)).toHaveLength(1);
+});
+
 describe("getIpRules", () => {
   test("separates rules with IP/CIDR destinations from tag rules", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:ops", "tag:server", "22"));
     state = addRule(state, createRule("group:ops", "10.0.0.1", "22"));
     state = addRule(state, createRule("group:ops", "192.168.0.0/24", "22"));
@@ -343,6 +568,15 @@ describe("getIpRules", () => {
     const ipRules = getIpRules(state);
     expect(ipRules).toHaveLength(2);
     expect(ipRules.map((r) => r.destination).sort()).toEqual(["10.0.0.1", "192.168.0.0/24"]);
+  });
+
+  test("skips a rule that has no destination yet", () => {
+    const state = {
+      ...emptyState(),
+      rules: [{ ...createRule("group:ops", "tag:server", "22"), destination: "" }],
+    };
+
+    expect(getIpRules(state)).toEqual([]);
   });
 
   test("exposes the reported allow-all ACL as an editable rule", () => {
@@ -376,8 +610,37 @@ describe("getIpRules", () => {
 });
 
 describe("updateIpRule", () => {
+  test("edits an individual ACL row without removing extension fields or changing sibling protocols", () => {
+    const state = parsePolicy(
+      JSON.stringify({
+        acls: [
+          {
+            action: "accept",
+            src: ["alice@"],
+            dst: ["10.0.0.1:443"],
+            proto: "tcp",
+            srcPosture: ["posture:managed"],
+          },
+          { action: "accept", src: ["alice@"], dst: ["10.0.0.1:53"], proto: "udp" },
+        ],
+      }),
+    );
+    const edited = updateIpRule(state, state.rules[0].id, { ports: "8443" });
+
+    expect(serializePolicy(edited).acls).toEqual([
+      {
+        action: "accept",
+        src: ["alice@"],
+        dst: ["10.0.0.1:8443"],
+        proto: "tcp",
+        srcPosture: ["posture:managed"],
+      },
+      { action: "accept", src: ["alice@"], dst: ["10.0.0.1:53"], proto: "udp" },
+    ]);
+  });
+
   test("patches source/destination/ports on the matching rule only", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:ops", "10.0.0.1", "22"));
     state = addRule(state, createRule("group:dev", "10.0.0.2", "80"));
     const targetId = state.rules[0].id;
@@ -398,7 +661,7 @@ describe("updateIpRule", () => {
   });
 
   test("ignores unknown rule ids", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = addRule(state, createRule("group:ops", "10.0.0.1", "22"));
     const next = updateIpRule(state, "nonexistent-id", { ports: "443" });
     expect(next.rules).toEqual(state.rules);
@@ -419,6 +682,12 @@ describe("listTagsFromState", () => {
     expect(tags).toContain("tag:workstation");
   });
 
+  test("ignores destinations that are not tags", () => {
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
+    state = addRule(state, createRule("tag:client", "10.0.0.0/8, group:ops", "22"));
+    expect(listTagsFromState(state)).toEqual(["tag:client"]);
+  });
+
   test("dedupes and sorts", () => {
     let state = emptyState();
     state = upsertTagOwner(state, createTagOwner("tag:b"));
@@ -427,6 +696,21 @@ describe("listTagsFromState", () => {
     state = addRule(state, createRule("group:x", "tag:a", "22"));
 
     expect(listTagsFromState(state)).toEqual(["tag:a", "tag:b"]);
+  });
+});
+
+describe("listTagsFromState with a blank tag owner", () => {
+  // The listing relies on this: a blank tagOwners key makes the whole policy unreadable.
+  test("pasted policy text with a blank tag owner is rejected and lists no phantom tag", () => {
+    const state = parsePolicy('{"tagOwners":{"":["alice@"],"tag:a":[]}}');
+    expect(state.error).toBeTruthy();
+    expect(state.tagOwners).toEqual([]);
+    expect(listTagsFromState(state)).toEqual([]);
+  });
+
+  test("the designer refuses to add a blank tag owner", () => {
+    const state = upsertTagOwner(emptyState(), createTagOwner("", [toMemberRef("alice@")]));
+    expect(state.tagOwners).toEqual([]);
   });
 });
 
@@ -456,7 +740,7 @@ describe("name prefix helpers", () => {
 
 describe("integration: setTagAccessor + getTagAccessors round-trip", () => {
   test("multi-step operations consistent", () => {
-    let state = { ...emptyState(), rules: [] };
+    let state: PolicyDesignerState = { ...emptyState(), rules: [] };
     state = upsertGroup(state, createGroup("group:ops"));
     state = upsertTagOwner(state, createTagOwner("tag:server"));
 
