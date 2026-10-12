@@ -89,6 +89,71 @@ function profile(overrides: Partial<ProfileSummary> = {}): ProfileSummary {
   };
 }
 afterEach(() => vi.restoreAllMocks());
+
+// Temporary: explains why the overlay click times out on the CI runner. Remove with the cause.
+function describeOverlayHit(overlay: HTMLElement): string {
+  const label = (element: Element | null) => {
+    if (!element) return null;
+    const style = getComputedStyle(element);
+    return [
+      element.tagName.toLowerCase(),
+      element.getAttribute("data-slot") ?? "",
+      element.hasAttribute("data-open")
+        ? "open"
+        : element.hasAttribute("data-closed")
+          ? "closed"
+          : "",
+      `pe=${style.pointerEvents}`,
+      `vis=${style.visibility}`,
+      `disp=${style.display}`,
+      `op=${style.opacity}`,
+      `pos=${style.position}`,
+      `z=${style.zIndex}`,
+    ].join(" ");
+  };
+  const rect = overlay.getBoundingClientRect();
+  const style = getComputedStyle(overlay);
+  const frames: string[] = [];
+  for (
+    let element: Element | null = window.frameElement;
+    element;
+    element = element.parentElement
+  ) {
+    const frameStyle = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    frames.push(
+      `${element.tagName.toLowerCase()} ${Math.round(box.width)}x${Math.round(box.height)}@${Math.round(box.left)},${Math.round(box.top)} transform=${frameStyle.transform} overflow=${frameStyle.overflow}`,
+    );
+  }
+  const hits = (x: number, y: number) => document.elementsFromPoint(x, y).slice(0, 5).map(label);
+  let parentSize = "unavailable";
+  try {
+    parentSize = `${window.parent.innerWidth}x${window.parent.innerHeight}`;
+  } catch {
+    // The parent page is not accessible.
+  }
+  return JSON.stringify({
+    rect: [rect.left, rect.top, rect.width, rect.height],
+    overlay: label(overlay),
+    animation: `${style.animationName}/${style.animationPlayState}`,
+    clipPath: style.clipPath,
+    hasInertAncestor: overlay.closest("[inert]") !== null,
+    hitsAtCorner: hits(rect.left + 1, rect.top + 1),
+    hitsAtCenter: hits(window.innerWidth / 2, window.innerHeight / 2),
+    overlays: [...document.querySelectorAll('[data-slot="dialog-overlay"]')].map(label),
+    window: `${window.innerWidth}x${window.innerHeight}@${window.devicePixelRatio}`,
+    visualViewport: window.visualViewport
+      ? `${window.visualViewport.width}x${window.visualViewport.height} scale=${window.visualViewport.scale}`
+      : null,
+    parentSize,
+    frames,
+    visibility: document.visibilityState,
+    hasFocus: document.hasFocus(),
+    htmlStyle: document.documentElement.getAttribute("style"),
+    bodyStyle: document.body.getAttribute("style"),
+  });
+}
+
 test("reports an activated language that was not saved and allows retry from the language menu", async () => {
   await setup();
   vi.mocked(settings.writeSetting).mockRejectedValueOnce(new Error("storage unavailable"));
@@ -169,7 +234,16 @@ test("guides API key setup and keeps a dirty connection editable through outside
   await page.getByTestId("connect-profile-name").fill("Draft");
   const overlay = document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]');
   if (!overlay) throw new Error("Missing dialog overlay");
-  await page.elementLocator(overlay).click({ position: { x: 1, y: 1 } });
+  const before = describeOverlayHit(overlay);
+  try {
+    await page.elementLocator(overlay).click({ position: { x: 1, y: 1 } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `${message}\nOVERLAY-DIAG before=${before}\nOVERLAY-DIAG after=${describeOverlayHit(overlay)}`,
+      { cause: error },
+    );
+  }
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("discard-profile-changes-dialog")).toBeVisible();
