@@ -177,7 +177,8 @@ test("guides API key setup and keeps a dirty connection editable through outside
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   await expect.element(page.getByTestId("connect-profile-name")).toHaveValue("Draft");
   await page.getByTestId("connect-close").click();
-  await expect.element(page.getByTestId("discard-profile-changes-dialog")).toBeVisible();
+  // Escape goes to the dialog holding focus, and the discard dialog takes it a frame after it appears.
+  await expect.element(page.getByTestId("keep-editing-profile")).toHaveFocus();
   await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("discard-profile-changes-dialog")).not.toBeInTheDocument();
   await expect.element(page.getByTestId("connect-profile-name")).toHaveValue("Draft");
