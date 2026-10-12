@@ -117,6 +117,11 @@ afterEach(() => vi.restoreAllMocks());
 function domClick(element: Element) {
   element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 }
+// Removing the focused row makes the dialog take focus back again on the next frame, which
+// would close a picker opened before it.
+function nextFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
 // An uncaught error in an event handler would otherwise only surface as a run-level failure.
 function captureErrors() {
   const errors: unknown[] = [];
@@ -369,6 +374,7 @@ test("create team and label, manage tag access and custom ports, rename and remo
     { action: "accept", src: ["group:support"], dst: ["tag:data-main:80,443,5432"] },
   ]);
   await page.getByTestId("tag-accessor-remove-group:support").click();
+  await nextFrame();
   await page.getByTestId("tag-add-accessor-trigger").click();
   await page.getByTestId("tag-add-accessor-option-alice@example.com").click();
   await page.getByTestId("tag-accessor-svc-alice@example.com-ssh").click();
@@ -840,6 +846,7 @@ test("a removed then re-added accessor starts clean", async () => {
   });
   await page.getByTestId("tag-card-tag:server").click();
   await page.getByTestId("tag-accessor-remove-group:ops").click();
+  await nextFrame();
   await page.getByTestId("tag-add-accessor-trigger").click();
   await page.getByTestId("tag-add-accessor-option-group:ops").click();
   await expect.element(customInput()).toHaveValue("");

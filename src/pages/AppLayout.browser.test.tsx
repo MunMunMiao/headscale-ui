@@ -280,7 +280,8 @@ test("keyboard users can close a submenu and continue through the parent menu", 
   await userEvent.keyboard("{Home}");
   await expect.element(id("language-menu-trigger")).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
-  await expect.element(id("locale-option-en-US")).toBeVisible();
+  // Keys go to the menu holding focus, and a submenu takes it a frame after it appears.
+  await expect.element(id("locale-option-en-US")).toHaveFocus();
   await userEvent.keyboard("{ArrowLeft}");
   await expect.element(id("locale-option-en-US")).not.toBeInTheDocument();
   await expect.element(id("profile-menu")).toBeVisible();
