@@ -1,7 +1,5 @@
 {
   "en-US": {
-    "messageCount": 415,
-    "sha256": "68d249277c4310494912209b242e0cf58dc79828774e65572233dded6ff317c5",
     "plurals": {
       "teamMembers": [
         [0, "0 members"],
@@ -66,8 +64,6 @@
     }
   },
   "zh-Hans": {
-    "messageCount": 415,
-    "sha256": "9ff9a15dd07d69f08c9346d980a8ffe48ef0a9dd297454658e183040a1440fd0",
     "plurals": {
       "teamMembers": [
         [0, "0 名成员"],
@@ -132,8 +128,6 @@
     }
   },
   "zh-Hant-TW": {
-    "messageCount": 415,
-    "sha256": "7fa1aa8a2faf738433cf1627979479eeee0b70ded2a3e43f4c1015c65dc92004",
     "plurals": {
       "teamMembers": [
         [0, "0 位成員"],
@@ -198,8 +192,6 @@
     }
   },
   "zh-Hant-HK": {
-    "messageCount": 415,
-    "sha256": "7d61ebc79bb8fbf5c878ff89add674c3d16070323aae54abf2bc529a34169b10",
     "plurals": {
       "teamMembers": [
         [0, "0 位成員"],
@@ -264,8 +256,6 @@
     }
   },
   "ja-JP": {
-    "messageCount": 415,
-    "sha256": "eff8c044a5fe562a0195c0e3154c66a6efd7d4cddafd8554984d3a07e783d5c7",
     "plurals": {
       "teamMembers": [
         [0, "メンバー 0 人"],
@@ -330,8 +320,6 @@
     }
   },
   "ko-KR": {
-    "messageCount": 415,
-    "sha256": "2dd5adceb7bc74f480b01a666f4d86f8e13b8c3dab8fc46060527394f3289b12",
     "plurals": {
       "teamMembers": [
         [0, "멤버 0명"],
@@ -396,8 +384,6 @@
     }
   },
   "fr-FR": {
-    "messageCount": 415,
-    "sha256": "a30c526a69c949c14d4030ff39c10cb20777eeb53179f1f648dc2444932ac509",
     "plurals": {
       "teamMembers": [
         [0, "0 membre"],
@@ -468,8 +454,6 @@
     }
   },
   "ru-RU": {
-    "messageCount": 415,
-    "sha256": "4657d37d466a229f3199e23f088dc8f1da5ff24d5682fb4cd25dbc7af22ad218",
     "plurals": {
       "teamMembers": [
         [0, "0 участников"],
@@ -561,8 +545,6 @@
     }
   },
   "es-ES": {
-    "messageCount": 415,
-    "sha256": "29861dc36731061528b5714d778ade3b162f7e778916df893648bed3e74245d3",
     "plurals": {
       "teamMembers": [
         [0, "0 miembros"],
@@ -627,8 +609,6 @@
     }
   },
   "it-IT": {
-    "messageCount": 415,
-    "sha256": "d74c69fd83f212ca492dafbbdf0f3acb65492499b038ee4f20c935135df43f3b",
     "plurals": {
       "teamMembers": [
         [0, "0 membri"],
@@ -693,8 +673,6 @@
     }
   },
   "ar": {
-    "messageCount": 415,
-    "sha256": "c0b8e3a62f6ceae70d56124c4f73e1a6569de4e64ece26ae39674afca125a7a1",
     "plurals": {
       "teamMembers": [
         [0, "لا يوجد أعضاء"],

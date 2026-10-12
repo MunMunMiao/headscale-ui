@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import baseline from "./__fixtures__/translation-corpus.json";
+import baseline from "./__fixtures__/plural-forms.json";
 import { SUPPORTED_LOCALES } from "./locales";
 import { type CountMessage, formatCount } from "./plural";
 import { loadLocale } from "./runtime";
