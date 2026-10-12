@@ -184,7 +184,8 @@ bun run test           # Vitest unit and Chromium component tests with the Istan
                        # `--coverage.enabled=false`, since a partial run cannot meet the gate
 bun run i18n:check     # Validate all catalogs, stable extraction, and strict compilation
 bun run test:docker    # All Docker suites below, in order (needs Docker Compose)
-bun run verify         # Static checks, translations, coverage, build, and Docker suites
+bun run verify:ci      # Static checks, translations, coverage, and build (what CI runs)
+bun run verify         # verify:ci plus the Docker suites
 ```
 
 `test:docker` runs four independent harnesses against disposable Docker services.
@@ -460,6 +461,9 @@ Before shipping a change, run:
 ```bash
 bun run verify
 ```
+
+CI runs `bun run verify:ci`, which omits the Docker suites, so run the full
+command locally before shipping.
 
 This covers Biome, the business-source coverage gate, the TypeScript production
 build, browser E2E against a disposable Docker Headscale service, policy lifecycle
