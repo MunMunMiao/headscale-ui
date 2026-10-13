@@ -1,6 +1,4 @@
 import { expect, test, vi } from "vitest";
-import { setPolicy } from "@/api/commands";
-import { ApiError } from "@/api/gateway";
 import { createManualClock } from "@/test/session-clock";
 import {
   type AuthSessionDependencies,
@@ -11,6 +9,7 @@ import {
 } from "./auth-session";
 import { executeOperation } from "./operation-dispatch";
 import type { PublicSessionSnapshot, SessionIdentity, SessionResult } from "./types";
+import { ApiError } from "./types";
 
 function successful<T>(result: SessionResult<T>): T {
   expect(result.ok).toBe(true);
@@ -160,7 +159,9 @@ test("touch checks the deadline before extending it, including exact equality", 
   expect(successful(session.touch(identity)).expiresAt).toBe(4_599_999);
   clock.set(4_599_999);
   expect(session.touch(identity)).toEqual({ ok: false, error: { kind: "expired" } });
-  expect(await session.execute(identity, { operation: "user.list", input: {} })).toEqual({
+  expect(
+    await session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "expired" },
   });
@@ -188,7 +189,9 @@ test("an expired execute is rejected before invoking the transport", async () =>
   const { session, input, clock, execute } = fixture();
   const identity = identityOf(successful(await session.unlock(input())));
   clock.advance(1_800_000);
-  expect(await session.execute(identity, { operation: "user.list" })).toEqual({
+  expect(
+    await session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "expired" },
   });
@@ -200,7 +203,13 @@ test("only user activity renews; execute and unchanged checks keep the snapshot"
   const unlocked = successful(await session.unlock(input()));
   clock.advance(90_000);
   expect(
-    successful(await session.execute(identityOf(unlocked), { operation: "user.list" })),
+    successful(
+      await session.execute(identityOf(unlocked), {
+        type: "api.read",
+        endpoint: "listUsers",
+        input: {},
+      }),
+    ),
   ).toEqual({ users: [] });
   expect(successful(session.check(identityOf(unlocked)))).toBe(unlocked);
   expect(session.getSnapshot()).toBe(unlocked);
@@ -217,7 +226,7 @@ test("an observed backwards clock locks the session and aborts its requests", as
     },
   });
   const identity = identityOf(successful(await session.unlock(input())));
-  const pending = session.execute(identity, { operation: "user.list" });
+  const pending = session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} });
   clock.set(999_999);
   expect(session.touch(identity)).toEqual({ ok: false, error: { kind: "locked" } });
   expect(session.getSnapshot().reason).toBe("clock-reversed");
@@ -265,7 +274,9 @@ test("the transport guard rechecks a deadline reached after request admission", 
     },
   });
   const identity = identityOf(successful(await session.unlock(input())));
-  expect(await session.execute(identity, { operation: "user.list" })).toEqual({
+  expect(
+    await session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "expired" },
   });
@@ -282,7 +293,9 @@ test("an HTTP result decoded after expiration is rejected even if its promise su
     },
   });
   const identity = identityOf(successful(await session.unlock(input())));
-  expect(await session.execute(identity, { operation: "user.list" })).toEqual({
+  expect(
+    await session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "expired" },
   });
@@ -338,7 +351,13 @@ test("failed candidate credentials preserve the still-valid current session", as
     pendingProfileId: null,
   });
   expect(
-    successful(await session.execute(identityOf(original), { operation: "user.list" })),
+    successful(
+      await session.execute(identityOf(original), {
+        type: "api.read",
+        endpoint: "listUsers",
+        input: {},
+      }),
+    ),
   ).toEqual({ users: [] });
 });
 
@@ -451,7 +470,9 @@ test("every successful unlock replaces identity and old messages cannot affect i
   expect(session.touch(first)).toEqual({ ok: false, error: { kind: "stale" } });
   expect(session.lock(first)).toEqual({ ok: false, error: { kind: "stale" } });
   expect(session.lock(null)).toEqual({ ok: false, error: { kind: "stale" } });
-  expect(await session.execute(first, { operation: "user.list" })).toEqual({
+  expect(
+    await session.execute(first, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "stale" },
   });
@@ -469,14 +490,14 @@ test("normal activity preserves an in-flight request but a switch aborts and rej
     signal = context.signal;
     return pending.promise;
   };
-  const firstRead = session.execute(first, { operation: "user.list" });
+  const firstRead = session.execute(first, { type: "api.read", endpoint: "listUsers", input: {} });
   clock.advance(10);
   successful(session.touch(first));
   expect(signal?.aborted).toBe(false);
   pending.resolve({ ok: true, value: "same-session" });
   expect(successful(await firstRead)).toBe("same-session");
   pending = Promise.withResolvers();
-  const staleRead = session.execute(first, { operation: "user.list" });
+  const staleRead = session.execute(first, { type: "api.read", endpoint: "listUsers", input: {} });
   successful(await session.unlock(input("profile-b")));
   expect(signal?.aborted).toBe(true);
   pending.resolve({ ok: true, value: "old-session" });
@@ -545,7 +566,7 @@ test("cancelling a request stops its signal and cannot deliver a late success", 
   const controller = new AbortController();
   const pending = session.execute(
     identity,
-    { operation: "user.list" },
+    { type: "api.read", endpoint: "listUsers", input: {} },
     { signal: controller.signal },
   );
   await started.promise;
@@ -560,7 +581,11 @@ test("already-cancelled requests never enter the transport", async () => {
   const { session, input, execute } = fixture();
   const identity = identityOf(successful(await session.unlock(input())));
   expect(
-    await session.execute(identity, { operation: "user.list" }, { signal: AbortSignal.abort() }),
+    await session.execute(
+      identity,
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      { signal: AbortSignal.abort() },
+    ),
   ).toEqual({ ok: false, error: { kind: "cancelled" } });
   expect(execute).not.toHaveBeenCalled();
 });
@@ -593,7 +618,9 @@ test("untrusted errors are sanitized and typed API failures stay within the resu
   normal.deps.execute = async () => {
     throw new Error("Authorization: Bearer secret");
   };
-  expect(await normal.session.execute(identity, { operation: "user.list" })).toEqual({
+  expect(
+    await normal.session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toEqual({
     ok: false,
     error: { kind: "unavailable" },
   });
@@ -602,7 +629,9 @@ test("untrusted errors are sanitized and typed API failures stay within the resu
     error: { kind: "api", code: "NET_TIMEOUT", message: "Request timed out" },
   } as const;
   normal.deps.execute = async () => apiResult;
-  expect(await normal.session.execute(identity, { operation: "user.list" })).toBe(apiResult);
+  expect(
+    await normal.session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} }),
+  ).toBe(apiResult);
 });
 
 test("execution binds a private identity even if the caller mutates its original object", async () => {
@@ -616,7 +645,7 @@ test("execution binds a private identity even if the caller mutates its original
     finalCheck();
     return { ok: true, value: "old" };
   };
-  const pending = session.execute(expected, { operation: "user.list" });
+  const pending = session.execute(expected, { type: "api.read", endpoint: "listUsers", input: {} });
   const next = identityOf(successful(await session.unlock(input("profile-b"))));
   expected.sessionId = next.sessionId;
   release.resolve();
@@ -659,7 +688,11 @@ test("a request cancelled between admission and its final-send guard never sends
   });
   const identity = identityOf(successful(await session.unlock(input())));
   expect(
-    await session.execute(identity, { operation: "user.list" }, { signal: controller.signal }),
+    await session.execute(
+      identity,
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      { signal: controller.signal },
+    ),
   ).toEqual({ ok: false, error: { kind: "cancelled" } });
   expect(sends).toBe(0);
 });
@@ -673,7 +706,7 @@ test("a rejected transport completion is also checked against the captured ident
     },
   });
   const identity = identityOf(successful(await session.unlock(input())));
-  const pending = session.execute(identity, { operation: "user.list" });
+  const pending = session.execute(identity, { type: "api.read", endpoint: "listUsers", input: {} });
   successful(await session.unlock(input("profile-b")));
   release.resolve();
   expect(await pending).toEqual({ ok: false, error: { kind: "stale" } });
@@ -689,7 +722,11 @@ test("native abort rejection is a cancelled request while its session remains va
   });
   const identity = identityOf(successful(await session.unlock(input())));
   expect(
-    await session.execute(identity, { operation: "user.list" }, { signal: controller.signal }),
+    await session.execute(
+      identity,
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      { signal: controller.signal },
+    ),
   ).toEqual({ ok: false, error: { kind: "cancelled" } });
   expect(session.getSnapshot().identity).toEqual(identity);
 });
@@ -731,7 +768,15 @@ test("committed display-name changes update metadata without renewing or replaci
   expect(renamed.expiresAt).toBe(original.expiresAt);
   expect(Object.isFrozen(renamed.profile)).toBe(true);
   expect(f.session.updateProfileName("profile-a", "Renamed")).toBe(renamed);
-  expect((await f.session.execute(identityOf(original), { operation: "user.list" })).ok).toBe(true);
+  expect(
+    (
+      await f.session.execute(identityOf(original), {
+        type: "api.read",
+        endpoint: "listUsers",
+        input: {},
+      })
+    ).ok,
+  ).toBe(true);
 });
 
 test("credential change invalidates the current profile and cancels its outstanding requests", async () => {
@@ -745,7 +790,11 @@ test("credential change invalidates the current profile and cancels its outstand
     },
   });
   const original = successful(await f.session.unlock(f.input()));
-  const pending = f.session.execute(identityOf(original), { operation: "user.list" });
+  const pending = f.session.execute(identityOf(original), {
+    type: "api.read",
+    endpoint: "listUsers",
+    input: {},
+  });
   expect(f.session.invalidateProfile("another-profile")).toBe(original);
   const changed = f.session.invalidateProfile("profile-a");
   expect(changed).toMatchObject({ status: "locked", reason: "profile-changed", identity: null });
@@ -773,14 +822,22 @@ test("changing a pending candidate only cancels that candidate, preserving anoth
   expect(signal?.aborted).toBe(true);
   release.resolve();
   expect(await pending).toEqual({ ok: false, error: { kind: "storage-conflict" } });
-  expect((await f.session.execute(identityOf(original), { operation: "user.list" })).ok).toBe(true);
+  expect(
+    (
+      await f.session.execute(identityOf(original), {
+        type: "api.read",
+        endpoint: "listUsers",
+        input: {},
+      })
+    ).ok,
+  ).toBe(true);
 });
 
 const writeCommands = [
-  { operation: "apikey.create", input: { expiration: "2027-01-01T00:00:00Z" } },
-  { operation: "policy.set", input: { policy: "{}" } },
+  { type: "api.write", endpoint: "createApiKey", input: { expiration: "2027-01-01T00:00:00Z" } },
+  { type: "api.write", endpoint: "setPolicy", input: { policy: "{}" } },
 ] as const;
-const readCommand = { operation: "user.list" } as const;
+const readCommand = { type: "api.read", endpoint: "listUsers", input: {} } as const;
 
 // Each scenario ends an in-flight request that the transport had already started.
 const interrupted = [
@@ -844,7 +901,7 @@ test.each(interrupted)("a write ended by $name is unconfirmed, a read is not", a
     const pending = f.session.execute(identity, command);
     await interrupt?.();
     release();
-    expect(await pending, command.operation).toEqual({
+    expect(await pending, command.endpoint).toEqual({
       ok: false,
       error: { kind: scenario.kind, ...outcome },
     });
@@ -852,7 +909,7 @@ test.each(interrupted)("a write ended by $name is unconfirmed, a read is not", a
 });
 
 test.each(writeCommands)(
-  "$operation aborted by its caller mid-flight is unconfirmed",
+  "$endpoint aborted by its caller mid-flight is unconfirmed",
   async (command) => {
     const started = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
@@ -874,7 +931,7 @@ test.each(writeCommands)(
 );
 
 test.each(writeCommands)(
-  "$operation rejected before dispatch carries no outcome",
+  "$endpoint rejected before dispatch carries no outcome",
   async (command) => {
     const f = fixture();
     const identity = identityOf(successful(await f.session.unlock(f.input())));
@@ -931,7 +988,11 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
       }),
     });
     const identity = identityOf(successful(await f.session.unlock(f.input())));
-    const pending = f.session.execute(identity, setPolicy({ policy: "{}" }));
+    const pending = f.session.execute(identity, {
+      type: "api.write",
+      endpoint: "setPolicy",
+      input: { policy: "{}" },
+    });
     await received.promise;
     successful(await f.session.unlock(f.input("profile-b")));
     release.resolve();

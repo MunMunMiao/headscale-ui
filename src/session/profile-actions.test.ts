@@ -1,7 +1,6 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { createHeadscaleGateway } from "@/api/gateway";
 import { fetchSnapshot } from "@/api/snapshot";
 import { decryptProfileKey, encryptProfileKey } from "@/lib/api-key-crypto";
 import { __resetForTest } from "@/lib/idb";
@@ -38,10 +37,9 @@ function fixture() {
   const clock = createManualClock();
   let sequence = 0;
   const validate: ProfileActionDependencies["validate"] = async (context) => {
-    await fetchSnapshot(
-      createHeadscaleGateway((command) => executeOperation(command, context)),
-      { signal: context.signal },
-    );
+    await fetchSnapshot((command) => executeOperation({ ...command, type: "api.read" }, context), {
+      signal: context.signal,
+    });
   };
   const auth = createAuthSession({
     workerId: "worker-a",

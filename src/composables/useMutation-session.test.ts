@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { createUser } from "@/api/commands";
 import type { PublicSessionSnapshot, SessionResult } from "@/session/types";
+import { fakeAuth } from "@/test/dispatch-fixture";
 import { createSessionDrafts } from "./session-drafts";
 import { createActionFeedbackStore } from "./useActionFeedback";
 import { createHeadscaleClientStore } from "./useHeadscaleClient";
@@ -23,49 +23,55 @@ function unlocked(sessionId: string): PublicSessionSnapshot {
 test("a callback created for server A cannot submit its old form to server B", async () => {
   let active = "a";
   const writes: string[] = [];
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute(expected) {
       if (expected.sessionId !== active) return { ok: false, error: { kind: "stale" } };
       writes.push(active);
       return { ok: true, value: { user: { id: "1", name: "old-form" } } };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("a"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
   const mutation = createMutation(
-    { client, feedback, snapshot, drafts: createSessionDrafts() },
+    { auth, client, feedback, snapshot, drafts: createSessionDrafts() },
     { skipRefresh: true },
   );
   active = "b";
   client.adopt(unlocked("b"));
   snapshot.setAuthorized(false);
   snapshot.setAuthorized(true);
-  expect(await mutation.mutate("create-member", createUser({ name: "old-form" }))).toBe(false);
+  expect(
+    await mutation.mutate("create-member", { endpoint: "createUser", input: { name: "old-form" } }),
+  ).toBe(false);
   expect(writes).toEqual([]);
   expect(feedback.actionError("create-member")).toBe("");
 });
 
 test("locked pages can create mutation callbacks and clicking reports locked without any transport call", async () => {
   let calls = 0;
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute() {
       calls++;
       return { ok: false, error: { kind: "locked" } };
     },
   });
+  const client = createHeadscaleClientStore();
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   let mutation: ReturnType<typeof createMutation> | undefined;
   expect(() => {
     mutation = createMutation(
-      { client, feedback, snapshot, drafts: createSessionDrafts() },
+      { auth, client, feedback, snapshot, drafts: createSessionDrafts() },
       { skipRefresh: true },
     );
   }).not.toThrow();
   expect.assert(mutation);
-  expect(await mutation.mutate("create-member", createUser({ name: "member" }))).toBe(false);
+  expect(
+    await mutation.mutate("create-member", { endpoint: "createUser", input: { name: "member" } }),
+  ).toBe(false);
   expect(calls).toBe(0);
   expect(feedback.getSnapshot().lastError).toBe(t("sessionLocked"));
 });
@@ -74,39 +80,55 @@ import { t } from "@/i18n";
 
 test("callbacks recreated for the new server cannot send a retained stale draft", async () => {
   let calls = 0;
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute() {
       calls++;
       return { ok: true, value: { user: { id: "1", name: "old draft" } } };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("b"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
   const drafts = createSessionDrafts();
   drafts.hold({ id: "a", name: "A" }, true);
-  const mutation = createMutation({ client, feedback, snapshot, drafts }, { skipRefresh: true });
-  expect(await mutation.mutate("create-member", createUser({ name: "old draft" }))).toBe(false);
+  const mutation = createMutation(
+    { auth, client, feedback, snapshot, drafts },
+    { skipRefresh: true },
+  );
+  expect(
+    await mutation.mutate("create-member", {
+      endpoint: "createUser",
+      input: { name: "old draft" },
+    }),
+  ).toBe(false);
   expect(calls).toBe(0);
   expect(feedback.getSnapshot().lastError).toBe(t("sessionChanged"));
 });
 
 test("a write result cannot refresh or adopt while its draft has become stale", async () => {
   const reply = Promise.withResolvers<void>();
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute() {
       await reply.promise;
       return { ok: true, value: { user: { id: "1", name: "old draft" } } };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("a"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
   const drafts = createSessionDrafts();
-  const mutation = createMutation({ client, feedback, snapshot, drafts }, { skipRefresh: true });
-  const writing = mutation.mutate("create-member", createUser({ name: "old draft" }));
+  const mutation = createMutation(
+    { auth, client, feedback, snapshot, drafts },
+    { skipRefresh: true },
+  );
+  const writing = mutation.mutate("create-member", {
+    endpoint: "createUser",
+    input: { name: "old draft" },
+  });
   drafts.hold({ id: "a", name: "A" }, true);
   reply.resolve();
   expect(await writing).toBe(false);
@@ -126,41 +148,45 @@ const definiteWrite = {
 /** A session whose write answers `writeResult` and whose reads are counted. */
 function counted(writeResult: SessionResult<unknown>, held?: Promise<void>) {
   const calls: string[] = [];
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute(_expected, command) {
-      calls.push(command.operation);
-      if (command.operation === "user.create") {
+      calls.push(command.endpoint);
+      if (command.endpoint === "createUser") {
         await held;
         return writeResult;
       }
       const reads: Record<string, unknown> = {
-        "user.list": { users: [] },
-        "preauthkey.list": { preAuthKeys: [] },
-        "apikey.list": { apiKeys: [] },
-        "health.check": { databaseConnectivity: true },
-        "version.get": { version: "0.29.4" },
-        "node.list": { nodes: [] },
-        "policy.get": { policy: "" },
+        listUsers: { users: [] },
+        listPreAuthKeys: { preAuthKeys: [] },
+        listApiKeys: { apiKeys: [] },
+        health: { databaseConnectivity: true },
+        version: { version: "0.29.4" },
+        listNodes: { nodes: [] },
+        getPolicy: { policy: "" },
       };
-      return { ok: true, value: reads[command.operation] };
+      return { ok: true, value: reads[command.endpoint] };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("a"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
-  const session = { client, feedback, snapshot, drafts: createSessionDrafts() };
+  const session = { auth, client, feedback, snapshot, drafts: createSessionDrafts() };
   return { calls, feedback, snapshot, session };
 }
 const refreshes = (calls: string[]) =>
-  calls.filter((operation) => operation === "user.list").length;
-const writes = (calls: string[]) => calls.filter((operation) => operation === "user.create").length;
+  calls.filter((operation) => operation === "listUsers").length;
+const writes = (calls: string[]) => calls.filter((operation) => operation === "createUser").length;
 
 test("an unconfirmed write shows the check-first copy and refreshes the page once without replaying", async () => {
   const { calls, feedback, session } = counted(unknownWrite);
-  expect(await createMutation(session).mutate("create-member", createUser({ name: "x" }))).toBe(
-    false,
-  );
+  expect(
+    await createMutation(session).mutate("create-member", {
+      endpoint: "createUser",
+      input: { name: "x" },
+    }),
+  ).toBe(false);
   expect(feedback.actionError("create-member")).toBe(t("sessionOutcomeUnknown"));
   expect(writes(calls)).toBe(1);
   expect(refreshes(calls)).toBe(1);
@@ -179,10 +205,10 @@ test.each([
   async (_name, result, skipRefresh, message) => {
     const { calls, feedback, session } = counted(result);
     expect(
-      await createMutation(session, { skipRefresh }).mutate(
-        "create-member",
-        createUser({ name: "x" }),
-      ),
+      await createMutation(session, { skipRefresh }).mutate("create-member", {
+        endpoint: "createUser",
+        input: { name: "x" },
+      }),
     ).toBe(false);
     expect(feedback.actionError("create-member")).toBe(message);
     expect(writes(calls)).toBe(1);
@@ -193,7 +219,10 @@ test.each([
 test("an unconfirmed write of a replaced session neither refreshes nor reports", async () => {
   const reply = Promise.withResolvers<void>();
   const { calls, feedback, session, snapshot } = counted(unknownWrite, reply.promise);
-  const writing = createMutation(session).mutate("create-member", createUser({ name: "x" }));
+  const writing = createMutation(session).mutate("create-member", {
+    endpoint: "createUser",
+    input: { name: "x" },
+  });
   await expect.poll(() => writes(calls)).toBe(1);
   snapshot.setAuthorized(false);
   snapshot.setAuthorized(true);
@@ -205,27 +234,30 @@ test("an unconfirmed write of a replaced session neither refreshes nor reports",
 
 test("discarding a stale draft invalidates its callbacks even when the current server identity is unchanged", async () => {
   let calls = 0;
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute() {
       calls++;
       return { ok: true, value: { user: { id: "1", name: "old draft" } } };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("b"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
   const drafts = createSessionDrafts();
   drafts.hold({ id: "a", name: "A" }, true);
-  const session = { client, feedback, snapshot, drafts };
+  const session = { auth, client, feedback, snapshot, drafts };
   const old = createMutation(session, { skipRefresh: true });
   drafts.discard();
-  expect(await old.mutate("create-member", createUser({ name: "old draft" }))).toBe(false);
+  expect(
+    await old.mutate("create-member", { endpoint: "createUser", input: { name: "old draft" } }),
+  ).toBe(false);
   expect(calls).toBe(0);
   expect(
-    await createMutation(session, { skipRefresh: true }).mutate(
-      "create-member",
-      createUser({ name: "new draft" }),
-    ),
+    await createMutation(session, { skipRefresh: true }).mutate("create-member", {
+      endpoint: "createUser",
+      input: { name: "new draft" },
+    }),
   ).toBe(true);
 });

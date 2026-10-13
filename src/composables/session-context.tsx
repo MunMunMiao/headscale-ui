@@ -17,8 +17,8 @@ import { createThemeStore } from "./useTheme";
 export function createSession(initialState: BootstrapState) {
   const feedback = createActionFeedbackStore();
   const auth = initialState.bridge;
-  const client = createHeadscaleClientStore(auth);
-  const snapshot = createSnapshotStore(client, feedback);
+  const client = createHeadscaleClientStore();
+  const snapshot = createSnapshotStore(auth, client, feedback);
   const profiles = createProfilesStore(auth, feedback, initialState.profiles);
   const policy = createPolicyDesignerStore();
   const deviceSetup = createDeviceSetupStore();

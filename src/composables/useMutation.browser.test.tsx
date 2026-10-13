@@ -2,9 +2,9 @@ import { useState } from "react";
 import { expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import { createUser } from "@/api/commands";
 import { t } from "@/i18n";
 import type { PublicSessionSnapshot } from "@/session/types";
+import { fakeAuth } from "@/test/dispatch-fixture";
 import { type Session, SessionContext } from "./session-context";
 import { createSessionDrafts } from "./session-drafts";
 import { createActionFeedbackStore } from "./useActionFeedback";
@@ -29,21 +29,29 @@ function current(id: string): PublicSessionSnapshot {
 
 test("React mutation and policy hooks use the subscribed safe gateway after a session switch", async () => {
   const calls: string[] = [];
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute(expected, command) {
-      calls.push(`${expected.sessionId}:${command.operation}`);
-      return command.operation === "policy.set"
+      calls.push(`${expected.sessionId}:${command.endpoint}`);
+      return command.endpoint === "setPolicy"
         ? { ok: true, value: { policy: '{"acls":[]}' } }
         : { ok: true, value: { user: { id: "1", name: expected.sessionId } } };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt(current("a"));
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   const policy = createPolicyDesignerStore();
   snapshot.setAuthorized(true);
   policy.load('{"acls":[]}');
-  const session = { client, feedback, snapshot, policy, drafts: createSessionDrafts() } as Session;
+  const session = {
+    auth,
+    client,
+    feedback,
+    snapshot,
+    policy,
+    drafts: createSessionDrafts(),
+  } as unknown as Session;
   function Controls() {
     const mutation = useMutation({ skipRefresh: true });
     const save = usePolicySave();
@@ -55,10 +63,10 @@ test("React mutation and policy hooks use the subscribed safe gateway after a se
         <button
           type="button"
           onClick={async () => {
-            const saved = await mutation.mutateWith(
-              "create-member",
-              createUser({ name: "member" }),
-            );
+            const saved = await mutation.mutateWith("create-member", {
+              endpoint: "createUser",
+              input: { name: "member" },
+            });
             if (saved.ok) setResult(saved.result.user?.name ?? "");
           }}
         >
@@ -91,22 +99,30 @@ test("React mutation and policy hooks use the subscribed safe gateway after a se
   await expect.element(page.getByRole("status")).toHaveTextContent("b");
   await page.getByRole("button", { name: "Save policy", exact: true }).click();
   await expect.element(page.getByRole("status")).toHaveTextContent("Policy saved");
-  expect(calls).toEqual(["a:user.create", "b:user.create", "b:policy.set"]);
+  expect(calls).toEqual(["a:createUser", "b:createUser", "b:setPolicy"]);
 });
 
 test("locked React controls render and reject mutation and policy clicks without transport", async () => {
   let calls = 0;
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute() {
       calls++;
       return { ok: false, error: { kind: "locked" } };
     },
   });
+  const client = createHeadscaleClientStore();
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   const policy = createPolicyDesignerStore();
   policy.load('{"acls":[]}');
-  const session = { client, feedback, snapshot, policy, drafts: createSessionDrafts() } as Session;
+  const session = {
+    auth,
+    client,
+    feedback,
+    snapshot,
+    policy,
+    drafts: createSessionDrafts(),
+  } as unknown as Session;
   function Controls() {
     const mutation = useMutation({ skipRefresh: true });
     const policySave = usePolicySave();
@@ -116,7 +132,10 @@ test("locked React controls render and reject mutation and policy clicks without
         <button
           type="button"
           onClick={async () => {
-            const saved = await mutation.mutate("create-member", createUser({ name: "member" }));
+            const saved = await mutation.mutate("create-member", {
+              endpoint: "createUser",
+              input: { name: "member" },
+            });
             setResult(saved ? "Created" : feedback.getSnapshot().lastError);
           }}
         >

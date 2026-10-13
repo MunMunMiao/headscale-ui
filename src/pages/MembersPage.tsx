@@ -17,7 +17,6 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import * as endpoints from "@/api/commands";
 import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import AssignMemberDialog, { type AssignMemberOption } from "@/components/AssignMemberDialog";
 import CreateAuthKeyDialog from "@/components/CreateAuthKeyDialog";
@@ -477,14 +476,14 @@ export default function MembersPage() {
   }
 
   async function createMember() {
-    const created = await mutate(
-      "create-member",
-      endpoints.createUser({
+    const created = await mutate("create-member", {
+      endpoint: "createUser",
+      input: {
         name: memberForm.name,
         displayName: memberForm.displayName,
         email: memberForm.email,
-      }),
-    );
+      },
+    });
     if (!created) return;
     setMemberForm((current) => ({ ...current, name: "" }));
     setMemberForm((current) => ({ ...current, displayName: "" }));
@@ -563,10 +562,10 @@ export default function MembersPage() {
     if (!user || renameConfirmDisabled) return;
     const isCurrentSession = snapshotStore.captureSession();
     if (!renameUserChanged) {
-      const renamed = await mutate(
-        "rename-member",
-        endpoints.renameUser({ id: user.id, newName: renameMemberForm.name }),
-      );
+      const renamed = await mutate("rename-member", {
+        endpoint: "renameUser",
+        input: { id: user.id, newName: renameMemberForm.name },
+      });
       if (!renamed || !isCurrentSession()) return;
     }
     const renamedUser = currentUser(user.id);
@@ -620,7 +619,8 @@ export default function MembersPage() {
     // nodes), so delete first: a rejected delete must leave the live policy untouched. After a
     // failed cleanup the user is already gone, so a retry only repeats the cleanup.
     if (currentUser(user.id)) {
-      if (!(await mutate("delete-member", endpoints.deleteUser({ id: user.id })))) return;
+      if (!(await mutate("delete-member", { endpoint: "deleteUser", input: { id: user.id } })))
+        return;
     }
     if (cleanup) {
       // Rebuild from the live draft; the targeted save refuses it if Access edits appeared meanwhile.

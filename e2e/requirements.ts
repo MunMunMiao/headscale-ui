@@ -1,4 +1,4 @@
-import type { OperationId } from "../src/domain/headscale-operations";
+import type { OperationId } from "./network-observations";
 
 // Every Headscale REST operation must be exercised by the Headscale lifecycle test, either
 // through the UI or as an API contract; the test asserts that this list matches what it observed.

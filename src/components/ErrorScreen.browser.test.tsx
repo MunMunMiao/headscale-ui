@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import { ApiError } from "@/api/gateway";
 import { i18n, loadLocale } from "@/i18n/runtime";
 import { VaultConflictError, VaultDataError } from "@/lib/vault-state";
+import { ApiError } from "@/session/types";
 import ErrorScreen from "./ErrorScreen";
 
 afterEach(() => {

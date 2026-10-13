@@ -4,17 +4,14 @@ import { afterEach, beforeEach, expect, test } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 import { cleanup, render } from "vitest-browser-react";
 import { SessionProviders } from "@/AppProviders";
-import type { OperationCommand, OperationOutput } from "@/api/commands";
-import * as endpoints from "@/api/commands";
 import { type apiKey, normalizeHeadscaleNode } from "@/api/contracts";
-import type { HeadscaleGateway } from "@/api/gateway";
-import { readHealth, readPolicy } from "@/api/snapshot";
+import * as endpoints from "@/api/requests";
+import { type Execute, readHealth, readPolicy } from "@/api/snapshot";
 import { prepareApplication, resetUnreadableVault } from "@/bootstrap";
 import ErrorScreen from "@/components/ErrorScreen";
 import { createSession, type Session } from "@/composables/session-context";
 import type { ActionFeedbackKey } from "@/composables/useActionFeedback";
 import { listedApiKeyPrefix } from "@/domain/api-key";
-import { OPERATION_IDS, type OperationId } from "@/domain/headscale-operations";
 import { policyPrincipalForUser } from "@/domain/principal";
 import { i18n, LOCALE_META, SUPPORTED_LOCALES, t } from "@/i18n";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -24,11 +21,13 @@ import type { ProfileSummary, VaultVersion } from "@/lib/profile-storage";
 import { settingsStorageTestingHandle } from "@/lib/settings-storage";
 import { VAULT_STATE_KEY, VaultDataError } from "@/lib/vault-state";
 import { createApplicationRouter } from "@/router";
+import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
+import { ApiError } from "@/session/types";
 import { expectNetworkTokensLtr } from "@/test/bidi";
 import { encryptLegacyKey, legacySalt, makeLegacyCanary } from "@/test-utils/legacy-vault";
 import { idbDelete, idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
 import type { NetworkGateState } from "../scripts/harness/session-network";
-import type { NetworkOperationCall } from "./network-observations";
+import type { NetworkOperationCall, OperationId } from "./network-observations";
 import { E2E_REQUIREMENTS } from "./requirements";
 import "@/styles/globals.css";
 import policyFixture from "./headscale-policy.hujson?raw";
@@ -58,13 +57,24 @@ declare module "vitest/browser" {
 let activeSession: Session;
 const caseSessions = new Set<Session>();
 
-async function request<K extends OperationId>(
-  client: HeadscaleGateway,
-  command: OperationCommand<K>,
-): Promise<OperationOutput<K>> {
-  const [error, data] = await client.execute(command);
-  if (error) throw error;
-  return data;
+/** Publishes reads and writes through the page bridge under the session the page has adopted now. */
+function adopted(): { read: Execute; write: Execute } {
+  const identity = session().client.getSnapshot().identity;
+  if (!identity) throw new ApiError({ kind: "locked" });
+  const bridge = session().auth;
+  return {
+    read: (command, options) => bridge.read(identity, command, options),
+    write: (command, options) => bridge.write(identity, command, options),
+  };
+}
+
+async function request<K extends EndpointName>(
+  execute: Execute,
+  command: ApiCommand<K>,
+): Promise<ApiOutput<K>> {
+  const result = await execute(command);
+  if (!result.ok) throw new ApiError(result.error);
+  return result.value;
 }
 
 async function expectHeadscaleGate(upstreamRequests = 1) {
@@ -785,7 +795,7 @@ function approvedRouteIndex(nodeId: string, route: string) {
 async function approvedRoutesOf(nodeId: string) {
   return [
     ...normalizeHeadscaleNode(
-      (await request(session().client.createClient(), endpoints.getNode({ nodeId }))).node,
+      (await request(adopted().read, { endpoint: "getNode", input: { nodeId } })).node,
     ).approvedRoutes,
   ].sort();
 }
@@ -870,11 +880,11 @@ async function latestSavedPolicy() {
   const payload = policyCall?.payload as { policy?: string };
   expect(typeof payload.policy).toBe("string");
   const expected = JSON.parse(payload.policy ?? "{}");
-  const client = session().client.createClient();
+  const client = adopted();
   let persisted: unknown;
   await expect
     .poll(async () => {
-      persisted = JSON.parse((await readPolicy(client)).policy);
+      persisted = JSON.parse((await readPolicy(client.read)).policy);
       return persisted;
     })
     .toEqual(expected);
@@ -2207,10 +2217,10 @@ test("supports consumer-friendly tailnet management flows", async () => {
   await page.getByTestId("node-tags-cancel").click();
   // Another administrator changes the tags while the dialog is closed: the next open shows the server's tags,
   // not the stale row.
-  await request(
-    session().client.createClient(),
-    endpoints.setTags({ nodeId: "1", tags: ["tag:workstation"] }),
-  );
+  await request(adopted().write, {
+    endpoint: "setTags",
+    input: { nodeId: "1", tags: ["tag:workstation"] },
+  });
   await clickVisibleDomTestId("machine-actions-trigger-1");
   await clickVisibleDomTestId("edit-node-tags-action-1");
   await expect.element(page.getByTestId("node-tags-dialog")).toBeVisible();
@@ -2228,7 +2238,7 @@ test("supports consumer-friendly tailnet management flows", async () => {
     .poll(
       async () =>
         normalizeHeadscaleNode(
-          (await request(session().client.createClient(), endpoints.getNode({ nodeId: "1" }))).node,
+          (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "1" } })).node,
         ).tags,
     )
     .toEqual(["tag:laptop"]);
@@ -2285,7 +2295,7 @@ test("supports consumer-friendly tailnet management flows", async () => {
   await expect.element(page.getByTestId("approve-route-dialog")).not.toBeInTheDocument();
   expect(
     normalizeHeadscaleNode(
-      (await request(session().client.createClient(), endpoints.getNode({ nodeId: "2" }))).node,
+      (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "2" } })).node,
     ).approvedRoutes.sort(),
   ).toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
 
@@ -2312,10 +2322,10 @@ test("supports consumer-friendly tailnet management flows", async () => {
     .toEqual(["0.0.0.0/0", "::/0"]);
 
   // An approved route the node no longer advertises can still be revoked, down to the empty set.
-  await request(
-    session().client.createClient(),
-    endpoints.setApprovedRoutes({ nodeId: "3", routes: ["192.168.99.0/24"] }),
-  );
+  await request(adopted().write, {
+    endpoint: "setApprovedRoutes",
+    input: { nodeId: "3", routes: ["192.168.99.0/24"] },
+  });
   await page.getByTestId("refresh-routes").click();
   await expect
     .poll(() => document.querySelector('[data-testid="route-approved-3-0"]')?.textContent?.trim())
@@ -2427,7 +2437,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   // evidence): Headscale stamps "now", which is also what the badge and the Expired filter must report.
   const phoneExpiry = async () =>
     normalizeHeadscaleNode(
-      (await request(session().client.createClient(), endpoints.getNode({ nodeId: "3" }))).node,
+      (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "3" } })).node,
     ).expiry;
   await expect
     .poll(async () => {
@@ -2494,7 +2504,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   await expect.element(page.getByTestId("remove-node-dialog")).not.toBeInTheDocument();
   await expect.element(page.getByTestId("device-3")).not.toBeInTheDocument();
   expect(
-    ((await request(session().client.createClient(), endpoints.listNodes({}))).nodes ?? []).some(
+    ((await request(adopted().read, { endpoint: "listNodes", input: {} })).nodes ?? []).some(
       (node) => node.id === "3",
     ),
   ).toBe(false);
@@ -2503,7 +2513,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
 test("keeps failed destructive member actions busy and error-visible", async () => {
   await renderLogin();
   await connectWithDefaults();
-  const client = session().client.createClient();
+  const client = adopted();
 
   await page.getByTestId("section-members").click();
   await expect.element(page.getByTestId("user-table")).toBeVisible();
@@ -2519,7 +2529,7 @@ test("keeps failed destructive member actions busy and error-visible", async () 
     document.querySelectorAll('[data-testid="delete-member-policy-impact"] li').length,
   ).toBeGreaterThan(0);
 
-  const policyBefore = (await request(client, endpoints.getPolicy())).policy;
+  const policyBefore = (await request(client.read, { endpoint: "getPolicy" })).policy;
   const policySetsBefore = await operationCount("policy.set");
   const userDeletesBefore = await operationCount("user.delete");
   await page.getByTestId("confirm-delete-member").click();
@@ -2540,7 +2550,7 @@ test("keeps failed destructive member actions busy and error-visible", async () 
   // rejected delete would leave alice present with her group and tag owner entries stripped.
   expect(await operationCount("user.delete")).toBe(userDeletesBefore + 1);
   expect(await operationCount("policy.set")).toBe(policySetsBefore);
-  expect((await request(client, endpoints.getPolicy())).policy).toBe(policyBefore);
+  expect((await request(client.read, { endpoint: "getPolicy" })).policy).toBe(policyBefore);
 });
 
 test("deletes a node-less referenced member before cleaning its policy references", async () => {
@@ -2548,13 +2558,13 @@ test("deletes a node-less referenced member before cleaning its policy reference
   // the policy still references, and accepts the follow-up PUT that removes the references.
   await renderLogin();
   await connectWithDefaults();
-  const client = session().client.createClient();
+  const client = adopted();
 
-  await request(client, endpoints.createUser({ name: "ghost" }));
-  const current = JSON.parse((await request(client, endpoints.getPolicy())).policy);
-  await request(
-    client,
-    endpoints.setPolicy({
+  await request(client.write, { endpoint: "createUser", input: { name: "ghost" } });
+  const current = JSON.parse((await request(client.read, { endpoint: "getPolicy" })).policy);
+  await request(client.write, {
+    endpoint: "setPolicy",
+    input: {
       policy: JSON.stringify({
         ...current,
         groups: { ...current.groups, "group:ghosts": ["ghost@"] },
@@ -2569,8 +2579,8 @@ test("deletes a node-less referenced member before cleaning its policy reference
           { action: "accept", src: ["ghost@"], dst: ["tag:server"], users: ["root"] },
         ],
       }),
-    }),
-  );
+    },
+  });
   await session().snapshot.refreshSegments(["identity", "policy"]);
   await commands.clearHeadscaleOperationCalls();
 
@@ -2605,9 +2615,9 @@ test("deletes a node-less referenced member before cleaning its policy reference
   expect(lastIndexOf("user.delete")).toBeGreaterThanOrEqual(0);
   expect(lastIndexOf("user.delete")).toBeLessThan(lastIndexOf("policy.set"));
 
-  const users = (await request(client, endpoints.listUsers({}))).users ?? [];
+  const users = (await request(client.read, { endpoint: "listUsers", input: {} })).users ?? [];
   expect(users.some((user) => user.name === "ghost")).toBe(false);
-  const persisted = (await request(client, endpoints.getPolicy())).policy;
+  const persisted = (await request(client.read, { endpoint: "getPolicy" })).policy;
   expect(persisted).not.toContain("ghost@");
   const saved = JSON.parse(persisted);
   expect(saved.groups["group:ops"]).toEqual(["alice@example.com"]);
@@ -2623,13 +2633,13 @@ test("renames a referenced member and updates its policy references", async () =
   // follow-up PUT that retargets the references is accepted.
   await renderLogin();
   await connectWithDefaults();
-  const client = session().client.createClient();
+  const client = adopted();
 
-  await request(client, endpoints.createUser({ name: "renamer" }));
-  const current = JSON.parse((await request(client, endpoints.getPolicy())).policy);
-  await request(
-    client,
-    endpoints.setPolicy({
+  await request(client.write, { endpoint: "createUser", input: { name: "renamer" } });
+  const current = JSON.parse((await request(client.read, { endpoint: "getPolicy" })).policy);
+  await request(client.write, {
+    endpoint: "setPolicy",
+    input: {
       policy: JSON.stringify({
         ...current,
         groups: { ...current.groups, "group:renamers": ["renamer@", "renamer-new@"] },
@@ -2638,8 +2648,8 @@ test("renames a referenced member and updates its policy references", async () =
           { action: "accept", src: ["renamer@"], dst: ["tag:server:22"] },
         ],
       }),
-    }),
-  );
+    },
+  });
   await session().snapshot.refreshSegments(["identity", "policy"]);
   await commands.clearHeadscaleOperationCalls();
 
@@ -2669,10 +2679,10 @@ test("renames a referenced member and updates its policy references", async () =
   expect(ids.lastIndexOf("user.rename")).toBeGreaterThanOrEqual(0);
   expect(ids.lastIndexOf("user.rename")).toBeLessThan(ids.lastIndexOf("policy.set"));
 
-  const users = (await request(client, endpoints.listUsers({}))).users ?? [];
+  const users = (await request(client.read, { endpoint: "listUsers", input: {} })).users ?? [];
   expect(users.some((user) => user.name === "renamer-new")).toBe(true);
   expect(users.some((user) => user.name === "renamer")).toBe(false);
-  const persisted = (await request(client, endpoints.getPolicy())).policy;
+  const persisted = (await request(client.read, { endpoint: "getPolicy" })).policy;
   expect(persisted).toContain("renamer-new@");
   expect(persisted).not.toContain("renamer@");
   const saved = JSON.parse(persisted);
@@ -2712,7 +2722,7 @@ test("keeps the newest identity fabric and policy after older responses are rele
   await renderLogin();
   await connectWithDefaults();
   await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
-  const client = session().client.createClient();
+  const client = adopted();
   for (const segment of ["identity", "fabric", "policy"] as const) {
     const path = segment === "identity" ? "user" : segment === "fabric" ? "node" : "policy";
     await commands.interceptHeadscaleRequest("GET", `^/api/v1/${path}$`);
@@ -2720,20 +2730,23 @@ test("keeps the newest identity fabric and policy after older responses are rele
     try {
       await expectHeadscaleGate();
       if (segment === "identity")
-        await request(client, endpoints.createUser({ name: "newest-response-user" }));
+        await request(client.write, {
+          endpoint: "createUser",
+          input: { name: "newest-response-user" },
+        });
       if (segment === "fabric")
-        await request(
-          client,
-          endpoints.renameNode({ nodeId: "1", newName: "newest-response-node" }),
-        );
+        await request(client.write, {
+          endpoint: "renameNode",
+          input: { nodeId: "1", newName: "newest-response-node" },
+        });
       if (segment === "policy") {
-        const current = JSON.parse((await readPolicy(client)).policy);
-        await request(
-          client,
-          endpoints.setPolicy({
+        const current = JSON.parse((await readPolicy(client.read)).policy);
+        await request(client.write, {
+          endpoint: "setPolicy",
+          input: {
             policy: JSON.stringify({ ...current, hosts: { newest: "10.88.0.1" } }),
-          }),
-        );
+          },
+        });
       }
       await session().snapshot.refreshSegments([segment]);
       const newest = session().snapshot.getSnapshot().snapshot;
@@ -2803,10 +2816,10 @@ test("does not replay a successful mutation when its following refresh fails", a
     expect(await operationCount("user.create")).toBe(createsBefore + 1);
     expect(session().snapshot.getSnapshot().refreshErrors.identity).toBeTruthy();
     await expect.element(page.getByTestId("member-create-dialog")).not.toBeInTheDocument();
-    const persisted = await request(
-      session().client.createClient(),
-      endpoints.listUsers({ name: "committed-before-refresh-failure" }),
-    );
+    const persisted = await request(adopted().read, {
+      endpoint: "listUsers",
+      input: { name: "committed-before-refresh-failure" },
+    });
     expect(persisted.users?.map((user) => user.name)).toEqual(["committed-before-refresh-failure"]);
     await page.getByTestId("refresh-users").click();
     await expect.element(page.getByTestId("member-committed-before-refresh-failure")).toBeVisible();
@@ -2871,7 +2884,7 @@ test("accepts a policy save without replacing edits made while its response was 
     await waitForActionFinished("save-policy");
     await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
     await expect.element(page.getByTestId("team-name-input")).toHaveValue("newer-local-name");
-    const accepted = (await readPolicy(session().client.createClient())).policy;
+    const accepted = (await readPolicy(adopted().read)).policy;
     expect(JSON.parse(accepted).groups["group:submitted-ops"]).toEqual(["alice@example.com"]);
     expect(session().policy.getSnapshot().policyDraft).toBe(accepted);
     expect(session().policy.policyPayload?.groups).toHaveProperty("group:newer-committed-ops");
@@ -2917,8 +2930,7 @@ test("persists complete group and tag references and restores the accepted Heads
   await resetDockerPolicy(JSON.stringify(documentFor("group:ops", "tag:staged")));
   await openAccessSection();
   const tagWritesBefore = await operationCount("node.setTags");
-  const nodesBefore = (await request(session().client.createClient(), endpoints.listNodes({})))
-    .nodes;
+  const nodesBefore = (await request(adopted().read, { endpoint: "listNodes", input: {} })).nodes;
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-name-input").fill("renamed-ops");
   await userEvent.keyboard("{Enter}");
@@ -2926,7 +2938,7 @@ test("persists complete group and tag references and restores the accepted Heads
   await page.getByTestId("unsaved-changes-save").click();
   await waitForActionFinished("save-policy");
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
-  expect(JSON.parse((await readPolicy(session().client.createClient())).policy)).toEqual(
+  expect(JSON.parse((await readPolicy(adopted().read)).policy)).toEqual(
     documentFor("group:renamed-ops", "tag:staged"),
   );
   await page.getByTestId("tag-card-tag:staged").click();
@@ -2936,10 +2948,9 @@ test("persists complete group and tag references and restores the accepted Heads
   await page.getByTestId("unsaved-changes-save").click();
   await waitForActionFinished("save-policy");
   const accepted = documentFor("group:renamed-ops", "tag:planned_v2");
-  expect(JSON.parse((await readPolicy(session().client.createClient())).policy)).toEqual(accepted);
+  expect(JSON.parse((await readPolicy(adopted().read)).policy)).toEqual(accepted);
   expect(await operationCount("node.setTags")).toBe(tagWritesBefore);
-  const nodesAfter = (await request(session().client.createClient(), endpoints.listNodes({})))
-    .nodes;
+  const nodesAfter = (await request(adopted().read, { endpoint: "listNodes", input: {} })).nodes;
   expect(nodesAfter?.map((node) => ({ id: node.id, tags: node.tags }))).toEqual(
     nodesBefore?.map((node) => ({ id: node.id, tags: node.tags })),
   );
@@ -3004,7 +3015,7 @@ test("covers the empty machine state and add-first-device flow", async () => {
     await expect.element(page.getByTestId("remove-node-dialog")).not.toBeInTheDocument();
     await expect.element(page.getByTestId(`device-${nodeId}`)).not.toBeInTheDocument();
     expect(
-      ((await request(session().client.createClient(), endpoints.listNodes({}))).nodes ?? []).some(
+      ((await request(adopted().read, { endpoint: "listNodes", input: {} })).nodes ?? []).some(
         (node) => node.id === nodeId,
       ),
     ).toBe(false);
@@ -3068,7 +3079,7 @@ test("preserves an edited rename while its opening refresh completes", async () 
     await expect.element(page.getByTestId("device-1")).toMatchTextContent("alice-delayed-rename");
     expect(
       normalizeHeadscaleNode(
-        (await request(session().client.createClient(), endpoints.getNode({ nodeId: "1" }))).node,
+        (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "1" } })).node,
       ).givenName,
     ).toBe("alice-delayed-rename");
   } finally {
@@ -3246,10 +3257,9 @@ test("preserves edited auth-key options while its opening refresh completes", as
   await renderLogin();
   await connectWithDefaults();
   expect(
-    (
-      (await request(session().client.createClient(), endpoints.listPreAuthKeys())).preAuthKeys ??
-      []
-    ).map((key) => key.id),
+    ((await request(adopted().read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []).map(
+      (key) => key.id,
+    ),
   ).toEqual(["1", "2", "3"]);
   expect(
     session()
@@ -3281,8 +3291,7 @@ test("preserves edited auth-key options while its opening refresh completes", as
     await page.getByTestId("create-invite").click();
     await expect.element(page.getByTestId("created-invite")).toBeVisible();
     const createdKey = (
-      (await request(session().client.createClient(), endpoints.listPreAuthKeys())).preAuthKeys ??
-      []
+      (await request(adopted().read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
     ).find((key) => key.user?.id === "3" && key.aclTags?.includes("tag:server"));
     expect(createdKey).toMatchObject({ reusable: false, ephemeral: true });
   } finally {
@@ -3318,8 +3327,7 @@ test("keeps the one-time auth key after creating an invite from a member", async
   expect(codes[1]?.textContent).toContain(`--authkey ${shownKey}`);
   await expectUiOperationDelta("preauthkey.create", 0, observedOperationIds);
 
-  const rows =
-    (await request(session().client.createClient(), endpoints.listPreAuthKeys())).preAuthKeys ?? [];
+  const rows = (await request(adopted().read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? [];
   const created = rows.reduce((newest, row) => (Number(row.id) > Number(newest.id) ? row : newest));
   expect(created.user?.id).toBe("3");
   // Premise guard: on Headscale 0.29.4 the plaintext exists only in the create response, the list
@@ -3331,9 +3339,11 @@ test("creates a tagged auth key without an owner", async () => {
   await renderLogin();
   await connectWithDefaults();
   const copy = getProductCopy("en-US");
-  const client = session().client.createClient();
+  const client = adopted();
   const idsBefore = new Set(
-    ((await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []).map((key) => key.id),
+    ((await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []).map(
+      (key) => key.id,
+    ),
   );
 
   await page.getByTestId("section-invites").click();
@@ -3360,9 +3370,9 @@ test("creates a tagged auth key without an owner", async () => {
   expect(await operationCount("preauthkey.create")).toBe(createsBefore + 1);
 
   // The server holds a key that has the tag and no owner; the UI sent no user to make that so.
-  const created = ((await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []).find(
-    (key) => !idsBefore.has(key.id),
-  );
+  const created = (
+    (await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
+  ).find((key) => !idsBefore.has(key.id));
   expect(created).toBeTruthy();
   expect(created?.aclTags).toEqual(["tag:server"]);
   expect(created?.user ?? null).toBeNull();
@@ -3535,8 +3545,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await expect
     .poll(async () => {
       const key = (
-        (await request(session().client.createClient(), endpoints.listPreAuthKeys())).preAuthKeys ??
-        []
+        (await request(adopted().read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
       ).find((key) => key.aclTags?.includes("tag:mobile"));
       return Date.parse(key?.expiration ?? "");
     })
@@ -3578,7 +3587,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
 
 async function resetDockerPolicy(policyJson: string) {
   if (policyJson)
-    await request(session().client.createClient(), endpoints.setPolicy({ policy: policyJson }));
+    await request(adopted().write, { endpoint: "setPolicy", input: { policy: policyJson } });
   else await commands.resetHeadscaleFixture(true);
   const { refreshSnapshot } = session().snapshot;
   await refreshSnapshot();
@@ -3850,7 +3859,7 @@ test("saves a no-email CLI user as a device-label manager with name@", async () 
   expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
 
   const created = (
-    (await request(session().client.createClient(), endpoints.listUsers({}))).users ?? []
+    (await request(adopted().read, { endpoint: "listUsers", input: {} })).users ?? []
   ).find((user) => user.name === "test-user");
   expect(created).toBeTruthy();
   if (!created) throw new Error("Headscale user test-user was not created");
@@ -4163,8 +4172,7 @@ test("does not expose a settings page", async () => {
 test("covers server settings API keys and maintenance actions", async () => {
   await renderLogin();
   await connectWithDefaults();
-  const fixtureKeys =
-    (await request(session().client.createClient(), endpoints.listApiKeys())).apiKeys ?? [];
+  const fixtureKeys = (await request(adopted().read, { endpoint: "listApiKeys" })).apiKeys ?? [];
   const livePrefix = fixtureKeys.find((key) => key.id === "2")?.prefix;
   const oldPrefix = fixtureKeys.find((key) => key.id === "3")?.prefix;
   expect(livePrefix).toBeTruthy();
@@ -4261,7 +4269,7 @@ test("covers server settings API keys and maintenance actions", async () => {
     await expect
       .poll(async () => {
         const key = (
-          (await request(session().client.createClient(), endpoints.listApiKeys())).apiKeys ?? []
+          (await request(adopted().read, { endpoint: "listApiKeys" })).apiKeys ?? []
         ).find((candidate) => candidate.prefix === livePrefix);
         return Boolean(key?.expiration && Date.parse(key.expiration) <= Date.now() + 5_000);
       })
@@ -4382,15 +4390,15 @@ test("covers task navigation and the client-device setup branch", async () => {
   await renderLogin();
   await connectWithDefaults();
   const registrationKey = "hskey-authreq-abcdefghijklmnopqrstuvwx";
-  await request(
-    session().client.createClient(),
-    endpoints.debugCreateNode({
+  await request(adopted().write, {
+    endpoint: "debugCreateNode",
+    input: {
       user: "alice",
       key: registrationKey,
       name: "pending-browser-device",
       routes: [],
-    }),
-  );
+    },
+  });
 
   expect(document.body.textContent).not.toContain("Quick actions");
   expect(document.querySelector('[data-testid="quick-invite"]')).toBeNull();
@@ -4438,7 +4446,7 @@ test("covers task navigation and the client-device setup branch", async () => {
     .toMatchTextContent("pending-browser-device");
   // The node belongs to the user the select showed when Register was pressed.
   expect(
-    ((await request(session().client.createClient(), endpoints.listNodes({}))).nodes ?? []).find(
+    ((await request(adopted().read, { endpoint: "listNodes", input: {} })).nodes ?? []).find(
       (node) =>
         node.givenName === "pending-browser-device" || node.name === "pending-browser-device",
     )?.user?.name,
@@ -5111,10 +5119,10 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expectUiOperationDelta("policy.get", 0, observedUiOperationIds);
   await expectUiOperationDelta("apikey.list", 0, observedUiOperationIds);
 
-  const client = session().client.createClient();
-  const health = await readHealth(client);
+  const client = adopted();
+  const health = await readHealth(client.read);
   expect(health.databaseConnectivity).toBe(true);
-  const version = await request(client, endpoints.version());
+  const version = await request(client.read, { endpoint: "version" });
   expect(version.version).toBe("v0.29.4");
 
   await selectSectionTab("members");
@@ -5128,7 +5136,10 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expect.element(page.getByTestId("member-e2e-user")).toBeVisible();
   await expectUiOperationDelta("user.create", userCreatesBeforeCreate, observedUiOperationIds);
 
-  const createdUsers = await request(client, endpoints.listUsers({ name: "e2e-user" }));
+  const createdUsers = await request(client.read, {
+    endpoint: "listUsers",
+    input: { name: "e2e-user" },
+  });
   expect(createdUsers.users ?? []).toHaveLength(1);
   const lifecycleUser = (createdUsers.users ?? [])[0];
   expect(lifecycleUser?.displayName).toBe("E2E User");
@@ -5143,7 +5154,10 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await clickVisibleDomTestId("confirm-rename-member");
   await expect.element(page.getByTestId("member-e2e-user-renamed")).toBeVisible();
   await expectUiOperationDelta("user.rename", userRenamesBeforeRename, observedUiOperationIds);
-  const renamedUsers = await request(client, endpoints.listUsers({ id: lifecycleUser?.id ?? "" }));
+  const renamedUsers = await request(client.read, {
+    endpoint: "listUsers",
+    input: { id: lifecycleUser?.id ?? "" },
+  });
   expect((renamedUsers.users ?? [])[0]?.name).toBe("e2e-user-renamed");
 
   const preAuthKeyListsBeforeInvites = await operationCount("preauthkey.list");
@@ -5154,7 +5168,9 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     observedUiOperationIds,
   );
   const preAuthKeyIdsBefore = new Set(
-    ((await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []).map((key) => key.id),
+    ((await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []).map(
+      (key) => key.id,
+    ),
   );
   const userListsBeforeInviteDialog = await operationCount("user.list");
   await page.getByTestId("open-create-invite").click();
@@ -5176,7 +5192,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   );
 
   const createdPreAuthKeys = (
-    (await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []
+    (await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
   ).filter((key) => !preAuthKeyIdsBefore.has(key.id));
   expect(createdPreAuthKeys).toHaveLength(1);
   const lifecyclePreAuthKey = createdPreAuthKeys[0];
@@ -5197,9 +5213,9 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   );
   await expect
     .poll(async () => {
-      const key = ((await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []).find(
-        (candidate) => candidate.id === lifecyclePreAuthKey?.id,
-      );
+      const key = (
+        (await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
+      ).find((candidate) => candidate.id === lifecyclePreAuthKey?.id);
       return Boolean(key?.expiration && Date.parse(key.expiration) <= Date.now() + 5_000);
     })
     .toBe(true);
@@ -5224,7 +5240,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   );
   await expect
     .poll(async () =>
-      ((await request(client, endpoints.listPreAuthKeys())).preAuthKeys ?? []).some(
+      ((await request(client.read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []).some(
         (candidate) => candidate.id === lifecyclePreAuthKey?.id,
       ),
     )
@@ -5244,8 +5260,14 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expect
     .poll(
       async () =>
-        ((await request(client, endpoints.listUsers({ id: lifecycleUser?.id ?? "" }))).users ?? [])
-          .length,
+        (
+          (
+            await request(client.read, {
+              endpoint: "listUsers",
+              input: { id: lifecycleUser?.id ?? "" },
+            })
+          ).users ?? []
+        ).length,
     )
     .toBe(0);
   await expect.poll(() => session().snapshot.getSnapshot().refreshSnapshotInFlight).toBe(0);
@@ -5253,23 +5275,24 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     .poll(() => document.querySelector('[data-testid="member-e2e-user-renamed"]'))
     .toBeNull();
 
-  const adminUser = ((await request(client, endpoints.listUsers({ name: "admin-test" }))).users ??
-    [])[0];
+  const adminUser = ((
+    await request(client.read, { endpoint: "listUsers", input: { name: "admin-test" } })
+  ).users ?? [])[0];
   expect(adminUser?.name).toBe("admin-test");
   const registrationKey = "hskey-authreq-abcdefghijklmnopqrstuvwx";
   const debugNode = await observeApiContract(
     "node.debugCreate",
     observedApiContractOperationIds,
     () =>
-      request(
-        client,
-        endpoints.debugCreateNode({
+      request(client.write, {
+        endpoint: "debugCreateNode",
+        input: {
           user: "admin-test",
           key: registrationKey,
           name: "e2e-router",
           routes: ["10.99.0.0/24"],
-        }),
-      ),
+        },
+      }),
   );
   expect(debugNode.node.name).toBe("e2e-router");
   // Three more pending entries, one per remaining auth operation. Never send an SSH-check id to
@@ -5284,7 +5307,10 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     [legacyKey, "e2e-legacy"],
   ] as const) {
     await observeApiContract("node.debugCreate", observedApiContractOperationIds, () =>
-      request(client, endpoints.debugCreateNode({ user: "admin-test", key, name })),
+      request(client.write, {
+        endpoint: "debugCreateNode",
+        input: { user: "admin-test", key, name },
+      }),
     );
   }
 
@@ -5310,13 +5336,14 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await page.getByTestId("add-device-finish").click();
 
   const registeredNodes = (
-    (await request(client, endpoints.listNodes({ user: adminUser?.name ?? "" }))).nodes ?? []
+    (await request(client.read, { endpoint: "listNodes", input: { user: adminUser?.name ?? "" } }))
+      .nodes ?? []
   ).filter((node) => node.name === "e2e-router" || node.givenName === "e2e-router");
   expect(registeredNodes).toHaveLength(1);
   const lifecycleNode = registeredNodes[0];
   expect(lifecycleNode?.user?.id).toBe(adminUser?.id);
   const nodeReadback = await observeApiContract("node.get", observedApiContractOperationIds, () =>
-    request(client, endpoints.getNode({ nodeId: lifecycleNode?.id ?? "" })),
+    request(client.read, { endpoint: "getNode", input: { nodeId: lifecycleNode?.id ?? "" } }),
   );
   expect(nodeReadback.node.id).toBe(lifecycleNode?.id);
   await expect.element(page.getByTestId(`device-${lifecycleNode?.id}`)).toBeVisible();
@@ -5368,10 +5395,14 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   const legacyNode = await observeApiContract(
     "node.register",
     observedApiContractOperationIds,
-    () => request(client, endpoints.registerNode({ user: "admin-test", key: legacyKey })),
+    () =>
+      request(client.write, {
+        endpoint: "registerNode",
+        input: { user: "admin-test", key: legacyKey },
+      }),
   );
   expect(legacyNode.node.name).toBe("e2e-legacy");
-  await request(client, endpoints.deleteNode({ nodeId: legacyNode.node.id }));
+  await request(client.write, { endpoint: "deleteNode", input: { nodeId: legacyNode.node.id } });
 
   await clickVisibleDomTestId(`machine-actions-trigger-${lifecycleNode?.id}`);
   await clickVisibleDomTestId(`rename-node-action-${lifecycleNode?.id}`);
@@ -5385,7 +5416,12 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     .poll(
       async () =>
         normalizeHeadscaleNode(
-          (await request(client, endpoints.getNode({ nodeId: lifecycleNode?.id ?? "" }))).node,
+          (
+            await request(client.read, {
+              endpoint: "getNode",
+              input: { nodeId: lifecycleNode?.id ?? "" },
+            })
+          ).node,
         ).givenName,
     )
     .toBe("e2e-router-main");
@@ -5412,7 +5448,12 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     .poll(
       async () =>
         normalizeHeadscaleNode(
-          (await request(client, endpoints.getNode({ nodeId: lifecycleNode?.id ?? "" }))).node,
+          (
+            await request(client.read, {
+              endpoint: "getNode",
+              input: { nodeId: lifecycleNode?.id ?? "" },
+            })
+          ).node,
         ).tags,
     )
     .toEqual(["tag:test-01"]);
@@ -5420,7 +5461,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
 
   // In Headscale 0.29, advertised routes come from a live client's Hostinfo, not debug registration.
   const routeNode = normalizeHeadscaleNode(
-    (await request(client, endpoints.getNode({ nodeId: "2" }))).node,
+    (await request(client.read, { endpoint: "getNode", input: { nodeId: "2" } })).node,
   );
   expect(routeNode.givenName).toBe("edge-router");
   expect([...routeNode.availableRoutes].sort()).toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
@@ -5429,13 +5470,13 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   // Another administrator approves a route the node never advertised while this page is open and not refreshed.
   // Approve all must write from the live approved set instead of the stale list, so the extra route survives.
   // This call is a precondition through the API client, not a UI operation.
-  await request(
-    client,
-    endpoints.setApprovedRoutes({
+  await request(client.write, {
+    endpoint: "setApprovedRoutes",
+    input: {
       nodeId: routeNode.id,
       routes: ["10.42.0.0/16", "172.16.0.0/12"],
-    }),
-  );
+    },
+  });
   await page.getByTestId(`approve-routes-${routeNode.id}`).click();
   await expect.element(page.getByTestId("approve-routes-dialog")).toMatchTextContent("edge-router");
   const routeApprovalsBeforeApprove = await operationCount("node.setApprovedRoutes");
@@ -5500,11 +5541,11 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await page.getByTestId("save-policy").click();
   await latestSavedPolicy();
   await expectUiOperationDelta("policy.set", policySetsBeforeSave, observedUiOperationIds);
-  const persistedPolicy = await readPolicy(client);
+  const persistedPolicy = await readPolicy(client.read);
   expect(JSON.parse(persistedPolicy.policy).groups["group:test-01"]).toContain("admin-test@");
 
   const apiKeyIdsBefore = new Set(
-    ((await request(client, endpoints.listApiKeys())).apiKeys ?? []).map((key) => key.id),
+    ((await request(client.read, { endpoint: "listApiKeys" })).apiKeys ?? []).map((key) => key.id),
   );
   await openProfileMenu();
   await page.getByTestId("open-server-settings").click();
@@ -5519,9 +5560,9 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   let lifecycleApiKey: Infer<typeof apiKey> | undefined;
   await expect
     .poll(async () => {
-      lifecycleApiKey = ((await request(client, endpoints.listApiKeys())).apiKeys ?? []).find(
-        (key) => !apiKeyIdsBefore.has(key.id),
-      );
+      lifecycleApiKey = (
+        (await request(client.read, { endpoint: "listApiKeys" })).apiKeys ?? []
+      ).find((key) => !apiKeyIdsBefore.has(key.id));
       return Boolean(lifecycleApiKey);
     })
     .toBe(true);
@@ -5541,7 +5582,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expectUiOperationDelta("apikey.expire", apiKeyExpiresBeforeExpire, observedUiOperationIds);
   await expect
     .poll(async () => {
-      const key = ((await request(client, endpoints.listApiKeys())).apiKeys ?? []).find(
+      const key = ((await request(client.read, { endpoint: "listApiKeys" })).apiKeys ?? []).find(
         (candidate) => candidate.id === lifecycleApiKey?.id,
       );
       return Boolean(key?.expiration && Date.parse(key.expiration) <= Date.now() + 5_000);
@@ -5564,7 +5605,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expectUiOperationDelta("apikey.delete", apiKeyDeletesBeforeDelete, observedUiOperationIds);
   await expect
     .poll(async () =>
-      ((await request(client, endpoints.listApiKeys())).apiKeys ?? []).some(
+      ((await request(client.read, { endpoint: "listApiKeys" })).apiKeys ?? []).some(
         (candidate) => candidate.id === lifecycleApiKey?.id,
       ),
     )
@@ -5600,7 +5641,12 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     .toMatchTextContent("e2e-router-main");
   const nodeExpiry = async () =>
     normalizeHeadscaleNode(
-      (await request(client, endpoints.getNode({ nodeId: lifecycleNode?.id ?? "" }))).node,
+      (
+        await request(client.read, {
+          endpoint: "getNode",
+          input: { nodeId: lifecycleNode?.id ?? "" },
+        })
+      ).node,
     ).expiry;
   // Guards against a vacuous pass: the node must not already be expired before the click.
   const expiryBefore = await nodeExpiry();
@@ -5636,7 +5682,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expectUiOperationDelta("node.delete", nodeDeletesBeforeDelete, observedUiOperationIds);
   await expect
     .poll(async () =>
-      ((await request(client, endpoints.listNodes({}))).nodes ?? []).some(
+      ((await request(client.read, { endpoint: "listNodes", input: {} })).nodes ?? []).some(
         (node) => node.id === lifecycleNode?.id,
       ),
     )
@@ -5655,7 +5701,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     ),
   ).toEqual([]);
   expect(requiredUiOperationIds.length + requiredApiContractOperationIds.length).toBe(
-    OPERATION_IDS.length,
+    Object.keys(endpoints).length,
   );
 }, 120_000);
 

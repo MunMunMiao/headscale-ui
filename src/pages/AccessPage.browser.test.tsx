@@ -92,7 +92,6 @@ async function setup(
     .toBe(true);
   await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
   return {
-    client: session.client.createClient(),
     session,
     writes,
     checks,
@@ -285,10 +284,10 @@ test("wildcard and IP rules remain visible, trim edits, and persist deletion wit
 });
 
 test("an old save-and-close response cannot dismiss the next server's editor", async () => {
-  const { session, client, hold, writes } = await setup();
+  const { session, hold, writes } = await setup();
   const response = Promise.withResolvers<void>();
   hold(response.promise);
-  const saved = vi.spyOn(client, "execute");
+  const saved = vi.spyOn(session.auth, "write");
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
   await page.getByTestId("team-detail-close").click();

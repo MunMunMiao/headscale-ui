@@ -1,4 +1,3 @@
-import { createHeadscaleGateway } from "@/api/gateway";
 import { fetchSnapshot } from "@/api/snapshot";
 import { decryptProfileKey } from "@/lib/api-key-crypto";
 import { DB_VERSION, openHeadscaleDb } from "@/lib/idb";
@@ -17,12 +16,10 @@ export async function createSessionHost(buildId: string) {
   await openHeadscaleDb();
   const workerId = crypto.randomUUID();
   async function validate(context: SessionExecutionContext) {
-    await fetchSnapshot(
-      createHeadscaleGateway((command) => executeOperation(command, context)),
-      {
-        signal: context.signal,
-      },
-    );
+    // The seven snapshot reads are all GET requests.
+    await fetchSnapshot((command) => executeOperation({ ...command, type: "api.read" }, context), {
+      signal: context.signal,
+    });
   }
   const runtime = createSessionRuntime({
     auth: {

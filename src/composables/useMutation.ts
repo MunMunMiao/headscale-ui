@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import type { OperationCommand, OperationOutput } from "@/api/commands";
-import { ApiError, type GatewayExecuteOptions } from "@/api/gateway";
-import type { OperationId } from "@/domain/headscale-operations";
+import type { SessionRequestOptions } from "@/session/auth-session";
+import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
+import { ApiError } from "@/session/types";
 import { type Session, useSession, useStore } from "./session-context";
 import type { ActionFeedbackKey, ActionResult } from "./useActionFeedback";
 
@@ -14,33 +14,35 @@ interface UseMutationReturn {
    * A write whose answer was lost or discarded rejects with `outcome: "unknown"` (including a
    * stale draft after success); unless skipRefresh, the page then refreshes once. Never replayed.
    */
-  mutate<K extends OperationId>(
+  mutate<K extends EndpointName>(
     key: ActionFeedbackKey,
-    command: OperationCommand<K>,
-    options?: GatewayExecuteOptions,
+    command: ApiCommand<K>,
+    options?: SessionRequestOptions,
   ): Promise<boolean>;
-  mutateWith<K extends OperationId>(
+  mutateWith<K extends EndpointName>(
     key: ActionFeedbackKey,
-    command: OperationCommand<K>,
-    options?: GatewayExecuteOptions,
-  ): Promise<ActionResult<OperationOutput<K>>>;
+    command: ApiCommand<K>,
+    options?: SessionRequestOptions,
+  ): Promise<ActionResult<ApiOutput<K>>>;
 }
 
 export function createMutation(
-  session: Pick<Session, "client" | "snapshot" | "feedback" | "drafts">,
+  session: Pick<Session, "client" | "snapshot" | "feedback" | "drafts"> & {
+    auth: Pick<Session["auth"], "write">;
+  },
   opts: UseMutationOptions = {},
 ): UseMutationReturn {
   const { runAction } = session.feedback;
   const { refreshSnapshot, captureSession } = session.snapshot;
-  const client = session.client.getSnapshot().http;
+  const identity = session.client.getSnapshot().identity;
   const ownsSession = captureSession();
   const viewEpoch = session.drafts.getSnapshot().viewEpoch;
   const ownsView = () => viewEpoch === session.drafts.getSnapshot().viewEpoch;
-  async function mutateWith<K extends OperationId>(
+  async function mutateWith<K extends EndpointName>(
     key: ActionFeedbackKey,
-    command: OperationCommand<K>,
-    options?: GatewayExecuteOptions,
-  ): Promise<ActionResult<OperationOutput<K>>> {
+    command: ApiCommand<K>,
+    options?: SessionRequestOptions,
+  ): Promise<ActionResult<ApiOutput<K>>> {
     if (!ownsSession() || !ownsView()) return { ok: false };
     const isCurrentSession = captureSession();
     const isCurrent = () => isCurrentSession() && ownsView();
@@ -48,9 +50,10 @@ export function createMutation(
       key,
       async () => {
         if (!session.drafts.isCurrent()) throw new ApiError({ kind: "stale" });
-        if (!client) throw new ApiError({ kind: "locked" });
-        const [error, result] = await client.execute(command, options);
-        if (error) {
+        if (!identity) throw new ApiError({ kind: "locked" });
+        const reply = await session.auth.write(identity, command, options);
+        if (!reply.ok) {
+          const error = new ApiError(reply.error);
           // The write may have been applied: show the server state, never replay it.
           if (
             error.outcome === "unknown" &&
@@ -63,7 +66,7 @@ export function createMutation(
         }
         if (!session.drafts.isCurrent()) throw new ApiError({ kind: "stale", outcome: "unknown" });
         if (isCurrent() && !opts.skipRefresh) await refreshSnapshot();
-        return result;
+        return reply.value;
       },
       isCurrent,
     );
@@ -79,7 +82,7 @@ export function createMutation(
 
 export function useMutation({ skipRefresh = false }: UseMutationOptions = {}): UseMutationReturn {
   const session = useSession();
-  const { http } = useStore(session.client);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: The factory captures the external store's current gateway.
-  return useMemo(() => createMutation(session, { skipRefresh }), [session, skipRefresh, http]);
+  const { identity } = useStore(session.client);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The factory captures the external store's current session.
+  return useMemo(() => createMutation(session, { skipRefresh }), [session, skipRefresh, identity]);
 }

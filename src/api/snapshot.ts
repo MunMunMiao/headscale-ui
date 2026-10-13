@@ -1,31 +1,36 @@
 import type { FaultCode } from "@defjs/core";
-import type { OperationId } from "@/domain/headscale-operations";
 import { serverVersionSupport, UnsupportedServerVersionError } from "@/domain/server-version";
-import type { OperationCommand, OperationOutput } from "./commands";
-import * as commands from "./commands";
+import type { SessionRequestOptions } from "@/session/auth-session";
+import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
+import { ApiError, type SessionResult } from "@/session/types";
 import type { HeadscaleSnapshot, HealthResponse, PolicyReading } from "./contracts";
 import { normalizeHeadscaleNode, normalizePreAuthKey } from "./contracts";
-import { ApiError, type GatewayExecuteOptions, type HeadscaleGateway } from "./gateway";
+
+/** Runs one request in the Worker: the page's bridge bound to its session, or the Worker's dispatcher. */
+export type Execute = <K extends EndpointName>(
+  command: ApiCommand<K>,
+  options?: SessionRequestOptions,
+) => Promise<SessionResult<ApiOutput<K>>>;
 
 export type SnapshotSegment = "identity" | "fabric" | "policy";
 export const ALL_SEGMENTS: readonly SnapshotSegment[] = ["identity", "fabric", "policy"];
 
-async function request<K extends OperationId>(
-  gateway: HeadscaleGateway,
-  command: OperationCommand<K>,
-  options?: GatewayExecuteOptions,
-): Promise<OperationOutput<K>> {
-  const [error, data] = await gateway.execute(command, options);
-  if (error) throw error;
-  return data;
+async function request<K extends EndpointName>(
+  execute: Execute,
+  command: ApiCommand<K>,
+  options?: SessionRequestOptions,
+): Promise<ApiOutput<K>> {
+  const result = await execute(command, options);
+  if (!result.ok) throw new ApiError(result.error);
+  return result.value;
 }
 
 export async function readHealth(
-  gateway: HeadscaleGateway,
-  options?: GatewayExecuteOptions,
+  execute: Execute,
+  options?: SessionRequestOptions,
 ): Promise<HealthResponse> {
   const startedAt = performance.now();
-  const response = await request(gateway, commands.health(), options);
+  const response = await request(execute, { endpoint: "health" }, options);
   return {
     ...response,
     checkedAt: new Date().toISOString(),
@@ -38,11 +43,12 @@ const MISSING_DATABASE_POLICY = /acl\s+policy not found/i;
 const UNSET_FILE_POLICY = /^reading policy from path "":/;
 
 export async function readPolicy(
-  gateway: HeadscaleGateway,
-  options?: GatewayExecuteOptions,
+  execute: Execute,
+  options?: SessionRequestOptions,
 ): Promise<PolicyReading> {
-  const [error, response] = await gateway.execute(commands.getPolicy(), options);
-  if (error) {
+  const result = await execute({ endpoint: "getPolicy" }, options);
+  if (!result.ok) {
+    const error = new ApiError(result.error);
     const message =
       error.code === "HTTP_STATUS" && error.status === 500 ? (error.data?.message ?? "") : "";
     if (MISSING_DATABASE_POLICY.test(message)) return { policy: "" };
@@ -50,7 +56,7 @@ export async function readPolicy(
     if (UNSET_FILE_POLICY.test(message)) return { policy: "", fileModeWithoutPath: true };
     throw error;
   }
-  return response;
+  return result.value;
 }
 
 const UNREADABLE_RESPONSE = new Set<FaultCode>([
@@ -60,11 +66,11 @@ const UNREADABLE_RESPONSE = new Set<FaultCode>([
 ]);
 
 const SEGMENT_FETCHERS = {
-  identity: async (gateway, options) => {
+  identity: async (execute, options) => {
     const [users, preAuthKeys, apiKeys] = await Promise.all([
-      request(gateway, commands.listUsers({}), options),
-      request(gateway, commands.listPreAuthKeys(), options),
-      request(gateway, commands.listApiKeys(), options),
+      request(execute, { endpoint: "listUsers", input: {} }, options),
+      request(execute, { endpoint: "listPreAuthKeys" }, options),
+      request(execute, { endpoint: "listApiKeys" }, options),
     ]);
     return {
       users: users.users ?? [],
@@ -72,13 +78,13 @@ const SEGMENT_FETCHERS = {
       apiKeys: apiKeys.apiKeys ?? [],
     };
   },
-  fabric: async (gateway, options) => {
+  fabric: async (execute, options) => {
     // ponytail: resolves when all three settle, so a hanging (not failing) optional read can delay
     // the nodes by up to the Worker request timeout; apply the nodes patch first if that matters.
     const [nodes, health, version] = await Promise.allSettled([
-      request(gateway, commands.listNodes({}), options),
-      readHealth(gateway, options),
-      request(gateway, commands.version(), options),
+      request(execute, { endpoint: "listNodes", input: {} }, options),
+      readHealth(execute, options),
+      request(execute, { endpoint: "version" }, options),
     ]);
     if (nodes.status === "rejected") {
       const unreadable =
@@ -102,31 +108,28 @@ const SEGMENT_FETCHERS = {
       ...(version.status === "fulfilled" ? { version: version.value } : {}),
     };
   },
-  policy: async (gateway, options) => ({ policy: await readPolicy(gateway, options) }),
+  policy: async (execute, options) => ({ policy: await readPolicy(execute, options) }),
 } satisfies Record<
   SnapshotSegment,
-  (
-    gateway: HeadscaleGateway,
-    options?: GatewayExecuteOptions,
-  ) => Promise<Partial<HeadscaleSnapshot>>
+  (execute: Execute, options?: SessionRequestOptions) => Promise<Partial<HeadscaleSnapshot>>
 >;
 
 export function fetchSegment(
-  gateway: HeadscaleGateway,
+  execute: Execute,
   segment: SnapshotSegment,
-  options?: GatewayExecuteOptions,
+  options?: SessionRequestOptions,
 ): Promise<Partial<HeadscaleSnapshot>> {
-  return SEGMENT_FETCHERS[segment](gateway, options);
+  return SEGMENT_FETCHERS[segment](execute, options);
 }
 
 export async function fetchSnapshot(
-  gateway: HeadscaleGateway,
-  options?: GatewayExecuteOptions,
+  execute: Execute,
+  options?: SessionRequestOptions,
 ): Promise<HeadscaleSnapshot> {
   const [identity, fabric, policy] = await Promise.all([
-    SEGMENT_FETCHERS.identity(gateway, options),
-    SEGMENT_FETCHERS.fabric(gateway, options),
-    SEGMENT_FETCHERS.policy(gateway, options),
+    SEGMENT_FETCHERS.identity(execute, options),
+    SEGMENT_FETCHERS.fabric(execute, options),
+    SEGMENT_FETCHERS.policy(execute, options),
   ]);
   // version is omitted from the fabric patch when its optional read failed.
   return { version: null, ...identity, ...fabric, ...policy };

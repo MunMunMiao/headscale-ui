@@ -94,7 +94,8 @@ test("a locked saved profile cannot restore authorization from the protected rou
   const session = await prepareTestSession(transport);
   await authenticateTestSession(session);
   await session.profiles.logout();
-  const execute = vi.spyOn(session.auth, "execute");
+  const read = vi.spyOn(session.auth, "read");
+  const write = vi.spyOn(session.auth, "write");
   const history = createMemoryHistory({ initialEntries: ["/devices?node=123#details"] });
   const router = createApplicationRouter(session, history);
   await render(
@@ -105,7 +106,8 @@ test("a locked saved profile cannot restore authorization from the protected rou
   await expect.element(page.getByTestId("profile-option-Test server")).toBeVisible();
   expect(history.location.pathname).toBe("/login");
   expect(router.state.location.search.redirect).toBe("/devices?node=123#details");
-  expect(execute).not.toHaveBeenCalled();
+  expect(read).not.toHaveBeenCalled();
+  expect(write).not.toHaveBeenCalled();
 });
 
 test("cold shared-session restore keeps the policy editor unmounted until the first full snapshot arrives", async () => {

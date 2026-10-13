@@ -1,11 +1,10 @@
+import type { Infer } from "@defjs/core";
 import { connectionSettingsError } from "@/api/connection";
-import { ApiError } from "@/api/gateway";
 import { decryptProfileKey, encryptProfileKey, ProfileUnlockError } from "@/lib/api-key-crypto";
 import type {
   ChangeProfilePasswordInput,
   MigrateProfileInput,
   ProfileList,
-  ProfileStorageScope,
   ProfileWriteExpected,
   StoredProfileCommit,
   VaultVersion,
@@ -24,26 +23,11 @@ import { clearAllSecureData } from "@/lib/secure-storage";
 import { assertVaultVersion } from "@/lib/vault-state";
 import { normalizedBaseUrl } from "@/utils/strings";
 import { type AuthSession, type SessionExecutionContext, SessionFault } from "./auth-session";
-import type { PublicSessionSnapshot, SessionIdentity, SessionResult } from "./types";
+import type { profileSaveInput } from "./protocol";
+import type { PublicSessionSnapshot, SessionResult } from "./types";
+import { ApiError } from "./types";
 
-export type ProfileSaveInput =
-  | {
-      kind: "metadata";
-      expected: ProfileWriteExpected;
-      name: string;
-      scope: ProfileStorageScope;
-    }
-  | {
-      kind: "credentials";
-      expected: ProfileWriteExpected;
-      profile: { id: string; name: string; baseUrl: string; scope: ProfileStorageScope };
-      apiKey: string;
-      password: string;
-      validation: "required" | "skip";
-      activate: boolean;
-      expectedWorkerId: string;
-      expectedIdentity: SessionIdentity | null;
-    };
+export type ProfileSaveInput = Infer<typeof profileSaveInput>;
 
 export interface ProfileSaveOutcome {
   saved: true;

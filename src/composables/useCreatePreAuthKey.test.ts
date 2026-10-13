@@ -2,7 +2,7 @@ import { createClient, withEndpoint, withHTTPHandle } from "@defjs/core";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, test } from "vitest";
-import { fixtureClientStore } from "@/test/operation-gateway";
+import { fixtureSession } from "@/test/dispatch-fixture";
 import { snapshotFixture } from "@/test-utils/headscale.test";
 import { type Session, SessionContext } from "./session-context";
 import { createSessionDrafts } from "./session-drafts";
@@ -45,12 +45,13 @@ function setup(respond: (body: unknown) => Response | Promise<Response>) {
     }),
   );
   const feedback = createActionFeedbackStore();
-  const client = fixtureClientStore(http);
-  const snapshot = createSnapshotStore(client, feedback);
+  const { auth, client } = fixtureSession(http);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   snapshot.setAuthorized(true);
   const deviceSetup = createDeviceSetupStore();
   const session = {
     feedback,
+    auth,
     client,
     snapshot,
     drafts: createSessionDrafts(),

@@ -189,7 +189,11 @@ test("scope disposal interrupts active work and locks the session even if a depe
   const identity = runtime.auth.getSnapshot().identity;
   if (!identity) throw new Error("fixture did not unlock");
   const pending = runtime.runOperation("port-a", "1", (signal) =>
-    runtime.auth.execute(identity, { operation: "user.list", input: {} }, { signal }),
+    runtime.auth.execute(
+      identity,
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      { signal },
+    ),
   );
   const signal = await started.promise;
   await runtime.dispose();

@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "vitest";
-import { OPERATION_IDS } from "../../src/domain/headscale-operations";
+import { definitionOf } from "../../e2e/headscale-upstream";
+import * as endpoints from "../../src/api/requests";
 import { createSessionNetwork } from "./session-network";
 
 const cleanup: (() => Promise<unknown>)[] = [];
@@ -200,7 +201,11 @@ test("identifies all 30 Headscale operations from actual HTTP methods and paths"
     ["policy.check", "POST", "/api/v1/policy/check"],
   ] as const;
   // The observation table must never lag the operation registry.
-  expect(cases.map(([id]) => id)).toEqual([...OPERATION_IDS]);
+  expect(cases.map(([id]) => id).sort()).toEqual(
+    Object.values(endpoints)
+      .map((endpoint) => definitionOf(endpoint).operation)
+      .sort(),
+  );
   for (const [, method, path] of cases)
     expect((await directFetch(`${network.url}${path}`, { method })).status).toBe(200);
   expect((await directFetch(`${network.url}/api/v1/unknown`)).status).toBe(200);

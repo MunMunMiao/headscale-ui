@@ -1,6 +1,6 @@
 import { createClient, withEndpoint, withHTTPHandle } from "@defjs/core";
 import { expect, test } from "vitest";
-import { fixtureGateway } from "@/test/operation-gateway";
+import { fixtureExecute } from "@/test/dispatch-fixture";
 import { readHealth, readPolicy } from "./snapshot";
 
 test.each([
@@ -17,7 +17,7 @@ test.each([
     }),
   );
   const controller = new AbortController();
-  const reading = read(fixtureGateway(client), { signal: controller.signal }).then(
+  const reading = read(fixtureExecute(client), { signal: controller.signal }).then(
     () => ({ code: "SUCCESS" }),
     (error: unknown) => error,
   );

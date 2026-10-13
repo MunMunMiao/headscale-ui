@@ -22,7 +22,6 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import * as endpoints from "@/api/commands";
 import type { HeadscaleNode } from "@/api/contracts";
 import { normalizeHeadscaleNode } from "@/api/contracts";
 import CreateAuthKeyDialog from "@/components/CreateAuthKeyDialog";
@@ -442,10 +441,10 @@ export default function DevicesPage() {
 
   async function registerPendingNode(authId: string) {
     setDeviceSetupState({ lastRegisteredNode: null });
-    const registered = await mutateWith(
-      "register-pending-node",
-      endpoints.authRegister({ user: registrationUser, authId }),
-    );
+    const registered = await mutateWith("register-pending-node", {
+      endpoint: "authRegister",
+      input: { user: registrationUser, authId },
+    });
     if (registered.ok) {
       setDeviceSetupState({ lastRegisteredNode: normalizeHeadscaleNode(registered.result.node) });
       setDeviceSetupState({ step: "result" });
@@ -456,8 +455,8 @@ export default function DevicesPage() {
   async function decideAuthRequest(decision: "approved" | "rejected", authId: string) {
     const done =
       decision === "approved"
-        ? await quiet.mutate("approve-auth-request", endpoints.authApprove({ authId }))
-        : await quiet.mutate("reject-auth-request", endpoints.authReject({ authId }));
+        ? await quiet.mutate("approve-auth-request", { endpoint: "authApprove", input: { authId } })
+        : await quiet.mutate("reject-auth-request", { endpoint: "authReject", input: { authId } });
     if (done) {
       setDeviceSetupState({ lastAuthDecision: decision });
       setPendingRegistrationForm((current) => ({ ...current, key: "" }));
@@ -609,39 +608,38 @@ export default function DevicesPage() {
   }
 
   async function confirmSetNodeTags(node: HeadscaleNode) {
-    const updated = await mutate(
-      "node-tags",
-      endpoints.setTags({
+    const updated = await mutate("node-tags", {
+      endpoint: "setTags",
+      input: {
         nodeId: node.id,
         tags: parseList(tagsForm.tags),
-      }),
-    );
+      },
+    });
     if (updated) {
       closeTagsDialog();
     }
   }
 
   async function renameNode(node: HeadscaleNode) {
-    return mutate(
-      "rename-node",
-      endpoints.renameNode({
+    return mutate("rename-node", {
+      endpoint: "renameNode",
+      input: {
         nodeId: node.id,
         newName: renameDraft || nodeDisplayName(node),
-      }),
-    );
+      },
+    });
   }
 
   async function expireNode(node: HeadscaleNode) {
-    return mutate(
-      "expire-node",
-      endpoints.expireNode(
+    return mutate("expire-node", {
+      endpoint: "expireNode",
+      input:
         expireAction === "disable" ? { nodeId: node.id, disableExpiry: true } : { nodeId: node.id },
-      ),
-    );
+    });
   }
 
   async function deleteNode(node: HeadscaleNode) {
-    return mutate("remove-node", endpoints.deleteNode({ nodeId: node.id }));
+    return mutate("remove-node", { endpoint: "deleteNode", input: { nodeId: node.id } });
   }
 
   async function confirmRenameNode(node: HeadscaleNode) {

@@ -57,15 +57,14 @@ test("reconnecting clears the old gateway until the same Worker proves its curre
   const { first } = await fixture();
   await expect.poll(() => first.snapshot.isRefreshing).toBe(false);
   const identity = first.client.getSnapshot().identity;
-  const previousGateway = first.client.createClient();
   const reconnecting = first.auth.reconnect();
-  expect(first.client.getSnapshot().http).toBeNull();
+  expect(first.client.getSnapshot().identity).toBeNull();
   expect(first.snapshot.getSnapshot().isAuthorized).toBe(false);
   expect(first.snapshot.getSnapshot().isReady).toBe(false);
   expect((await reconnecting).ok).toBe(true);
   await expect.poll(() => first.snapshot.getSnapshot().isReady).toBe(true);
   expect(first.client.getSnapshot().identity).toEqual(identity);
-  expect(first.client.createClient()).not.toBe(previousGateway);
+  expect(first.client.getSnapshot().identity).not.toBe(identity);
 });
 test("a failed profile read after committed reset remains visible while the page stays locked", async () => {
   const { first } = await fixture();
@@ -158,7 +157,7 @@ test("touch keeps page data and drafts; a shared lock clears connection data and
   const { page, first } = await fixture();
   const second = await page("owner-b");
   await expect.poll(() => first.snapshot.getSnapshot().snapshot.users.length).toBe(1);
-  const gateway = first.client.createClient();
+  const adopted = first.client.getSnapshot().identity;
   const data = first.snapshot.getSnapshot().snapshot;
   first.policy.setState({ teamDetailOpen: true });
   first.deviceSetup.setState({
@@ -170,7 +169,7 @@ test("touch keeps page data and drafts; a shared lock clears connection data and
   const identity = first.auth.getSessionSnapshot()?.identity;
   if (!identity) throw new Error("Expected shared identity");
   expect((await first.auth.touch(identity)).ok).toBe(true);
-  expect(first.client.createClient()).toBe(gateway);
+  expect(first.client.getSnapshot().identity).toBe(adopted);
   expect(first.snapshot.getSnapshot().snapshot).toBe(data);
   expect(first.policy.getSnapshot().teamDetailOpen).toBe(true);
   await second.profiles.logout();
@@ -200,7 +199,6 @@ test("a same-server re-unlock keeps drafts and data, clears generated secrets an
     lastAuthDecision: "approved",
   });
   const identity = first.client.getSnapshot().identity;
-  const gateway = first.client.createClient();
   const seen: { isReady: boolean; users: number }[] = [];
   cleanup.push(
     first.snapshot.subscribe(() => {
@@ -213,7 +211,7 @@ test("a same-server re-unlock keeps drafts and data, clears generated secrets an
   expect(await first.profiles.enterProfile(profile, "projection-password")).toBe(true);
 
   expect(first.client.getSnapshot().identity).not.toEqual(identity);
-  expect(first.client.createClient()).not.toBe(gateway);
+
   expect(first.drafts.isCurrent()).toBe(true);
   expect(first.drafts.getSnapshot().stale).toBeNull();
   expect(first.policy.getSnapshot().policyDraft).toBe("unfinished policy");

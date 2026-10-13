@@ -1,9 +1,9 @@
 import type { FaultCode } from "@defjs/core";
-import { ApiError } from "@/api/gateway";
 import { isolateVersion, UnsupportedServerVersionError } from "@/domain/server-version";
 import { i18n, t } from "@/i18n";
 import { type MessageKey, productDescriptors } from "@/i18n/descriptors";
 import type { SessionFailureKind } from "@/session/types";
+import { ApiError } from "@/session/types";
 
 const sessionErrorKeys = {
   locked: "sessionLocked",

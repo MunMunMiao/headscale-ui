@@ -7,12 +7,11 @@ import {
   swaggerRoutes,
   UPSTREAM_RPCS,
 } from "../e2e/headscale-upstream";
-import { REQUEST_REGISTRY } from "../src/api/requests";
-import { OPERATION_IDS } from "../src/domain/headscale-operations";
+import * as endpoints from "../src/api/requests";
 
 test("every pinned upstream RPC has exactly one operation and no operation lacks an upstream route", () => {
-  expect(diffRoutes(UPSTREAM_RPCS, REQUEST_REGISTRY)).toEqual([]);
-  expect(OPERATION_IDS.length).toBe(UPSTREAM_RPCS.length + NON_RPC_OPERATIONS.length);
+  expect(diffRoutes(UPSTREAM_RPCS, endpoints)).toEqual([]);
+  expect(Object.keys(endpoints)).toHaveLength(UPSTREAM_RPCS.length + NON_RPC_OPERATIONS.length);
 });
 
 test("pinned upstream routes are unique and the E2E fixture runs the pinned Headscale version", async () => {
@@ -27,7 +26,7 @@ test("pinned upstream routes are unique and the E2E fixture runs the pinned Head
 });
 
 test("reports an upstream route whose operation was removed", () => {
-  const { "auth.approve": _removed, ...registry } = REQUEST_REGISTRY;
+  const { authApprove: _removed, ...registry } = endpoints;
   expect(diffRoutes(UPSTREAM_RPCS, registry)).toEqual([
     "Missing operation for upstream route: POST /api/v1/auth/approve",
   ]);
@@ -35,8 +34,8 @@ test("reports an upstream route whose operation was removed", () => {
 
 test("reports an operation pointed at a path upstream does not serve", () => {
   const wrong = {
-    ...REQUEST_REGISTRY,
-    "policy.check": () => ({
+    ...endpoints,
+    checkPolicy: () => ({
       definition: { operation: "policy.check", method: "POST", path: "/api/v1/policy/validate" },
     }),
   };
@@ -50,7 +49,7 @@ test("reports fabricated and duplicate upstream routes", () => {
   expect(
     diffRoutes(
       [...UPSTREAM_RPCS, { method: "POST", path: "/api/v1/fabricated" }, UPSTREAM_RPCS[0]],
-      REQUEST_REGISTRY,
+      endpoints,
     ),
   ).toEqual([
     `Duplicate upstream route: ${routeKey(UPSTREAM_RPCS[0].method, UPSTREAM_RPCS[0].path)}`,
@@ -80,9 +79,9 @@ test.each([null, [], {}, { paths: null }, { paths: [] }, { paths: { "/x": 1 } }]
 );
 
 test("rejects two operations that share one route", () => {
-  expect(() =>
-    diffRoutes([], { ...REQUEST_REGISTRY, "policy.check": REQUEST_REGISTRY["policy.get"] }),
-  ).toThrow("share the route GET /api/v1/policy");
+  expect(() => diffRoutes([], { ...endpoints, checkPolicy: endpoints.getPolicy })).toThrow(
+    "share the route GET /api/v1/policy",
+  );
 });
 
 test("rejects a registry entry that is not a request", () => {

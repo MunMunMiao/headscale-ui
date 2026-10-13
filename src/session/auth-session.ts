@@ -1,14 +1,14 @@
-import { ApiError } from "@/api/gateway";
 import { redactDiagnosticData } from "@/api/operation-log";
 import { listedApiKeyPrefix } from "@/domain/api-key";
-import { modifiesServer, type OperationId } from "@/domain/headscale-operations";
-import type {
-  PublicSessionSnapshot,
-  SessionFailure,
-  SessionFailureKind,
-  SessionIdentity,
-  SessionProfile,
-  SessionResult,
+import type { ApiRequest } from "./protocol";
+import {
+  ApiError,
+  type PublicSessionSnapshot,
+  type SessionFailure,
+  type SessionFailureKind,
+  type SessionIdentity,
+  type SessionProfile,
+  type SessionResult,
 } from "./types";
 
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -30,11 +30,6 @@ export interface CandidateCredential {
   credentialVersion: string;
   keyEpoch: string;
   apiKey: string;
-}
-
-export interface AuthOperationCommand {
-  operation: OperationId;
-  input?: unknown;
 }
 
 export interface SessionRequestOptions {
@@ -60,10 +55,7 @@ export interface AuthSessionDependencies {
     signal: AbortSignal,
     requireCurrent: () => void,
   ): Promise<void>;
-  execute(
-    command: AuthOperationCommand,
-    context: SessionExecutionContext,
-  ): Promise<SessionResult<unknown>>;
+  execute(command: ApiRequest, context: SessionExecutionContext): Promise<SessionResult<unknown>>;
 }
 
 /** The result of the synchronous session operations, which fail only with session faults. */
@@ -114,7 +106,12 @@ export function createAuthSession(deps: AuthSessionDependencies) {
       )
     )
       return snapshot;
-    snapshot = Object.freeze({ ...snapshot, ...patch, revision: snapshot.revision + 1 });
+    // Every caller patches a whole locked or unlocked group, so the result is one of the two branches.
+    snapshot = Object.freeze({
+      ...snapshot,
+      ...patch,
+      revision: snapshot.revision + 1,
+    } as PublicSessionSnapshot);
     for (const listener of listeners) listener();
     return snapshot;
   }
@@ -330,7 +327,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
     },
     async execute(
       expected: SessionIdentity,
-      command: AuthOperationCommand,
+      command: ApiRequest,
       options?: SessionRequestOptions,
     ): Promise<SessionResult<unknown>> {
       let admitted: SessionIdentity | undefined;
@@ -344,7 +341,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
           ? AbortSignal.any([current.controller.signal, options.signal])
           : current.controller.signal;
         if (signal.aborted) return failure("cancelled");
-        unknown = modifiesServer(command.operation) ? "unknown" : undefined;
+        unknown = command.type === "api.write" ? "unknown" : undefined;
         const result = await deps.execute(command, {
           signal,
           requireCurrent() {

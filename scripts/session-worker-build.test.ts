@@ -92,6 +92,8 @@ test.each(["/", "/nested/ui/"])(
     expect(main?.startsWith(base)).toBe(true);
     const javascript = await Bun.file(join(output, (main as string).slice(base.length))).text();
     expect(javascript).toContain(`${base}shared-session-worker.js`);
+    // The page reaches the Worker through bridge.ts only: requests.ts and defjs's HTTP pipeline stay out.
+    expect(javascript).not.toContain("/api/v1/");
   },
   30_000,
 );

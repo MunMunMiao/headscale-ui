@@ -19,7 +19,6 @@ import {
   Users,
 } from "lucide-react";
 import { createElement, useEffect, useRef, useState } from "react";
-import * as endpoints from "@/api/commands";
 import type { ApiKey } from "@/api/contracts";
 import {
   API_KEY_EXPIRY_DAYS,
@@ -266,10 +265,10 @@ function AppLayoutContent() {
       return;
     }
     setCreatedApiKey("");
-    const created = await mutateWith(
-      "api-key-create",
-      endpoints.createApiKey({ expiration: dateTimeLocalToIso(apiKeyForm.expiration) }),
-    );
+    const created = await mutateWith("api-key-create", {
+      endpoint: "createApiKey",
+      input: { expiration: dateTimeLocalToIso(apiKeyForm.expiration) },
+    });
     if (created.ok) {
       setCreatedApiKey(created.result.apiKey);
     }
@@ -277,8 +276,11 @@ function AppLayoutContent() {
 
   async function confirmApiKeyAction(target: ApiKeyActionTarget) {
     const completed = await (target.kind === "expire"
-      ? mutate("api-key-action", endpoints.expireApiKey({ prefix: target.key.prefix }))
-      : mutate("api-key-action", endpoints.deleteApiKey({ prefix: target.key.prefix })));
+      ? mutate("api-key-action", { endpoint: "expireApiKey", input: { prefix: target.key.prefix } })
+      : mutate("api-key-action", {
+          endpoint: "deleteApiKey",
+          input: { prefix: target.key.prefix },
+        }));
     if (completed) {
       closeApiKeyActionDialog();
     }
@@ -301,10 +303,10 @@ function AppLayoutContent() {
 
   async function confirmBackfillNodeIps() {
     setBackfillNodeIpsResult("");
-    const backfilled = await mutateWith(
-      "backfill-node-ips",
-      endpoints.backfillNodeIps({ confirmed: true }),
-    );
+    const backfilled = await mutateWith("backfill-node-ips", {
+      endpoint: "backfillNodeIps",
+      input: { confirmed: true },
+    });
     if (backfilled.ok) {
       setBackfillNodeIpsResult((backfilled.result.changes ?? []).join(", ") || copy.readyToSave);
       closeBackfillNodeIpsDialog();

@@ -1,5 +1,4 @@
 import { connectionSettingsError } from "@/api/connection";
-import { ApiError } from "@/api/gateway";
 import { t } from "@/i18n";
 import type {
   ProfileList,
@@ -13,6 +12,7 @@ import { createStore } from "@/lib/store";
 import type { SessionBridge } from "@/session/bridge";
 import type { ProfileSaveInput } from "@/session/profile-actions";
 import type { SessionIdentity } from "@/session/types";
+import { ApiError } from "@/session/types";
 import { storageErrorMessage } from "@/utils/storage-error";
 import { normalizedBaseUrl } from "@/utils/strings";
 import { useSession, useStore } from "./session-context";

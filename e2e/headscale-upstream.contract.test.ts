@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { REQUEST_REGISTRY } from "../src/api/requests";
+import * as endpoints from "../src/api/requests";
 import { isPolicyIdentityName } from "../src/domain/policy-designer";
 import {
   diffRoutes,
@@ -54,7 +54,7 @@ test("the pinned upstream route table matches the live gateway", async () => {
   }
   const live = swaggerRoutes(response.json);
   expect(live.map(({ method, path }) => routeKey(method, path)).sort()).toEqual(pinned);
-  expect(diffRoutes(live, REQUEST_REGISTRY)).toEqual([]);
+  expect(diffRoutes(live, endpoints)).toEqual([]);
 });
 
 test("the server reports the pinned Headscale version", async () => {

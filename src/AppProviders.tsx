@@ -1,7 +1,6 @@
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { I18nProvider } from "@lingui/react";
 import { type ReactNode, useEffect, useState } from "react";
-import { ApiError } from "./api/gateway";
 import type { BootstrapState } from "./bootstrap";
 import ErrorScreen from "./components/ErrorScreen";
 import {
@@ -12,6 +11,7 @@ import {
   useStore,
 } from "./composables/session-context";
 import { i18n, useHeadscaleI18n } from "./i18n";
+import { ApiError } from "./session/types";
 
 function RuntimeProviders({ children }: { children: ReactNode }) {
   const session = useSession();

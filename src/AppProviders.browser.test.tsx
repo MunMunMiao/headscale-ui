@@ -3,7 +3,6 @@ import { afterEach, expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { AppProviders } from "./AppProviders";
-import { createUser } from "./api/commands";
 import { useSession, useStore } from "./composables/session-context";
 import { useMutation } from "./composables/useMutation";
 import { DB_VERSION } from "./lib/idb";
@@ -27,7 +26,10 @@ function BusinessRequest() {
       <button
         type="button"
         onClick={async () => {
-          const response = await mutateWith("create-member", createUser({ name: "Ada" }));
+          const response = await mutateWith("create-member", {
+            endpoint: "createUser",
+            input: { name: "Ada" },
+          });
           if (response.ok) setResult(response.result.user.name);
         }}
       >
@@ -66,7 +68,7 @@ function Controls() {
       <button type="button" onClick={() => session.profiles.logout()}>
         Lock
       </button>
-      {client.http ? <BusinessRequest /> : null}
+      {client.identity ? <BusinessRequest /> : null}
     </>
   );
 }

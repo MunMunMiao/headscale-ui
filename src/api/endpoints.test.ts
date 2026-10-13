@@ -1,14 +1,14 @@
 import type { AnyStruct, HttpCommand } from "@defjs/core";
 import { createClient, createHttpInterceptor, withEndpoint, withInterceptors } from "@defjs/core";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from "vitest";
-import { fixtureGateway } from "@/test/operation-gateway";
+import { fixtureExecute } from "@/test/dispatch-fixture";
 import { normalizeHeadscaleNode, normalizePreAuthKey } from "./contracts";
 import * as endpoints from "./requests";
 import { readHealth as readGatewayHealth } from "./snapshot";
 
-const readHealth = (http: HeadscaleHttp) => readGatewayHealth(fixtureGateway(http));
+const readHealth = (http: HeadscaleHttp) => readGatewayHealth(fixtureExecute(http));
 
-import { createFixtureHttp } from "@/test/operation-gateway";
+import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { HeadscaleHttp } from "./http";
 
 type SeenRequest = {

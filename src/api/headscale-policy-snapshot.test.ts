@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { createFixtureHttp, fixtureGateway } from "@/test/operation-gateway";
+import { createFixtureHttp, fixtureExecute } from "@/test/dispatch-fixture";
 import { fetchSnapshot, readPolicy } from "./snapshot";
 
 let server: ReturnType<typeof Bun.serve>;
@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 function client() {
-  return fixtureGateway(
+  return fixtureExecute(
     createFixtureHttp({
       baseUrl: `http://127.0.0.1:${server.port}`,
       apiKey: "test-token",

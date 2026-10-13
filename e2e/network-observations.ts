@@ -1,4 +1,5 @@
-import type { OperationId } from "../src/domain/headscale-operations";
+/** The defjs `operation` of each request in src/api/requests.ts, matched here by method and path. */
+export type OperationId = (typeof operations)[number][0];
 
 export interface NetworkOperationCall {
   id: OperationId;
@@ -12,7 +13,7 @@ export interface NetworkOperationCall {
   };
 }
 
-const operations: ReadonlyArray<readonly [OperationId, string, RegExp]> = [
+const operations = [
   ["health.check", "GET", /^\/api\/v1\/health$/],
   ["version.get", "GET", /^\/version$/],
   ["user.list", "GET", /^\/api\/v1\/user$/],
@@ -43,7 +44,7 @@ const operations: ReadonlyArray<readonly [OperationId, string, RegExp]> = [
   ["policy.get", "GET", /^\/api\/v1\/policy$/],
   ["policy.set", "PUT", /^\/api\/v1\/policy$/],
   ["policy.check", "POST", /^\/api\/v1\/policy\/check$/],
-];
+] as const;
 
 export function networkOperation(method: string, path: string): NetworkOperationCall | undefined {
   const operation = operations.find(([, verb, pattern]) => method === verb && pattern.test(path));

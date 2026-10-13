@@ -2,20 +2,7 @@ import type { AddressInfo } from "node:net";
 import { createServer } from "node:net";
 import type { FaultCode } from "@defjs/core";
 import { expect, test, vi } from "vitest";
-import {
-  authApprove,
-  backfillNodeIps,
-  checkPolicy,
-  createApiKey,
-  createPreAuthKey,
-  createUser,
-  deleteUser,
-  listUsers,
-  setPolicy,
-  setTags,
-} from "@/api/commands";
-import { createHeadscaleGateway } from "@/api/gateway";
-import { createFixtureHttp } from "@/test/operation-gateway";
+import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { SessionExecutionContext } from "./auth-session";
 import { SessionFault } from "./auth-session";
 import { executeOperation } from "./operation-dispatch";
@@ -50,19 +37,39 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
   });
   try {
     const current = context(`${server.url.origin}/headscale`);
-    expect(await executeOperation(listUsers({ name: "ops team" }), current)).toEqual({
+    expect(
+      await executeOperation(
+        { type: "api.read", endpoint: "listUsers", input: { name: "ops team" } },
+        current,
+      ),
+    ).toEqual({
       ok: true,
       value: { users: [{ id: "1", name: "ops" }] },
     });
     expect(
-      await executeOperation(setTags({ nodeId: "1", tags: ["tag:ops"] }), current),
+      await executeOperation(
+        { type: "api.write", endpoint: "setTags", input: { nodeId: "1", tags: ["tag:ops"] } },
+        current,
+      ),
     ).toMatchObject({ ok: true, value: { node: { id: "1" } } });
-    expect(await executeOperation(setPolicy({ policy: "{}" }), current)).toEqual({
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "setPolicy", input: { policy: "{}" } },
+        current,
+      ),
+    ).toEqual({
       ok: true,
       value: { policy: "{}" },
     });
     expect(
-      await executeOperation(createApiKey({ expiration: "2027-01-01T00:00:00Z" }), current),
+      await executeOperation(
+        {
+          type: "api.write",
+          endpoint: "createApiKey",
+          input: { expiration: "2027-01-01T00:00:00Z" },
+        },
+        current,
+      ),
     ).toEqual({
       ok: true,
       value: { apiKey: "new-business-key" },
@@ -98,26 +105,27 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
   }
 });
 
-test("preserves HTTP fault semantics through the typed gateway without serializing request metadata", async () => {
+test("preserves HTTP fault semantics without serializing request metadata", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
     fetch: () => Response.json({ code: 13, message: "acl policy not found" }, { status: 500 }),
   });
   try {
-    const gateway = createHeadscaleGateway((command) =>
-      executeOperation(command, context(server.url.origin)),
+    const result = await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context(server.url.origin),
     );
-    const [error, data] = await gateway.execute(listUsers({}));
-    expect(data).toBeNull();
-    expect(error).toBeInstanceOf(Error);
-    expect(error).toMatchObject({
-      kind: "api",
-      code: "HTTP_STATUS",
-      status: 500,
-      data: { code: 13, message: "acl policy not found" },
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "api",
+        code: "HTTP_STATUS",
+        status: 500,
+        data: { code: 13, message: "acl policy not found" },
+      },
     });
-    expect(JSON.stringify(error)).not.toMatch(/fixture-connection-secret|headers|request|cause/);
+    expect(JSON.stringify(result)).not.toMatch(/fixture-connection-secret|headers|request|cause/);
   } finally {
     server.stop(true);
   }
@@ -135,21 +143,27 @@ test("rejects unknown operations, invalid input and expired sessions without a n
   });
   try {
     expect(
-      await executeOperation({ operation: "toString" } as never, context(server.url.origin)),
+      await executeOperation(
+        { type: "api.write", endpoint: "toString" } as never,
+        context(server.url.origin),
+      ),
     ).toEqual({ ok: false, error: { kind: "invalid-request" } });
     expect(
       await executeOperation(
-        { operation: "node.setTags", input: { nodeId: "1", tags: 9 } },
+        { type: "api.write", endpoint: "setTags", input: { nodeId: "1", tags: 9 } } as never,
         context(server.url.origin),
       ),
     ).toMatchObject({ ok: false, error: { kind: "api", code: "REQ_INPUT_INVALID" } });
     expect(
-      await executeOperation(listUsers({}), {
-        signal: new AbortController().signal,
-        requireCurrent() {
-          throw new SessionFault("expired");
+      await executeOperation(
+        { type: "api.read", endpoint: "listUsers", input: {} },
+        {
+          signal: new AbortController().signal,
+          requireCurrent() {
+            throw new SessionFault("expired");
+          },
         },
-      }),
+      ),
     ).toEqual({ ok: false, error: { kind: "expired" } });
     expect(count).toBe(0);
   } finally {
@@ -173,7 +187,10 @@ test("an error cannot echo the connection key or serialize raw request metadata"
       ),
   });
   try {
-    const result = await executeOperation(listUsers({}), context(server.url.origin));
+    const result = await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context(server.url.origin),
+    );
     expect(result).toMatchObject({
       ok: false,
       error: {
@@ -230,13 +247,16 @@ test.each([200, 503])(
       },
     });
     try {
-      const pending = executeOperation(setPolicy({ policy: "{}" }), {
-        signal: new AbortController().signal,
-        requireCurrent() {
-          if (invalidated) throw new SessionFault("stale");
-          return { baseUrl: server.url.origin, apiKey: "fixture-connection-secret" };
+      const pending = executeOperation(
+        { type: "api.write", endpoint: "setPolicy", input: { policy: "{}" } },
+        {
+          signal: new AbortController().signal,
+          requireCurrent() {
+            if (invalidated) throw new SessionFault("stale");
+            return { baseUrl: server.url.origin, apiKey: "fixture-connection-secret" };
+          },
         },
-      });
+      );
       await received.promise;
       invalidated = true;
       release.resolve();
@@ -266,11 +286,21 @@ test("dispatches the auth request and policy check writes through the injected t
   try {
     const current = context(server.url.origin);
     const authId = "hskey-authreq-abcdefghijklmnopqrstuvwx";
-    expect(await executeOperation(authApprove({ authId }), current)).toEqual({
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "authApprove", input: { authId } },
+        current,
+      ),
+    ).toEqual({
       ok: true,
       value: undefined,
     });
-    expect(await executeOperation(checkPolicy({ policy: "{}" }), current)).toEqual({
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "checkPolicy", input: { policy: "{}" } },
+        current,
+      ),
+    ).toEqual({
       ok: true,
       value: undefined,
     });
@@ -295,7 +325,11 @@ test("an unknown auth request fails with the server message and without the conn
   });
   try {
     const result = await executeOperation(
-      authApprove({ authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }),
+      {
+        type: "api.write",
+        endpoint: "authApprove",
+        input: { authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" },
+      },
       context(server.url.origin),
     );
     expect(result).toMatchObject({
@@ -327,7 +361,11 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       baseUrl: server.url.origin,
       apiKey: "fixture-connection-secret",
     });
-    const result = await executeOperation(listUsers({}), current, http);
+    const result = await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      current,
+      http,
+    );
     expect(result).toMatchObject({
       ok: false,
       error: { kind: "api", code: "HTTP_STATUS", status: 500 },
@@ -335,17 +373,23 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
 
     const execute = vi.spyOn(http, "execute").mockRejectedValueOnce(new Error("boom"));
-    expect(await executeOperation(listUsers({}), current, http)).toEqual({
+    expect(
+      await executeOperation({ type: "api.read", endpoint: "listUsers", input: {} }, current, http),
+    ).toEqual({
       ok: false,
       error: { kind: "unavailable" },
     });
     execute.mockRejectedValueOnce(new SessionFault("expired"));
-    expect(await executeOperation(listUsers({}), current, http)).toEqual({
+    expect(
+      await executeOperation({ type: "api.read", endpoint: "listUsers", input: {} }, current, http),
+    ).toEqual({
       ok: false,
       error: { kind: "expired" },
     });
     execute.mockClear();
-    expect(await executeOperation({ operation: "toString" } as never, current, http)).toEqual({
+    expect(
+      await executeOperation({ type: "api.write", endpoint: "toString" } as never, current, http),
+    ).toEqual({
       ok: false,
       error: { kind: "invalid-request" },
     });
@@ -356,15 +400,36 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
 });
 
 const writes = [
-  ["user.create", () => createUser({ name: "ops" })],
-  ["preauthkey.create", () => createPreAuthKey({ user: "1", expiration: "2027-01-01T00:00:00Z" })],
-  ["policy.set", () => setPolicy({ policy: "{}" })],
-  ["node.backfillIps", () => backfillNodeIps({ confirmed: true })],
-  ["user.delete", () => deleteUser({ id: "1" })],
+  [
+    "createUser",
+    () => ({ type: "api.write", endpoint: "createUser", input: { name: "ops" } }) as const,
+  ],
+  [
+    "createPreAuthKey",
+    () =>
+      ({
+        type: "api.write",
+        endpoint: "createPreAuthKey",
+        input: { user: "1", expiration: "2027-01-01T00:00:00Z" },
+      }) as const,
+  ],
+  [
+    "setPolicy",
+    () => ({ type: "api.write", endpoint: "setPolicy", input: { policy: "{}" } }) as const,
+  ],
+  [
+    "backfillNodeIps",
+    () => ({ type: "api.write", endpoint: "backfillNodeIps", input: { confirmed: true } }) as const,
+  ],
+  [
+    "deleteUser",
+    () => ({ type: "api.write", endpoint: "deleteUser", input: { id: "1" } }) as const,
+  ],
 ] as const;
+// The page declares the kind; the dispatcher marks only declared writes.
 const reads = [
-  ["user.list", () => listUsers({})],
-  ["policy.check", () => checkPolicy({ policy: "{}" })],
+  ["listUsers", () => ({ type: "api.read", endpoint: "listUsers", input: {} }) as const],
+  ["getPolicy", () => ({ type: "api.read", endpoint: "getPolicy" }) as const],
 ] as const;
 const wrongShape = { user: "x", preAuthKey: "x", policy: 1, changes: "x", users: "x" };
 
@@ -414,8 +479,8 @@ test.each(writes)("%s: a write that may have been applied is marked unknown", as
     ["200 wrong shape", "RES_STRUCT_MISMATCH", () => scripted(() => Response.json(wrongShape))],
   ];
   for (const [name, code, respond] of uncertain) {
-    // user.delete has no output contract, so its response body is never read.
-    if (make().operation === "user.delete") continue;
+    // deleteUser has no output contract, so its success body is never read.
+    if (make().endpoint === "deleteUser") continue;
     const { server, seen } = await respond();
     try {
       const result = await executeOperation(make(), context(server.url.origin));
@@ -424,6 +489,56 @@ test.each(writes)("%s: a write that may have been applied is marked unknown", as
         error: { kind: "api", code, outcome: "unknown" },
       });
       expect(seen.requests, name).toBe(1);
+    } finally {
+      server.stop(true);
+    }
+  }
+});
+
+test.each([
+  [
+    "502 html",
+    () =>
+      new Response("<html>bad gateway</html>", {
+        status: 502,
+        headers: { "content-type": "text/html" },
+      }),
+    "RES_MEDIA_TYPE_INVALID",
+  ],
+  [
+    "503 json",
+    () => Response.json({ code: 14, message: "unavailable" }, { status: 503 }),
+    "HTTP_STATUS",
+  ],
+  [
+    "504 plain text",
+    () =>
+      new Response("upstream timed out", {
+        status: 504,
+        headers: { "content-type": "text/plain" },
+      }),
+    "RES_MEDIA_TYPE_INVALID",
+  ],
+])("a write answered by a gateway with %s may have been applied", async (name, respond, code) => {
+  for (const [id, make] of writes) {
+    const { server, seen } = await scripted(respond);
+    try {
+      expect(
+        await executeOperation(make(), context(server.url.origin)),
+        `${id} ${name}`,
+      ).toMatchObject({ ok: false, error: { kind: "api", code, outcome: "unknown" } });
+      expect(seen.requests, `${id} ${name}`).toBe(1);
+    } finally {
+      server.stop(true);
+    }
+  }
+  for (const [id, make] of reads) {
+    const { server } = await scripted(respond);
+    try {
+      expect(
+        await executeOperation(make(), context(server.url.origin)),
+        `${id} ${name}`,
+      ).not.toHaveProperty("error.outcome");
     } finally {
       server.stop(true);
     }
@@ -505,10 +620,7 @@ test.each(reads)("%s: the same faults on a read never carry an outcome", async (
   }
   for (const result of outcomes)
     expect(result.ok ? result : result.error).not.toHaveProperty("outcome");
-  // policy.check has no output contract, so only the network faults fail it.
-  expect(outcomes.filter((result) => !result.ok)).toHaveLength(
-    make().operation === "user.list" ? 4 : 2,
-  );
+  expect(outcomes.filter((result) => !result.ok)).toHaveLength(4);
 });
 
 test.each([
@@ -520,6 +632,11 @@ test.each([
   [
     "500 json",
     () => Response.json({ code: 13, message: "failed" }, { status: 500 }),
+    "HTTP_STATUS",
+  ],
+  [
+    "404 json",
+    () => Response.json({ code: 5, message: "not found" }, { status: 404 }),
     "HTTP_STATUS",
   ],
   [
@@ -544,56 +661,6 @@ test.each([
       expect(result, `${id} ${name}`).toMatchObject({ ok: false, error: { kind: "api", code } });
       expect(result, `${id} ${name}`).not.toHaveProperty("error.outcome");
       expect(seen.requests, `${id} ${name}`).toBe(1);
-    } finally {
-      server.stop(true);
-    }
-  }
-});
-
-test.each([
-  [
-    "502 html",
-    () =>
-      new Response("<html>bad gateway</html>", {
-        status: 502,
-        headers: { "content-type": "text/html" },
-      }),
-    "RES_MEDIA_TYPE_INVALID",
-  ],
-  [
-    "503 json",
-    () => Response.json({ code: 14, message: "unavailable" }, { status: 503 }),
-    "HTTP_STATUS",
-  ],
-  [
-    "504 plain text",
-    () =>
-      new Response("upstream timed out", {
-        status: 504,
-        headers: { "content-type": "text/plain" },
-      }),
-    "RES_MEDIA_TYPE_INVALID",
-  ],
-])("a write answered by a gateway with %s may have been applied", async (name, respond, code) => {
-  for (const [id, make] of writes) {
-    const { server, seen } = await scripted(respond);
-    try {
-      expect(
-        await executeOperation(make(), context(server.url.origin)),
-        `${id} ${name}`,
-      ).toMatchObject({ ok: false, error: { kind: "api", code, outcome: "unknown" } });
-      expect(seen.requests, `${id} ${name}`).toBe(1);
-    } finally {
-      server.stop(true);
-    }
-  }
-  for (const [id, make] of reads) {
-    const { server } = await scripted(respond);
-    try {
-      expect(
-        await executeOperation(make(), context(server.url.origin)),
-        `${id} ${name}`,
-      ).not.toHaveProperty("error.outcome");
     } finally {
       server.stop(true);
     }

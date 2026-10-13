@@ -169,7 +169,7 @@ test("each new identity gets its first activity immediately and dispose releases
   const dispose = attachSessionActivity(source, bridge);
   document.fire("pointerdown", true);
   replace({
-    ...(bridge.getSessionSnapshot() as PublicSessionSnapshot),
+    ...(bridge.getSessionSnapshot() as Extract<PublicSessionSnapshot, { status: "unlocked" }>),
     identity: { workerId: "worker-a", sessionId: "session-b" },
   });
   document.fire("pointerdown", true);

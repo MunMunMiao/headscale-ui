@@ -1,7 +1,6 @@
 import { createClient, withEndpoint, withHTTPHandle } from "@defjs/core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { createUser, setPolicy } from "@/api/commands";
-import { createFixtureHttp, fixtureClientStore } from "@/test/operation-gateway";
+import { createFixtureHttp, fixtureSession } from "@/test/dispatch-fixture";
 import { snapshotFixture, startSnapshotServer } from "@/test-utils/headscale.test";
 import { createSessionDrafts } from "./session-drafts";
 import { createActionFeedbackStore } from "./useActionFeedback";
@@ -11,6 +10,7 @@ import { createSnapshotStore } from "./useSnapshot";
 
 let session: {
   feedback: ReturnType<typeof createActionFeedbackStore>;
+  auth: ReturnType<typeof fixtureSession>["auth"];
   client: ReturnType<typeof createHeadscaleClientStore>;
   snapshot: ReturnType<typeof createSnapshotStore>;
   drafts: ReturnType<typeof createSessionDrafts>;
@@ -20,14 +20,15 @@ let fixture: ReturnType<typeof startSnapshotServer>;
 beforeEach(() => {
   const feedback = createActionFeedbackStore();
   fixture = startSnapshotServer();
-  const client = fixtureClientStore(
+  const { auth, client } = fixtureSession(
     createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     fixture.baseUrl,
   );
   session = {
     feedback,
+    auth,
     client,
-    snapshot: createSnapshotStore(client, feedback),
+    snapshot: createSnapshotStore(auth, client, feedback),
     drafts: createSessionDrafts(),
   };
 });
@@ -41,10 +42,10 @@ describe("useMutation", () => {
     const snapshot = session.snapshot;
     snapshot.setAuthorized(true);
 
-    const result = await createMutation(session).mutateWith(
-      "save-policy",
-      setPolicy({ policy: '{"acls":[]}' }),
-    );
+    const result = await createMutation(session).mutateWith("save-policy", {
+      endpoint: "setPolicy",
+      input: { policy: '{"acls":[]}' },
+    });
 
     expect(result).toEqual({ ok: true, result: { policy: '{"acls":[]}' } });
     expect(fixture.requests).toContain("PUT /api/v1/policy");
@@ -82,12 +83,15 @@ describe("useMutation", () => {
         return Response.json(responses[path]);
       }),
     );
-    session.client = fixtureClientStore(http);
-    session.snapshot = createSnapshotStore(session.client, session.feedback);
+    ({ auth: session.auth, client: session.client } = fixtureSession(http));
+    session.snapshot = createSnapshotStore(session.auth, session.client, session.feedback);
     session.snapshot.setAuthorized(true);
     session.snapshot.applyPatch(fixture);
     expect(
-      await createMutation(session).mutate("create-member", createUser({ name: "committed" })),
+      await createMutation(session).mutate("create-member", {
+        endpoint: "createUser",
+        input: { name: "committed" },
+      }),
     ).toBe(true);
     expect(writes).toBe(1);
     expect(session.feedback.actionError("create-member")).toBe("");
@@ -106,13 +110,18 @@ describe("useMutation", () => {
     snapshot.setOnApplySnapshot(() => void refreshes++);
     const mutation = createMutation(session, { skipRefresh: true });
 
-    expect(await mutation.mutate("save-policy", setPolicy({ policy: '{"acls":[]}' }))).toBe(true);
+    expect(
+      await mutation.mutate("save-policy", {
+        endpoint: "setPolicy",
+        input: { policy: '{"acls":[]}' },
+      }),
+    ).toBe(true);
     expect(refreshes).toBe(0);
     expect(
       await createMutation(
         {
           ...session,
-          client: fixtureClientStore(
+          ...fixtureSession(
             createClient(
               withEndpoint("https://headscale.example.test"),
               withHTTPHandle(async () => Response.json({ message: "denied" }, { status: 403 })),
@@ -120,7 +129,7 @@ describe("useMutation", () => {
           ),
         },
         { skipRefresh: true },
-      ).mutate("save-policy", setPolicy({ policy: '{"acls":[]}' })),
+      ).mutate("save-policy", { endpoint: "setPolicy", input: { policy: '{"acls":[]}' } }),
     ).toBe(false);
   });
 });

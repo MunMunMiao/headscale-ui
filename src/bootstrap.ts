@@ -1,4 +1,3 @@
-import { ApiError } from "./api/gateway";
 import { applyStoredTheme } from "./composables/useTheme";
 import { applyStoredLocale } from "./i18n";
 import type { ProfileList } from "./lib/profile-storage";
@@ -6,6 +5,7 @@ import { clearSessionMetadata } from "./lib/secure-storage";
 import { hydrateSettings } from "./lib/settings-storage";
 import type { SessionBridge } from "./session/bridge";
 import { createBrowserSessionBridge } from "./session/connect";
+import { ApiError } from "./session/types";
 
 export interface BootstrapState {
   bridge: SessionBridge;

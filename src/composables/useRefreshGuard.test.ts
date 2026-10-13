@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { createFixtureHttp, fixtureClientStore } from "@/test/operation-gateway";
+import { createFixtureHttp, fixtureSession } from "@/test/dispatch-fixture";
 import { createActionFeedbackStore } from "./useActionFeedback";
 import { createRefreshGuard } from "./useRefreshGuard";
 import { createSnapshotStore } from "./useSnapshot";
@@ -24,7 +24,8 @@ describe("useRefreshGuard", () => {
   function newStore() {
     // The guard never reads through this client: its refresh is a deferred supplied by the test.
     const http = createFixtureHttp({ baseUrl: "http://127.0.0.1:9", apiKey: "unused" });
-    const store = createSnapshotStore(fixtureClientStore(http), createActionFeedbackStore());
+    const { auth, client } = fixtureSession(http);
+    const store = createSnapshotStore(auth, client, createActionFeedbackStore());
     store.setAuthorized(true);
     return store;
   }

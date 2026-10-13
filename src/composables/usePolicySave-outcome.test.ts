@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { parsePolicy } from "@/domain/policy-designer";
 import { t } from "@/i18n";
+import { fakeAuth } from "@/test/dispatch-fixture";
 import { createSessionDrafts } from "./session-drafts";
 import { createActionFeedbackStore } from "./useActionFeedback";
 import { createHeadscaleClientStore } from "./useHeadscaleClient";
@@ -10,15 +11,16 @@ import { createSnapshotStore } from "./useSnapshot";
 
 test("an unconfirmed policy write keeps the draft dirty, reports it under save-policy and is not resubmitted", async () => {
   const writes: string[] = [];
-  const client = createHeadscaleClientStore({
+  const auth = fakeAuth({
     async execute(_expected, command) {
-      writes.push(command.operation);
+      writes.push(command.endpoint);
       return {
         ok: false,
         error: { kind: "api", code: "NET_TIMEOUT", message: "timed out", outcome: "unknown" },
       };
     },
   });
+  const client = createHeadscaleClientStore();
   client.adopt({
     status: "unlocked",
     identity: { workerId: "worker", sessionId: "a" },
@@ -30,9 +32,9 @@ test("an unconfirmed policy write keeps the draft dirty, reports it under save-p
     revision: 1,
   });
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   const policy = createPolicyDesignerStore();
-  const session = { client, feedback, snapshot, policy, drafts: createSessionDrafts() };
+  const session = { auth, client, feedback, snapshot, policy, drafts: createSessionDrafts() };
   snapshot.setAuthorized(true);
   policy.load('{"acls":[],"groups":{"group:ops":["alice@"]}}');
   const baseline = policy.getSnapshot().policyDraft;
@@ -45,5 +47,5 @@ test("an unconfirmed policy write keeps the draft dirty, reports it under save-p
   expect(policy.isPolicyDirty).toBe(true);
   expect(policy.isPolicySaving).toBe(false);
   // Neither a refresh nor a replay: exactly the one write left the page.
-  expect(writes).toEqual(["policy.set"]);
+  expect(writes).toEqual(["setPolicy"]);
 });

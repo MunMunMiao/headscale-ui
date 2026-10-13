@@ -1,11 +1,9 @@
-import type { OperationId } from "../src/domain/headscale-operations";
-
 // Pinned from the Headscale v0.29.4 gRPC gateway (proto/headscale/v1/headscale.proto).
 // Reviewed data: the live swagger check in headscale-upstream.contract.test.ts compares it with a server.
 export const HEADSCALE_UPSTREAM_VERSION = "0.29.4";
 
 // Routes the UI needs that are not gateway RPCs.
-export const NON_RPC_OPERATIONS = ["version.get"] as const satisfies readonly OperationId[];
+export const NON_RPC_OPERATIONS: readonly string[] = ["version.get"];
 
 export interface UpstreamRpc {
   rpc: string;
@@ -74,10 +72,11 @@ export function definitionOf(request: unknown): RouteRef & { operation: string }
   };
 }
 
+/** Route of every request in a module of endpoints, keyed by its defjs operation id. */
 export function registryRoutes(registry: Readonly<Record<string, unknown>>) {
   const routes = new Map<string, string>();
-  for (const [id, request] of Object.entries(registry)) {
-    const { method, path } = definitionOf(request);
+  for (const request of Object.values(registry)) {
+    const { method, path, operation: id } = definitionOf(request);
     const key = routeKey(method, path);
     const other = routes.get(key);
     if (other) throw new Error(`Operations ${other} and ${id} share the route ${key}`);

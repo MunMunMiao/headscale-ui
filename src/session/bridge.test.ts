@@ -125,7 +125,7 @@ test("a reply queued before expiry cannot publish after expiry even though no ti
     const pair = f.pairs[0];
     expect.assert(pair);
     pair.pause();
-    const pending = f.bridge.execute(identity, { operation: "user.list", input: {} });
+    const pending = f.bridge.read(identity, { endpoint: "listUsers", input: {} });
     await expect.poll(() => pair.queued()).toBeGreaterThan(0);
     f.clock.advance(SESSION_IDLE_MS);
     expect(f.runtime.auth.getSnapshot().status).toBe("unlocked");
@@ -145,8 +145,8 @@ test("a hidden one-time key result waits for same-session recovery and is delive
     const identity = await unlock(f);
     f.bridge.suspend();
     const result = f.bridge
-      .execute(identity, {
-        operation: "apikey.create",
+      .write(identity, {
+        endpoint: "createApiKey",
         input: { expiration: "2027-01-01T00:00:00Z" },
       })
       .then((value) => {
@@ -199,7 +199,7 @@ test("silent Worker death ends waiting within the command deadline and clears th
   try {
     await f.bridge.connect();
     const identity = await unlock(f);
-    const result = f.bridge.execute(identity, { operation: "policy.set", input: { policy: "{}" } });
+    const result = f.bridge.write(identity, { endpoint: "setPolicy", input: { policy: "{}" } });
     await started.promise;
     f.pairs[0]?.worker.close();
     expect(timer.timers.some((entry) => entry.milliseconds === 20_000 && !entry.cancelled)).toBe(
@@ -208,7 +208,7 @@ test("silent Worker death ends waiting within the command deadline and clears th
     timer.fire(20_000);
     expect(await result).toEqual({ ok: false, error: { kind: "unavailable", outcome: "unknown" } });
     expect(f.bridge.getSnapshot()).toMatchObject({ status: "unavailable", session: null });
-    expect(await f.bridge.execute(identity, { operation: "user.list", input: {} })).toMatchObject({
+    expect(await f.bridge.read(identity, { endpoint: "listUsers", input: {} })).toMatchObject({
       ok: false,
     });
   } finally {
@@ -249,8 +249,8 @@ test("timely hidden replies stop their communication deadline while waiting for 
     await f.bridge.connect();
     const identity = await unlock(f);
     f.bridge.suspend();
-    const pending = f.bridge.execute(identity, {
-      operation: "apikey.create",
+    const pending = f.bridge.write(identity, {
+      endpoint: "createApiKey",
       input: { expiration: "2027-01-01T00:00:00Z" },
     });
     const pair = f.pairs[0];
@@ -278,9 +278,9 @@ test("page cancellation aborts only its matching Worker request and settled canc
     await f.bridge.connect();
     const identity = await unlock(f);
     const abort = new AbortController();
-    const pending = f.bridge.execute(
+    const pending = f.bridge.read(
       identity,
-      { operation: "user.list", input: {} },
+      { endpoint: "listUsers", input: {} },
       { signal: abort.signal },
     );
     const signal = await started.promise;
@@ -353,11 +353,11 @@ test("buffered results and in-flight work share a 64-command bound", async () =>
     const identity = await unlock(f);
     f.bridge.suspend();
     for (let index = 0; index < 63; index++)
-      results.push(f.bridge.execute(identity, { operation: "user.list", input: {} }));
+      results.push(f.bridge.read(identity, { endpoint: "listUsers", input: {} }));
     const pair = f.pairs[0];
     expect.assert(pair);
     await sessionMessage(pair.page, (value) => (value as { requestId?: number }).requestId === 64);
-    const extra = f.bridge.execute(identity, { operation: "user.list", input: {} });
+    const extra = f.bridge.read(identity, { endpoint: "listUsers", input: {} });
     const result = await Promise.race([extra, Promise.resolve("still-pending")]);
     expect(result).toEqual({ ok: false, error: { kind: "busy" } });
     expect(await f.bridge.resume()).toMatchObject({ ok: true });
@@ -397,6 +397,33 @@ test("a handshake with incompatible Worker storage or protocol metadata never gr
     });
     expect(await pending).toEqual({ ok: false, error: { kind: "reload-required" } });
     expect(bridge.getSnapshot()).toMatchObject({ status: "reload-required", session: null });
+  } finally {
+    bridge.dispose();
+    pair.close();
+  }
+});
+
+test("a Worker from another build reads as reload-required even when the rest of its hello differs", async () => {
+  const pair = createSessionPorts();
+  const bridge = createSessionBridge({
+    openPort: () => pair.page,
+    ownerTabId: () => "owner",
+    buildId: "page-build",
+    storageVersion: 3,
+  });
+  try {
+    const pending = bridge.connect();
+    // An older Worker: no `reads`, and a snapshot without a field this build added.
+    pair.worker.postMessage({
+      type: "hello",
+      protocolVersion: 1,
+      storageVersion: 3,
+      workerId: "worker",
+      buildId: "older-build",
+      snapshot: { status: "locked", identity: null, profile: null, expiresAt: null, revision: 0 },
+    });
+    expect(await pending).toEqual({ ok: false, error: { kind: "reload-required" } });
+    expect(bridge.getSnapshot().status).toBe("reload-required");
   } finally {
     bridge.dispose();
     pair.close();
@@ -540,19 +567,22 @@ test("old Worker identities and out-of-order snapshots cannot replace the curren
 });
 
 test.each([
-  ["lock", "apikey.create", { kind: "stale", outcome: "unknown" }],
-  ["expire", "apikey.create", { kind: "expired", outcome: "unknown" }],
-  ["lock", "user.list", { kind: "stale" }],
-  ["expire", "user.list", { kind: "expired" }],
+  ["lock", "createApiKey", { kind: "stale", outcome: "unknown" }],
+  ["expire", "createApiKey", { kind: "expired", outcome: "unknown" }],
+  ["lock", "listUsers", { kind: "stale" }],
+  ["expire", "listUsers", { kind: "expired" }],
 ] as const)(
   "a hidden %s result of %s is discarded after the session ends",
-  async (action, operation, error) => {
+  async (action, endpoint, error) => {
     const f = fixture(async () => ({ ok: true, value: { apiKey: "never-deliver" } }));
     try {
       await f.bridge.connect();
       const identity = await unlock(f);
       f.bridge.suspend();
-      const pending = f.bridge.execute(identity, { operation, input: {} });
+      const pending =
+        endpoint === "listUsers"
+          ? f.bridge.read(identity, { endpoint, input: {} })
+          : f.bridge.write(identity, { endpoint, input: { expiration: "2027-01-01T00:00:00Z" } });
       const pair = f.pairs[0];
       expect.assert(pair);
       await sessionMessage(pair.page, (value) => (value as { requestId?: number }).requestId === 2);
@@ -574,8 +604,8 @@ test("another peer's valid touch permits a queued old-deadline result from the s
     const pair = f.pairs[0];
     expect.assert(pair);
     pair.pause();
-    const pending = f.bridge.execute(identity, {
-      operation: "apikey.create",
+    const pending = f.bridge.write(identity, {
+      endpoint: "createApiKey",
       input: { expiration: "2027-01-01T00:00:00Z" },
     });
     await expect.poll(() => pair.queued()).toBeGreaterThan(0);
@@ -596,12 +626,10 @@ test("a new suspension prevents an older resume check from releasing buffered re
     await f.bridge.connect();
     const identity = await unlock(f);
     f.bridge.suspend();
-    const pending = f.bridge
-      .execute(identity, { operation: "user.list", input: {} })
-      .then((result) => {
-        delivered = true;
-        return result;
-      });
+    const pending = f.bridge.read(identity, { endpoint: "listUsers", input: {} }).then((result) => {
+      delivered = true;
+      return result;
+    });
     const pair = f.pairs[0];
     expect.assert(pair);
     await sessionMessage(pair.page, (value) => (value as { requestId?: number }).requestId === 2);
@@ -846,17 +874,17 @@ test("fault DTOs survive the port while a stale or pre-cancelled call never disp
     const identity = await unlock(f);
     expect(await f.bridge.touch(identity)).toMatchObject({ ok: true });
     expect(
-      await f.bridge.execute(
+      await f.bridge.read(
         { ...identity, sessionId: "stale" },
-        { operation: "user.list", input: {} },
+        { endpoint: "listUsers", input: {} },
       ),
     ).toMatchObject({ ok: false, error: { kind: "stale" } });
     const signal = AbortSignal.abort();
     expect(
-      await f.bridge.execute(identity, { operation: "user.list", input: {} }, { signal }),
+      await f.bridge.read(identity, { endpoint: "listUsers", input: {} }, { signal }),
     ).toMatchObject({ ok: false, error: { kind: "cancelled" } });
     expect(calls).toBe(0);
-    expect(await f.bridge.execute(identity, { operation: "user.list", input: {} })).toEqual({
+    expect(await f.bridge.read(identity, { endpoint: "listUsers", input: {} })).toEqual({
       ok: false,
       error: {
         kind: "api",
@@ -906,7 +934,7 @@ test("a failed page post resolves every command and retains no authorization", a
     pair.page.postMessage = () => {
       throw new DOMException("Port failed", "DataCloneError");
     };
-    expect(await f.bridge.execute(identity, { operation: "user.list", input: {} })).toEqual({
+    expect(await f.bridge.read(identity, { endpoint: "listUsers", input: {} })).toEqual({
       ok: false,
       error: { kind: "unavailable" },
     });
@@ -943,15 +971,15 @@ test.each([
   }
 });
 
-/** Starts a suspended command, waits until the Worker has answered it, and returns the handle. */
+/** Starts a suspended write, waits until the Worker has answered it, and returns the handle. */
 async function held(
   f: ReturnType<typeof fixture>,
-  command: Parameters<ReturnType<typeof fixture>["bridge"]["execute"]>[1],
+  command: Parameters<ReturnType<typeof fixture>["bridge"]["write"]>[1],
 ) {
   await f.bridge.connect();
   const identity = await unlock(f);
   f.bridge.suspend();
-  const pending = f.bridge.execute(identity, command);
+  const pending = f.bridge.write(identity, command);
   const pair = f.pairs[0];
   expect.assert(pair);
   await sessionMessage(pair.page, (value) => (value as { requestId?: number }).requestId === 2);
@@ -961,7 +989,7 @@ async function held(
 test("a write answered by the Worker but not yet delivered is unconfirmed when the port is lost", async () => {
   const f = fixture(async () => ({ ok: true, value: { policy: "{}" } }));
   try {
-    const { pending, pair } = await held(f, { operation: "policy.set", input: { policy: "{}" } });
+    const { pending, pair } = await held(f, { endpoint: "setPolicy", input: { policy: "{}" } });
     pair.page.dispatchEvent(new MessageEvent("messageerror"));
     expect(await pending).toEqual({
       ok: false,
@@ -972,7 +1000,7 @@ test("a write answered by the Worker but not yet delivered is unconfirmed when t
   }
 });
 
-test("a policy check is only a validation, so losing the port carries no outcome", async () => {
+test("a read cannot have been applied, so losing the port carries no outcome", async () => {
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   const timer = scheduler();
@@ -984,10 +1012,7 @@ test("a policy check is only a validation, so losing the port carries no outcome
   try {
     await f.bridge.connect();
     const identity = await unlock(f);
-    const result = f.bridge.execute(identity, {
-      operation: "policy.check",
-      input: { policy: "{}" },
-    });
+    const result = f.bridge.read(identity, { endpoint: "listUsers", input: {} });
     await started.promise;
     timer.fire(20_000);
     expect(await result).toEqual({ ok: false, error: { kind: "unavailable" } });
@@ -998,12 +1023,13 @@ test("a policy check is only a validation, so losing the port carries no outcome
 });
 
 test("a page cancellation after the write was posted is unconfirmed, a read cancellation is not", async () => {
-  for (const [command, error] of [
+  for (const [publish, command, error] of [
     [
-      { operation: "policy.set", input: { policy: "{}" } },
+      "write",
+      { endpoint: "setPolicy", input: { policy: "{}" } },
       { kind: "cancelled", outcome: "unknown" },
     ],
-    [{ operation: "user.list", input: {} }, { kind: "cancelled" }],
+    ["read", { endpoint: "listUsers", input: {} }, { kind: "cancelled" }],
   ] as const) {
     const started = Promise.withResolvers<AbortSignal>();
     const release = Promise.withResolvers<void>();
@@ -1016,7 +1042,7 @@ test("a page cancellation after the write was posted is unconfirmed, a read canc
       await f.bridge.connect();
       const identity = await unlock(f);
       const abort = new AbortController();
-      const pending = f.bridge.execute(identity, command, { signal: abort.signal });
+      const pending = f.bridge[publish](identity, command, { signal: abort.signal });
       const signal = await started.promise;
       abort.abort();
       await expect.poll(() => signal.aborted).toBe(true);
@@ -1035,7 +1061,7 @@ test("a held definite server answer stays a bare stale after the session changes
   }));
   try {
     const { identity, pending } = await held(f, {
-      operation: "policy.set",
+      endpoint: "setPolicy",
       input: { policy: "{}" },
     });
     await f.bridge.lock(identity);
@@ -1050,7 +1076,7 @@ test("a held plain session failure of a write is not a definite answer", async (
   const f = fixture(async () => ({ ok: false, error: { kind: "cancelled" } }));
   try {
     const { identity, pending } = await held(f, {
-      operation: "policy.set",
+      endpoint: "setPolicy",
       input: { policy: "{}" },
     });
     await f.bridge.lock(identity);
@@ -1071,9 +1097,9 @@ test("a write for another identity is a bare stale and never reaches the Worker"
     await f.bridge.connect();
     const identity = await unlock(f);
     expect(
-      await f.bridge.execute(
+      await f.bridge.write(
         { ...identity, sessionId: "stale" },
-        { operation: "apikey.create", input: { expiration: "2027-01-01T00:00:00Z" } },
+        { endpoint: "createApiKey", input: { expiration: "2027-01-01T00:00:00Z" } },
       ),
     ).toEqual({ ok: false, error: { kind: "stale" } });
     expect(calls).toBe(0);

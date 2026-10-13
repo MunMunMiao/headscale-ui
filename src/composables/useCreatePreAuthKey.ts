@@ -1,4 +1,3 @@
-import * as endpoints from "@/api/commands";
 import type { AuthKeyDialogPayload } from "@/components/create-auth-key-dialog";
 import { useDeviceSetup } from "./useDeviceSetup";
 import { useMutation } from "./useMutation";
@@ -9,7 +8,10 @@ export function useCreatePreAuthKey() {
   const { setState } = useDeviceSetup();
   return async (payload: AuthKeyDialogPayload) => {
     setState({ lastCreatedInvite: "" });
-    const created = await mutateWith("create-invite", endpoints.createPreAuthKey(payload));
+    const created = await mutateWith("create-invite", {
+      endpoint: "createPreAuthKey",
+      input: payload,
+    });
     if (!created.ok) return false;
     setState({ lastCreatedInvite: created.result.preAuthKey.key, revealCreatedInvite: true });
     return true;

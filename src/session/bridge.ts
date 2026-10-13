@@ -1,5 +1,4 @@
-import type { OperationCommand } from "@/api/commands";
-import { modifiesServer } from "@/domain/headscale-operations";
+import { struct } from "@defjs/core";
 import type {
   ChangeProfilePasswordInput,
   MigrateProfileInput,
@@ -8,22 +7,34 @@ import type {
   StoredProfileCommit,
   VaultVersion,
 } from "@/lib/profile-storage";
-import type { AuthOperationCommand, SessionRequestOptions } from "./auth-session";
+import type { SessionRequestOptions } from "./auth-session";
 import type { ProfileResetOutcome, ProfileSaveInput, ProfileSaveOutcome } from "./profile-actions";
-import type { PageUnlockInput } from "./protocol";
+// Types only: protocol.ts loads requests.ts, and with it defjs's HTTP pipeline, which the page must not ship.
+import type {
+  ApiCommand,
+  ApiOutput,
+  EndpointName,
+  PageUnlockInput,
+  SessionCommand,
+  SessionMessagePort,
+} from "./protocol";
 import {
   MAX_PORT_REQUESTS,
+  type PublicSessionSnapshot,
   SESSION_PROTOCOL_VERSION,
-  type SessionCommand,
-  type SessionMessagePort,
-  validWorkerMessage,
-} from "./protocol";
-import type {
-  PublicSessionSnapshot,
-  SessionFailureKind,
-  SessionIdentity,
-  SessionResult,
+  type SessionFailureKind,
+  type SessionIdentity,
+  type SessionResult,
+  workerMessage,
 } from "./types";
+
+/** The fields every build's hello carries, read before anything else a Worker of another build sends. */
+const helloStamp = struct.object({
+  type: struct.literal("hello"),
+  buildId: struct.string(),
+  protocolVersion: struct.number(),
+  storageVersion: struct.number(),
+});
 
 export interface SessionBridgeSnapshot {
   readonly status:
@@ -98,30 +109,13 @@ export function createSessionBridge(options: SessionBridgeOptions) {
   function update(session: PublicSessionSnapshot) {
     if (session.identity && session.identity.workerId !== snapshot.workerId) return;
     if (snapshot.session && session.revision <= snapshot.session.revision) return;
+    // struct.parse built these objects for this message alone, so they can be frozen in place.
+    if (session.identity) Object.freeze(session.identity);
+    if (session.profile) Object.freeze(session.profile);
     publish({
       ...snapshot,
       status: session.status === "locked" ? "ready-locked" : "ready-unlocked",
-      session: Object.freeze({
-        status: session.status,
-        identity:
-          session.identity &&
-          Object.freeze({
-            workerId: session.identity.workerId,
-            sessionId: session.identity.sessionId,
-          }),
-        profile:
-          session.profile &&
-          Object.freeze({
-            id: session.profile.id,
-            name: session.profile.name,
-            baseUrl: session.profile.baseUrl,
-          }),
-        expiresAt: session.expiresAt,
-        pendingProfileId: session.pendingProfileId,
-        reason: session.reason,
-        revision: session.revision,
-        apiKeyPrefix: session.apiKeyPrefix,
-      }),
+      session: Object.freeze(session),
     });
     flush();
   }
@@ -169,7 +163,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
         continue;
       }
       if (!entry.received || suspended) continue;
-      // validWorkerMessage only admits an identity together with a finite expiry.
+      // The unlocked snapshot struct requires an identity together with an expiry.
       if ((snapshot.session as PublicSessionSnapshot & { expiresAt: number }).expiresAt <= now()) {
         void check();
         continue;
@@ -199,20 +193,20 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       return Promise.resolve({ ok: false, error: { kind: "busy" } });
     const id = ++nextId;
     return new Promise((resolve) => {
-      const milliseconds =
-        command.type === "api.execute"
-          ? 20_000
-          : ["session.snapshot", "session.touch", "session.lock"].includes(command.type)
-            ? 5_000
-            : 30_000;
+      const headscale = command.type === "api.read" || command.type === "api.write";
+      const milliseconds = headscale
+        ? 20_000
+        : ["session.snapshot", "session.touch", "session.lock"].includes(command.type)
+          ? 5_000
+          : 30_000;
+      // The command type says whether a request the page loses may have been applied.
       const modifies =
-        command.type === "api.execute"
-          ? modifiesServer(command.command.operation)
-          : command.type === "storage.reset" ||
-            (command.type.startsWith("profiles.") && command.type !== "profiles.list");
+        command.type === "api.write" ||
+        command.type === "storage.reset" ||
+        (command.type.startsWith("profiles.") && command.type !== "profiles.list");
       const entry: Pending = {
         resolve: (result) => resolve(result as SessionResult<T>),
-        expected: command.type === "api.execute" ? command.expected : null,
+        expected: headscale ? command.expected : null,
         modifies,
         sent: false,
         kind: command.type,
@@ -230,6 +224,18 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       }
       entry.sent = post({ type: "request", requestId: id, command });
     });
+  }
+  /** Sends one Headscale request, run by the Worker under the session `expected` names. */
+  function api(type: "api.read" | "api.write") {
+    return <K extends EndpointName>(
+      expected: SessionIdentity,
+      command: ApiCommand<K>,
+      options?: SessionRequestOptions,
+    ): Promise<SessionResult<ApiOutput<K>>> =>
+      matches(expected)
+        ? // The Worker decodes with this build's contracts and the handshake refused any other build.
+          request<ApiOutput<K>>({ ...(command as ApiCommand), type, expected }, options)
+        : Promise.resolve({ ok: false, error: { kind: "stale" } });
   }
   function disconnect() {
     cancelHello?.();
@@ -299,25 +305,30 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       nextId = 0;
       function receive(event: Event) {
         if (port !== current) return;
-        const message: unknown = (event as MessageEvent).data;
-        if (!validWorkerMessage(message)) return unavailable();
+        const data: unknown = (event as MessageEvent).data;
+        // Another build may shape the rest of its messages differently: compare the build first.
+        const [, stamp] = struct.parse(helloStamp, data);
+        if (
+          hello &&
+          stamp &&
+          (stamp.protocolVersion !== SESSION_PROTOCOL_VERSION ||
+            stamp.storageVersion !== options.storageVersion ||
+            stamp.buildId !== options.buildId)
+        ) {
+          hello.resolve({ ok: false, error: { kind: "reload-required" } });
+          hello = null;
+          disconnect();
+          publish({ status: "reload-required", session: null, workerId: null, buildId: null });
+          return;
+        }
+        const [invalid, message] = struct.parse(workerMessage, data);
+        if (invalid) return unavailable();
         if (message.type === "hello") {
           if (
             !hello ||
             (message.snapshot.identity && message.snapshot.identity.workerId !== message.workerId)
           )
             return unavailable();
-          if (
-            message.protocolVersion !== SESSION_PROTOCOL_VERSION ||
-            message.storageVersion !== options.storageVersion ||
-            message.buildId !== options.buildId
-          ) {
-            hello?.resolve({ ok: false, error: { kind: "reload-required" } });
-            hello = null;
-            disconnect();
-            publish({ status: "reload-required", session: null, workerId: null, buildId: null });
-            return;
-          }
           cancelHello?.();
           cancelHello = null;
           snapshot = Object.freeze({
@@ -332,12 +343,14 @@ export function createSessionBridge(options: SessionBridgeOptions) {
         else if (message.type === "reply") {
           update(message.snapshot);
           const entry = pending.get(message.requestId);
+          // A request without output (deleteUser) answers with no value, which reads as undefined.
+          const result = message.result as SessionResult<unknown>;
           if (entry) {
             entry.cancelTimer();
             if (entry.expected) {
-              entry.received = message.result;
+              entry.received = result;
               flush();
-            } else finish(message.requestId, entry, message.result);
+            } else finish(message.requestId, entry, result);
           }
         } else if (message.type === "error") {
           hello?.resolve({ ok: false, error: message.error });
@@ -353,7 +366,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           deferredReset = message.version;
           deliverReset();
         } else {
-          // validWorkerMessage admits only these six types, so this is profiles-changed.
+          // workerMessage admits only these six types, so this is profiles-changed.
           for (const listener of profileListeners) listener();
         }
       }
@@ -393,17 +406,10 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       request<PublicSessionSnapshot>({ type: "session.touch", expected }),
     lock: (expected: SessionIdentity | null) =>
       request<PublicSessionSnapshot>({ type: "session.lock", expected }),
-    execute: (
-      expected: SessionIdentity,
-      command: AuthOperationCommand,
-      options?: SessionRequestOptions,
-    ): Promise<SessionResult<unknown>> =>
-      matches(expected)
-        ? request<unknown>(
-            { type: "api.execute", expected, command: command as OperationCommand },
-            options,
-          )
-        : Promise.resolve({ ok: false, error: { kind: "stale" } }),
+    /** Publish a request that leaves the server untouched; the Worker accepts only GET endpoints. */
+    read: api("api.read"),
+    /** Publish a request that may change the server: if its answer is lost, its outcome is unknown. */
+    write: api("api.write"),
     listProfiles: () => request<ProfileList>({ type: "profiles.list" }),
     saveProfile: (input: ProfileSaveInput, options?: SessionRequestOptions) =>
       request<ProfileSaveOutcome>({ type: "profiles.save", input }, options),

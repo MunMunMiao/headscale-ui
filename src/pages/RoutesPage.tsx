@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { LoaderCircle, RefreshCw, Router, X } from "lucide-react";
 import { useState } from "react";
-import * as endpoints from "@/api/commands";
 import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import {
   AlertDialog,
@@ -78,16 +77,16 @@ export default function RoutesPage() {
     clearActionFeedback("approve-routes");
   }
   async function confirmApproveRoutes(node: HeadscaleNode) {
-    const approved = await mutate(
-      "approve-routes",
-      endpoints.setApprovedRoutes({
+    const approved = await mutate("approve-routes", {
+      endpoint: "setApprovedRoutes",
+      input: {
         nodeId: node.id,
         // Only the routes the dialog displayed are newly approved; a route advertised since is never approved unseen.
         routes: Array.from(
           new Set([...latest(node).approvedRoutes, ...selectedRoutesApprovalPending]),
         ),
-      }),
-    );
+      },
+    });
     if (approved) closeApproveRoutesDialog();
   }
   function openRouteApprovalDialog(node: HeadscaleNode, route: string) {
@@ -108,13 +107,13 @@ export default function RoutesPage() {
     clearActionFeedback("approve-route");
   }
   async function confirmApproveRoute(target: RouteApprovalTarget) {
-    const approved = await mutate(
-      "approve-route",
-      endpoints.setApprovedRoutes({
+    const approved = await mutate("approve-route", {
+      endpoint: "setApprovedRoutes",
+      input: {
         nodeId: target.node.id,
         routes: Array.from(new Set([...latest(target.node).approvedRoutes, target.route])),
-      }),
-    );
+      },
+    });
     if (approved) closeRouteApprovalDialog();
   }
   function openRevokeDialog(node: HeadscaleNode, route: string) {
@@ -136,13 +135,13 @@ export default function RoutesPage() {
   async function confirmRevoke(target: RouteApprovalTarget) {
     const fresh = latest(target.node);
     const gone = nodeRevocationTargets(fresh, target.route);
-    const revoked = await mutate(
-      "revoke-route",
-      endpoints.setApprovedRoutes({
+    const revoked = await mutate("revoke-route", {
+      endpoint: "setApprovedRoutes",
+      input: {
         nodeId: target.node.id,
         routes: fresh.approvedRoutes.filter((route) => !gone.includes(route)),
-      }),
-    );
+      },
+    });
     if (revoked) closeRevokeDialog();
   }
   return (

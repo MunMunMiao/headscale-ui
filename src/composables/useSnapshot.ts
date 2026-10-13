@@ -3,6 +3,8 @@ import type { HeadscaleNode, HeadscaleSnapshot, PreAuthKey } from "@/api/contrac
 import { ALL_SEGMENTS, fetchSegment, type SnapshotSegment } from "@/api/snapshot";
 import { isTimestampExpired, msUntilNextExpiry } from "@/domain/node-status";
 import { createStore } from "@/lib/store";
+import type { SessionBridge } from "@/session/bridge";
+import { ApiError } from "@/session/types";
 import { getErrorMessage } from "@/utils/error-mapping";
 import { useSession, useStore } from "./session-context";
 import type { createActionFeedbackStore } from "./useActionFeedback";
@@ -19,6 +21,7 @@ interface SnapshotState {
 }
 
 export function createSnapshotStore(
+  auth: Pick<SessionBridge, "read">,
   client: ReturnType<typeof createHeadscaleClientStore>,
   feedback: ReturnType<typeof createActionFeedbackStore>,
 ) {
@@ -99,9 +102,13 @@ export function createSnapshotStore(
             generation === generations[segment] &&
             (segment !== "policy" || requestPolicy === policyRevision);
           try {
-            const patch = await fetchSegment(client.createClient(), segment, {
-              signal: controller.signal,
-            });
+            const { identity } = client.getSnapshot();
+            if (!identity) throw new ApiError({ kind: "locked" });
+            const patch = await fetchSegment(
+              (command, options) => auth.read(identity, command, options),
+              segment,
+              { signal: controller.signal },
+            );
             if (!isCurrent()) return;
             applyPatch(patch);
             loadedSegments.add(segment);

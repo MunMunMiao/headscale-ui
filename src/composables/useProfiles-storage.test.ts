@@ -485,8 +485,7 @@ test("a migrated record stays visible as password encrypted when the following l
 });
 
 import { t } from "@/i18n";
-import type { WorkerMessage } from "@/session/protocol";
-import type { PublicSessionSnapshot } from "@/session/types";
+import type { PublicSessionSnapshot, WorkerMessage } from "@/session/types";
 
 test("a successful unlock reply delayed behind a peer switch cannot report the old identity as current", async () => {
   const f = await saved();

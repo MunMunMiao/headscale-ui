@@ -1,5 +1,4 @@
 import { defineRequest, struct } from "@defjs/core";
-import type { OperationId } from "@/domain/headscale-operations";
 import {
   apiKeysResponse,
   changesResponse,
@@ -328,36 +327,3 @@ export const checkPolicy = defineRequest({
   builder: (input) => ({ body: input }),
   error: rpcStatus,
 });
-
-export const REQUEST_REGISTRY = {
-  "health.check": health,
-  "version.get": version,
-  "user.list": listUsers,
-  "user.create": createUser,
-  "user.rename": renameUser,
-  "user.delete": deleteUser,
-  "preauthkey.list": listPreAuthKeys,
-  "preauthkey.create": createPreAuthKey,
-  "preauthkey.expire": expirePreAuthKey,
-  "preauthkey.delete": deletePreAuthKey,
-  "node.list": listNodes,
-  "node.get": getNode,
-  "node.register": registerNode,
-  "node.debugCreate": debugCreateNode,
-  "node.rename": renameNode,
-  "node.expire": expireNode,
-  "node.delete": deleteNode,
-  "node.setTags": setTags,
-  "node.setApprovedRoutes": setApprovedRoutes,
-  "node.backfillIps": backfillNodeIps,
-  "auth.register": authRegister,
-  "auth.approve": authApprove,
-  "auth.reject": authReject,
-  "apikey.list": listApiKeys,
-  "apikey.create": createApiKey,
-  "apikey.expire": expireApiKey,
-  "apikey.delete": deleteApiKey,
-  "policy.get": getPolicy,
-  "policy.set": setPolicy,
-  "policy.check": checkPolicy,
-} satisfies Record<OperationId, unknown>;

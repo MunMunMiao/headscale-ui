@@ -1,7 +1,6 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { listUsers } from "@/api/commands";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import { subscribeVaultChanges } from "@/lib/vault-state";
 import { createSessionPorts } from "@/test/session-ports";
@@ -127,7 +126,7 @@ test("boots without creating any decrypting key and only sends profile summaries
   expect(wire).not.toContain('"ct"');
   const identity = first.getSessionSnapshot()?.identity;
   if (!identity) throw new Error("Missing shared session");
-  expect(value(await first.execute(identity, listUsers({})))).toEqual({
+  expect(value(await first.read(identity, { endpoint: "listUsers", input: {} }))).toEqual({
     users: server.snapshot.users,
   });
 });
@@ -161,7 +160,7 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
     );
   });
   const gate = transport.intercept({ method: "GET", pathPattern: "^/api/v1/user$" });
-  const pending = first.execute(identity, listUsers({}));
+  const pending = first.read(identity, { endpoint: "listUsers", input: {} });
   await expect.poll(() => gate.getSnapshot().captured).toBe(true);
   window.dispatchEvent(Object.assign(new Event("pagehide"), { persisted: false }));
   expect(await pending).toMatchObject({ ok: false, error: { kind: "unavailable" } });
@@ -180,7 +179,7 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
     )
     .toBe(true);
   expect(peer.getSessionSnapshot()?.identity).toEqual(identity);
-  expect((await peer.execute(identity, listUsers({}))).ok).toBe(true);
+  expect((await peer.read(identity, { endpoint: "listUsers", input: {} })).ok).toBe(true);
 });
 
 test("a second owner adopts the one global temporary connection without listing its private profile", async () => {
@@ -193,10 +192,10 @@ test("a second owner adopts the one global temporary connection without listing 
   expect(value(await first.listProfiles()).profiles).toHaveLength(1);
   const identity = second.getSessionSnapshot()?.identity;
   if (!identity) throw new Error("Missing shared session");
-  expect((await second.execute(identity, listUsers({}))).ok).toBe(true);
+  expect((await second.read(identity, { endpoint: "listUsers", input: {} })).ok).toBe(true);
   value(await second.lock(identity));
   await expect.poll(() => first.getSessionSnapshot()?.status).toBe("locked");
-  expect((await first.execute(identity, listUsers({}))).ok).toBe(false);
+  expect((await first.read(identity, { endpoint: "listUsers", input: {} })).ok).toBe(false);
 });
 
 test("a newly created host cannot inherit an earlier unlocked connection", async () => {
@@ -253,7 +252,9 @@ test("foreign temporary unlocks never contact the server and reset announces its
   second.subscribeReset(reset);
   const committed = value(await first.resetStorage(result.commit.version));
   await expect.poll(() => reset.mock.calls.length).toBe(1);
-  expect(reset).toHaveBeenCalledWith(committed.version);
+  // The page receives the wire VaultVersion; the Worker's storage marker `v` is not part of it.
+  const { keyEpoch, profilesRevision } = committed.version;
+  expect(reset).toHaveBeenCalledWith({ keyEpoch, profilesRevision });
   expect(second.getSessionSnapshot()?.status).toBe("locked");
   expect(value(await first.listProfiles()).profiles).toEqual([]);
 });

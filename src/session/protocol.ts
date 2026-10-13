@@ -1,61 +1,175 @@
-import type { OperationCommand } from "@/api/commands";
-import { OPERATION_IDS } from "@/domain/headscale-operations";
-import type {
-  ChangeProfilePasswordInput,
-  MigrateProfileInput,
-  ProfileWriteExpected,
-  VaultVersion,
-} from "@/lib/profile-storage";
-import type { UnlockInput } from "./auth-session";
-import type { ProfileActions, ProfileSaveInput } from "./profile-actions";
+import {
+  type AnyStruct,
+  type HttpCommand,
+  type Infer,
+  type RequestSuccessData,
+  struct,
+} from "@defjs/core";
+import type { rpcStatus } from "@/api/contracts";
+import * as endpoints from "@/api/requests";
+import type { VaultVersion } from "@/lib/profile-storage";
+import type { ProfileActions } from "./profile-actions";
 import type { SessionRuntime } from "./runtime";
-import type {
-  PublicSessionSnapshot,
-  SessionIdentity,
-  SessionResult,
-  WorkerErrorDto,
+import {
+  MAX_PORT_REQUESTS,
+  SESSION_PROTOCOL_VERSION,
+  type SessionResult,
+  sessionIdentity,
+  vaultVersion,
+  type WorkerErrorDto,
+  type WorkerMessage,
 } from "./types";
 
-export const SESSION_PROTOCOL_VERSION = 1;
-export const MAX_PORT_REQUESTS = 64;
+type Endpoints = typeof endpoints;
+/** An export of src/api/requests.ts; the Worker runs that endpoint with its own client. */
+export type EndpointName = keyof Endpoints;
+export type ApiCommand<K extends EndpointName = EndpointName> = {
+  [N in K]: Parameters<Endpoints[N]> extends []
+    ? { readonly endpoint: N }
+    : { readonly endpoint: N; readonly input: Parameters<Endpoints[N]>[0] };
+}[K];
+export type ApiOutput<K extends EndpointName> =
+  ReturnType<Endpoints[K]> extends HttpCommand<infer _Input, infer Output, infer _Error>
+    ? RequestSuccessData<Output>
+    : never;
+
+/**
+ * A request as the Worker runs it. The page declares which kind it publishes, as tRPC's query and
+ * mutate do: a lost `api.write` may have been applied, a lost `api.read` was not.
+ */
+export type ApiRequest<K extends EndpointName = EndpointName> = ApiCommand<K> & {
+  readonly type: "api.read" | "api.write";
+};
+
+type AnyEndpoint = (
+  input?: unknown,
+) => HttpCommand<AnyStruct | undefined, AnyStruct | undefined, typeof rpcStatus>;
+
+/** The endpoint a request names, or undefined for anything requests.ts does not export. */
+export function endpointOf(name: unknown) {
+  return typeof name === "string" && Object.hasOwn(endpoints, name)
+    ? // biome-ignore lint/performance/noDynamicNamespaceImportAccess: the Worker serves every endpoint, so none can be shaken.
+      (endpoints[name as EndpointName] as AnyEndpoint)
+    : undefined;
+}
+
+const ENDPOINTS = Object.keys(endpoints) as [EndpointName, ...EndpointName[]];
+/** Only these may be published as reads, so a write can never pass for one (like Connect's GET check). */
+const GET_ENDPOINTS = ENDPOINTS.filter(
+  (name) => (endpointOf(name) as AnyEndpoint)().definition.method === "GET",
+) as [EndpointName, ...EndpointName[]];
 
 export type SessionMessagePort = Pick<
   MessagePort,
   "postMessage" | "start" | "close" | "addEventListener" | "removeEventListener"
 >;
-export type PageUnlockInput = Omit<UnlockInput, "ownerTabId" | "portId" | "operationId">;
-export type SessionCommand =
-  | { type: "session.snapshot" }
-  | { type: "session.unlock"; input: PageUnlockInput }
-  | { type: "session.touch"; expected: SessionIdentity }
-  | { type: "session.lock"; expected: SessionIdentity | null }
-  | { type: "api.execute"; expected: SessionIdentity; command: OperationCommand }
-  | { type: "profiles.list" }
-  | { type: "profiles.save"; input: ProfileSaveInput }
-  | { type: "profiles.migrate"; input: MigrateProfileInput }
-  | { type: "profiles.change-password"; input: ChangeProfilePasswordInput }
-  | { type: "profiles.delete"; expected: ProfileWriteExpected }
-  | { type: "storage.reset"; expected: VaultVersion | null };
 
-export type WorkerMessage =
-  | {
-      type: "hello";
-      workerId: string;
-      buildId: string;
-      protocolVersion: number;
-      storageVersion: number;
-      snapshot: PublicSessionSnapshot;
-    }
-  | {
-      type: "reply";
-      requestId: number;
-      result: SessionResult<unknown>;
-      snapshot: PublicSessionSnapshot;
-    }
-  | { type: "snapshot"; snapshot: PublicSessionSnapshot }
-  | { type: "reset"; version: VaultVersion }
-  | { type: "profiles-changed" }
-  | { type: "error"; error: WorkerErrorDto };
+const profileWriteExpected = struct.object({
+  version: vaultVersion,
+  ownerTabId: struct.string(),
+  profile: struct.object({ id: struct.string(), credentialVersion: struct.string().null() }).null(),
+});
+const scope = struct.enum(["session", "persistent"]);
+
+const unlockInput = struct.object({
+  profileId: struct.string(),
+  password: struct.string(),
+  expectedWorkerId: struct.string(),
+  expectedCredentialVersion: struct.string(),
+  expectedIdentity: sessionIdentity.null(),
+});
+export type PageUnlockInput = Infer<typeof unlockInput>;
+
+export const profileSaveInput = struct.discriminatedUnion("kind", [
+  struct.object({
+    kind: struct.literal("metadata"),
+    expected: profileWriteExpected,
+    name: struct.string(),
+    scope,
+  }),
+  struct.object({
+    kind: struct.literal("credentials"),
+    expected: profileWriteExpected,
+    profile: struct.object({
+      id: struct.string(),
+      name: struct.string(),
+      baseUrl: struct.string(),
+      scope,
+    }),
+    apiKey: struct.string(),
+    password: struct.string(),
+    validation: struct.enum(["required", "skip"]),
+    activate: struct.boolean(),
+    expectedWorkerId: struct.string(),
+    expectedIdentity: sessionIdentity.null(),
+  }),
+]);
+
+/** One page → Worker business command; `api.read`/`api.write` name an export of src/api/requests.ts. */
+export const sessionCommand = struct.discriminatedUnion("type", [
+  struct.object({ type: struct.literal("session.snapshot") }),
+  struct.object({
+    type: struct.literal("session.unlock"),
+    input: unlockInput,
+  }),
+  struct.object({ type: struct.literal("session.touch"), expected: sessionIdentity }),
+  struct.object({ type: struct.literal("session.lock"), expected: sessionIdentity.null() }),
+  struct.object({
+    type: struct.literal("api.read"),
+    expected: sessionIdentity,
+    endpoint: struct.enum(GET_ENDPOINTS),
+    // The endpoint's own input struct checks this when the Worker client executes it.
+    input: struct.unknown().optional(),
+  }),
+  struct.object({
+    type: struct.literal("api.write"),
+    expected: sessionIdentity,
+    endpoint: struct.enum(ENDPOINTS),
+    input: struct.unknown().optional(),
+  }),
+  struct.object({ type: struct.literal("profiles.list") }),
+  struct.object({
+    type: struct.literal("profiles.save"),
+    input: profileSaveInput,
+  }),
+  struct.object({
+    type: struct.literal("profiles.migrate"),
+    input: struct.object({
+      expected: profileWriteExpected,
+      password: struct.string(),
+      legacyPassword: struct.string().optional(),
+    }),
+  }),
+  struct.object({
+    type: struct.literal("profiles.change-password"),
+    input: struct.object({
+      expected: profileWriteExpected,
+      password: struct.string(),
+      newPassword: struct.string(),
+    }),
+  }),
+  struct.object({ type: struct.literal("profiles.delete"), expected: profileWriteExpected }),
+  struct.object({ type: struct.literal("storage.reset"), expected: vaultVersion.null() }),
+]);
+export type SessionCommand = Infer<typeof sessionCommand>;
+
+/** Page → Worker envelope. A request's command is parsed on its own so a bad one is answered, not fatal. */
+const pageMessage = struct.discriminatedUnion("type", [
+  struct.object({
+    type: struct.literal("hello"),
+    ownerTabId: struct.string(),
+    buildId: struct.string(),
+    protocolVersion: struct.number(),
+    storageVersion: struct.number(),
+  }),
+  struct.object({
+    type: struct.literal("request"),
+    requestId: struct.number(),
+    command: struct.unknown().nullish(),
+  }),
+  struct.object({ type: struct.literal("cancel"), requestId: struct.number() }),
+  struct.object({ type: struct.literal("disconnect") }),
+]);
 
 export interface SessionProtocolDependencies {
   runtime: SessionRuntime;
@@ -65,191 +179,8 @@ export interface SessionProtocolDependencies {
   storageVersion: number;
 }
 
-function record(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function requestId(value: unknown): value is number {
-  return Number.isSafeInteger(value) && (value as number) > 0;
-}
-
-function identity(value: unknown): value is SessionIdentity {
-  return record(value) && typeof value.workerId === "string" && typeof value.sessionId === "string";
-}
-function version(value: unknown): value is VaultVersion {
-  return (
-    record(value) &&
-    typeof value.keyEpoch === "string" &&
-    Number.isSafeInteger(value.profilesRevision) &&
-    (value.profilesRevision as number) >= 0
-  );
-}
-function expectedProfile(value: unknown): value is ProfileWriteExpected {
-  return (
-    record(value) &&
-    typeof value.ownerTabId === "string" &&
-    version(value.version) &&
-    (value.profile === null ||
-      (record(value.profile) &&
-        typeof value.profile.id === "string" &&
-        (value.profile.credentialVersion === null ||
-          typeof value.profile.credentialVersion === "string")))
-  );
-}
-function scope(value: unknown) {
-  return value === "session" || value === "persistent";
-}
-function validSnapshot(value: unknown): value is PublicSessionSnapshot {
-  if (
-    !record(value) ||
-    !Number.isSafeInteger(value.revision) ||
-    (value.revision as number) < 0 ||
-    !(value.pendingProfileId === null || typeof value.pendingProfileId === "string") ||
-    ![null, "initial", "user", "expired", "clock-reversed", "profile-changed"].includes(
-      value.reason as never,
-    )
-  )
-    return false;
-  if (value.status === "locked")
-    return (
-      value.identity === null &&
-      value.profile === null &&
-      value.expiresAt === null &&
-      value.apiKeyPrefix === null
-    );
-  return (
-    value.status === "unlocked" &&
-    (value.apiKeyPrefix === null || typeof value.apiKeyPrefix === "string") &&
-    identity(value.identity) &&
-    Number.isFinite(value.expiresAt) &&
-    record(value.profile) &&
-    typeof value.profile.id === "string" &&
-    typeof value.profile.name === "string" &&
-    typeof value.profile.baseUrl === "string"
-  );
-}
-function validError(value: unknown): value is WorkerErrorDto {
-  if (!record(value)) return false;
-  const outcomeOk = value.outcome === undefined || value.outcome === "unknown";
-  if (value.kind === "api")
-    return (
-      typeof value.code === "string" &&
-      typeof value.message === "string" &&
-      (value.status === undefined || Number.isFinite(value.status)) &&
-      outcomeOk
-    );
-  return (
-    [
-      "locked",
-      "expired",
-      "stale",
-      "busy",
-      "unlock-failed",
-      "storage-conflict",
-      "storage-failed",
-      "unavailable",
-      "cancelled",
-      "invalid-request",
-      "reload-required",
-    ].includes(value.kind as string) && outcomeOk
-  );
-}
-export function validWorkerMessage(value: unknown): value is WorkerMessage {
-  if (!record(value)) return false;
-  switch (value.type) {
-    case "hello":
-      return (
-        typeof value.workerId === "string" &&
-        typeof value.buildId === "string" &&
-        Number.isInteger(value.protocolVersion) &&
-        Number.isInteger(value.storageVersion) &&
-        validSnapshot(value.snapshot)
-      );
-    case "reply":
-      return (
-        requestId(value.requestId) &&
-        validSnapshot(value.snapshot) &&
-        record(value.result) &&
-        (value.result.ok === true || (value.result.ok === false && validError(value.result.error)))
-      );
-    case "snapshot":
-      return validSnapshot(value.snapshot);
-    case "reset":
-      return version(value.version);
-    case "profiles-changed":
-      return true;
-    case "error":
-      return validError(value.error);
-    default:
-      return false;
-  }
-}
-function validCommand(value: unknown): value is SessionCommand {
-  if (!record(value)) return false;
-  const input = value.input;
-  switch (value.type) {
-    case "session.snapshot":
-    case "profiles.list":
-      return true;
-    case "session.lock":
-      return value.expected === null || identity(value.expected);
-    case "session.touch":
-      return identity(value.expected);
-    case "api.execute":
-      return (
-        identity(value.expected) &&
-        record(value.command) &&
-        OPERATION_IDS.some((id) => id === (value.command as Record<string, unknown>).operation)
-      );
-    case "session.unlock":
-      return (
-        record(input) &&
-        typeof input.profileId === "string" &&
-        typeof input.password === "string" &&
-        typeof input.expectedWorkerId === "string" &&
-        typeof input.expectedCredentialVersion === "string" &&
-        (input.expectedIdentity === null || identity(input.expectedIdentity))
-      );
-    case "profiles.delete":
-      return expectedProfile(value.expected);
-    case "storage.reset":
-      return value.expected === null || version(value.expected);
-    case "profiles.migrate":
-      return (
-        record(input) &&
-        expectedProfile(input.expected) &&
-        typeof input.password === "string" &&
-        (input.legacyPassword === undefined || typeof input.legacyPassword === "string")
-      );
-    case "profiles.change-password":
-      return (
-        record(input) &&
-        expectedProfile(input.expected) &&
-        typeof input.password === "string" &&
-        typeof input.newPassword === "string"
-      );
-    case "profiles.save": {
-      if (!record(input) || !expectedProfile(input.expected)) return false;
-      if (input.kind === "metadata") return typeof input.name === "string" && scope(input.scope);
-      return (
-        input.kind === "credentials" &&
-        record(input.profile) &&
-        typeof input.profile.id === "string" &&
-        typeof input.profile.name === "string" &&
-        typeof input.profile.baseUrl === "string" &&
-        scope(input.profile.scope) &&
-        typeof input.apiKey === "string" &&
-        typeof input.password === "string" &&
-        (input.validation === "required" || input.validation === "skip") &&
-        typeof input.activate === "boolean" &&
-        typeof input.expectedWorkerId === "string" &&
-        (input.expectedIdentity === null || identity(input.expectedIdentity))
-      );
-    }
-    default:
-      return false;
-  }
-}
+// Struct checks shape only; ordering needs a positive safe integer.
+const requestId = (value: number) => Number.isSafeInteger(value) && value > 0;
 
 export function createSessionProtocol(deps: SessionProtocolDependencies) {
   const connections = new Set<{ send(message: WorkerMessage): void; close(): void }>();
@@ -291,23 +222,18 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         connection.close();
       }
       function receive(event: Event) {
-        const data: unknown = (event as MessageEvent).data;
         if (closed) return;
-        if (!record(data)) return reject({ kind: "invalid-request" });
+        const [invalid, message] = struct.parse(pageMessage, (event as MessageEvent).data);
+        if (invalid) return reject({ kind: "invalid-request" });
         if (ownerTabId === null) {
-          if (
-            data.type !== "hello" ||
-            typeof data.ownerTabId !== "string" ||
-            !data.ownerTabId ||
-            typeof data.buildId !== "string"
-          )
+          if (message.type !== "hello" || !message.ownerTabId)
             return reject({ kind: "invalid-request" });
           if (
-            data.protocolVersion !== SESSION_PROTOCOL_VERSION ||
-            data.storageVersion !== deps.storageVersion
+            message.protocolVersion !== SESSION_PROTOCOL_VERSION ||
+            message.storageVersion !== deps.storageVersion
           )
             return reject({ kind: "reload-required" });
-          ownerTabId = data.ownerTabId;
+          ownerTabId = message.ownerTabId;
           if (!deps.runtime.attachPort(portId)) return reject({ kind: "unavailable" });
           deps.runtime.auth.check();
           ready = true;
@@ -321,16 +247,16 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
           });
           return;
         }
-        if (data.type === "disconnect") return connection.close();
-        if (data.type === "cancel" && requestId(data.requestId)) {
-          highestId = Math.max(highestId, data.requestId);
-          pending.delete(data.requestId);
-          void deps.runtime.cancel(portId, String(data.requestId));
+        if (message.type === "disconnect") return connection.close();
+        if (message.type === "hello" || !requestId(message.requestId))
+          return reject({ kind: "invalid-request" });
+        const id = message.requestId;
+        if (message.type === "cancel") {
+          highestId = Math.max(highestId, id);
+          pending.delete(id);
+          void deps.runtime.cancel(portId, String(id));
           return;
         }
-        if (data.type !== "request" || !requestId(data.requestId))
-          return reject({ kind: "invalid-request" });
-        const id = data.requestId;
         const reply = (result: SessionResult<unknown>) =>
           connection.send({
             type: "reply",
@@ -338,19 +264,19 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             result,
             snapshot: deps.runtime.auth.getSnapshot(),
           });
-        if (id <= highestId || !validCommand(data.command)) {
+        const [malformed, command] = struct.parse(sessionCommand, message.command);
+        if (id <= highestId || malformed) {
           highestId = Math.max(highestId, id);
           reply({ ok: false, error: { kind: "invalid-request" } });
           return;
         }
         highestId = id;
         const control = ["session.snapshot", "session.touch", "session.lock"].includes(
-          data.command.type,
+          command.type,
         );
         if (pending.size >= MAX_PORT_REQUESTS - (control ? 0 : 1))
           return reply({ ok: false, error: { kind: "busy" } });
         pending.add(id);
-        const command = data.command;
         const owner = ownerTabId;
         void deps.runtime
           .runOperation(portId, String(id), async (signal) => {
@@ -371,8 +297,12 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
                 if (result.ok) await deps.runtime.cancelPending(context);
                 return result;
               }
-              case "api.execute":
-                return deps.runtime.auth.execute(command.expected, command.command, { signal });
+              case "api.read":
+              case "api.write":
+                // The endpoint is one requests.ts exports; its input struct runs inside client.execute.
+                return deps.runtime.auth.execute(command.expected, command as ApiRequest, {
+                  signal,
+                });
               case "profiles.list":
                 return deps.profiles.list(context);
               case "profiles.save":

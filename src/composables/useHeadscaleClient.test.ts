@@ -1,9 +1,11 @@
-import { expect, test, vi } from "vitest";
-import { version } from "@/api/commands";
-import type { PublicSessionSnapshot, SessionResult } from "@/session/types";
+import { expect, test } from "vitest";
+import type { PublicSessionSnapshot } from "@/session/types";
 import { createHeadscaleClientStore } from "./useHeadscaleClient";
 
-function unlocked(id: string, revision = 1): PublicSessionSnapshot {
+function unlocked(
+  id: string,
+  revision = 1,
+): Extract<PublicSessionSnapshot, { status: "unlocked" }> {
   return {
     status: "unlocked",
     identity: { workerId: "worker", sessionId: id },
@@ -15,29 +17,29 @@ function unlocked(id: string, revision = 1): PublicSessionSnapshot {
     apiKeyPrefix: null,
   };
 }
-test("a page gateway is permanently bound to the identity it adopted", async () => {
-  const execute = vi.fn(
-    async (): Promise<SessionResult<unknown>> => ({ ok: true, value: { version: "0.29.4" } }),
-  );
-  const client = createHeadscaleClientStore({ execute });
+test("a page publishes under the identity it adopted and shows only the server address", () => {
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("a"));
-  const previous = client.createClient();
+  const previous = client.getSnapshot().identity;
   client.adopt(unlocked("b", 2));
-  await previous.execute(version());
-  expect(execute.mock.calls[0]).toEqual([unlocked("a").identity, version(), undefined]);
-  await client.createClient().execute(version());
-  expect(execute.mock.calls[1]).toEqual([unlocked("b").identity, version(), undefined]);
+  expect(previous).toEqual(unlocked("a").identity);
+  expect(client.getSnapshot().identity).toEqual(unlocked("b").identity);
   expect(client.getSnapshot().settings).toEqual({ baseUrl: "https://b.example" });
   expect(JSON.stringify(client.getSnapshot())).not.toContain("apiKey");
 });
-test("activity snapshots retain the gateway while a lock removes it", () => {
-  const execute = vi.fn();
-  const client = createHeadscaleClientStore({ execute });
+test("activity snapshots keep the adopted identity while a lock removes it", () => {
+  const client = createHeadscaleClientStore();
   client.adopt(unlocked("a"));
-  const gateway = client.createClient();
+  const identity = client.getSnapshot().identity;
   client.adopt({ ...unlocked("a", 2), expiresAt: Date.now() + 30_000 });
-  expect(client.createClient()).toBe(gateway);
-  client.clear();
-  expect(client.getSnapshot().settings).toEqual({ baseUrl: "" });
-  expect(() => client.createClient()).toThrow();
+  expect(client.getSnapshot().identity).toBe(identity);
+  client.adopt({
+    ...unlocked("a", 3),
+    status: "locked",
+    identity: null,
+    profile: null,
+    expiresAt: null,
+    apiKeyPrefix: null,
+  });
+  expect(client.getSnapshot()).toEqual({ settings: { baseUrl: "" }, identity: null });
 });

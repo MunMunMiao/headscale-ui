@@ -1,7 +1,7 @@
 import { createClient, type FetchHandle, withEndpoint, withHTTPHandle } from "@defjs/core";
 import { describe, expect, test } from "vitest";
 import { parsePolicy, toMemberRef } from "@/domain/policy-designer";
-import { fixtureClientStore } from "@/test/operation-gateway";
+import { fixtureSession } from "@/test/dispatch-fixture";
 import { createSessionDrafts } from "./session-drafts";
 import { createActionFeedbackStore } from "./useActionFeedback";
 import { createPolicyDesignerStore } from "./usePolicyDesigner";
@@ -10,11 +10,11 @@ import { createSnapshotStore } from "./useSnapshot";
 
 function setup(handle: FetchHandle) {
   const http = createClient(withEndpoint("https://headscale.test"), withHTTPHandle(handle));
-  const client = fixtureClientStore(http);
+  const { auth, client } = fixtureSession(http);
   const feedback = createActionFeedbackStore();
-  const snapshot = createSnapshotStore(client, feedback);
+  const snapshot = createSnapshotStore(auth, client, feedback);
   const policy = createPolicyDesignerStore();
-  const session = { client, feedback, snapshot, policy, drafts: createSessionDrafts() };
+  const session = { auth, client, feedback, snapshot, policy, drafts: createSessionDrafts() };
   snapshot.setAuthorized(true);
   policy.load('{"acls":[],"groups":{"group:ops":["alice@"]}}');
   return { ...session, ...createPolicySave(session) };

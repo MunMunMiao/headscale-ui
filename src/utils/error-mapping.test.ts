@@ -1,8 +1,6 @@
 import "fake-indexeddb/auto";
 import type { FaultCode } from "@defjs/core";
 import { expect, test } from "vitest";
-import { listUsers } from "@/api/commands";
-import { ApiError, createHeadscaleGateway } from "@/api/gateway";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { setLocale, t } from "@/i18n";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -10,6 +8,7 @@ import { hydrateSettings } from "@/lib/settings-storage";
 import type { SessionExecutionContext } from "@/session/auth-session";
 import { executeOperation } from "@/session/operation-dispatch";
 import type { SessionFailureKind } from "@/session/types";
+import { ApiError } from "@/session/types";
 import { getErrorMessage } from "./error-mapping";
 import { storageErrorMessage } from "./storage-error";
 
@@ -81,12 +80,12 @@ function context(baseUrl: string): SessionExecutionContext {
 async function failureFrom(respond: () => Response | Promise<Response>): Promise<ApiError> {
   const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: respond });
   try {
-    const gateway = createHeadscaleGateway((command) =>
-      executeOperation(command, context(server.url.origin)),
+    const result = await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context(server.url.origin),
     );
-    const [error] = await gateway.execute(listUsers({}));
-    if (!(error instanceof ApiError)) throw new Error("Expected an API failure");
-    return error;
+    if (result.ok) throw new Error("Expected an API failure");
+    return new ApiError(result.error);
   } finally {
     server.stop(true);
   }
@@ -119,8 +118,11 @@ test("classifies transport and proxy faults", async () => {
   const refused = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response() });
   const origin = refused.url.origin;
   refused.stop(true);
-  const gateway = createHeadscaleGateway((command) => executeOperation(command, context(origin)));
-  const [unreachable] = await gateway.execute(listUsers({}));
+  const refusedResult = await executeOperation(
+    { type: "api.read", endpoint: "listUsers", input: {} },
+    context(origin),
+  );
+  const unreachable = refusedResult.ok ? null : new ApiError(refusedResult.error);
   expect(unreachable).toMatchObject({ code: "NET_UNREACHABLE" });
   expect(getErrorMessage(unreachable)).toBe(t("requestUnreachable"));
 

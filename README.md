@@ -222,18 +222,18 @@ frozen installs in CI. Add official Base UI components through
 
 HTTP requests are declared once in `src/api/requests.ts` with Defjs
 `defineRequest`. Shared response schemas and model types live in
-`src/api/contracts.ts`. The explicit 30-operation command registry in
-`src/api/commands.ts` (all 29 Headscale 0.29.4 RPCs plus `GET /version`, pinned in
-`e2e/headscale-upstream.ts` and checked by `bun run test` and the contract suite in `bun run e2e`)
-crosses the Worker boundary; `src/api/commands.ts` also exports
-these typed page commands. Worker dispatch uses the Defjs middleware,
-error-first tuples, response validation, and native fetch. Errors retain their
-safe code, status, and server details without exposing connection credentials.
-Effect manages Worker request lifetimes and cancellation; the closure in
+`src/api/contracts.ts`. An export name of `requests.ts` is the command name
+(all 29 Headscale 0.29.4 RPCs plus `GET /version`, pinned in
+`e2e/headscale-upstream.ts` and checked by `bun run test` and the contract suite in `bun run e2e`).
+The page publishes `{ endpoint, input }` through the bridge `read` and `write`
+entries, and the Worker checks the command and runs that endpoint. Worker dispatch
+uses the Defjs middleware, error-first tuples, response validation, and native fetch.
+Errors retain their safe code, status, and server details without exposing connection
+credentials. Effect manages Worker request lifetimes and cancellation; the closure in
 `src/session/auth-session.ts` alone owns the current credentials and expiry.
 
-React uses the session gateway with its captured Worker/session identity. Page
-mutations retain the existing pending state, feedback, refresh, and policy-save
+React keeps the captured Worker/session identity and publishes through the bridge.
+Page mutations retain the existing pending state, feedback, refresh, and policy-save
 protection. `@defjs/react` is no longer needed because authenticated HTTP runs in
 the Worker. A previous session's response cannot update the new UI. Switching
 sessions does not undo a write already received by the server.

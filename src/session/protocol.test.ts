@@ -1,14 +1,14 @@
+import { struct } from "@defjs/core";
 import { expect, test, vi } from "vitest";
+import type { MigrateProfileInput } from "@/lib/profile-storage";
 import { createSessionPorts, sessionMessage } from "@/test/session-ports";
 import type { AuthSessionDependencies } from "./auth-session";
 import type { ProfileActions } from "./profile-actions";
-import {
-  createSessionProtocol,
-  type SessionCommand,
-  type SessionMessagePort,
-  validWorkerMessage,
-} from "./protocol";
+import { createSessionProtocol, type SessionCommand, type SessionMessagePort } from "./protocol";
 import { createSessionRuntime } from "./runtime";
+import { workerMessage } from "./types";
+
+const valid = (message: unknown) => struct.parse(workerMessage, message)[0] === null;
 
 function auth(): AuthSessionDependencies {
   return {
@@ -217,9 +217,10 @@ test("all peers share one unlock and API session, while owner context remains bo
     expect(openedOwner).toBe("owner-a");
     expect(
       await request(b.page, 1, {
-        type: "api.execute",
+        type: "api.read",
         expected: { workerId: "worker", sessionId: "session" },
-        command: { operation: "user.list", input: {} },
+        endpoint: "listUsers",
+        input: {},
       }),
     ).toMatchObject({ result: { ok: true, value: { users: [] } } });
     expect(await request(b.page, 2, { type: "profiles.list" })).toMatchObject({
@@ -239,9 +240,10 @@ test("all peers share one unlock and API session, while owner context remains bo
     ).toMatchObject({ result: { ok: true, value: { status: "locked" } } });
     expect(
       await request(b.page, 4, {
-        type: "api.execute",
+        type: "api.read",
         expected: { workerId: "worker", sessionId: "session" },
-        command: { operation: "user.list", input: {} },
+        endpoint: "listUsers",
+        input: {},
       }),
     ).toMatchObject({ result: { ok: false, error: { kind: "locked" } } });
     expect(JSON.stringify(unlocked)).not.toMatch(/connection-secret|profile-password|forged-owner/);
@@ -254,12 +256,30 @@ test("all peers share one unlock and API session, while owner context remains bo
 });
 
 test.each([
-  ["auth.register", { user: "alice", authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }, true],
-  ["auth.approve", { authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }, true],
-  ["auth.reject", { authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }, true],
-  ["policy.check", { policy: "{}" }, true],
-  ["auth.bogus", {}, false],
-])("api.execute %s is %s by the command allow-list", async (operation, input, accepted) => {
+  [
+    "api.write",
+    "authRegister",
+    { user: "alice", authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" },
+    true,
+  ],
+  ["api.write", "authApprove", { authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }, true],
+  ["api.write", "authReject", { authId: "hskey-authreq-abcdefghijklmnopqrstuvwx" }, true],
+  ["api.write", "checkPolicy", { policy: "{}" }, true],
+  // A write may name a read: it is only treated more carefully if its answer is lost.
+  ["api.write", "listUsers", {}, true],
+  ["api.read", "listUsers", {}, true],
+  // A read may name only a GET endpoint, so a write can never pass for one.
+  ["api.read", "checkPolicy", { policy: "{}" }, false],
+  ["api.read", "createUser", { name: "ops" }, false],
+  ["api.write", "auth.approve", {}, false],
+  ["api.write", "toString", {}, false],
+  ["api.write", "__proto__", {}, false],
+  ["api.write", "constructor", {}, false],
+  ["api.write", "hasOwnProperty", {}, false],
+  ["api.write", 1, {}, false],
+  ["api.write", null, {}, false],
+  ["api.execute", "listUsers", {}, false],
+])("%s %s is %s by the command allow-list", async (type, endpoint, input, accepted) => {
   const runtime = createSessionRuntime({ auth: auth() });
   const protocol = createSessionProtocol({
     runtime,
@@ -283,9 +303,10 @@ test.each([
       },
     });
     const reply = await request(pair.page, 2, {
-      type: "api.execute",
+      type,
       expected: { workerId: "worker", sessionId: "session" },
-      command: { operation, input },
+      endpoint,
+      input,
     } as never);
     expect(reply).toMatchObject({
       result: accepted
@@ -333,8 +354,8 @@ test("finite profile commands preserve inputs and completed request ids cannot r
     expect(
       await request(ports.page, 2, {
         type: "profiles.delete",
-        expected: { ...expected, version: { keyEpoch: "epoch", profilesRevision: -1 } },
-      }),
+        expected: { ...expected, version: { keyEpoch: "epoch", profilesRevision: "0" } },
+      } as never),
     ).toMatchObject({ result: { ok: false, error: { kind: "invalid-request" } } });
     expect(calls).toEqual(["write"]);
   } finally {
@@ -524,7 +545,7 @@ test.each([
   ["null", null, true],
   ["a vault version", { keyEpoch: "epoch", profilesRevision: 2 }, true],
   ["undefined", undefined, false],
-  ["a malformed version", { keyEpoch: "epoch", profilesRevision: -1 }, false],
+  ["a malformed version", { keyEpoch: "epoch", profilesRevision: "2" }, false],
   ["a string", "epoch", false],
 ])("storage.reset accepts only null or a vault version: %s", async (_name, expected, valid) => {
   const runtime = createSessionRuntime({ auth: auth() });
@@ -653,12 +674,12 @@ test.each([
   ["an unlocked snapshot with a null prefix", unlockedSnapshot, null, true],
   ["a locked snapshot with a non-null prefix", lockedSnapshot, "abcdefg***", false],
   ["a numeric prefix", unlockedSnapshot, 7, false],
-])("snapshot validation: %s", (_name, base, apiKeyPrefix, valid) => {
-  expect(validWorkerMessage({ type: "snapshot", snapshot: { ...base, apiKeyPrefix } })).toBe(valid);
+])("snapshot validation: %s", (_name, base, apiKeyPrefix, accepted) => {
+  expect(valid({ type: "snapshot", snapshot: { ...base, apiKeyPrefix } })).toBe(accepted);
 });
 test("a snapshot without the prefix field is rejected", () => {
   const { apiKeyPrefix: _omitted, ...withoutPrefix } = lockedSnapshot;
-  expect(validWorkerMessage({ type: "snapshot", snapshot: withoutPrefix })).toBe(false);
+  expect(valid({ type: "snapshot", snapshot: withoutPrefix })).toBe(false);
 });
 const errorMessage = (error: unknown) => ({ type: "error", error });
 
@@ -668,11 +689,11 @@ test.each([
 ])(
   "an unconfirmed outcome is accepted only as 'unknown' on the %s error branch",
   (_name, error) => {
-    expect(validWorkerMessage(errorMessage({ ...error, outcome: "unknown" }))).toBe(true);
-    expect(validWorkerMessage(errorMessage(error))).toBe(true);
-    expect(validWorkerMessage(errorMessage({ ...error, outcome: "maybe" }))).toBe(false);
+    expect(valid(errorMessage({ ...error, outcome: "unknown" }))).toBe(true);
+    expect(valid(errorMessage(error))).toBe(true);
+    expect(valid(errorMessage({ ...error, outcome: "maybe" }))).toBe(false);
     expect(
-      validWorkerMessage({
+      valid({
         type: "reply",
         requestId: 1,
         snapshot: lockedSnapshot,
@@ -680,7 +701,7 @@ test.each([
       }),
     ).toBe(false);
     expect(
-      validWorkerMessage({
+      valid({
         type: "reply",
         requestId: 1,
         snapshot: lockedSnapshot,
@@ -691,9 +712,9 @@ test.each([
 );
 
 test.each([null, "unavailable", 7, []])("an error DTO that is %j is rejected", (error) => {
-  expect(validWorkerMessage(errorMessage(error))).toBe(false);
+  expect(valid(errorMessage(error))).toBe(false);
   expect(
-    validWorkerMessage({
+    valid({
       type: "reply",
       requestId: 1,
       snapshot: lockedSnapshot,
@@ -749,4 +770,134 @@ test("a connection stays silent before its handshake and ignores everything once
     await protocol.dispose();
     await runtime.dispose();
   }
+});
+
+/** A Worker with the given profile actions, connected and past its handshake. */
+async function connected(actions: ProfileActions = profiles()) {
+  const runtime = createSessionRuntime({ auth: auth() });
+  const protocol = createSessionProtocol({
+    runtime,
+    profiles: actions,
+    workerId: "worker",
+    buildId: "build",
+    storageVersion: 3,
+  });
+  const pair = createSessionPorts();
+  protocol.connect(pair.worker);
+  await hello(pair.page);
+  return {
+    page: pair.page,
+    async close() {
+      pair.close();
+      await protocol.dispose();
+      await runtime.dispose();
+    },
+  };
+}
+const writeExpected = {
+  ownerTabId: "owner-a",
+  version: { keyEpoch: "epoch", profilesRevision: 0 },
+  profile: null,
+};
+
+// struct.number() accepts Infinity and fractions; an Infinity id would refuse every later request.
+test.each([Number.POSITIVE_INFINITY, 1.5, -1, 0, "1"])(
+  "a request id of %j closes the port",
+  async (requestId) => {
+    const worker = await connected();
+    try {
+      const reply = sessionMessage(worker.page);
+      worker.page.postMessage({ type: "request", requestId, command: { type: "profiles.list" } });
+      expect(await reply).toEqual({ type: "error", error: { kind: "invalid-request" } });
+    } finally {
+      await worker.close();
+    }
+  },
+);
+
+test("own __proto__ keys and undeclared fields never reach a handler", async () => {
+  const save = vi.fn<ProfileActions["save"]>(profiles().save);
+  const worker = await connected({ ...profiles(), save });
+  try {
+    const command = JSON.parse(
+      `{"type":"profiles.save","__proto__":{"polluted":1},"input":{"kind":"metadata","name":"n","scope":"session","expected":${JSON.stringify(writeExpected)},"__proto__":{"admin":true},"extra":"x"}}`,
+    );
+    await request(worker.page, 1, command);
+    const input = save.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(Object.keys(input).sort()).toEqual(["expected", "kind", "name", "scope"]);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(({} as Record<string, unknown>).admin).toBeUndefined();
+  } finally {
+    await worker.close();
+  }
+});
+
+test("a malformed unlock is answered with a bare invalid-request that echoes nothing", async () => {
+  const worker = await connected();
+  try {
+    const reply = await request(worker.page, 1, {
+      type: "session.unlock",
+      input: {
+        profileId: "profile",
+        password: "hunter2-profile-password",
+        expectedWorkerId: "worker",
+        expectedCredentialVersion: 7,
+        expectedIdentity: null,
+      },
+    } as never);
+    expect(reply).toMatchObject({ result: { ok: false, error: { kind: "invalid-request" } } });
+    expect(JSON.stringify(reply)).not.toContain("hunter2");
+  } finally {
+    await worker.close();
+  }
+});
+
+// The struct drops what it does not declare: a sample naming every optional field must arrive whole.
+test("profiles.migrate delivers every field the page sends", async () => {
+  const sample = {
+    expected: { ...writeExpected, profile: { id: "profile", credentialVersion: null } },
+    password: "new-password",
+    legacyPassword: "legacy-password",
+  } satisfies Required<MigrateProfileInput>;
+  const migrate = vi.fn<ProfileActions["migrate"]>(profiles().migrate);
+  const worker = await connected({ ...profiles(), migrate });
+  try {
+    await request(worker.page, 1, { type: "profiles.migrate", input: sample });
+    expect({ ...migrate.mock.calls[0]?.[0] }).toEqual(sample);
+  } finally {
+    await worker.close();
+  }
+});
+
+test("a reply without a value and an API error with its server data both reach the page", () => {
+  const locked = {
+    status: "locked",
+    identity: null,
+    profile: null,
+    expiresAt: null,
+    pendingProfileId: null,
+    reason: null,
+    revision: 1,
+    apiKeyPrefix: null,
+  };
+  expect(valid({ type: "reply", requestId: 1, result: { ok: true }, snapshot: locked })).toBe(true);
+  // readPolicy recognizes an unconfigured policy only by this data.message.
+  const [, reply] = struct.parse(workerMessage, {
+    type: "reply",
+    requestId: 1,
+    snapshot: locked,
+    result: {
+      ok: false,
+      error: {
+        kind: "api",
+        code: "HTTP_STATUS",
+        message: "failed",
+        status: 500,
+        data: { code: 2, message: "acl policy not found" },
+      },
+    },
+  });
+  expect(reply).toMatchObject({
+    result: { error: { status: 500, data: { message: "acl policy not found" } } },
+  });
 });

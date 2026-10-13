@@ -4,23 +4,24 @@ import type { HeadscaleSnapshot, HealthResponse } from "@/api/contracts";
 import * as headscale from "@/api/snapshot";
 import { fetchSegment, fetchSnapshot } from "@/api/snapshot";
 import { getProductCopy } from "@/i18n/product-copy";
-import { createFixtureHttp, fixtureClientStore, fixtureGateway } from "@/test/operation-gateway";
+import { createFixtureHttp, fixtureExecute, fixtureSession } from "@/test/dispatch-fixture";
 import { snapshotFixture, startSnapshotServer } from "@/test-utils/headscale.test";
 import { createActionFeedbackStore } from "./useActionFeedback";
 import type { createHeadscaleClientStore } from "./useHeadscaleClient";
 import { createSnapshotStore } from "./useSnapshot";
 
 let feedbackStore: ReturnType<typeof createActionFeedbackStore>;
+let auth: ReturnType<typeof fixtureSession>["auth"];
 let clientStore: ReturnType<typeof createHeadscaleClientStore>;
 let snapshotStore: ReturnType<typeof createSnapshotStore>;
 beforeEach(() => {
   feedbackStore = createActionFeedbackStore();
   fixture = startSnapshotServer();
-  clientStore = fixtureClientStore(
+  ({ auth, client: clientStore } = fixtureSession(
     createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     fixture.baseUrl,
-  );
-  snapshotStore = createSnapshotStore(clientStore, feedbackStore);
+  ));
+  snapshotStore = createSnapshotStore(auth, clientStore, feedbackStore);
 });
 
 let fixture: ReturnType<typeof startSnapshotServer>;
@@ -44,7 +45,7 @@ describe("snapshot fetchers", () => {
         provider: null,
       },
     ];
-    const client = fixtureGateway(
+    const client = fixtureExecute(
       createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     );
     const snapshot = await fetchSnapshot(client);
@@ -64,7 +65,7 @@ describe("snapshot fetchers", () => {
   });
 
   test("fetches selected segments and assembles a complete snapshot", async () => {
-    const client = fixtureGateway(
+    const client = fixtureExecute(
       createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     );
 
@@ -113,7 +114,10 @@ describe("useSnapshot", () => {
         return handle(new URL(request.url).pathname, request.signal);
       }),
     );
-    vi.spyOn(clientStore, "createClient").mockReturnValue(fixtureGateway(http));
+    const execute = fixtureExecute(http);
+    vi.spyOn(auth, "read").mockImplementation((_expected, command, options) =>
+      execute(command, options),
+    );
     snapshotStore.setAuthorized(true);
     snapshotStore.applyPatch(snapshotFixture());
   }
@@ -131,6 +135,15 @@ describe("useSnapshot", () => {
     };
     return Response.json(responses[path]);
   }
+
+  test("an authorized store without an adopted session reports locked and publishes nothing", async () => {
+    const execute = vi.spyOn(auth, "read");
+    clientStore.clear();
+    snapshotStore.setAuthorized(true);
+    await snapshotStore.refreshSegments(["identity"]);
+    expect(execute).not.toHaveBeenCalled();
+    expect(snapshotStore.getSnapshot().refreshErrors.identity).toBeTruthy();
+  });
 
   test("a later identity response wins even when the superseded transport finishes last", async () => {
     const responses = [Promise.withResolvers<Response>(), Promise.withResolvers<Response>()];

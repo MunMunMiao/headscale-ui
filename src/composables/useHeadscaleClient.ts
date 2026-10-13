@@ -1,17 +1,15 @@
-import { ApiError, createHeadscaleGateway, type HeadscaleGateway } from "@/api/gateway";
 import { createStore } from "@/lib/store";
-import type { SessionBridge } from "@/session/bridge";
 import type { PublicSessionSnapshot, SessionIdentity } from "@/session/types";
 import { useSession, useStore } from "./session-context";
 
-export function createHeadscaleClientStore(bridge: Pick<SessionBridge, "execute">) {
-  const state = createStore<{
-    settings: { baseUrl: string };
-    identity: SessionIdentity | null;
-    http: HeadscaleGateway | null;
-  }>({ settings: { baseUrl: "" }, identity: null, http: null });
+/** The unlocked session the page publishes its requests under, and the server it shows. */
+export function createHeadscaleClientStore() {
+  const state = createStore<{ settings: { baseUrl: string }; identity: SessionIdentity | null }>({
+    settings: { baseUrl: "" },
+    identity: null,
+  });
   function clear() {
-    state.setState({ settings: { baseUrl: "" }, identity: null, http: null });
+    state.setState({ settings: { baseUrl: "" }, identity: null });
   }
   return {
     getSnapshot: state.getSnapshot,
@@ -23,19 +21,10 @@ export function createHeadscaleClientStore(bridge: Pick<SessionBridge, "execute"
       const previous = state.getSnapshot().identity;
       if (previous?.workerId === identity.workerId && previous.sessionId === identity.sessionId)
         return;
-      const expected = Object.freeze({
-        workerId: identity.workerId,
-        sessionId: identity.sessionId,
+      state.setState({
+        settings: { baseUrl: snapshot.profile.baseUrl },
+        identity: Object.freeze({ workerId: identity.workerId, sessionId: identity.sessionId }),
       });
-      const http = createHeadscaleGateway((command, options) =>
-        bridge.execute(expected, command, options),
-      );
-      state.setState({ settings: { baseUrl: snapshot.profile.baseUrl }, identity: expected, http });
-    },
-    createClient(): HeadscaleGateway {
-      const client = state.getSnapshot().http;
-      if (!client) throw new ApiError({ kind: "locked" });
-      return client;
     },
   };
 }

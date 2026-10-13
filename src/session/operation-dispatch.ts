@@ -1,14 +1,8 @@
-import type { AnyStruct, FaultCode, HttpCommand } from "@defjs/core";
-import type { rpcStatus } from "@/api/contracts";
+import type { FaultCode } from "@defjs/core";
 import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
 import { redactDiagnosticData } from "@/api/operation-log";
-import { REQUEST_REGISTRY } from "@/api/requests";
-import { modifiesServer } from "@/domain/headscale-operations";
-import {
-  type AuthOperationCommand,
-  type SessionExecutionContext,
-  SessionFault,
-} from "./auth-session";
+import { type SessionExecutionContext, SessionFault } from "./auth-session";
+import { type ApiOutput, type ApiRequest, type EndpointName, endpointOf } from "./protocol";
 import type { SessionResult } from "./types";
 
 // Faults after which a write may have been applied without a usable answer.
@@ -24,23 +18,22 @@ const UNCERTAIN: ReadonlySet<FaultCode> = new Set<FaultCode>([
 // A proxy answered for an upstream that may already have applied the write.
 const GATEWAY_STATUS: ReadonlySet<number> = new Set([502, 503, 504]);
 
-export async function executeOperation(
-  command: AuthOperationCommand,
+export async function executeOperation<K extends EndpointName>(
+  command: ApiRequest<K>,
   context: SessionExecutionContext,
   http?: HeadscaleHttp, // only tests inject a client; production always builds the Worker client
-): Promise<SessionResult<unknown>> {
-  if (!Object.hasOwn(REQUEST_REGISTRY, command.operation))
-    return { ok: false, error: { kind: "invalid-request" } };
+): Promise<SessionResult<ApiOutput<K>>> {
+  const endpoint = endpointOf(command.endpoint);
+  if (!endpoint) return { ok: false, error: { kind: "invalid-request" } };
   try {
     const client = http ?? createWorkerHeadscaleHttp(context);
-    const makeRequest = REQUEST_REGISTRY[command.operation] as (
-      input: unknown,
-    ) => HttpCommand<AnyStruct | undefined, AnyStruct | undefined, typeof rpcStatus>;
-    const [fault, value] = await client.execute(makeRequest(command.input), {
-      signal: context.signal,
-    });
+    const [fault, value] = await client.execute(
+      endpoint("input" in command ? command.input : undefined),
+      { signal: context.signal },
+    );
     const { apiKey } = context.requireCurrent();
-    if (!fault) return { ok: true, value };
+    // defjs decoded the body against this endpoint's output contract.
+    if (!fault) return { ok: true, value: value as ApiOutput<K> };
     const status = "status" in fault ? fault.status : undefined;
     const uncertain =
       GATEWAY_STATUS.has(status ?? 0) ||
@@ -53,7 +46,7 @@ export async function executeOperation(
         message: redactDiagnosticData(fault.message, apiKey),
         ...(status === undefined ? {} : { status }),
         ...(fault.code === "HTTP_STATUS" ? { data: redactDiagnosticData(fault.data, apiKey) } : {}),
-        ...(uncertain && modifiesServer(command.operation) ? { outcome: "unknown" as const } : {}),
+        ...(uncertain && command.type === "api.write" ? { outcome: "unknown" as const } : {}),
       },
     };
   } catch (error) {

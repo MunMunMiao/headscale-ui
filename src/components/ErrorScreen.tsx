@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ApiError } from "@/api/gateway";
 import { t } from "@/i18n";
 import type { DatabaseStatus } from "@/lib/idb";
 import { VaultDataError } from "@/lib/vault-state";
+import { ApiError } from "@/session/types";
 import { getErrorMessage } from "@/utils/error-mapping";
 import { storageErrorMessage } from "@/utils/storage-error";
 

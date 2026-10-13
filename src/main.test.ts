@@ -137,7 +137,7 @@ test("offers the shared-session vault reset only for an unreadable vault", async
 
 test("other startup failures, including session errors, never get a reset action", async () => {
   boundary.prepare.mockImplementation(async () => {
-    throw new (await import("./api/gateway")).ApiError({ kind: "storage-failed" });
+    throw new (await import("./session/types")).ApiError({ kind: "storage-failed" });
   });
   await start();
   await vi.waitFor(() => expect(boundary.render).toHaveBeenCalledTimes(1));

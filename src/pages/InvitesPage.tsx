@@ -10,7 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import * as endpoints from "@/api/commands";
 import type { HeadscaleUser, PreAuthKey } from "@/api/contracts";
 import CreateAuthKeyDialog from "@/components/CreateAuthKeyDialog";
 import {
@@ -166,8 +165,8 @@ export default function InvitesPage() {
     const completed = await mutate(
       "invite-action",
       target.kind === "expire"
-        ? endpoints.expirePreAuthKey({ id: target.key.id })
-        : endpoints.deletePreAuthKey({ id: target.key.id }),
+        ? { endpoint: "expirePreAuthKey", input: { id: target.key.id } }
+        : { endpoint: "deletePreAuthKey", input: { id: target.key.id } },
     );
     if (completed) closeInviteActionDialog();
   }

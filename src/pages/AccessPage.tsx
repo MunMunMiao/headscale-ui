@@ -17,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import * as endpoints from "@/api/commands";
 import MemberPicker, { type MemberOption } from "@/components/MemberPicker";
 import IpRuleRow from "@/components/policy/IpRuleRow";
 import {
@@ -149,12 +148,12 @@ export default function AccessPage() {
   // Byte-identical to the text a save would submit. Without a payload the check button is
   // disabled, so the "null" text this yields is never sent.
   const draftText = JSON.stringify(policyPayload, null, 2);
-  const { http } = useStore(client);
+  const { identity } = useStore(client);
   // biome-ignore lint/correctness/useExhaustiveDependencies: A result must not carry over to another server or session.
-  useEffect(() => setCheckedText(null), [http]);
+  useEffect(() => setCheckedText(null), [identity]);
   async function checkDraft() {
     setCheckedText(null);
-    if (await runCheck("check-policy", endpoints.checkPolicy({ policy: draftText })))
+    if (await runCheck("check-policy", { endpoint: "checkPolicy", input: { policy: draftText } }))
       setCheckedText(draftText);
   }
 
