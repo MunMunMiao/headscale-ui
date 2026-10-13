@@ -933,7 +933,9 @@ function AppLayoutContent() {
                       data-testid="confirm-api-key-action"
                       disabled={
                         isActionPending("api-key-action") ||
-                        (pendingKeyIsCurrent && !currentKeyAcknowledged)
+                        (pendingKeyIsCurrent && !currentKeyAcknowledged) ||
+                        // A key without a prefix cannot be named; never send an empty expire.
+                        !pendingApiKeyAction.key.prefix
                       }
                       onClick={() => confirmApiKeyAction(pendingApiKeyAction)}
                     >

@@ -258,10 +258,7 @@ describe("Headscale endpoint contracts", () => {
     expect(data.apiKey).toBe("ak_live_demo.secret");
   });
 
-  test("rejects empty API key identities before a write", async () => {
-    await expect(execute(endpoints.expireApiKey({ prefix: "" }))).rejects.toMatchObject({
-      code: "REQ_BUILD_FAILED",
-    });
+  test("an empty API key prefix never reaches the delete route", async () => {
     await expect(execute(endpoints.deleteApiKey({ prefix: "" }))).rejects.toMatchObject({
       code: "REQ_BUILD_FAILED",
     });
@@ -600,7 +597,7 @@ describe("Headscale endpoint contracts", () => {
     const rejected = await execute(endpoints.authReject({ authId: "hskey-authreq-reject" }), api);
     const apiKeys = await execute(endpoints.listApiKeys(), api);
     await execute(endpoints.createApiKey({ expiration: "2026-12-31T23:59:00Z" }), api);
-    await execute(endpoints.expireApiKey({ prefix: "ak_live_demo", id: "1" }), api);
+    await execute(endpoints.expireApiKey({ prefix: "ak_live_demo" }), api);
     await execute(endpoints.expireApiKey({ id: "2" }), api);
     await execute(endpoints.deleteApiKey({ prefix: "ak_old_demo" }), api);
     await expect(execute(endpoints.expireApiKey(JSON.parse("{}")), api)).rejects.toMatchObject({

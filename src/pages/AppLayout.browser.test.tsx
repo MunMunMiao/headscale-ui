@@ -240,6 +240,18 @@ test("creates, copies, expires and deletes API keys with visible retryable error
   }
   expect(screen.calls.some((call) => call.method === "DELETE")).toBe(true);
 });
+test("an API key the server listed without a prefix cannot be expired or deleted", async () => {
+  const screen = await setup(true, { apiKeys: [{ id: "7", prefix: "" }] });
+  await openSettings();
+  for (const action of ["expire", "delete"]) {
+    await id("api-key-actions-trigger-").click();
+    await id(`${action}-api-key-`).click();
+    await expect.element(id("confirm-api-key-action")).toBeDisabled();
+    await id("cancel-api-key-action").click();
+    await expect.element(id(`${action}-api-key-dialog`)).not.toBeInTheDocument();
+  }
+  expect(screen.calls.filter((call) => call.method !== "GET")).toEqual([]);
+});
 test("requires explicit maintenance confirmation and keeps failed maintenance retryable", async () => {
   const screen = await setup();
   await openSettings();

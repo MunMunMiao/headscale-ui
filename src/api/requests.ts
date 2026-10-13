@@ -16,6 +16,7 @@ import {
   versionResponse,
 } from "./contracts";
 
+// A builder only places its input. Checks belong before a command is built (defjs struct.mdx).
 export const health = defineRequest({
   operation: "health.check",
   method: "GET",
@@ -288,10 +289,7 @@ export const expireApiKey = defineRequest({
     struct.object({ prefix: struct.string(), id: struct.string().optional() }),
     struct.object({ id: struct.string(), prefix: struct.string().optional() }),
   ),
-  builder: (input) => {
-    if (!input.prefix && !input.id) throw new Error("API key prefix or ID is required");
-    return { body: input.prefix ? { prefix: input.prefix } : { id: input.id } };
-  },
+  builder: (input) => ({ body: input }),
   error: rpcStatus,
 });
 
@@ -300,10 +298,7 @@ export const deleteApiKey = defineRequest({
   method: "DELETE",
   path: "/api/v1/apikey/:prefix",
   input: struct.object({ prefix: struct.string() }),
-  builder: (input) => {
-    if (!input.prefix) throw new Error("API key prefix is required");
-    return { path: input };
-  },
+  builder: (input) => ({ path: input }),
   error: rpcStatus,
 });
 
