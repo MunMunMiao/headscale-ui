@@ -192,20 +192,32 @@ test("an unconfirmed write shows the check-first copy and refreshes the page onc
   expect(refreshes(calls)).toBe(1);
 });
 
-test.each([
-  ["skipRefresh is set", unknownWrite, true, t("sessionOutcomeUnknown")],
-  [
-    "the failure is a definite rejection",
-    definiteWrite,
-    false,
+// Chromium resends a POST whose reused connection closed before any response byte, so the
+// server's definite answer may be to the resend of a write it already applied.
+test("a definite rejection of a write keeps its message and refreshes the page once without replaying", async () => {
+  const { calls, feedback, session } = counted(definiteWrite);
+  expect(
+    await createMutation(session).mutate("create-member", {
+      endpoint: "createUser",
+      input: { name: "x" },
+    }),
+  ).toBe(false);
+  expect(feedback.actionError("create-member")).toBe(
     t("requestUnexpectedResponse", { status: 400 }),
-  ],
+  );
+  expect(writes(calls)).toBe(1);
+  expect(refreshes(calls)).toBe(1);
+});
+
+test.each([
+  ["an unconfirmed write", unknownWrite, t("sessionOutcomeUnknown")],
+  ["a definite rejection", definiteWrite, t("requestUnexpectedResponse", { status: 400 })],
 ] as const)(
-  "no refresh follows a failed write when %s",
-  async (_name, result, skipRefresh, message) => {
+  "skipRefresh leaves the refresh after %s to the caller",
+  async (_name, result, message) => {
     const { calls, feedback, session } = counted(result);
     expect(
-      await createMutation(session, { skipRefresh }).mutate("create-member", {
+      await createMutation(session, { skipRefresh: true }).mutate("create-member", {
         endpoint: "createUser",
         input: { name: "x" },
       }),

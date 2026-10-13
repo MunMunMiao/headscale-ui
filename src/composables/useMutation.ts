@@ -12,7 +12,8 @@ interface UseMutationOptions {
 interface UseMutationReturn {
   /**
    * A write whose answer was lost or discarded rejects with `outcome: "unknown"` (including a
-   * stale draft after success); unless skipRefresh, the page then refreshes once. Never replayed.
+   * stale draft after success). After that, or after any server answer to a failed write, the page
+   * refreshes once unless skipRefresh. Never replayed.
    */
   mutate<K extends EndpointName>(
     key: ActionFeedbackKey,
@@ -54,9 +55,11 @@ export function createMutation(
         const reply = await session.auth.write(identity, command, options);
         if (!reply.ok) {
           const error = new ApiError(reply.error);
-          // The write may have been applied: show the server state, never replay it.
+          // The write may have been applied: show the server state, never replay it. A definite
+          // server answer may also follow an applied write, because Chromium resends a POST whose
+          // reused connection closed before any response byte.
           if (
-            error.outcome === "unknown" &&
+            (error.kind === "api" || error.outcome === "unknown") &&
             !opts.skipRefresh &&
             isCurrent() &&
             session.drafts.isCurrent()
