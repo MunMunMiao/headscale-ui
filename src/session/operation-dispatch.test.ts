@@ -549,3 +549,53 @@ test.each([
     }
   }
 });
+
+test.each([
+  [
+    "502 html",
+    () =>
+      new Response("<html>bad gateway</html>", {
+        status: 502,
+        headers: { "content-type": "text/html" },
+      }),
+    "RES_MEDIA_TYPE_INVALID",
+  ],
+  [
+    "503 json",
+    () => Response.json({ code: 14, message: "unavailable" }, { status: 503 }),
+    "HTTP_STATUS",
+  ],
+  [
+    "504 plain text",
+    () =>
+      new Response("upstream timed out", {
+        status: 504,
+        headers: { "content-type": "text/plain" },
+      }),
+    "RES_MEDIA_TYPE_INVALID",
+  ],
+])("a write answered by a gateway with %s may have been applied", async (name, respond, code) => {
+  for (const [id, make] of writes) {
+    const { server, seen } = await scripted(respond);
+    try {
+      expect(
+        await executeOperation(make(), context(server.url.origin)),
+        `${id} ${name}`,
+      ).toMatchObject({ ok: false, error: { kind: "api", code, outcome: "unknown" } });
+      expect(seen.requests, `${id} ${name}`).toBe(1);
+    } finally {
+      server.stop(true);
+    }
+  }
+  for (const [id, make] of reads) {
+    const { server } = await scripted(respond);
+    try {
+      expect(
+        await executeOperation(make(), context(server.url.origin)),
+        `${id} ${name}`,
+      ).not.toHaveProperty("error.outcome");
+    } finally {
+      server.stop(true);
+    }
+  }
+});

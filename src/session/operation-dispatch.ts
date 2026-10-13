@@ -21,6 +21,8 @@ const UNCERTAIN: ReadonlySet<FaultCode> = new Set<FaultCode>([
   "RES_MEDIA_TYPE_INVALID",
   "RES_STRUCT_MISMATCH",
 ]);
+// A proxy answered for an upstream that may already have applied the write.
+const GATEWAY_STATUS: ReadonlySet<number> = new Set([502, 503, 504]);
 
 export async function executeOperation(
   command: AuthOperationCommand,
@@ -39,20 +41,19 @@ export async function executeOperation(
     });
     const { apiKey } = context.requireCurrent();
     if (!fault) return { ok: true, value };
+    const status = "status" in fault ? fault.status : undefined;
+    const uncertain =
+      GATEWAY_STATUS.has(status ?? 0) ||
+      (UNCERTAIN.has(fault.code) && (status === undefined || status < 300));
     return {
       ok: false,
       error: {
         kind: "api",
         code: fault.code,
         message: redactDiagnosticData(fault.message, apiKey),
-        ...("status" in fault ? { status: fault.status } : {}),
+        ...(status === undefined ? {} : { status }),
         ...(fault.code === "HTTP_STATUS" ? { data: redactDiagnosticData(fault.data, apiKey) } : {}),
-        // A decode fault with an error status is a definite proxy or Headscale rejection.
-        ...(modifiesServer(command.operation) &&
-        UNCERTAIN.has(fault.code) &&
-        (!("status" in fault) || fault.status < 300)
-          ? { outcome: "unknown" as const }
-          : {}),
+        ...(uncertain && modifiesServer(command.operation) ? { outcome: "unknown" as const } : {}),
       },
     };
   } catch (error) {
