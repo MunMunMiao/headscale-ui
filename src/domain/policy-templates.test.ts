@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { createRule, emptyState, parsePolicy, serializePolicy } from "./policy-designer";
-import { applyTemplate, POLICY_TEMPLATES, type PolicyTemplate } from "./policy-templates";
+import {
+  applyTemplate,
+  POLICY_TEMPLATES,
+  type PolicyTemplate,
+  rulesReplacedByTemplate,
+} from "./policy-templates";
 import { hasOnlyDefaultAccess } from "./policy-views";
 
 const triple = ({
@@ -143,5 +148,15 @@ describe("policy templates", () => {
         (POLICY_TEMPLATES[2].build().rules ?? []).map(triple),
       );
     });
+  });
+
+  test("reports exactly the rules a template would replace", () => {
+    const open = emptyState();
+    expect(rulesReplacedByTemplate(open, POLICY_TEMPLATES[1])).toEqual(open.rules);
+    expect(rulesReplacedByTemplate(parsePolicy('{"acls":[]}'), POLICY_TEMPLATES[1])).toEqual([]);
+    const scoped = { ...emptyState(), rules: [createRule("alice@", "tag:server", "443")] };
+    expect(rulesReplacedByTemplate(scoped, POLICY_TEMPLATES[1])).toEqual([]);
+    const noRules: PolicyTemplate = { ...POLICY_TEMPLATES[0], build: () => ({}) };
+    expect(rulesReplacedByTemplate(open, noRules)).toEqual([]);
   });
 });

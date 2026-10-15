@@ -1,5 +1,5 @@
 import type { Infer } from "@defjs/core";
-import { connectionSettingsError } from "@/api/connection";
+import { canonicalBaseUrl, connectionSettingsError } from "@/api/connection";
 import { decryptProfileKey, encryptProfileKey, ProfileUnlockError } from "@/lib/api-key-crypto";
 import type {
   ChangeProfilePasswordInput,
@@ -19,9 +19,8 @@ import {
   updateProfileMetadata,
   VaultConflictError,
 } from "@/lib/profile-storage";
-import { clearAllSecureData } from "@/lib/secure-storage";
+import { assertResetExpected, clearAllSecureData } from "@/lib/secure-storage";
 import { assertVaultVersion } from "@/lib/vault-state";
-import { normalizedBaseUrl } from "@/utils/strings";
 import { type AuthSession, type SessionExecutionContext, SessionFault } from "./auth-session";
 import type { profileSaveInput } from "./protocol";
 import type { PublicSessionSnapshot, SessionResult } from "./types";
@@ -134,12 +133,12 @@ export function createProfileActions(deps: ProfileActionDependencies): ProfileAc
           deps.profilesCommitted();
           return { saved: true as const, commit, activation: null };
         }
-        const baseUrl = normalizedBaseUrl(input.profile.baseUrl);
+        const baseUrl = canonicalBaseUrl(input.profile.baseUrl);
         const apiKey = input.apiKey.trim();
         if (
           !input.profile.id ||
           !input.password ||
-          connectionSettingsError({ baseUrl, apiKey }) ||
+          connectionSettingsError({ baseUrl: input.profile.baseUrl, apiKey }) ||
           (input.validation === "skip" && input.activate)
         )
           throw new SessionFault("invalid-request");
@@ -161,22 +160,36 @@ export function createProfileActions(deps: ProfileActionDependencies): ProfileAc
         };
         requireCurrent();
         if (expected.profile) {
-          const read = await readProfileForOwner(expected.profile.id, context.ownerTabId);
-          if (
-            !read ||
-            expected.profile.id !== input.profile.id ||
-            !read.profile.credentialVersion ||
-            read.profile.credentialVersion !== expected.profile.credentialVersion
-          )
-            throw new VaultConflictError();
-          assertVaultVersion(read.version, expected.version);
-          await decryptProfileKey({
-            profileId: read.profile.id,
-            canonicalBaseUrl: read.profile.baseUrl,
-            credentialVersion: read.profile.credentialVersion,
-            secret: read.profile.apiKey,
-            password: input.password,
-          });
+          const reference = expected.profile;
+          if (reference.id !== input.profile.id) throw new VaultConflictError();
+          const read = await readProfileForOwner(reference.id, context.ownerTabId).catch(
+            async (error: unknown) => {
+              // An unreadable row has no key or password left to prove: replacing it equals
+              // deleting it and adding the server again. The commit re-checks this version.
+              const listed = await listProfileSummaries(context.ownerTabId);
+              const row = listed.profiles.find((item) => item.id === reference.id);
+              if (row?.credentialKind !== "unreadable") throw error;
+              if (row.credentialVersion !== reference.credentialVersion)
+                throw new VaultConflictError();
+              assertVaultVersion(listed.version, expected.version);
+              return "unreadable" as const;
+            },
+          );
+          if (read !== "unreadable") {
+            if (
+              !read?.profile.credentialVersion ||
+              read.profile.credentialVersion !== reference.credentialVersion
+            )
+              throw new VaultConflictError();
+            assertVaultVersion(read.version, expected.version);
+            await decryptProfileKey({
+              profileId: read.profile.id,
+              canonicalBaseUrl: read.profile.baseUrl,
+              credentialVersion: read.profile.credentialVersion,
+              secret: read.profile.apiKey,
+              password: input.password,
+            });
+          }
         } else {
           assertVaultVersion(
             (await listProfileSummaries(context.ownerTabId)).version,
@@ -269,6 +282,8 @@ export function createProfileActions(deps: ProfileActionDependencies): ProfileAc
       }),
     reset: (expected, context) =>
       attempt(context, async () => {
+        // A stale request must not lock every page before its transaction refuses it.
+        await assertResetExpected(expected);
         deps.auth.lock(deps.auth.getSnapshot().identity);
         await deps.cancelPending(context);
         const result = await clearAllSecureData(expected, context.signal);

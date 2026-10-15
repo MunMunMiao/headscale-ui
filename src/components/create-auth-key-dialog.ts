@@ -1,8 +1,19 @@
+import type { HeadscaleUser } from "@/api/contracts";
 import type { ProductCopy } from "@/i18n/product-copy";
+import { userLabel } from "@/utils/user";
 
 export interface AuthKeyDialogUserOption {
   id: string;
   label: string;
+}
+
+/** Owner option labelled "Display name (username)" when both exist, so namesakes stay apart. */
+export function authKeyDialogUser(user: HeadscaleUser, fallback: string): AuthKeyDialogUserOption {
+  const label =
+    user.displayName && user.name && user.displayName !== user.name
+      ? `${user.displayName} (${user.name})`
+      : userLabel(user, fallback);
+  return { id: user.id, label };
 }
 
 export type AuthKeyDialogDefaults = {

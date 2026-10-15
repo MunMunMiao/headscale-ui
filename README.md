@@ -18,7 +18,7 @@ auth keys, approve routes, and design access policy through guided controls.
   focused header.
 - Machines table: search, status filtering, IP tags, route tags, owner details,
   and row-level actions.
-- Users table: user filters, device lists, auth source display, and user
+- Users table: user search, device lists, auth source display, and user
   management actions.
 - Auth key flow: reusable and ephemeral keys, ACL tags, expiration picker with
   date and time, and generated `tailscale up` commands.
@@ -49,9 +49,11 @@ bun run dev
 ```
 
 Open the printed local URL, add a server profile, and enter the server's
-absolute HTTP(S) URL, an API key created by Headscale, and a password for this
-server profile. Each profile has its own password. A running Headscale server
-is required to unlock it; new profiles start with empty fields. The browser calls
+absolute HTTP(S) URL (without a user name, password, query, or fragment), an API
+key created by Headscale, and a profile password of at least 8 characters. Each
+profile has its own password. The form warns when plain `http://` to another host
+would send the API key unencrypted. A running Headscale server is required to
+unlock it; new profiles start with empty fields. The browser calls
 the Headscale API directly, so the server must be same-origin with the UI or answer
 CORS preflights; see [Connecting to Headscale (CORS)](#connecting-to-headscale-cors).
 
@@ -66,7 +68,9 @@ profile's password and a fresh 32-byte salt (600,000 iterations). Each write use
 a fresh 12-byte IV and binds the ciphertext to the profile ID, canonical server
 URL, and credential version. Neither the password nor its derived key is saved.
 Forgetting this password requires entering a replacement API key or deleting the
-profile; there is no password recovery or password-free storage option.
+profile; there is no password recovery or password-free storage option. A saved
+profile that can no longer be read can be replaced with its URL, an API key, and a
+new password, or deleted.
 
 Legacy device-encrypted, globally password-encrypted, and plaintext records are
 preserved until explicitly migrated one profile at a time. Migration requires a
@@ -93,10 +97,11 @@ HTTP requests. Pages exchange commands and public session metadata with it. Page
 do not store the decrypted connection key in React state, localStorage, or
 sessionStorage. Same-origin pages in the same browser storage partition share
 one active server: a successful switch in one tab changes the current server for
-all its peers. A failed unlock leaves an existing valid session unchanged.
-Ordinary unsaved drafts stay attached to their previous session and cannot be
-submitted to the new server; explicitly discard them before continuing. Generated
-credentials from the old server are cleared when the session changes or locks.
+all its peers, and a peer showing the login page returns to the page it came from.
+A failed unlock leaves an existing valid session unchanged. Ordinary unsaved
+drafts stay attached to their previous session and cannot be submitted to the new
+server; explicitly discard them before continuing. Generated credentials from the
+old server are cleared when the session changes or locks.
 
 The session expires after 30 minutes without accepted user activity across the
 application. Trusted input, key presses, pointer presses, and wheel input in a
@@ -111,9 +116,12 @@ A refreshed tab joins a live peer's session. With no surviving Worker session,
 a refresh or browser restart requires the profile password. Browser lifecycle
 management determines when an unused Worker is destroyed; closing the last page
 does not guarantee immediate erasure of its heap. Explicit logout locks all
-connected pages. Logout and timeout do not revoke the Headscale API key or roll
-back writes already received by the server. A lost write response may represent
-a committed operation; the client does not automatically repeat it.
+connected pages; the login page says why the password is needed, and unlocking
+returns to the page that was open. A lock discards unsaved Access edits, and the
+login page reports that before it continues. Logout and timeout do not revoke the
+Headscale API key or roll back writes already received by the server. A lost
+write response may represent a committed operation; the client does not
+automatically repeat it.
 
 The remember option controls saved-profile visibility. Temporary encrypted rows
 remain associated with their sessionStorage owner ID across reload and browser

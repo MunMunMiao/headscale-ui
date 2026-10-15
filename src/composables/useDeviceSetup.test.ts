@@ -8,7 +8,7 @@ describe("createDeviceSetupStore", () => {
       task: null,
       step: "type",
       authKeyExpiryDays: 7,
-      returnAfterInvite: false,
+      loginServer: null,
       lastCreatedInvite: "",
       revealCreatedInvite: false,
       lastRegisteredNode: null,

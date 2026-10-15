@@ -100,6 +100,8 @@ export function createSession(initialState: BootstrapState) {
     if (held) {
       clearGeneratedCredentials();
     } else {
+      // The login page tells the user before anything continues past this lock.
+      if (!next && policy.isPolicyDirty) profiles.setState({ discardedPolicyDraft: true });
       policy.load("");
       deviceSetup.setState(emptyDeviceSetup);
       if (!next) drafts.discard();

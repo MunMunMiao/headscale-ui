@@ -66,3 +66,10 @@ test("builds avatar initials from name, URL or fallback without reading credenti
   expect(visuals.profileAvatarLabel(profile({ name: "", baseUrl: "https://example" }))).toBe("HT");
   expect(visuals.profileAvatarLabel(profile({ name: "  ", baseUrl: "" }))).toBe("HS");
 });
+
+test("avatar initials keep whole characters, including emoji and supplementary ideographs", () => {
+  const visuals = createProfileVisuals(() => null);
+  expect(visuals.profileAvatarLabel(profile({ name: "A🚀 prod" }))).toBe("A🚀");
+  expect(visuals.profileAvatarLabel(profile({ name: "𠮷野家" }))).toBe("𠮷野");
+  expect(visuals.profileAvatarLabel(profile({ name: "👩‍💻ops" }))).toBe("👩‍💻O");
+});

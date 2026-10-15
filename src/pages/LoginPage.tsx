@@ -1,7 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   AlertCircle,
-  Info,
   KeyRound,
   Languages,
   LoaderCircle,
@@ -9,9 +8,11 @@ import {
   LockKeyhole,
   Pencil,
   Plus,
+  Save,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { sendsApiKeyInClear } from "@/api/connection";
 import GithubIcon from "@/components/GithubIcon";
 import HeadscaleLogo from "@/components/HeadscaleLogo";
 import {
@@ -32,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -53,23 +54,40 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSession } from "@/composables/session-context";
+import { useSession, useStore } from "@/composables/session-context";
 import { useActionFeedback } from "@/composables/useActionFeedback";
 import { useConnectionDialog } from "@/composables/useConnectionDialog";
 import { useDisplayHelpers } from "@/composables/useDisplayHelpers";
-import { newProfileId, useProfiles } from "@/composables/useProfiles";
+import { MIN_PROFILE_PASSWORD_LENGTH, newProfileId, useProfiles } from "@/composables/useProfiles";
 import { useProfileValidationFlow } from "@/composables/useProfileValidationFlow";
 import { useProfileVisuals } from "@/composables/useProfileVisuals";
 import { useTheme } from "@/composables/useTheme";
 import { LOCALE_META, useHeadscaleI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/descriptors";
 import type { ProfileSummary } from "@/lib/profile-storage";
-
 import { cn } from "@/lib/utils";
+import { redirectTarget } from "@/router/search";
+import type { PublicSessionSnapshot } from "@/session/types";
+
+/** Why a page that was sent here must ask for the profile password again. */
+const lockNotices = {
+  initial: "loginNoticeNoSession",
+  user: "loginNoticeLoggedOut",
+  expired: "loginNoticeExpired",
+  "clock-reversed": "loginNoticeClockReversed",
+  "profile-changed": "loginNoticeProfileChanged",
+} as const satisfies Record<NonNullable<PublicSessionSnapshot["reason"]>, MessageKey>;
 
 export default function LoginPage() {
   const apiKeyCommand = "headscale apikeys create --expiration 90d";
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  // A submit attempt shows the new-password rules inline even before the confirmation is typed.
+  const [passwordChecked, setPasswordChecked] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmationRef = useRef<HTMLInputElement>(null);
   const session = useSession();
+  const auth = useStore(session.auth).session;
   const headscaleRemoteCliDocsUrl = "https://docs.headscale.org/ref/remote-cli/";
   const githubRepositoryUrl = "https://github.com/MunMunMiao/headscale-ui";
   const { t, locale, pendingLocale, localeError, settingsError } = useHeadscaleI18n();
@@ -85,6 +103,10 @@ export default function LoginPage() {
     profileValidationDialogOpen,
     profileValidationError,
     pendingDeleteProfile,
+    unlockProfile,
+    unreadableRecords,
+    passwordChanged,
+    discardedPolicyDraft,
     enterProfile,
     deleteProfile,
     confirmDeleteProfile,
@@ -92,8 +114,15 @@ export default function LoginPage() {
     setConnectionForm,
   } = useProfiles();
   useEffect(() => {
-    if (!connectionDialogOpen) setPasswordConfirmation("");
+    if (connectionDialogOpen) return;
+    setPasswordConfirmation("");
+    setPasswordChecked(false);
   }, [connectionDialogOpen]);
+  // These notices explain the lock that brought the user here; leaving the page ends them.
+  useEffect(
+    () => () => session.profiles.setState({ passwordChanged: false, discardedPolicyDraft: false }),
+    [session],
+  );
   const { colorMode, themeError } = useTheme();
   const { profileVisualState, profileAvatarLabel } = useProfileVisuals();
   const {
@@ -116,28 +145,39 @@ export default function LoginPage() {
   }
   // Close-only: the dialog has no trigger, so Base UI only ever reports closing.
   function closeDeleteProfileDialog() {
+    // A running delete keeps its dialog open, so its result is always reported there.
+    if (session.profiles.isConnecting) return;
     window.setTimeout(() => setProfileState({ pendingDeleteProfile: null }), 0);
+  }
+  const unlocked = auth?.status === "unlocked" ? auth : null;
+  function continueToServer(profileId: string) {
+    return navigate(redirectTarget(query.redirect, profileId));
   }
   async function enterProfileAndRoute(profile: ProfileSummary) {
     if (profile.credentialKind === "unreadable") {
       await editProfileWithBaseline(profile);
       return;
     }
+    // Another tab already unlocked this server; the shared session needs no password here.
+    if (unlocked?.profile.id === profile.id) return continueToServer(profile.id);
     // Without a password this only opens the unlock overlay, which navigates after unlocking.
     await enterProfile(profile);
   }
   function clearConsumedConfirmation() {
     if (!session.profiles.getSnapshot().connectionForm.password) setPasswordConfirmation("");
   }
+  // A new profile, or one whose unreadable row is replaced, gets a newly chosen password.
+  const newPassword = !selectedProfile || selectedProfile.credentialKind === "unreadable";
+  const passwordTooShort =
+    newPassword && connectionForm.password.length < MIN_PROFILE_PASSWORD_LENGTH;
+  const confirmationMismatch = newPassword && connectionForm.password !== passwordConfirmation;
   async function submitConnection(activate = false) {
-    if (
-      connectionForm.profileId === newProfileId &&
-      connectionForm.password !== passwordConfirmation
-    ) {
-      setFeedbackState({ lastError: t("passwordsMismatch") });
-      return;
-    }
+    setPasswordChecked(true);
+    // An empty password is reported by the save itself, after the URL and API key checks.
+    if (connectionForm.password && passwordTooShort) return passwordRef.current?.focus();
+    if (connectionForm.password && confirmationMismatch) return confirmationRef.current?.focus();
     const ticket = session.profiles.connectionFormGeneration;
+    setActivating(activate);
     try {
       await submitAddProfile(activate);
     } finally {
@@ -148,13 +188,25 @@ export default function LoginPage() {
       activate &&
       ticket === session.profiles.connectionFormGeneration &&
       current?.status === "unlocked" &&
-      current.profile?.id === session.profiles.getSnapshot().connectionForm.profileId
+      current.profile.id === session.profiles.getSnapshot().connectionForm.profileId
     )
-      await navigate({ to: "/" });
+      await continueToServer(current.profile.id);
   }
   const profilesWereCleared = query.cleared === "1";
-  const confirmationMismatch = !selectedProfile && connectionForm.password !== passwordConfirmation;
-  const showMismatch = confirmationMismatch && passwordConfirmation !== "";
+  const showTooShort = passwordTooShort && passwordChecked && connectionForm.password !== "";
+  const showMismatch =
+    confirmationMismatch && (passwordConfirmation !== "" || passwordChecked) && !showTooShort;
+  const lockReason =
+    auth?.status === "locked" && typeof query.redirect === "string" ? auth.reason : null;
+  const lockNotice = passwordChanged
+    ? t("loginNoticePasswordChanged")
+    : lockReason
+      ? t(lockNotices[lockReason])
+      : "";
+  const hiddenUnreadable =
+    unreadableRecords -
+    profiles.filter((profile) => profile.credentialKind === "unreadable").length;
+  const legacyProfile = selectedProfile?.credentialKind.startsWith("legacy-");
   return (
     <div className="min-h-screen bg-background">
       <div className="min-h-screen bg-background">
@@ -168,17 +220,17 @@ export default function LoginPage() {
             </div>
 
             <div className="ms-auto flex items-center gap-1 py-1">
-              <Button
-                variant="ghost"
-                size="icon"
+              <a
+                className={buttonVariants({ variant: "ghost", size: "icon" })}
+                href={githubRepositoryUrl}
+                target="_blank"
+                rel="noreferrer"
                 title="GitHub"
                 aria-label="GitHub"
                 data-testid="github-repository-link"
-                nativeButton={false}
-                render={<a href={githubRepositoryUrl} target="_blank" rel="noreferrer" />}
               >
                 <GithubIcon className="h-5 w-5" aria-hidden="true" />
-              </Button>
+              </a>
 
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -239,7 +291,8 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {lastError && !connectionDialogOpen ? (
+            {/* A dialog that is open reports its own failure, so the page shows it only once. */}
+            {lastError && !connectionDialogOpen && !unlockProfile && !pendingDeleteProfile ? (
               <div
                 data-testid="login-error"
                 role="alert"
@@ -284,6 +337,52 @@ export default function LoginPage() {
                 {t("preferencesReloadFailed")}
               </p>
             ) : null}
+            {lockNotice ? (
+              <div
+                data-testid="login-notice"
+                role="status"
+                className="mx-auto mt-4 max-w-xl rounded-md border bg-muted/40 px-3 py-2 text-start text-sm text-muted-foreground"
+              >
+                {lockNotice}
+              </div>
+            ) : null}
+            {discardedPolicyDraft ? (
+              <div
+                data-testid="login-discarded-policy"
+                role="status"
+                className="mx-auto mt-4 max-w-xl rounded-md border border-amber-400/50 bg-amber-50 px-3 py-2 text-start text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+              >
+                {t("loginNoticeDiscardedPolicy")}
+              </div>
+            ) : null}
+            {unlocked ? (
+              <div
+                data-testid="login-unlocked"
+                role="status"
+                className="mx-auto mt-4 flex max-w-xl flex-wrap items-center justify-between gap-2 rounded-md border bg-card px-3 py-2 text-start text-sm"
+              >
+                <span className="min-w-0 break-words">
+                  {t("loginUnlockedNotice", { name: unlocked.profile.name })}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  data-testid="login-continue"
+                  onClick={() => void continueToServer(unlocked.profile.id)}
+                >
+                  {t("continueToServer")}
+                </Button>
+              </div>
+            ) : null}
+            {hiddenUnreadable > 0 ? (
+              <div
+                data-testid="unreadable-records-notice"
+                role="status"
+                className="mx-auto mt-4 max-w-xl rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-start text-sm text-muted-foreground"
+              >
+                {t("unreadableRecordsNotice", { count: hiddenUnreadable })}
+              </div>
+            ) : null}
             {profilesWereCleared && profiles.length === 0 ? (
               <div
                 data-testid="profiles-cleared-notice"
@@ -293,14 +392,15 @@ export default function LoginPage() {
                 {t("profilesClearedNotice")}
               </div>
             ) : null}
+            {/* Wrapping rows stay centered under the heading, even with a single card. */}
             <div
-              className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              className="mx-auto mt-6 flex max-w-4xl flex-wrap justify-center gap-3"
               data-testid="profile-picker"
             >
               {profiles.map((profile) => (
                 <div
                   key={profile.id}
-                  className="relative min-w-0"
+                  className="relative w-full min-w-0 sm:w-52"
                   data-testid={`profile-row-${profile.name}`}
                 >
                   <Button
@@ -350,7 +450,9 @@ export default function LoginPage() {
                       ) : null}
                     </span>
                     <span className="grid w-full min-w-0 gap-1">
-                      <span className="truncate text-sm font-semibold">{profile.name}</span>
+                      <span className="truncate text-sm font-semibold" title={profile.name}>
+                        {profile.name}
+                      </span>
                       <span className="break-all text-xs text-muted-foreground">
                         {profile.baseUrl}
                       </span>
@@ -439,7 +541,7 @@ export default function LoginPage() {
                 type="button"
                 variant="ghost"
                 data-testid="profile-option-new"
-                className="h-auto min-h-36 flex-col items-center justify-center gap-3 border border-dashed bg-card p-4 text-center hover:bg-accent hover:text-accent-foreground"
+                className="h-auto min-h-36 w-full flex-col items-center justify-center gap-3 border border-dashed bg-card p-4 text-center hover:bg-accent hover:text-accent-foreground sm:w-52"
                 onClick={() => openConnectionDialogWithBaseline(newProfileId)}
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full border bg-background">
@@ -465,7 +567,7 @@ export default function LoginPage() {
             showCloseButton={false}
           >
             <DialogHeader className="px-4 pb-2 pe-10 pt-3 text-start sm:px-6 sm:pb-3 sm:pt-6">
-              <DialogTitle className="truncate">
+              <DialogTitle className="truncate" title={selectedProfile?.name}>
                 {selectedProfile
                   ? `${t("editProfile")} ${selectedProfile.name}`
                   : t("addServerProfile")}
@@ -473,6 +575,15 @@ export default function LoginPage() {
               <DialogDescription className="text-sm leading-5">
                 {t("connectSubtitle")}
               </DialogDescription>
+              {selectedProfile?.credentialKind === "unreadable" || legacyProfile ? (
+                <p
+                  role="note"
+                  data-testid="connect-profile-state"
+                  className="rounded-md border border-amber-400/50 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                >
+                  {t(legacyProfile ? "legacyProfileMigrateFirst" : "unreadableProfileRepair")}
+                </p>
+              ) : null}
             </DialogHeader>
 
             <form
@@ -480,7 +591,7 @@ export default function LoginPage() {
               data-testid="connect-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                void submitConnection();
+                void submitConnection(!selectedProfile);
               }}
             >
               <div className="grid min-h-0 min-w-0 gap-2 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6 sm:pb-3 md:grid-cols-2">
@@ -491,6 +602,7 @@ export default function LoginPage() {
                     data-testid="connect-profile-name"
                     className="mt-1.5"
                     value={connectionForm.profileName}
+                    readOnly={isConnecting}
                     onChange={(event) => setConnectionForm({ profileName: event.target.value })}
                   />
                 </div>
@@ -506,8 +618,23 @@ export default function LoginPage() {
                     autoCorrect="off"
                     spellCheck={false}
                     value={connectionForm.baseUrl}
+                    readOnly={isConnecting}
+                    aria-describedby={
+                      sendsApiKeyInClear(connectionForm.baseUrl)
+                        ? "connect-url-insecure"
+                        : undefined
+                    }
                     onChange={(event) => setConnectionForm({ baseUrl: event.target.value })}
                   />
+                  {sendsApiKeyInClear(connectionForm.baseUrl) ? (
+                    <p
+                      id="connect-url-insecure"
+                      data-testid="connect-url-insecure"
+                      className="mt-1.5 text-xs text-amber-700 dark:text-amber-300"
+                    >
+                      {t("insecureServerUrlWarning")}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="min-w-0 md:col-span-2">
@@ -520,57 +647,89 @@ export default function LoginPage() {
                     placeholder={t("apiKeyPlaceholder")}
                     autoComplete="off"
                     value={connectionForm.apiKey}
+                    readOnly={isConnecting}
                     onChange={(event) => setConnectionForm({ apiKey: event.target.value })}
                   />
                 </div>
 
                 <div className="min-w-0 md:col-span-2">
                   <Label htmlFor="connect-password">
-                    {t(selectedProfile ? "currentServerPassword" : "serverPassword")}
+                    {t(newPassword ? "serverPassword" : "currentServerPassword")}
                   </Label>
                   <Input
+                    ref={passwordRef}
                     id="connect-password"
                     data-testid="connect-password"
                     type="password"
                     className="mt-1.5"
                     value={connectionForm.password}
-                    autoComplete={selectedProfile ? "current-password" : "new-password"}
+                    autoComplete={newPassword ? "new-password" : "current-password"}
+                    readOnly={isConnecting}
+                    aria-invalid={showTooShort}
+                    aria-describedby="connect-password-hint"
                     onChange={(event) => setConnectionForm({ password: event.target.value })}
                   />
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {t(selectedProfile ? "serverCredentialEditHint" : "serverPasswordHint")}
+                  <p id="connect-password-hint" className="mt-1.5 text-xs text-muted-foreground">
+                    {newPassword ? (
+                      <>
+                        <span
+                          data-testid="connect-password-length"
+                          className={cn("block", showTooShort && "text-destructive")}
+                        >
+                          {t("profilePasswordMinLength")}
+                        </span>
+                        {t("serverPasswordHint")}
+                      </>
+                    ) : (
+                      t("serverCredentialEditHint")
+                    )}
                   </p>
                 </div>
-                {!selectedProfile && (
+                {newPassword && (
                   <div className="min-w-0 md:col-span-2">
                     <Label htmlFor="connect-password-confirm">
                       {t("encryptionConfirmPassphrase")}
                     </Label>
                     <Input
+                      ref={confirmationRef}
                       id="connect-password-confirm"
                       data-testid="connect-password-confirm"
                       type="password"
                       className="mt-1.5"
                       value={passwordConfirmation}
                       autoComplete="new-password"
+                      readOnly={isConnecting}
+                      aria-invalid={showMismatch}
+                      aria-describedby={showMismatch ? "connect-password-mismatch" : undefined}
                       onChange={(event) => setPasswordConfirmation(event.target.value)}
                     />
+                    {showMismatch ? (
+                      <p
+                        id="connect-password-mismatch"
+                        data-testid="connect-password-mismatch"
+                        className="mt-1.5 text-xs text-destructive"
+                      >
+                        {t("passwordsMismatch")}
+                      </p>
+                    ) : null}
                   </div>
                 )}
 
-                <div className="flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm md:col-span-2">
-                  <Checkbox
-                    id="connect-remember"
-                    data-testid="connect-remember"
-                    checked={connectionForm.remember}
-                    onCheckedChange={(checked) => setConnectionForm({ remember: checked })}
-                  />
-                  <Label htmlFor="connect-remember" className="flex items-center gap-1.5">
-                    {t("rememberConnection")}
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true">
-                      <title>{t("serverPasswordHint")}</title>
-                    </Info>
-                  </Label>
+                <div className="grid gap-1.5 rounded-md border px-3 py-2 text-sm md:col-span-2">
+                  <div className="flex min-h-7 items-center gap-2">
+                    <Checkbox
+                      id="connect-remember"
+                      data-testid="connect-remember"
+                      checked={connectionForm.remember}
+                      readOnly={isConnecting}
+                      aria-describedby="connect-remember-hint"
+                      onCheckedChange={(checked) => setConnectionForm({ remember: checked })}
+                    />
+                    <Label htmlFor="connect-remember">{t("rememberConnection")}</Label>
+                  </div>
+                  <p id="connect-remember-hint" className="text-xs text-muted-foreground">
+                    {t("rememberConnectionHint")}
+                  </p>
                 </div>
 
                 <details
@@ -651,28 +810,36 @@ export default function LoginPage() {
                   >
                     {t("close")}
                   </Button>
+                  {/* Saving an edit is the primary action; a new server is usually opened right away. */}
                   <Button
-                    type="submit"
+                    type={selectedProfile ? "submit" : "button"}
+                    variant={selectedProfile ? "default" : "outline"}
                     className="flex-1 sm:flex-none"
                     data-testid="connect-submit"
                     disabled={isConnecting}
+                    onClick={selectedProfile ? undefined : () => void submitConnection()}
                   >
-                    {isConnecting ? (
+                    {isConnecting && !activating ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : selectedProfile ? (
+                      <Save className="h-4 w-4" aria-hidden="true" />
                     ) : (
                       <Plus className="h-4 w-4" aria-hidden="true" />
                     )}
-                    {isConnecting ? t("addingProfile") : t("saveProfile")}
+                    {isConnecting && !activating
+                      ? t(selectedProfile ? "savingProfile" : "addingProfile")
+                      : t("saveProfile")}
                   </Button>
                   {!selectedProfile && (
                     <Button
-                      type="button"
-                      variant="outline"
+                      type="submit"
                       className="w-full sm:w-auto"
                       data-testid="connect-save-unlock"
                       disabled={isConnecting}
-                      onClick={() => void submitConnection(true)}
                     >
+                      {isConnecting && activating ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
                       {t("saveAndUnlock")}
                     </Button>
                   )}
@@ -741,17 +908,25 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="validation-password">{t("serverPassword")}</Label>
+                <Label htmlFor="validation-password">
+                  {t(newPassword ? "serverPassword" : "currentServerPassword")}
+                </Label>
                 <Input
                   id="validation-password"
                   data-testid="validation-password"
                   type="password"
-                  autoComplete={selectedProfile ? "current-password" : "new-password"}
+                  autoComplete={newPassword ? "new-password" : "current-password"}
                   value={connectionForm.password}
+                  aria-describedby={newPassword ? "validation-password-length" : undefined}
                   onChange={(event) => setConnectionForm({ password: event.target.value })}
                 />
+                {newPassword ? (
+                  <p id="validation-password-length" className="text-xs text-muted-foreground">
+                    {t("profilePasswordMinLength")}
+                  </p>
+                ) : null}
               </div>
-              {!selectedProfile && (
+              {newPassword && (
                 <div className="space-y-1.5">
                   <Label htmlFor="validation-password-confirm">
                     {t("encryptionConfirmPassphrase")}
@@ -793,6 +968,7 @@ export default function LoginPage() {
                   isConnecting ||
                   !connectionForm.apiKey ||
                   !connectionForm.password ||
+                  passwordTooShort ||
                   confirmationMismatch
                 }
                 onClick={async () => {
@@ -803,7 +979,7 @@ export default function LoginPage() {
                   }
                 }}
               >
-                {t("saveAnywayButton")}
+                {t(selectedProfile ? "saveAnywayEditButton" : "saveAnywayButton")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -833,14 +1009,18 @@ export default function LoginPage() {
               </p>
             ) : null}
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="cancel-delete-profile">
+              <AlertDialogCancel data-testid="cancel-delete-profile" disabled={isConnecting}>
                 {t("cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="confirm-delete-profile"
+                disabled={isConnecting}
                 onClick={confirmDeleteProfile}
               >
+                {isConnecting ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : null}
                 {t("deleteProfile")}
               </AlertDialogAction>
             </AlertDialogFooter>

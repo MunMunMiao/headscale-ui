@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { LoaderCircle, RefreshCw, Router, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import { useDisplayHelpers } from "@/composables/useDisplayHelpers";
 import { useMutation } from "@/composables/useMutation";
 import { useProductCopy } from "@/composables/useProductCopy";
 import { useRefreshGuard } from "@/composables/useRefreshGuard";
+import { useRouteIntent } from "@/composables/useRouteIntent";
 import { useSessionDraft } from "@/composables/useSessionDraft";
 import { useSnapshot } from "@/composables/useSnapshot";
 import { useSegment } from "@/composables/useSnapshotSegment";
@@ -27,12 +28,31 @@ import { nodePendingRoutes, nodeRevocationTargets } from "@/utils/node";
 import { isExitRoute, pendingRouteClass } from "@/utils/status-class";
 
 type RouteApprovalTarget = { node: HeadscaleNode; route: string };
+// Headscale approves either exit prefix together with the other, so the UI treats them as one exit node.
+const pairedExitRoute = (route: string) => (route === "::/0" ? "0.0.0.0/0" : "::/0");
+/** Pending routes with subnets first and the exit routes last, so the exit pair forms one row. */
+function orderedPendingRoutes(node: HeadscaleNode) {
+  const pending = nodePendingRoutes(node);
+  return [...pending.filter((route) => !isExitRoute(route)), ...pending.filter(isExitRoute)];
+}
 export default function RoutesPage() {
   const { copy } = useProductCopy();
   const { routeNodes, nodeById: currentNode, isRefreshing } = useSnapshot();
   const { isRefreshing: isRefreshingSnapshot, refresh: refreshRoutes } = useSegment("fabric");
   const { isActionPending, actionError, clearActionFeedback } = useActionFeedback();
   const navigate = useNavigate();
+  const { nodeId } = useRouteIntent();
+  const linkedNodeId = routeNodes.some((node) => node.id === nodeId) ? nodeId : null;
+  useEffect(() => {
+    if (!linkedNodeId) return;
+    // One frame later: the router resets the scroll position after the navigation that opened this page.
+    const frame = requestAnimationFrame(() => {
+      const heading = document.getElementById(`route-node-heading-${linkedNodeId}`);
+      heading?.scrollIntoView({ block: "center" });
+      heading?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [linkedNodeId]);
   const [selectedRouteApproval, setSelectedRouteApproval] = useState<RouteApprovalTarget | null>(
     null,
   );
@@ -172,12 +192,28 @@ export default function RoutesPage() {
       <div className="grid gap-2">
         {routeNodes.map((node) => {
           const owner = hasVisibleUser(node.user) ? node.user : null;
+          const pending = orderedPendingRoutes(node);
+          const pendingExit = pending.filter(isExitRoute);
+          // One row per subnet route and one for the whole exit pair.
+          const pendingRows = pending.filter(
+            (route) => !isExitRoute(route) || route === pendingExit[0],
+          );
           return (
-            <Card key={node.id} className="overflow-hidden" data-testid={`route-node-${node.id}`}>
+            <Card
+              key={node.id}
+              className="overflow-hidden data-highlighted:ring-2 data-highlighted:ring-primary"
+              data-testid={`route-node-${node.id}`}
+              data-highlighted={node.id === linkedNodeId || undefined}
+            >
               <div className="grid gap-3 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="font-semibold">
+                    <h2
+                      id={`route-node-heading-${node.id}`}
+                      tabIndex={-1}
+                      className="font-semibold outline-none"
+                      data-testid={`route-node-heading-${node.id}`}
+                    >
                       <button
                         type="button"
                         className="inline-flex max-w-full items-center text-start underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -204,19 +240,22 @@ export default function RoutesPage() {
                     size="sm"
                     variant="ghost"
                     className="text-muted-foreground hover:text-foreground"
-                    disabled={nodePendingRoutes(node).length === 0}
+                    disabled={pending.length === 0}
                     data-testid={`approve-routes-${node.id}`}
                     onClick={() => requestApproveRoutes(node)}
                   >
                     <Router className="h-4 w-4" aria-hidden="true" />
-                    {nodePendingRoutes(node).length === 0 ? copy.routesApproved : copy.approveAll}
+                    {pending.length === 0 ? copy.routesApproved : copy.approveAll}
                   </Button>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="grid gap-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {copy.availableRoutes}
+                    <p
+                      className="text-xs font-medium text-muted-foreground"
+                      data-testid={`route-advertised-label-${node.id}`}
+                    >
+                      {copy.advertisedRoutes}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {node.availableRoutes.map((route, routeIndex) => (
@@ -239,28 +278,31 @@ export default function RoutesPage() {
                       {copy.approvedRoutes}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {node.approvedRoutes.map((route, routeIndex) => (
-                        <div key={route} className="inline-flex max-w-full items-center gap-0.5">
-                          <Badge
-                            variant="secondary"
-                            className="max-w-full justify-start whitespace-normal break-all font-mono"
-                            data-testid={`route-approved-${node.id}-${routeIndex}`}
-                          >
-                            <bdi dir="ltr">{route}</bdi>
-                          </Badge>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            data-testid={`revoke-route-${node.id}-${routeIndex}`}
-                            aria-label={`${copy.revokeRoute}: ${route}, ${nodeDisplayName(node)}`}
-                            title={`${copy.revokeRoute}: ${route}, ${nodeDisplayName(node)}`}
-                            onClick={() => openRevokeDialog(node, route)}
-                          >
-                            <X aria-hidden="true" className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ))}
+                      {node.approvedRoutes.map((route, routeIndex) => {
+                        const revokeLabel = `${isExitRoute(route) ? copy.revokeExitNode : copy.revokeRoute}: ${nodeRevocationTargets(node, route).join(", ")}, ${nodeDisplayName(node)}`;
+                        return (
+                          <div key={route} className="inline-flex max-w-full items-center gap-0.5">
+                            <Badge
+                              variant="secondary"
+                              className="max-w-full justify-start whitespace-normal break-all font-mono"
+                              data-testid={`route-approved-${node.id}-${routeIndex}`}
+                            >
+                              <bdi dir="ltr">{route}</bdi>
+                            </Badge>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              data-testid={`revoke-route-${node.id}-${routeIndex}`}
+                              aria-label={revokeLabel}
+                              title={revokeLabel}
+                              onClick={() => openRevokeDialog(node, route)}
+                            >
+                              <X aria-hidden="true" className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                       {node.approvedRoutes.length === 0 && (
                         <span className="text-xs text-muted-foreground">{copy.noRouteValues}</span>
                       )}
@@ -268,12 +310,12 @@ export default function RoutesPage() {
                   </div>
                 </div>
 
-                {nodePendingRoutes(node).length > 0 && (
+                {pendingRows.length > 0 && (
                   <div
                     className="overflow-hidden rounded-md border bg-background/45"
                     data-testid={`pending-routes-list-${node.id}`}
                   >
-                    {nodePendingRoutes(node).map((route, routeIndex) => (
+                    {pendingRows.map((route, routeIndex) => (
                       <div
                         key={route}
                         className="grid gap-2 border-t px-3 py-2 first:border-t-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
@@ -283,15 +325,20 @@ export default function RoutesPage() {
                           variant={isExitRoute(route) ? "destructive" : "outline"}
                           className="justify-self-start"
                         >
-                          {isExitRoute(route) ? copy.exitRoute : copy.pendingRoutes}
+                          {isExitRoute(route) ? copy.exitNode : copy.pendingRoutes}
                         </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="max-w-full justify-self-start whitespace-normal break-all font-mono"
-                          data-testid={`pending-route-value-${node.id}-${routeIndex}`}
-                        >
-                          <bdi dir="ltr">{route}</bdi>
-                        </Badge>
+                        <div className="flex min-w-0 flex-wrap gap-1.5">
+                          {(isExitRoute(route) ? pendingExit : [route]).map((value) => (
+                            <Badge
+                              key={value}
+                              variant="secondary"
+                              className="max-w-full whitespace-normal break-all font-mono"
+                              data-testid={`pending-route-value-${node.id}-${pending.indexOf(value)}`}
+                            >
+                              <bdi dir="ltr">{value}</bdi>
+                            </Badge>
+                          ))}
+                        </div>
                         <Button
                           size="sm"
                           variant="outline"
@@ -305,7 +352,7 @@ export default function RoutesPage() {
                           onClick={() => openRouteApprovalDialog(node, route)}
                         >
                           <Router className="h-4 w-4" aria-hidden="true" />
-                          {copy.approveRoute}
+                          {isExitRoute(route) ? copy.approveExitNode : copy.approveRoute}
                         </Button>
                       </div>
                     ))}
@@ -328,7 +375,7 @@ export default function RoutesPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {isExitRoute(selectedRouteApproval.route)
-                  ? copy.approveExitRouteTitle
+                  ? copy.approveExitNode
                   : copy.approveRouteTitle}
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -341,8 +388,15 @@ export default function RoutesPage() {
               <div className="text-muted-foreground">
                 {nodeDisplayName(selectedRouteApproval.node)}
               </div>
-              <div className="mt-1 break-all font-medium" data-testid="approve-route-target">
-                <bdi dir="ltr">{selectedRouteApproval.route}</bdi>
+              <div className="mt-1 flex flex-wrap gap-x-3 break-all font-medium">
+                <bdi dir="ltr" data-testid="approve-route-target">
+                  {selectedRouteApproval.route}
+                </bdi>
+                {isExitRoute(selectedRouteApproval.route) && (
+                  <bdi dir="ltr" data-testid="approve-route-paired">
+                    {pairedExitRoute(selectedRouteApproval.route)}
+                  </bdi>
+                )}
               </div>
             </div>
             <AlertDialogFooter>
@@ -363,7 +417,9 @@ export default function RoutesPage() {
                 ) : (
                   <Router className="h-4 w-4" aria-hidden="true" />
                 )}
-                {copy.approveRoute}
+                {isExitRoute(selectedRouteApproval.route)
+                  ? copy.approveExitNode
+                  : copy.approveRoute}
               </Button>
             </AlertDialogFooter>
             {actionError("approve-route") && (
@@ -452,7 +508,9 @@ export default function RoutesPage() {
         {revokeTarget && (
           <AlertDialogContent data-testid="revoke-route-dialog">
             <AlertDialogHeader>
-              <AlertDialogTitle>{copy.revokeRouteTitle}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {isExitRoute(revokeTarget.route) ? copy.revokeExitNode : copy.revokeRouteTitle}
+              </AlertDialogTitle>
               <AlertDialogDescription>
                 {isExitRoute(revokeTarget.route)
                   ? copy.revokeExitRouteDescription
@@ -494,7 +552,7 @@ export default function RoutesPage() {
                 ) : (
                   <X className="h-4 w-4" aria-hidden="true" />
                 )}
-                {copy.revokeRoute}
+                {isExitRoute(revokeTarget.route) ? copy.revokeExitNode : copy.revokeRoute}
               </Button>
             </AlertDialogFooter>
             {actionError("revoke-route") && (

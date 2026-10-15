@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   Network,
   Plus,
+  RotateCcw,
   Search,
   Server,
   ShieldAlert,
@@ -58,6 +59,7 @@ import { useSnapshot } from "@/composables/useSnapshot";
 import {
   addMemberToGroupByName,
   createGroup,
+  createRule,
   createTagOwner,
   findOrphanReferences,
   isPolicyIdentityName,
@@ -67,6 +69,7 @@ import {
   removeMemberFromGroupByName,
   removeOrphanReferences,
   removeOwnerFromTagByName,
+  removeRuleById,
   toMemberRef,
   upsertGroup,
   upsertTagOwner,
@@ -74,18 +77,25 @@ import {
 import {
   type PolicyReferenceIssue,
   type PolicyReferenceResult,
+  policyAliases,
   removePolicyGroup,
   removePolicyTag,
   renamePolicyGroup,
   renamePolicyTag,
 } from "@/domain/policy-references";
-import { applyTemplate, POLICY_TEMPLATES, type PolicyTemplate } from "@/domain/policy-templates";
+import {
+  applyTemplate,
+  POLICY_TEMPLATES,
+  type PolicyTemplate,
+  rulesReplacedByTemplate,
+} from "@/domain/policy-templates";
 import {
   getGroupAccess,
   getIpRules,
   getOpenAccessWarnings,
   getTagAccessors,
   hasOnlyDefaultAccess,
+  type IpRule,
   listTagsFromState,
   removeTagAccessor,
   type ServiceId,
@@ -107,6 +117,9 @@ import {
 import { useHeadscaleI18n } from "@/i18n";
 import { type CountMessage, formatCount } from "@/i18n/plural";
 import { cn } from "@/lib/utils";
+
+// The add-rule form reuses the IP rule editor with a rule that is not in the policy yet.
+const NEW_IP_RULE: IpRule = { ruleId: "new", source: "", destination: "", ports: "" };
 
 export default function AccessPage() {
   const { policy: policyStore, snapshot: snapshotStore, client } = useSession();
@@ -144,18 +157,21 @@ export default function AccessPage() {
 
   // A dry run: no save ticket, no refresh, no draft or dirty-state change.
   const { mutate: runCheck } = useMutation({ skipRefresh: true });
-  const [checkedText, setCheckedText] = useState<string | null>(null);
+  // A check result, passed or failed, only describes the draft text it was run on.
+  const [checked, setChecked] = useState<{ text: string; ok: boolean } | null>(null);
   // Byte-identical to the text a save would submit. Without a payload the check button is
   // disabled, so the "null" text this yields is never sent.
   const draftText = JSON.stringify(policyPayload, null, 2);
   const { identity } = useStore(client);
   // biome-ignore lint/correctness/useExhaustiveDependencies: A result must not carry over to another server or session.
-  useEffect(() => setCheckedText(null), [identity]);
+  useEffect(() => setChecked(null), [identity]);
   async function checkDraft() {
-    setCheckedText(null);
-    if (await runCheck("check-policy", { endpoint: "checkPolicy", input: { policy: draftText } }))
-      setCheckedText(draftText);
+    setChecked(null);
+    const text = draftText;
+    const ok = await runCheck("check-policy", { endpoint: "checkPolicy", input: { policy: text } });
+    setChecked({ text, ok });
   }
+  const checkResult = checked?.text === draftText ? checked : null;
 
   const [tagSearchQuery, setTagSearchQuery] = useState("");
 
@@ -175,8 +191,13 @@ export default function AccessPage() {
     owners: string[];
     accessors: TagAccessor[];
     deviceCount: number;
+    // Carried by devices but never named by the policy, so rename and delete have nothing to change.
+    deviceOnly: boolean;
   }
 
+  const aliases = policyAliases(policyDesignerState);
+  const deviceCountFor = (tagName: string) =>
+    snapshot.nodes.filter((node) => node.tags.includes(tagName)).length;
   const tagsWithMeta: TagMeta[] = allTags.map((tagName) => {
     const ownerEntry = policyTagOwners.find((o) => o.tag === tagName);
     return {
@@ -184,7 +205,8 @@ export default function AccessPage() {
       displayName: stripTagPrefix(tagName),
       owners: ownerEntry ? ownerEntry.owners.map((o) => o.value) : [],
       accessors: getTagAccessors(policyDesignerState, tagName),
-      deviceCount: snapshot.nodes.filter((node) => node.tags.includes(tagName)).length,
+      deviceCount: deviceCountFor(tagName),
+      deviceOnly: !aliases.has(tagName),
     };
   });
 
@@ -216,6 +238,8 @@ export default function AccessPage() {
   const ipRules = getIpRules(policyDesignerState);
 
   const hasGrants = Array.isArray(policyDesignerState.extras.grants);
+  // Headscale ACLs are an allow-list: without ACLs or grants nothing can connect.
+  const allowsNothing = policyRules.length === 0 && !hasGrants;
 
   const isEmptyState =
     !hasGrants &&
@@ -240,9 +264,9 @@ export default function AccessPage() {
   } | null>(null);
   const saving = isActionPending("save-policy") || isPolicySaving;
   const [identityIssue, setIdentityIssue] = useState<PolicyReferenceIssue | null>(null);
-  function identityErrorText(issue: PolicyReferenceIssue) {
+  function identityErrorText(issue: PolicyReferenceIssue, kind: "group" | "tag") {
     const messages = {
-      "invalid-name": copy.policyReferenceInvalidName,
+      "invalid-name": kind === "group" ? copy.teamNameInvalid : copy.labelNameInvalid,
       "name-conflict": copy.policyReferenceNameConflict,
       "entity-not-found": copy.policyReferenceEntityMissing,
       "unreadable-policy": copy.policyReadOnlyError,
@@ -258,6 +282,23 @@ export default function AccessPage() {
     setIdentityIssue(null);
     commitState(result.state);
     return true;
+  }
+  // Runs on every keystroke, so a stale error never outlives the text it was about. A rename can
+  // still be refused on commit for references this cannot see.
+  function nameIssue(
+    kind: "group" | "tag",
+    draft: string,
+    current: string,
+  ): PolicyReferenceIssue | null {
+    const fullName = kind === "group" ? withGroupPrefix(draft) : withTagPrefix(draft);
+    if (!fullName || fullName === current) return null;
+    if (!isPolicyIdentityName(fullName, kind)) return { code: "invalid-name", paths: [] };
+    const taken = current
+      ? aliases.has(fullName)
+      : kind === "group"
+        ? policyGroups.some((group) => group.name === fullName)
+        : allTags.includes(fullName);
+    return taken ? { code: "name-conflict", paths: [] } : null;
   }
 
   useEffect(
@@ -424,25 +465,13 @@ export default function AccessPage() {
   }
 
   function commitTeamName() {
-    const display = teamNameDraft.trim();
-    if (!display) return;
-    const fullName = withGroupPrefix(display);
-    // Blurring an existing team without editing its name is not an edit.
-    if (teamDetailCurrent === fullName) {
-      setIdentityIssue(null);
-      return;
-    }
-    if (!isPolicyIdentityName(fullName, "group")) {
-      setIdentityIssue({ code: "invalid-name", paths: [] });
-      return;
-    }
-    setIdentityIssue(null);
+    const fullName = withGroupPrefix(teamNameDraft);
+    const issue = nameIssue("group", teamNameDraft, teamDetailCurrent);
+    setIdentityIssue(issue);
+    // A blank name, or blurring an existing team without editing its name, is not an edit.
+    if (issue || !fullName || teamDetailCurrent === fullName) return;
 
     if (!teamDetailCurrent) {
-      if (policyGroups.some((group) => group.name === fullName)) {
-        setIdentityIssue({ code: "name-conflict", paths: [] });
-        return;
-      }
       const newGroup = createGroup(fullName, []);
       commitState(upsertGroup(policyDesignerState, newGroup));
       setPolicyState({ teamDetailCurrent: fullName });
@@ -481,24 +510,12 @@ export default function AccessPage() {
   }
 
   function commitTagName() {
-    const display = tagNameDraft.trim();
-    if (!display) return;
-    const fullName = withTagPrefix(display);
-    if (tagDetailCurrent === fullName) {
-      setIdentityIssue(null);
-      return;
-    }
-    if (!isPolicyIdentityName(fullName, "tag")) {
-      setIdentityIssue({ code: "invalid-name", paths: [] });
-      return;
-    }
-    setIdentityIssue(null);
+    const fullName = withTagPrefix(tagNameDraft);
+    const issue = nameIssue("tag", tagNameDraft, tagDetailCurrent);
+    setIdentityIssue(issue);
+    if (issue || !fullName || tagDetailCurrent === fullName) return;
 
     if (!tagDetailCurrent) {
-      if (allTags.includes(fullName)) {
-        setIdentityIssue({ code: "name-conflict", paths: [] });
-        return;
-      }
       const newOwner = createTagOwner(fullName, []);
       commitState(upsertTagOwner(policyDesignerState, newOwner));
       setPolicyState({ tagDetailCurrent: fullName });
@@ -642,17 +659,34 @@ export default function AccessPage() {
     });
   }
 
-  const removalPreview =
+  function requestRemoveIpRule(rule: IpRule) {
+    setPolicyState({
+      pendingPolicyRemoval: {
+        kind: "rule",
+        id: rule.ruleId,
+        label: `${rule.source} → ${rule.destination} · ${rule.ports}`,
+      },
+    });
+    setPolicyState({ policyRemovalDialogOpen: true });
+  }
+
+  const removalKind = pendingPolicyRemoval?.kind === "group" ? "group" : "tag";
+  const removalTag =
+    pendingPolicyRemoval?.kind === "tagOwner"
+      ? (policyTagOwners.find((owner) => owner.id === pendingPolicyRemoval.id)?.tag ??
+        withTagPrefix(pendingPolicyRemoval.label))
+      : "";
+  const removalPreview: PolicyReferenceResult | null =
     pendingPolicyRemoval?.kind === "group"
       ? removePolicyGroup(policyDesignerState, pendingPolicyRemoval.id)
-      : pendingPolicyRemoval?.kind === "tagOwner"
-        ? removePolicyTag(
-            policyDesignerState,
-            policyTagOwners.find((owner) => owner.id === pendingPolicyRemoval.id)?.tag ??
-              withTagPrefix(pendingPolicyRemoval.label),
-          )
-        : null;
+      : pendingPolicyRemoval?.kind === "rule"
+        ? { ok: true, state: removeRuleById(policyDesignerState, pendingPolicyRemoval.id) }
+        : removalTag
+          ? removePolicyTag(policyDesignerState, removalTag)
+          : null;
   const removalNext = removalPreview?.ok ? removalPreview.state : null;
+  // Headscale keeps a deleted label on the devices that carry it.
+  const removalDevices = removalTag ? deviceCountFor(removalTag) : 0;
   // Only built for a removal that previews cleanly; the confirm button is disabled otherwise.
   const confirmRemovePolicyItem = removalNext
     ? () => {
@@ -671,23 +705,18 @@ export default function AccessPage() {
     const after = removalNext?.extras[section];
     return affected(Array.isArray(before) ? before : [], Array.isArray(after) ? after : []);
   };
-  const removalImpact = removalNext
-    ? {
-        rules:
-          affected(policyRules, removalNext.rules) +
-          extraImpact("ssh") +
-          extraImpact("grants") +
-          extraImpact("nodeAttrs"),
-        tests: extraImpact("tests") + extraImpact("sshTests"),
-      }
-    : null;
-
-  function removeIpRule(ruleId: string) {
-    commitState({
-      ...policyDesignerState,
-      rules: policyDesignerState.rules.filter((r) => r.id !== ruleId),
-    });
-  }
+  // A single rule's removal has no references to count; its consequence is stated instead.
+  const removalImpact =
+    removalNext && pendingPolicyRemoval?.kind !== "rule"
+      ? {
+          rules:
+            affected(policyRules, removalNext.rules) +
+            extraImpact("ssh") +
+            extraImpact("grants") +
+            extraImpact("nodeAttrs"),
+          tests: extraImpact("tests") + extraImpact("sshTests"),
+        }
+      : null;
 
   function onUpdateIpRule(
     ruleId: string,
@@ -697,8 +726,52 @@ export default function AccessPage() {
     setPolicyState({ editingIpRuleId: null });
   }
 
+  const addIpRuleButton = useRef<HTMLButtonElement>(null);
+  function closeNewIpRule() {
+    setPolicyState({ editingIpRuleId: null });
+    addIpRuleButton.current?.focus();
+  }
+
+  function addIpRule({
+    source,
+    destination,
+    ports,
+  }: {
+    source: string;
+    destination: string;
+    ports: string;
+  }) {
+    commitState({
+      ...policyDesignerState,
+      rules: [...policyDesignerState.rules, createRule(source, destination, ports)],
+    });
+    closeNewIpRule();
+  }
+
+  // A template that replaces rules (the open default) is applied only after a confirmation.
+  const [pendingTemplate, setPendingTemplate] = useState<PolicyTemplate | null>(null);
+  const replacedRules = pendingTemplate
+    ? rulesReplacedByTemplate(policyDesignerState, pendingTemplate)
+    : [];
   function applyPolicyTemplate(template: PolicyTemplate) {
+    if (rulesReplacedByTemplate(policyDesignerState, template).length > 0) {
+      setPendingTemplate(template);
+      return;
+    }
     commitState(applyTemplate(policyDesignerState, template));
+  }
+  function confirmPolicyTemplate() {
+    if (pendingTemplate) commitState(applyTemplate(policyDesignerState, pendingTemplate));
+    setPendingTemplate(null);
+  }
+
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  function discardPolicyChanges() {
+    setDiscardConfirmOpen(false);
+    clearActionFeedback("save-policy");
+    setPolicyState({ editingIpRuleId: null });
+    // A server policy withheld during the edits is applied once the draft is clean again.
+    commitState(parsePolicy(policyDraft));
   }
 
   const { savePolicy: savePolicyDocument } = usePolicySave();
@@ -756,26 +829,29 @@ export default function AccessPage() {
   const [pendingDialogClose, setPendingDialogClose] = useState<PendingClose>(null);
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
 
-  // The dialogs have no trigger, so Base UI only ever asks to close them, and "Done" does the same.
+  // "Done": the dialog's edits stay in the page draft, which the page-level Save publishes.
+  function closeDialog(which: Exclude<PendingClose, null>) {
+    ++closeGeneration.current;
+    setPolicyState(which === "tag" ? { tagDetailOpen: false } : { teamDetailOpen: false });
+  }
+
+  // X, Escape and the backdrop (the dialogs have no trigger, so Base UI only ever asks to close
+  // them): edits made in this dialog need an explicit choice.
   function attemptDialogClose(which: Exclude<PendingClose, null>) {
     if (saving) return;
-    ++closeGeneration.current;
     const base = dialogBase.current;
     if (isPolicyDirty && (!base || base.revision !== policyStore.getSnapshot().editRevision)) {
+      ++closeGeneration.current;
       setPendingDialogClose(which);
       setUnsavedConfirmOpen(true);
       return;
     }
-    if (which === "tag") setPolicyState({ tagDetailOpen: false });
-    else setPolicyState({ teamDetailOpen: false });
+    closeDialog(which);
   }
 
   function closePendingDialog() {
-    ++closeGeneration.current;
     // Only the unsaved-changes dialog calls this, and it opens together with pendingDialogClose.
-    setPolicyState(
-      pendingDialogClose === "tag" ? { tagDetailOpen: false } : { teamDetailOpen: false },
-    );
+    closeDialog(pendingDialogClose === "tag" ? "tag" : "team");
     setPendingDialogClose(null);
   }
 
@@ -818,7 +894,9 @@ export default function AccessPage() {
       highRiskConfirmOpen ||
       policyRemovalDialogOpen ||
       unsavedConfirmOpen ||
-      cleanupOrphanRefsOpen,
+      cleanupOrphanRefsOpen ||
+      pendingTemplate !== null ||
+      discardConfirmOpen,
   );
 
   function cleanupOrphanRefs() {
@@ -880,11 +958,23 @@ export default function AccessPage() {
               data-testid="save-policy-dirty-badge"
             >
               <span
-                className="me-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"
+                className="me-1 inline-block h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-amber-500"
                 aria-hidden="true"
               />
               {copy.unsavedChangesBadge}
             </Badge>
+          )}
+          {isPolicyDirty && (
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="discard-policy-changes"
+              disabled={saving}
+              onClick={() => setDiscardConfirmOpen(true)}
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              {copy.discardPolicyChanges}
+            </Button>
           )}
           <Button
             size="sm"
@@ -905,7 +995,7 @@ export default function AccessPage() {
           <Button
             size="sm"
             data-testid="save-policy"
-            disabled={!policyPayload || isActionPending("save-policy")}
+            disabled={!policyPayload || !isPolicyDirty || isActionPending("save-policy")}
             onClick={() => savePolicy()}
           >
             {isActionPending("save-policy") ? (
@@ -920,7 +1010,7 @@ export default function AccessPage() {
 
       {!tagDetailOpen && !teamDetailOpen && renderSaveFeedback("")}
 
-      {checkedText !== null && checkedText === draftText && (
+      {checkResult?.ok && (
         <p
           role="status"
           data-testid="policy-check-passed"
@@ -930,7 +1020,7 @@ export default function AccessPage() {
         </p>
       )}
 
-      {actionError("check-policy") && (
+      {checkResult && actionError("check-policy") && (
         <p
           role="alert"
           className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -958,6 +1048,19 @@ export default function AccessPage() {
           <div className="grid gap-0.5">
             <p className="font-medium">{copy.openAccessBannerTitle}</p>
             <p className="text-xs">{pluralize(openAccessWarnings.length, "openAccessWarnings")}</p>
+          </div>
+        </div>
+      )}
+
+      {allowsNothing && (
+        <div
+          className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          data-testid="deny-all-banner"
+        >
+          <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+          <div className="grid gap-0.5">
+            <p className="font-medium">{copy.denyAllBannerTitle}</p>
+            <p className="text-xs">{copy.denyAllBannerBody}</p>
           </div>
         </div>
       )}
@@ -1092,7 +1195,7 @@ export default function AccessPage() {
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
-                  {team.group.members.length > 0 && (
+                  {team.group.members.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {team.group.members.slice(0, 4).map((member) => (
                         <Badge key={member.value} variant="outline" className="text-xs">
@@ -1101,10 +1204,17 @@ export default function AccessPage() {
                       ))}
                       {team.group.members.length > 4 && (
                         <Badge variant="outline" className="text-xs">
-                          +{team.group.members.length - 4}
+                          {pluralize(team.group.members.length - 4, "moreItems")}
                         </Badge>
                       )}
                     </div>
+                  ) : (
+                    <p
+                      className="mt-2 text-xs text-amber-700 dark:text-amber-300"
+                      data-testid={`team-empty-warning-${team.group.name}`}
+                    >
+                      {copy.emptyTeamWarning}
+                    </p>
                   )}
                 </Card>
               ))}
@@ -1113,7 +1223,8 @@ export default function AccessPage() {
         </Card>
       )}
 
-      {!isEmptyState && (
+      {/* Tags already on devices stay visible even while the policy itself is still empty. */}
+      {(!isEmptyState || allTags.length > 0) && (
         <Card className="p-4" data-testid="device-labels-section">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold flex items-center gap-2 me-auto">
@@ -1129,6 +1240,8 @@ export default function AccessPage() {
                 aria-hidden="true"
               />
               <Input
+                type="search"
+                aria-label={copy.searchDeviceLabels}
                 placeholder={copy.searchDeviceLabels}
                 data-testid="tag-search"
                 className="ps-8"
@@ -1146,6 +1259,21 @@ export default function AccessPage() {
             <div className="mt-3 rounded-md border border-dashed bg-background/50 px-4 py-6 text-center text-sm text-muted-foreground">
               <p className="font-medium text-foreground">{copy.noDeviceLabelsYet}</p>
               <p className="mt-1 text-xs">{copy.noDeviceLabelsHint}</p>
+            </div>
+          ) : filteredTagsWithMeta.length === 0 ? (
+            <div
+              className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-md border border-dashed bg-background/50 px-4 py-6 text-sm text-muted-foreground"
+              data-testid="tag-search-empty"
+            >
+              <p role="status">{copy.noDeviceLabelsMatch}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                data-testid="tag-search-clear"
+                onClick={() => setTagSearchQuery("")}
+              >
+                {copy.clearSearch}
+              </Button>
             </div>
           ) : (
             <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1175,20 +1303,27 @@ export default function AccessPage() {
                         <p className="text-xs text-muted-foreground">
                           {pluralize(t.deviceCount, "devicesTagged")}
                         </p>
+                        {t.deviceOnly && (
+                          <Badge variant="outline" className="w-fit text-xs">
+                            {copy.deviceOnlyLabelBadge}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`${copy.removeDeviceLabel} ${t.displayName}`}
-                      data-testid={`tag-remove-${t.tagName}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        requestRemoveTag(t.tagName);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </Button>
+                    {!t.deviceOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`${copy.removeDeviceLabel} ${t.displayName}`}
+                        data-testid={`tag-remove-${t.tagName}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          requestRemoveTag(t.tagName);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    )}
                   </div>
 
                   <div className="mt-3 space-y-3 text-sm">
@@ -1220,6 +1355,9 @@ export default function AccessPage() {
                                   <UserX className="h-3 w-3 shrink-0" aria-hidden="true" />
                                 )}
                                 {whoDisplayLabel(a.who)}
+                                {isOrphanValue(a.who) && (
+                                  <span className="sr-only"> ({copy.orphanReferenceBadge})</span>
+                                )}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 · {serviceSummary(a.services, a.customPorts)}
@@ -1228,7 +1366,7 @@ export default function AccessPage() {
                           ))}
                           {t.accessors.length > 3 && (
                             <li className="text-xs text-muted-foreground">
-                              + {t.accessors.length - 3} …
+                              {pluralize(t.accessors.length - 3, "moreItems")}
                             </li>
                           )}
                         </ul>
@@ -1261,11 +1399,14 @@ export default function AccessPage() {
                                 <UserX className="h-3 w-3 shrink-0" aria-hidden="true" />
                               )}
                               {whoDisplayLabel(owner)}
+                              {isOrphanValue(owner) && (
+                                <span className="sr-only"> ({copy.orphanReferenceBadge})</span>
+                              )}
                             </Badge>
                           ))}
                           {t.owners.length > 3 && (
                             <Badge variant="secondary" className="text-xs">
-                              + {t.owners.length - 3}
+                              {pluralize(t.owners.length - 3, "moreItems")}
                             </Badge>
                           )}
                         </div>
@@ -1279,35 +1420,54 @@ export default function AccessPage() {
         </Card>
       )}
 
-      {ipRules.length > 0 && (
-        <Card className="p-4" data-testid="ip-rules-section">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold">
-                {copy.ipRulesSectionTitle}
-                <Badge variant="outline" className="ms-1">
-                  {ipRules.length}
-                </Badge>
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">{copy.ipRulesSectionHint}</p>
-            </div>
+      <Card className="p-4" data-testid="ip-rules-section">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold">
+              {copy.ipRulesSectionTitle}
+              <Badge variant="outline" className="ms-1">
+                {ipRules.length}
+              </Badge>
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">{copy.ipRulesSectionHint}</p>
           </div>
+          <Button
+            ref={addIpRuleButton}
+            size="sm"
+            variant="outline"
+            data-testid="add-ip-rule"
+            onClick={() => setPolicyState({ editingIpRuleId: NEW_IP_RULE.ruleId })}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {copy.addIpRule}
+          </Button>
+        </div>
 
-          <div className="mt-3 grid gap-1">
-            {ipRules.map((rule) => (
-              <IpRuleRow
-                key={rule.ruleId}
-                rule={rule}
-                onEditStart={() => setPolicyState({ editingIpRuleId: rule.ruleId })}
-                onEditCancel={() => setPolicyState({ editingIpRuleId: null })}
-                onRemove={() => removeIpRule(rule.ruleId)}
-                onUpdate={(patch) => onUpdateIpRule(rule.ruleId, patch)}
-                isEditing={editingIpRuleId === rule.ruleId}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
+        <div className="mt-3 grid gap-1">
+          {ipRules.length === 0 && editingIpRuleId !== NEW_IP_RULE.ruleId && (
+            <p className="text-xs text-muted-foreground italic">{copy.noIpRules}</p>
+          )}
+          {ipRules.map((rule) => (
+            <IpRuleRow
+              key={rule.ruleId}
+              rule={rule}
+              onEditStart={() => setPolicyState({ editingIpRuleId: rule.ruleId })}
+              onEditCancel={() => setPolicyState({ editingIpRuleId: null })}
+              onRemove={() => requestRemoveIpRule(rule)}
+              onUpdate={(patch) => onUpdateIpRule(rule.ruleId, patch)}
+              isEditing={editingIpRuleId === rule.ruleId}
+            />
+          ))}
+          {editingIpRuleId === NEW_IP_RULE.ruleId && (
+            <IpRuleRow
+              rule={NEW_IP_RULE}
+              onEditCancel={closeNewIpRule}
+              onUpdate={addIpRule}
+              isEditing
+            />
+          )}
+        </div>
+      </Card>
 
       <Dialog open={tagDetailOpen} onOpenChange={() => attemptDialogClose("tag")}>
         <DialogContent
@@ -1340,10 +1500,14 @@ export default function AccessPage() {
                   id="tag-name-input"
                   data-testid="tag-name-input"
                   placeholder={copy.deviceLabelNameHint}
+                  readOnly={currentTagMeta?.deviceOnly}
+                  aria-invalid={identityIssue ? true : undefined}
+                  aria-describedby={identityIssue ? "tag-name-error" : undefined}
                   value={tagNameDraft}
                   onChange={(event) => {
                     ++closeGeneration.current;
                     setTagNameDraft(event.target.value);
+                    setIdentityIssue(nameIssue("tag", event.target.value, tagDetailCurrent));
                   }}
                   onBlur={() => commitTagName()}
                   onKeyDown={(event) => {
@@ -1357,7 +1521,7 @@ export default function AccessPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!tagNameDraft.trim()}
+                    disabled={!tagNameDraft.trim() || identityIssue !== null}
                     data-testid="tag-name-confirm"
                     onClick={commitTagName}
                   >
@@ -1367,13 +1531,22 @@ export default function AccessPage() {
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{copy.deviceLabelNameHint}</p>
               <p className="mt-1 text-xs text-muted-foreground">{copy.policyTagRenameScope}</p>
+              {currentTagMeta?.deviceOnly && (
+                <p
+                  className="mt-1 text-xs text-amber-700 dark:text-amber-300"
+                  data-testid="tag-device-only-hint"
+                >
+                  {copy.deviceOnlyLabelHint}
+                </p>
+              )}
               {identityIssue && (
                 <p
+                  id="tag-name-error"
                   role="alert"
                   data-testid="tag-policy-reference-error"
                   className="mt-2 text-sm text-destructive"
                 >
-                  {identityErrorText(identityIssue)}
+                  {identityErrorText(identityIssue, "tag")}
                 </p>
               )}
             </div>
@@ -1581,10 +1754,10 @@ export default function AccessPage() {
                 data-testid="tag-dialog-unsaved-hint"
               >
                 <span
-                  className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"
+                  className="inline-block h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-amber-500"
                   aria-hidden="true"
                 />
-                {copy.changesAutoSaveHint}
+                {copy.dialogChangesKeptHint}
               </p>
             ) : (
               <span className="text-xs text-muted-foreground">&nbsp;</span>
@@ -1592,7 +1765,7 @@ export default function AccessPage() {
             <Button
               data-testid="tag-detail-close"
               disabled={saving}
-              onClick={() => attemptDialogClose("tag")}
+              onClick={() => closeDialog("tag")}
             >
               {saving && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {copy.finish}
@@ -1627,10 +1800,13 @@ export default function AccessPage() {
                   id="team-name-input"
                   data-testid="team-name-input"
                   placeholder={copy.teamNameHint}
+                  aria-invalid={identityIssue ? true : undefined}
+                  aria-describedby={identityIssue ? "team-name-error" : undefined}
                   value={teamNameDraft}
                   onChange={(event) => {
                     ++closeGeneration.current;
                     setTeamNameDraft(event.target.value);
+                    setIdentityIssue(nameIssue("group", event.target.value, teamDetailCurrent));
                   }}
                   onBlur={() => commitTeamName()}
                   onKeyDown={(event) => {
@@ -1644,7 +1820,7 @@ export default function AccessPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!teamNameDraft.trim()}
+                    disabled={!teamNameDraft.trim() || identityIssue !== null}
                     data-testid="team-name-confirm"
                     onClick={commitTeamName}
                   >
@@ -1656,11 +1832,12 @@ export default function AccessPage() {
 
             {identityIssue && (
               <p
+                id="team-name-error"
                 role="alert"
                 data-testid="team-policy-reference-error"
                 className="text-sm text-destructive"
               >
-                {identityErrorText(identityIssue)}
+                {identityErrorText(identityIssue, "group")}
               </p>
             )}
             {teamDetailCurrent && (
@@ -1671,7 +1848,9 @@ export default function AccessPage() {
                 <legend className="px-1 text-sm font-medium">{copy.teamMembersSection}</legend>
 
                 {teamMembers.length === 0 ? (
-                  <div className="text-xs text-muted-foreground italic">—</div>
+                  <div className="text-xs text-muted-foreground italic">
+                    {copy.noPolicyGroupMembers}
+                  </div>
                 ) : (
                   <div
                     className="grid gap-1 max-h-64 overflow-y-auto pe-1"
@@ -1767,10 +1946,10 @@ export default function AccessPage() {
                 data-testid="team-dialog-unsaved-hint"
               >
                 <span
-                  className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"
+                  className="inline-block h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-amber-500"
                   aria-hidden="true"
                 />
-                {copy.changesAutoSaveHint}
+                {copy.dialogChangesKeptHint}
               </p>
             ) : (
               <span className="text-xs text-muted-foreground">&nbsp;</span>
@@ -1778,7 +1957,7 @@ export default function AccessPage() {
             <Button
               data-testid="team-detail-close"
               disabled={saving}
-              onClick={() => attemptDialogClose("team")}
+              onClick={() => closeDialog("team")}
             >
               {saving && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {copy.finish}
@@ -1819,14 +1998,26 @@ export default function AccessPage() {
               {copy.confirmRemovePolicyItemDescription}
               {pendingPolicyRemoval && (
                 <span className="mt-2 block break-all font-medium text-foreground">
-                  {pendingPolicyRemoval.label}
+                  <bdi dir={pendingPolicyRemoval.kind === "rule" ? "ltr" : "auto"}>
+                    {pendingPolicyRemoval.label}
+                  </bdi>
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {removalPreview && !removalPreview.ok && (
             <p role="alert" data-testid="policy-removal-error" className="text-sm text-destructive">
-              {identityErrorText(removalPreview.issue)}
+              {identityErrorText(removalPreview.issue, removalKind)}
+            </p>
+          )}
+          {pendingPolicyRemoval?.kind === "rule" && (
+            <p data-testid="policy-removal-consequence" className="text-sm text-muted-foreground">
+              {copy.removeIpRuleConsequence}
+            </p>
+          )}
+          {removalDevices > 0 && (
+            <p data-testid="policy-removal-devices" className="text-sm text-muted-foreground">
+              {pluralize(removalDevices, "labelRemovalDevices")}
             </p>
           )}
           {removalImpact && (
@@ -1856,7 +2047,7 @@ export default function AccessPage() {
         <AlertDialogContent data-testid="unsaved-changes-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>{copy.unsavedChangesTitle}</AlertDialogTitle>
-            <AlertDialogDescription>{copy.unsavedChangesBody}</AlertDialogDescription>
+            <AlertDialogDescription>{copy.dialogUnsavedChangesBody}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="unsaved-changes-keep-editing">
@@ -1869,7 +2060,7 @@ export default function AccessPage() {
               disabled={saving}
               onClick={() => discardAndClose()}
             >
-              {copy.unsavedChangesCloseAnyway}
+              {copy.discardDialogChanges}
             </Button>
             <Button
               type="button"
@@ -1902,6 +2093,57 @@ export default function AccessPage() {
               onClick={() => cleanupOrphanRefs()}
             >
               {pluralize(orphanRefs.length, "cleanupOrphans")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* No trigger, so Base UI only ever asks to close it. */}
+      <AlertDialog open={pendingTemplate !== null} onOpenChange={() => setPendingTemplate(null)}>
+        <AlertDialogContent data-testid="template-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.templateReplaceTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{copy.templateReplaceBody}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="grid gap-1 text-sm" data-testid="template-confirm-removed">
+            {replacedRules.map((rule) => (
+              <li key={rule.id} className="break-all rounded-md border px-3 py-2 font-mono text-xs">
+                <bdi dir="ltr">
+                  {rule.source} → {rule.destination} · {rule.ports}
+                </bdi>
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="template-confirm-cancel">
+              {copy.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="template-confirm-apply"
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => confirmPolicyTemplate()}
+            >
+              {copy.templateReplaceConfirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
+        <AlertDialogContent data-testid="discard-policy-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.discardPolicyChangesTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{copy.discardPolicyChangesBody}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="discard-policy-cancel">{copy.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="discard-policy-confirm"
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={saving}
+              onClick={() => discardPolicyChanges()}
+            >
+              {copy.discardPolicyChanges}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

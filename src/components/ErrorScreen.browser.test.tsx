@@ -260,3 +260,20 @@ describe("unreadable vault reset", () => {
     expect(reloadPage).toHaveBeenCalledTimes(1);
   });
 });
+
+test("takes over as a labelled alert dialog and moves keyboard focus to its title", async () => {
+  const before = document.createElement("button");
+  document.body.append(before);
+  before.focus();
+  try {
+    await render(<ErrorScreen error={new Error("boom")} reloadPage={vi.fn()} />);
+    const dialog = page.getByRole("alertdialog", { name: "Headscale UI ran into a problem" });
+    await expect.element(dialog).toHaveAttribute("aria-modal", "true");
+    await expect.element(dialog).toHaveAccessibleDescription(/could not finish loading/);
+    await expect
+      .element(page.getByRole("heading", { name: "Headscale UI ran into a problem" }))
+      .toHaveFocus();
+  } finally {
+    before.remove();
+  }
+});

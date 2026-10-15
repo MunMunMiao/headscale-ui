@@ -17,10 +17,11 @@ const { endpoint, start, temporary } = stack;
 let browser: Browser | undefined;
 stack.onCleanup(() => browser?.close());
 
-async function assertIdentity(url: string, label: string) {
+async function assertIdentity(url: string, label: string, compressible = true) {
   const plain = await fetch(url, { headers: { "Accept-Encoding": "identity" } });
   assert.equal(plain.headers.get("content-encoding"), null, `${label}: identity encoding`);
-  assert.match(plain.headers.get("vary") || "", /Accept-Encoding/i, `${label}: identity Vary`);
+  if (compressible)
+    assert.match(plain.headers.get("vary") || "", /Accept-Encoding/i, `${label}: identity Vary`);
 }
 
 async function checkHttp(origin: string, base: string) {
@@ -53,13 +54,17 @@ async function checkHttp(origin: string, base: string) {
       link.endsWith(".js") ? /javascript/ : link.endsWith(".css") ? /text\/css/ : /image\//,
       link,
     );
+    const content = await asset.arrayBuffer();
     if (/\.(js|css)$/.test(link)) {
-      assert.match(asset.headers.get("vary") || "", /Accept-Encoding/i, `${link} Vary`);
-      await assertIdentity(`${origin}${link}`, link);
+      // 与 nginx 的 gzip_min_length 256 一致；更小的资源没有压缩变体，不需要 Vary。
+      const compressible = content.byteLength >= 256;
+      if (compressible)
+        assert.match(asset.headers.get("vary") || "", /Accept-Encoding/i, `${link} Vary`);
+      else
+        assert.equal(asset.headers.get("content-encoding"), null, `${link}: small asset encoding`);
+      await assertIdentity(`${origin}${link}`, link, compressible);
     }
-    assets.push(
-      `${link}:${new Bun.CryptoHasher("sha256").update(await asset.arrayBuffer()).digest("hex")}`,
-    );
+    assets.push(`${link}:${new Bun.CryptoHasher("sha256").update(content).digest("hex")}`);
   }
   const worker = await fetch(`${origin}${base}shared-session-worker.js`);
   assert.equal(worker.status, 200, "stable SharedWorker entry");

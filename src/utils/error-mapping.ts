@@ -45,13 +45,24 @@ type ProductKey =
   | "errorUserStillOwns"
   | "errorUserNotFound"
   | "errorNodeNotFound"
+  | "errorInvalidDnsLabel"
+  | "errorNodeNameTaken"
+  | "errorTagsNotPermitted"
+  | "errorCannotRemoveAllTags"
+  | "errorUserNameTaken"
   | "policyUpdateDisabled";
 
-// Headscale v0.29.4 strings (db/users.go, grpcv1.go), matched case-insensitively.
+// Headscale v0.29.4 strings (db/users.go, grpcv1.go, state/state.go, types/node.go), matched
+// case-insensitively.
 const headscalePhrases: readonly (readonly [RegExp, ProductKey])[] = [
   [/user not empty/i, "errorUserStillOwns"],
   [/user not found/i, "errorUserNotFound"],
   [/node not found/i, "errorNodeNotFound"],
+  [/is not a valid DNS label/i, "errorInvalidDnsLabel"],
+  [/node name is not unique/i, "errorNodeNameTaken"],
+  [/requested tags .* are invalid or not permitted/i, "errorTagsNotPermitted"],
+  [/cannot remove all tags from (a )?node/i, "errorCannotRemoveAllTags"],
+  [/UNIQUE constraint failed: users\.name/i, "errorUserNameTaken"],
   [/update is disabled for modes other than 'database'/i, "policyUpdateDisabled"],
 ];
 

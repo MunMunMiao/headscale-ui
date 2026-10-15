@@ -1,5 +1,5 @@
 import { LoaderCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,11 +58,13 @@ export default function AssignMemberDialog({
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(options.filter((o) => o.assigned).map((o) => o.id)),
   );
-  const assignedIds = options.filter((o) => o.assigned).map((o) => o.id);
-  const assignmentSignature = JSON.stringify(assignedIds);
-  useEffect(() => {
-    if (open) setSelected(new Set(JSON.parse(assignmentSignature) as string[]));
-  }, [open, assignmentSignature]);
+  // Start from the server state only when the dialog opens: a refresh while it is open must not
+  // replace the admin's unsaved choices.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSelected(new Set(options.filter((o) => o.assigned).map((o) => o.id)));
+  }
   const sortedOptions = [...options].sort((a, b) => collator.compare(a.name, b.name));
   const dirty =
     selected.size !== options.filter((o) => o.assigned).length ||

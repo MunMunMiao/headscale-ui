@@ -73,7 +73,7 @@ test("locked pages can create mutation callbacks and clicking reports locked wit
     await mutation.mutate("create-member", { endpoint: "createUser", input: { name: "member" } }),
   ).toBe(false);
   expect(calls).toBe(0);
-  expect(feedback.getSnapshot().lastError).toBe(t("sessionLocked"));
+  expect(feedback.actionError("create-member")).toBe(t("sessionLocked"));
 });
 
 import { t } from "@/i18n";
@@ -104,7 +104,7 @@ test("callbacks recreated for the new server cannot send a retained stale draft"
     }),
   ).toBe(false);
   expect(calls).toBe(0);
-  expect(feedback.getSnapshot().lastError).toBe(t("sessionChanged"));
+  expect(feedback.actionError("create-member")).toBe(t("sessionChanged"));
 });
 
 test("a write result cannot refresh or adopt while its draft has become stale", async () => {
@@ -133,7 +133,7 @@ test("a write result cannot refresh or adopt while its draft has become stale", 
   reply.resolve();
   expect(await writing).toBe(false);
   // The write succeeded upstream, so its result is reported as unconfirmed rather than dropped.
-  expect(feedback.getSnapshot().lastError).toBe(t("sessionOutcomeUnknown"));
+  expect(feedback.actionError("create-member")).toBe(t("sessionOutcomeUnknown"));
 });
 
 const unknownWrite = {
@@ -272,4 +272,47 @@ test("discarding a stale draft invalidates its callbacks even when the current s
       input: { name: "new draft" },
     }),
   ).toBe(true);
+});
+
+test("a lost answer to the read-only policy check is not reported as a possibly saved change", async () => {
+  const calls: string[] = [];
+  const auth = fakeAuth({
+    async execute(_expected, command) {
+      calls.push(command.endpoint);
+      return unknownWrite;
+    },
+  });
+  const client = createHeadscaleClientStore();
+  client.adopt(unlocked("a"));
+  const feedback = createActionFeedbackStore();
+  const snapshot = createSnapshotStore(auth, client, feedback);
+  snapshot.setAuthorized(true);
+  const drafts = createSessionDrafts();
+  const session = { auth, client, feedback, snapshot, drafts };
+  const check = () =>
+    createMutation(session).mutate("check-policy", {
+      endpoint: "checkPolicy",
+      input: { policy: "{}" },
+    });
+  expect(await check()).toBe(false);
+  expect(feedback.actionError("check-policy")).toBe(t("requestUnreachable"));
+  // Nothing was written, so there is no server state to re-read.
+  expect(calls).toEqual(["checkPolicy"]);
+
+  // A check answered after a server switch changed nothing either.
+  const answer = Promise.withResolvers<void>();
+  const passing = fakeAuth({
+    async execute() {
+      await answer.promise;
+      return { ok: true, value: {} };
+    },
+  });
+  const checking = createMutation({ ...session, auth: passing }).mutate("check-policy", {
+    endpoint: "checkPolicy",
+    input: { policy: "{}" },
+  });
+  drafts.hold({ id: "a", name: "A" }, true);
+  answer.resolve();
+  expect(await checking).toBe(false);
+  expect(feedback.actionError("check-policy")).toBe(t("sessionChanged"));
 });

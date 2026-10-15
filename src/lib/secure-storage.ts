@@ -13,7 +13,6 @@ import {
   readVaultState,
   VAULT_STATE_KEY,
   VaultConflictError,
-  VaultDataError,
   type VaultVersion,
 } from "./vault-state";
 
@@ -22,6 +21,26 @@ export interface SecureResetResult {
   committed: true;
   sessionMetadataCleared: boolean;
   version: VaultVersion;
+}
+
+/** A reset proceeds when the vault record is unreadable, or matches `expected`; `null` means "repair only if unreadable". */
+function assertResettable(raw: unknown, expected: VaultVersion | null): void {
+  let current: VaultVersion | null = null;
+  try {
+    current = readVaultState(raw);
+  } catch {
+    /* An unreadable record is what a repair reset replaces. */
+  }
+  if (current) {
+    if (expected === null) throw new VaultConflictError();
+    assertVaultVersion(current, expected);
+  }
+}
+
+/** Refuses a reset that would fail before any session state is touched; the reset re-checks atomically. */
+export async function assertResetExpected(expected: VaultVersion | null): Promise<void> {
+  const db = await openHeadscaleDb();
+  assertResettable(await db.get(STORE_META, VAULT_STATE_KEY), expected);
 }
 
 /**
@@ -38,18 +57,8 @@ export async function clearAllSecureData(
   const stopAbort = bindTransactionAbort(tx, signal);
   const version = newVaultState();
   try {
-    if (expected !== undefined) {
-      let current: VaultVersion | null = null;
-      try {
-        current = readVaultState(await tx.objectStore(STORE_META).get(VAULT_STATE_KEY));
-      } catch (error) {
-        if (!(error instanceof VaultDataError)) throw error;
-      }
-      if (current) {
-        if (expected === null) throw new VaultConflictError();
-        assertVaultVersion(current, expected);
-      }
-    }
+    if (expected !== undefined)
+      assertResettable(await tx.objectStore(STORE_META).get(VAULT_STATE_KEY), expected);
     await tx.objectStore(STORE_PROFILES).clear();
     await tx.objectStore(STORE_KEYS).clear();
     await tx.objectStore(STORE_META).clear();

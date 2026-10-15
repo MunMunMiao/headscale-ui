@@ -245,7 +245,8 @@ try {
     try {
       await element("resource-access-empty").waitFor({ state: "visible", timeout: 15000 });
       await expectNoWildcard();
-      assert.equal((await element("ip-rules-section").count()) > 0, false, "No phantom ACL rows");
+      // The IP rule section always renders (with "Add rule"); an empty ACL has no rule rows in it.
+      assert.equal((await emptyState()).rules, 0, "No phantom ACL rows");
       assert.deepEqual((await readPolicy()).acls, [], "Explicit empty ACL must persist");
     } catch (error) {
       console.error(
@@ -420,6 +421,7 @@ try {
   );
 
   await prefix("ip-rule-remove-").click();
+  await click("confirm-remove-policy-item");
   await save([]);
   await expectEmpty("empty ACL after save");
   await reload();

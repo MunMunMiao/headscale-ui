@@ -116,6 +116,27 @@ test("the page handshake publishes one stable safe projection and explicit check
   }
 });
 
+test("a renewal records the new expiry without waking subscribers", async () => {
+  const f = fixture();
+  try {
+    await f.bridge.connect();
+    const identity = await unlock(f);
+    const before = f.bridge.getSessionSnapshot();
+    let notifications = 0;
+    const stop = f.bridge.subscribe(() => notifications++);
+    f.clock.advance(1000);
+    expect(await f.bridge.touch(identity)).toMatchObject({ ok: true });
+    stop();
+    expect(notifications).toBe(0);
+    expect(f.bridge.getSessionSnapshot()).toMatchObject({
+      identity,
+      expiresAt: (before?.expiresAt ?? 0) + 1000,
+    });
+  } finally {
+    await f.close();
+  }
+});
+
 // The expiry timers themselves are exercised by the runtime tests in src/session/runtime.test.ts.
 test("a reply queued before expiry cannot publish after expiry even though no timer ran", async () => {
   const f = fixture();

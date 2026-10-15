@@ -354,9 +354,10 @@ test("auth key creation preserves draft across refresh and exposes the new key a
     );
   await expect.element(page.getByTestId("invite-create-dialog")).not.toBeInTheDocument();
   const created = ctx.backend.preAuthKeys.find((key) => key.id === "4");
+  // The dialog starts from a one-time key, so the toggled checkbox asks for a reusable one.
   expect(created).toMatchObject({
     user: bob,
-    reusable: false,
+    reusable: true,
     ephemeral: true,
     aclTags: ["tag:server"],
   });

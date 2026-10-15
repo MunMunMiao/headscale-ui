@@ -1,13 +1,19 @@
 import { type AnyRouter, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
+import { isLoginPath, redirectTarget } from "@/router/search";
 import { type Session, useSession } from "./session-context";
 
 export function createSessionRestoration(session: Session, router: AnyRouter) {
   let generation = 0;
   const requiresAuth = () => router.state.matches.some((match) => match.staticData.requiresAuth);
   async function reconcile() {
-    if (session.auth.getSnapshot().status !== "ready-unlocked" && requiresAuth()) {
-      const location = router.state.location;
+    const location = router.state.location;
+    // A page already leaving for login (logout) still has the old matches and keeps its own redirect.
+    if (
+      session.auth.getSnapshot().status !== "ready-unlocked" &&
+      requiresAuth() &&
+      !isLoginPath(location.pathname)
+    ) {
       await router.navigate({
         to: "/login",
         replace: true,
@@ -19,6 +25,19 @@ export function createSessionRestoration(session: Session, router: AnyRouter) {
         },
       });
     }
+  }
+  /** A login page continues once any tab unlocks; this tab's own unlock or save navigates itself. */
+  function follow(): boolean {
+    const location = router.state.location;
+    const current = session.auth.getSessionSnapshot();
+    if (current?.status !== "unlocked" || !isLoginPath(location.pathname)) return false;
+    const { phase, connectionDialogOpen, discardedPolicyDraft } = session.profiles.getSnapshot();
+    // An open profile form keeps its typed input, and discarded edits are explained first.
+    if (phase.kind === "idle" && !connectionDialogOpen && !discardedPolicyDraft) {
+      session.profiles.closeUnlockDialog();
+      void router.navigate(redirectTarget(location.search.redirect, current.profile.id));
+    }
+    return true;
   }
   async function restore() {
     const ticket = ++generation;
@@ -48,6 +67,7 @@ export function createSessionRestoration(session: Session, router: AnyRouter) {
       const switched = previous && current;
       previous = current;
       previousStatus = status;
+      if (follow()) return;
       if (switched && router.state.location.search.profile) {
         const { profile: _profile, ...search } = router.state.location.search;
         void router.navigate({

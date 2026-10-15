@@ -215,10 +215,7 @@ function profileSummary(raw: unknown, version: VaultVersion): ProfileSummary {
   };
   if (typeof value.ownerTabId === "string") fields.ownerTabId = value.ownerTabId;
   let credentialKind: ProfileSummary["credentialKind"] = "unreadable";
-  const credentialVersion =
-    typeof value.credentialVersion === "string" && value.credentialVersion
-      ? value.credentialVersion
-      : null;
+  const credentialVersion = storedCredentialVersion(value);
   if (
     fields.baseUrl &&
     fields.keyEpoch === version.keyEpoch &&
@@ -238,6 +235,13 @@ function profileSummary(raw: unknown, version: VaultVersion): ProfileSummary {
     }
   }
   return { ...fields, credentialVersion, credentialKind };
+}
+
+/** Summaries and write expectations read a missing or malformed version the same way. */
+function storedCredentialVersion(value: Record<string, unknown>): string | null {
+  return typeof value.credentialVersion === "string" && value.credentialVersion
+    ? value.credentialVersion
+    : null;
 }
 
 function storedProfile(raw: unknown, version: VaultVersion): StoredProfile {
@@ -300,7 +304,7 @@ function assertProfileExpectation(raw: unknown, id: string, expected: ProfileWri
   const value = recordObject(raw);
   if (
     !visibleToOwner(value, expected.ownerTabId) ||
-    (value.credentialVersion ?? null) !== expected.profile.credentialVersion
+    storedCredentialVersion(value) !== expected.profile.credentialVersion
   )
     throw new VaultConflictError();
 }

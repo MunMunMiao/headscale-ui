@@ -95,8 +95,8 @@ describe("useCreatePreAuthKey", () => {
     expect(bodies[0]).toMatchObject({ aclTags: ["tag:server"] });
   });
 
-  // Members used to keep showing the previous one-time key while a new one was being created.
-  test("clears a stale key before creating and leaves it empty when creation fails", async () => {
+  // The listing only returns masked keys, so dropping the previous secret on a failed attempt loses it for good.
+  test("keeps the previous one-time key when creation fails", async () => {
     const { create, deviceSetup, feedback } = setup(() =>
       Response.json({ code: 3, message: "denied", details: [] }, { status: 400 }),
     );
@@ -104,9 +104,9 @@ describe("useCreatePreAuthKey", () => {
     const seen: string[] = [];
     deviceSetup.subscribe(() => seen.push(deviceSetup.getSnapshot().lastCreatedInvite));
     expect(await create(payload)).toBe(false);
-    expect(seen).toEqual([""]);
+    expect(seen).toEqual([]);
     expect(deviceSetup.getSnapshot()).toMatchObject({
-      lastCreatedInvite: "",
+      lastCreatedInvite: "old",
       revealCreatedInvite: false,
     });
     expect(feedback.actionError("create-invite")).not.toBe("");

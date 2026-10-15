@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { i18n, setLocale } from "@/i18n";
+import { englishCopy } from "@/i18n/product-copy";
 import { hydrateSettings } from "@/lib/settings-storage";
 
 beforeEach(async () => {
@@ -51,7 +52,9 @@ function Harness({
   busy = false,
   error = "",
   expirationDays = undefined as number | undefined,
+  owner = defaults.user,
 }) {
+  const [ownerDefaults] = useState({ ...defaults, user: owner });
   const [open, setOpen] = useState(true);
   const [paused, setPaused] = useState(false);
   const [users, setUsers] = useState(
@@ -90,7 +93,7 @@ function Harness({
         paused={paused}
         onOpenChange={setOpen}
         users={users}
-        defaults={defaults}
+        defaults={ownerDefaults}
         expirationDays={expirationDays}
         labels={labels}
         isSubmitting={busy}
@@ -212,7 +215,8 @@ test("no owner and no tags does not submit, explains why and focuses the tags fi
   await expect.element(page.getByTestId("invite-tags")).toHaveAttribute("aria-invalid", "true");
   await expect
     .element(page.getByTestId("invite-tags"))
-    .toHaveAttribute("aria-describedby", "invite-tags-error");
+    .toHaveAttribute("aria-describedby", "invite-tags-error invite-tags-hint");
+  await expect.element(page.getByTestId("invite-tags-error")).toHaveAttribute("role", "alert");
   await expect.element(page.getByTestId("invite-tags")).toHaveFocus();
   await expect.element(page.getByTestId("payload")).toHaveTextContent("");
   await page.getByTestId("invite-tags").fill("tag:fixed");
@@ -251,10 +255,41 @@ test("shows both errors together when the expiration is also invalid", async () 
   await expect.element(page.getByTestId("invite-expiration-error")).toBeInTheDocument();
   await expect.element(page.getByTestId("invite-tags-error")).toBeInTheDocument();
   await expect.element(page.getByTestId("payload")).toHaveTextContent("");
-  await expect.element(page.getByTestId("invite-tags")).not.toHaveFocus();
+  // The first invalid field in form order takes focus.
+  await expect.element(page.getByTestId("invite-expiration")).toHaveFocus();
 });
 
-// Catches the no-owner choice being remembered: every open starts from the first user again.
+// Catches "server, db" reaching Headscale, which rejects tags without the prefix.
+test("rejects tags without the tag: prefix, explains the format and focuses the field", async () => {
+  setNow(NOW);
+  await render(<Harness />);
+  const tags = page.getByTestId("invite-tags");
+  await expect.element(page.getByText(englishCopy.inviteTagsHint)).toBeVisible();
+  await expect.element(tags).toHaveAttribute("aria-describedby", "invite-tags-hint");
+  for (const value of ["server, db", "tag:server,tag:"]) {
+    await tags.fill(value);
+    await page.getByTestId("create-invite").click();
+    await expect
+      .element(page.getByTestId("invite-tags-error"))
+      .toHaveTextContent(englishCopy.inviteTagsPrefix);
+    await expect.element(tags).toHaveFocus();
+    await expect.element(page.getByTestId("payload")).toHaveTextContent("");
+  }
+  await tags.fill("tag:server, tag:db");
+  await expect.element(page.getByTestId("invite-tags-error")).not.toBeInTheDocument();
+  await page.getByTestId("create-invite").click();
+  await expect
+    .element(page.getByTestId("payload"))
+    .toMatchTextContent('"aclTags":["tag:server","tag:db"]');
+});
+
+// Catches a remembered tag-only choice reopening with the first user while keeping its tags.
+test("a no-owner default opens with no owner", async () => {
+  await render(<Harness owner="" />);
+  await expect.element(page.getByTestId("invite-user")).toHaveValue("");
+});
+
+// Catches a canceled no-owner choice leaking into the next open; a submitted one returns through defaults.
 test("a no-owner choice is not remembered across opens", async () => {
   await render(<Harness />);
   await page.getByTestId("invite-user").selectOptions("");

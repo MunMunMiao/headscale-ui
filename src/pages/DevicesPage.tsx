@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Check,
   Clock,
@@ -20,17 +20,12 @@ import {
   Trash2,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { HeadscaleNode } from "@/api/contracts";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import { normalizeHeadscaleNode } from "@/api/contracts";
-import CreateAuthKeyDialog from "@/components/CreateAuthKeyDialog";
-import {
-  type AuthKeyDialogDefaults,
-  type AuthKeyDialogPayload,
-  authKeyDialogLabels,
-  toAuthKeyDefaults,
-} from "@/components/create-auth-key-dialog";
+import { type AuthKeyDialogDefaults, authKeyDialogUser } from "@/components/create-auth-key-dialog";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -43,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
@@ -91,21 +87,35 @@ import { useSessionDraft } from "@/composables/useSessionDraft";
 import { useSnapshot } from "@/composables/useSnapshot";
 import { useSegment } from "@/composables/useSnapshotSegment";
 import { AUTH_ID_PLACEHOLDER, parseAuthRequest } from "@/domain/auth-request";
-import { type NodeConnectionStatus, nodeConnectionStatus } from "@/domain/node-status";
+import {
+  isTimestampExpired,
+  type NodeConnectionStatus,
+  nodeConnectionStatus,
+} from "@/domain/node-status";
+import { parsePolicy } from "@/domain/policy-designer";
+import { useHeadscaleI18n } from "@/i18n";
 import type { ProductCopy } from "@/i18n/product-copy";
 import { cn } from "@/lib/utils";
 import { downloadCsv } from "@/utils/csv";
-import { nodePendingRoutes } from "@/utils/node";
+import { isNodeTag, isValidNodeName, nodePendingRoutes, parseNodeTags } from "@/utils/node";
 import {
   approvedRouteClass,
   deviceTagClass,
+  isExitRoute,
   nodeStatusClass,
   pendingRouteClass,
 } from "@/utils/status-class";
-import { parseList, tailscaleUpCommand } from "@/utils/strings";
-import { userLabel as userOptionLabel } from "@/utils/user";
+import { isHttpUrl, tailscaleUpCommand } from "@/utils/strings";
 
 type MachineFilter = "all" | NodeConnectionStatus | "routes" | "tagged";
+const MACHINE_FILTERS: readonly MachineFilter[] = [
+  "all",
+  "online",
+  "offline",
+  "expired",
+  "routes",
+  "tagged",
+];
 
 type AddDeviceStepInfo = {
   id: ReturnType<typeof useDeviceSetup>["step"];
@@ -118,21 +128,24 @@ function deviceSetupTitle(task: AddDeviceTask | null, copy: ProductCopy) {
   return task === "server" ? copy.addLinuxServerTitle : copy.addClientDeviceTitle;
 }
 
-function deviceSetupDescription(task: AddDeviceTask | null, copy: ProductCopy) {
-  if (task === "pending") return copy.pendingRegistrationDescription;
-  return task === "server" ? copy.linuxServerDescription : copy.clientDeviceDescription;
-}
-
-function addDeviceSteps(task: AddDeviceTask | null, copy: ProductCopy): AddDeviceStepInfo[] {
+function addDeviceSteps(
+  task: AddDeviceTask | null,
+  kind: "device" | "ssh",
+  copy: ProductCopy,
+): AddDeviceStepInfo[] {
   if (task === "pending") {
-    return [
-      {
-        id: "pending",
-        label: copy.pendingRegistrationTitle,
-        description: copy.wizardStepPendingDescription,
-      },
-      { id: "result", label: copy.wizardResult, description: copy.wizardStepResultDescription },
-    ];
+    const pending: AddDeviceStepInfo = {
+      id: "pending",
+      label: copy.pendingRegistrationTitle,
+      description: copy.wizardStepPendingDescription,
+    };
+    // An SSH check is decided in place; only a registration has a machine to show afterwards.
+    return kind === "ssh"
+      ? [pending]
+      : [
+          pending,
+          { id: "result", label: copy.wizardResult, description: copy.wizardStepResultDescription },
+        ];
   }
   if (task) {
     return [
@@ -148,7 +161,7 @@ function addDeviceSteps(task: AddDeviceTask | null, copy: ProductCopy): AddDevic
       },
       {
         id: "generate",
-        label: copy.generateInstallScript,
+        label: copy.generateInstallCommand,
         description: copy.wizardStepGenerateDescription,
       },
     ];
@@ -156,9 +169,19 @@ function addDeviceSteps(task: AddDeviceTask | null, copy: ProductCopy): AddDevic
   return [];
 }
 
+function registerMethodLabel(method: string, copy: ProductCopy) {
+  const labels: Record<string, string> = {
+    REGISTER_METHOD_AUTH_KEY: copy.registerMethodAuthKey,
+    REGISTER_METHOD_CLI: copy.registerMethodCli,
+    REGISTER_METHOD_OIDC: copy.registerMethodOidc,
+  };
+  return labels[method] ?? copy.unknown;
+}
+
 export default function DevicesPage() {
   const { stale } = useStore(useSession().drafts);
   const { copy } = useProductCopy();
+  const { t } = useHeadscaleI18n();
   const { snapshot, nodeById: currentNode } = useSnapshot();
   const { isRefreshing: isRefreshingSnapshot, refresh: refreshDevices } = useSegment(
     "fabric",
@@ -172,7 +195,7 @@ export default function DevicesPage() {
     task: deviceSetupTask,
     step: addDeviceStep,
     authKeyExpiryDays,
-    returnAfterInvite: returnToDeviceSetupAfterInvite,
+    loginServer,
     lastCreatedInvite,
     lastRegisteredNode,
     lastAuthDecision,
@@ -180,14 +203,21 @@ export default function DevicesPage() {
   } = useDeviceSetup();
   const navigate = useNavigate();
   const intent = useRouteIntent();
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
 
-  const [deviceSearch, setDeviceSearch] = useState("");
-  const [machineFilter, setMachineFilter] = useState<MachineFilter>("all");
+  // The URL carries the filters, so a reload or a shared link lists the same machines.
+  const urlSearch = intent.search ?? "";
+  const urlFilter = MACHINE_FILTERS.find((filter) => filter === searchParams.filter) ?? "all";
+  const ownerFilter = intent.userId;
+  const [deviceSearch, setDeviceSearch] = useState(urlSearch);
+  const [machineFilter, setMachineFilter] = useState<MachineFilter>(urlFilter);
+  useEffect(() => setDeviceSearch(urlSearch), [urlSearch]);
+  useEffect(() => setMachineFilter(urlFilter), [urlFilter]);
 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedRenameNode, setSelectedRenameNode] = useState<HeadscaleNode | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [renameInvalid, setRenameInvalid] = useState(false);
   const [selectedExpireNode, setSelectedExpireNode] = useState<HeadscaleNode | null>(null);
   const [expireAction, setExpireAction] = useState<"expire" | "disable">("expire");
   const [selectedRemoveNode, setSelectedRemoveNode] = useState<HeadscaleNode | null>(null);
@@ -195,8 +225,8 @@ export default function DevicesPage() {
   const [selectedDetailNode, setSelectedDetailNode] = useState<HeadscaleNode | null>(null);
 
   const [inviteForm, setInviteForm] = useState<AuthKeyDialogDefaults>({
-    user: "1",
-    reusable: true,
+    user: "",
+    reusable: false,
     ephemeral: false,
     aclTags: "",
   });
@@ -204,7 +234,13 @@ export default function DevicesPage() {
     tags: "",
   });
   const [tagsSyncing, setTagsSyncing] = useState(false);
+  const [tagsAcknowledged, setTagsAcknowledged] = useState(false);
+  const [tagsInvalid, setTagsInvalid] = useState(false);
   const [advertiseExitNode, setAdvertiseExitNode] = useState(false);
+  // Typed days stay text until the field is left, so clearing it does not snap to a bound.
+  const [expiryDraft, setExpiryDraft] = useState<string | null>(null);
+  const [setupError, setSetupError] = useState<"tags" | "owner" | null>(null);
+  const [discardKeyOpen, setDiscardKeyOpen] = useState(false);
   const wizardKeyCardRef = useRef<HTMLFieldSetElement>(null);
   useRevealCreatedInvite(wizardKeyCardRef, deviceSetupDialogOpen);
   useSessionDraft(
@@ -212,9 +248,7 @@ export default function DevicesPage() {
       selectedExpireNode !== null ||
       selectedRemoveNode !== null ||
       selectedTagsNode !== null ||
-      inviteDialogOpen ||
-      deviceSetupDialogOpen ||
-      returnToDeviceSetupAfterInvite,
+      deviceSetupDialogOpen,
   );
 
   const nodeDetailGuard = useRefreshGuard();
@@ -227,19 +261,17 @@ export default function DevicesPage() {
     useDisplayHelpers();
 
   const visibleUsers = snapshot.users.filter((user) => hasVisibleUser(user));
-  const [registrationUserOptions, setRegistrationUserOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
+  // Open drafts keep offering the users of the server they were started on.
+  const [draftUsers, setDraftUsers] = useState<HeadscaleUser[]>([]);
   useEffect(() => {
-    if (!stale)
-      setRegistrationUserOptions(
-        snapshot.users.filter(hasVisibleUser).map((user) => ({
-          value: user.name,
-          label: userOptionLabel(user, copy.unknown),
-        })),
-      );
-  }, [snapshot.users, stale, hasVisibleUser, copy.unknown]);
+    if (!stale) setDraftUsers(snapshot.users.filter(hasVisibleUser));
+  }, [snapshot.users, stale, hasVisibleUser]);
+  const registrationUserOptions = draftUsers.map((user) => ({
+    value: user.name,
+    label: userLabel(user),
+  }));
 
+  const ownerFilterUser = visibleUsers.find((user) => user.id === ownerFilter);
   const query = deviceSearch.trim().toLowerCase();
   const filteredNodes = snapshot.nodes.filter((node) => {
     const searchable = [
@@ -261,17 +293,52 @@ export default function DevicesPage() {
       (machineFilter === "routes" && node.availableRoutes.length > 0) ||
       (machineFilter === "tagged" && node.tags.length > 0) ||
       machineFilter === nodeConnectionStatus(node);
+    const matchesOwner =
+      ownerFilter === null || (hasVisibleUser(node.user) && node.user.id === ownerFilter);
 
-    return matchesSearch && matchesFilter;
+    return matchesSearch && matchesFilter && matchesOwner;
   });
 
-  const hasMachineFilters = deviceSearch.trim() !== "" || machineFilter !== "all";
+  const hasMachineFilters =
+    deviceSearch.trim() !== "" || machineFilter !== "all" || ownerFilter !== null;
 
-  const installCommand = lastCreatedInvite
-    ? tailscaleUpCommand(settings.baseUrl, lastCreatedInvite, advertiseExitNode)
-    : "";
+  const wizardTags = parseNodeTags(inviteForm.aclTags);
+  // A chosen owner that is no longer listed falls back to the first one, as the select shows.
+  const wizardOwner =
+    inviteForm.user === "" || draftUsers.some((user) => user.id === inviteForm.user)
+      ? inviteForm.user
+      : (draftUsers[0]?.id ?? "");
+  const policyText = snapshot.policy?.policy;
+  // Unknown (not loaded or unreadable) policies give no hint rather than a false one.
+  const definedTags = useMemo(() => {
+    if (policyText === undefined) return null;
+    const policy = parsePolicy(policyText);
+    return policy.error ? null : new Set(policy.tagOwners.map((owner) => owner.tag));
+  }, [policyText]);
+  const undefinedTags = definedTags
+    ? wizardTags.filter((tag) => isNodeTag(tag) && !definedTags.has(tag))
+    : [];
+  const loginServerUrl = loginServer ?? settings.baseUrl;
+  const loginServerValid = isHttpUrl(loginServerUrl);
+  const installCommand =
+    lastCreatedInvite && loginServerValid
+      ? tailscaleUpCommand(loginServerUrl, lastCreatedInvite, advertiseExitNode)
+      : "";
 
-  const steps = addDeviceSteps(deviceSetupTask, copy);
+  const nextNodeTags = parseNodeTags(tagsForm.tags);
+  const tagsOwnedNode = selectedTagsNode !== null && selectedTagsNode.tags.length > 0;
+  // Headscale moves a tagged machine from its user to its tags and refuses to remove every tag.
+  const tagsWouldDropOwner = !tagsOwnedNode && nextNodeTags.length > 0;
+  const tagsWouldClear = tagsOwnedNode && nextNodeTags.length === 0;
+  const canSaveTags = !tagsWouldClear && (!tagsWouldDropOwner || tagsAcknowledged);
+
+  const renameName = renameDraft.trim();
+  const canRename =
+    renameName !== "" &&
+    selectedRenameNode !== null &&
+    renameName !== nodeDisplayName(selectedRenameNode);
+
+  const steps = addDeviceSteps(deviceSetupTask, pendingRegistrationForm.kind, copy);
   const addDeviceStepIndex = Math.max(
     0,
     steps.findIndex((step) => step.id === addDeviceStep),
@@ -308,46 +375,106 @@ export default function DevicesPage() {
   const registerAuthId =
     canSubmitAuthRequest && registrationUser !== "" ? parsedAuthRequest.id : "";
   const decideAuthId = canSubmitAuthRequest ? parsedAuthRequest.id : "";
-  const latest = useRef({ consumeDeviceQuery, renameDraft, deviceSetupTask });
-  latest.current = { consumeDeviceQuery, renameDraft, deviceSetupTask };
+  const latest = useRef({ consumeDeviceQuery, renameDraft });
+  latest.current = { consumeDeviceQuery, renameDraft };
 
   function exportMachines() {
     downloadCsv(
       "headscale-machines.csv",
-      ["name", "owner", "status", "addresses", "tags", "routes", "lastSeen", "expires"],
+      [
+        "name",
+        "owner",
+        "status",
+        "addresses",
+        "tags",
+        "advertisedRoutes",
+        "approvedRoutes",
+        "lastSeen",
+        "expires",
+      ],
       filteredNodes.map((node) => ({
         name: nodeDisplayName(node),
         owner: nodeOwner(node),
         status: nodeStatusLabel(node),
         addresses: node.ipAddresses.join(" "),
         tags: node.tags.join(" "),
-        routes: node.approvedRoutes.join(" "),
+        advertisedRoutes: node.availableRoutes.join(" "),
+        approvedRoutes: node.approvedRoutes.join(" "),
         lastSeen: node.lastSeen,
         expires: node.expiry,
       })),
     );
   }
 
+  function updateFilterQuery(patch: Record<string, string | undefined>) {
+    void navigate({
+      to: ".",
+      search: (current: Record<string, unknown>) => ({ ...current, ...patch }),
+      replace: true,
+    });
+  }
+
+  function changeDeviceSearch(value: string) {
+    setDeviceSearch(value);
+    updateFilterQuery({ search: value || undefined });
+  }
+
+  function changeMachineFilter(value: MachineFilter) {
+    setMachineFilter(value);
+    updateFilterQuery({ filter: value === "all" ? undefined : value });
+  }
+
   function clearMachineFilters() {
     setDeviceSearch("");
     setMachineFilter("all");
+    updateFilterQuery({ search: undefined, filter: undefined, user: undefined });
   }
 
   function setAuthKeyExpiryDays(value: number) {
-    const nextValue = Number.isFinite(value) ? value : 7;
-    setDeviceSetupState({ authKeyExpiryDays: Math.min(90, Math.max(1, Math.round(nextValue))) });
+    setDeviceSetupState({ authKeyExpiryDays: Math.min(90, Math.max(1, value)) });
+  }
+
+  function commitExpiryDraft() {
+    if (expiryDraft === null) return;
+    const days = Number.parseInt(expiryDraft, 10);
+    if (Number.isFinite(days)) setAuthKeyExpiryDays(days);
+    setExpiryDraft(null);
+  }
+
+  // A generated key belongs to the options it was made with; going back makes them editable.
+  function returnToAddDeviceStep(step: AddDeviceStepInfo["id"]) {
+    setDeviceSetupState({ step, lastCreatedInvite: "" });
   }
 
   function goToPreviousAddDeviceStep() {
     const previousStep = steps[addDeviceStepIndex - 1];
     if (!previousStep) {
-      setDeviceSetupState({ task: null });
-      setDeviceSetupState({ step: "type" });
-      setDeviceSetupState({ lastCreatedInvite: "" });
-      setDeviceSetupState({ lastRegisteredNode: null });
+      setDeviceSetupState({
+        task: null,
+        step: "type",
+        lastCreatedInvite: "",
+        lastRegisteredNode: null,
+      });
       return;
     }
-    setDeviceSetupState({ step: previousStep.id });
+    returnToAddDeviceStep(previousStep.id);
+  }
+
+  function goToNextAddDeviceStep(step: AddDeviceStepInfo["id"]) {
+    if (addDeviceStep === "preferences" && !wizardTags.every(isNodeTag)) {
+      setSetupError("tags");
+      return;
+    }
+    if (addDeviceStep === "authKey" && wizardOwner === "" && wizardTags.length === 0) {
+      setSetupError("owner");
+      return;
+    }
+    setDeviceSetupState({ step });
+  }
+
+  function changeInviteForm(patch: Partial<AuthKeyDialogDefaults>) {
+    setSetupError(null);
+    setInviteForm((current) => ({ ...current, ...patch }));
   }
 
   function isAddDeviceStepComplete(index: number) {
@@ -355,24 +482,45 @@ export default function DevicesPage() {
   }
 
   function openDeviceSetupDialog() {
-    setDeviceSetupState({ task: null });
-    setDeviceSetupState({ step: "type" });
-    setDeviceSetupState({ lastCreatedInvite: "" });
-    setDeviceSetupState({ lastRegisteredNode: null });
-    setDeviceSetupState({ open: true });
+    setDeviceSetupState({
+      task: null,
+      step: "type",
+      lastCreatedInvite: "",
+      lastRegisteredNode: null,
+      open: true,
+    });
   }
 
   function prepareDeviceInvite(task: "server" | "client") {
-    setDeviceSetupState({ task: task });
-    setDeviceSetupState({ step: "preferences" });
-    setDeviceSetupState({ open: true });
-    setInviteForm((current) => ({ ...current, reusable: task === "server" }));
-    setInviteForm((current) => ({ ...current, ephemeral: task === "client" }));
-    setInviteForm((current) => ({ ...current, aclTags: task === "server" ? "tag:server" : "" }));
+    clearActionFeedback("create-invite");
+    // Presets set every option: a client device is a person's own machine, a server is automated.
+    setInviteForm({
+      user: draftUsers[0]?.id ?? "",
+      reusable: task === "server",
+      ephemeral: false,
+      aclTags: task === "server" ? "tag:server" : "",
+    });
     setAdvertiseExitNode(false);
-    setAuthKeyExpiryDays(7);
-    setDeviceSetupState({ lastCreatedInvite: "" });
-    setDeviceSetupState({ lastRegisteredNode: null });
+    setExpiryDraft(null);
+    setSetupError(null);
+    setDeviceSetupState({
+      task,
+      step: "preferences",
+      open: true,
+      authKeyExpiryDays: 7,
+      lastCreatedInvite: "",
+      lastRegisteredNode: null,
+    });
+  }
+
+  async function generateDeviceKey() {
+    await createPreAuthKey({
+      user: wizardOwner || undefined,
+      reusable: inviteForm.reusable,
+      ephemeral: inviteForm.ephemeral,
+      expiration: new Date(Date.now() + authKeyExpiryDays * 86_400_000).toISOString(),
+      aclTags: wizardTags,
+    });
   }
 
   function clearAuthFeedback() {
@@ -383,55 +531,43 @@ export default function DevicesPage() {
 
   function preparePendingRegistration() {
     clearAuthFeedback();
-    setDeviceSetupState({ task: "pending" });
-    setDeviceSetupState({ step: "pending" });
-    setDeviceSetupState({ open: true });
-    setDeviceSetupState({ lastCreatedInvite: "" });
-    setDeviceSetupState({ lastRegisteredNode: null });
+    setDeviceSetupState({
+      task: "pending",
+      step: "pending",
+      open: true,
+      lastCreatedInvite: "",
+      lastRegisteredNode: null,
+    });
   }
 
-  // The dialog has no trigger, so Base UI only ever reports it closing.
+  const wizardBusy = anyAuthPending || isActionPending("create-invite");
+
+  // The dialog has no trigger, so Base UI only ever reports it closing. The created key is
+  // shown only once, so dismissing it asks first; Done closes without asking.
+  function requestCloseDeviceSetupDialog() {
+    if (wizardBusy) return;
+    if (lastCreatedInvite) setDiscardKeyOpen(true);
+    else closeDeviceSetupDialog();
+  }
+
   function closeDeviceSetupDialog() {
-    if (anyAuthPending) return;
-    setDeviceSetupState({ open: false });
-    setDeviceSetupState({ returnAfterInvite: false });
-    setDeviceSetupState({ task: null });
-    setDeviceSetupState({ step: "type" });
-    setDeviceSetupState({ lastCreatedInvite: "" });
-    setDeviceSetupState({ lastRegisteredNode: null, lastAuthDecision: null });
+    setDiscardKeyOpen(false);
+    setDeviceSetupState({
+      open: false,
+      task: null,
+      step: "type",
+      lastCreatedInvite: "",
+      lastRegisteredNode: null,
+      lastAuthDecision: null,
+    });
     clearAuthFeedback();
-  }
-
-  function openInviteDialogFromDeviceSetup() {
-    setDeviceSetupState({ returnAfterInvite: true });
-    setDeviceSetupState({ step: "generate" });
-    setDeviceSetupState({ open: false });
-    openInviteDialog();
-  }
-
-  const authKeyDialogUsers = visibleUsers.map((user) => ({
-    id: user.id,
-    label: userLabel(user),
-  }));
-
-  function openInviteDialog() {
     clearActionFeedback("create-invite");
-    setInviteDialogOpen(true);
   }
 
-  // The dialog has no trigger, so Base UI only ever reports it closing. It is opened only from
-  // the device setup wizard, which is why closing it always returns there.
-  function closeInviteDialog() {
-    if (isActionPending("create-invite")) return;
-    setInviteDialogOpen(false);
-    clearActionFeedback("create-invite");
-    setDeviceSetupState({ returnAfterInvite: false });
-    setDeviceSetupState({ open: latest.current.deviceSetupTask !== null });
-  }
-
-  async function createInvite(payload: AuthKeyDialogPayload) {
-    setInviteForm(toAuthKeyDefaults(payload));
-    if (await createPreAuthKey(payload)) closeInviteDialog();
+  // The new machine appears once the key or request is used, so Done reloads the list.
+  function finishDeviceSetup() {
+    closeDeviceSetupDialog();
+    void refreshDevices();
   }
 
   function openAccessFromDeviceSetup() {
@@ -494,9 +630,6 @@ export default function DevicesPage() {
     }
   }
 
-  useEffect(() => {
-    if (intent.search !== null) setDeviceSearch(intent.search);
-  }, [intent.search]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Retry query consumption after the initial node snapshot arrives.
   useEffect(
     () => latest.current.consumeDeviceQuery(intent.nodeId),
@@ -530,6 +663,7 @@ export default function DevicesPage() {
     renameDialogGuard.cancel();
     setSelectedRenameNode(null);
     setRenameDraft("");
+    setRenameInvalid(false);
     clearActionFeedback("rename-node");
   }
 
@@ -604,30 +738,26 @@ export default function DevicesPage() {
     setTagsSyncing(false);
     setSelectedTagsNode(null);
     setTagsForm({ tags: "" });
+    setTagsAcknowledged(false);
+    setTagsInvalid(false);
     clearActionFeedback("node-tags");
   }
 
   async function confirmSetNodeTags(node: HeadscaleNode) {
+    if (!nextNodeTags.every(isNodeTag)) {
+      setTagsInvalid(true);
+      return;
+    }
     const updated = await mutate("node-tags", {
       endpoint: "setTags",
       input: {
         nodeId: node.id,
-        tags: parseList(tagsForm.tags),
+        tags: nextNodeTags,
       },
     });
     if (updated) {
       closeTagsDialog();
     }
-  }
-
-  async function renameNode(node: HeadscaleNode) {
-    return mutate("rename-node", {
-      endpoint: "renameNode",
-      input: {
-        nodeId: node.id,
-        newName: renameDraft || nodeDisplayName(node),
-      },
-    });
   }
 
   async function expireNode(node: HeadscaleNode) {
@@ -643,7 +773,15 @@ export default function DevicesPage() {
   }
 
   async function confirmRenameNode(node: HeadscaleNode) {
-    const renamed = await renameNode(node);
+    if (!canRename) return;
+    if (!isValidNodeName(renameName)) {
+      setRenameInvalid(true);
+      return;
+    }
+    const renamed = await mutate("rename-node", {
+      endpoint: "renameNode",
+      input: { nodeId: node.id, newName: renameName },
+    });
     if (renamed) {
       closeRenameDialog();
     }
@@ -663,13 +801,27 @@ export default function DevicesPage() {
     }
   }
 
-  async function jumpToRoutesForMachine(node: HeadscaleNode) {
-    await navigate({ to: "/routes" });
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    document.querySelector<HTMLElement>(`[data-testid="route-node-${node.id}"]`)?.scrollIntoView({
-      block: "center",
-      inline: "nearest",
-    });
+  // The routes page finds the machine from `?node=`.
+  function jumpToRoutesForMachine(node: HeadscaleNode) {
+    void navigate({ to: "/routes", search: { node: node.id } });
+  }
+
+  // Each route says its status in words, not only by colour.
+  function routeBadge(route: string, approved: boolean, testId?: string, className?: string) {
+    const status = approved ? copy.routeStatusApproved : copy.routeStatusPending;
+    return (
+      <Badge
+        key={route}
+        variant="outline"
+        className={cn(className, approved ? approvedRouteClass() : pendingRouteClass(route))}
+        data-testid={testId}
+      >
+        <bdi dir="ltr">{route}</bdi>
+        <span className="text-[10px] font-normal opacity-80">
+          {isExitRoute(route) ? `${copy.routeStatusExit} · ${status}` : status}
+        </span>
+      </Badge>
+    );
   }
 
   function openUserDetailsExternal(userId?: string) {
@@ -686,31 +838,30 @@ export default function DevicesPage() {
 
   return (
     <section className="space-y-3 sm:space-y-4">
-      <Dialog open={deviceSetupDialogOpen} onOpenChange={closeDeviceSetupDialog}>
+      <Dialog open={deviceSetupDialogOpen} onOpenChange={requestCloseDeviceSetupDialog}>
         <DialogContent
-          className="max-h-[min(90vh,760px)] overflow-y-auto sm:max-w-4xl"
+          className="flex flex-col overflow-hidden sm:max-w-[min(56rem,calc(100%-2rem))]"
           data-testid="add-device-dialog"
           initialFocus={() => wizardKeyCardRef.current ?? true}
         >
-          <div className="grid gap-4" data-testid="add-device-wizard">
-            <DialogHeader>
-              <DialogTitle>
-                {deviceSetupTask ? deviceSetupTitle(deviceSetupTask, copy) : copy.addDevice}
-              </DialogTitle>
-              <DialogDescription>
-                <span className="block">{copy.deviceSetupLead}</span>
-                {deviceSetupTask ? (
-                  <span className="mt-1 block">
-                    {deviceSetupDescription(deviceSetupTask, copy)}
-                  </span>
-                ) : null}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {deviceSetupTask ? deviceSetupTitle(deviceSetupTask, copy) : copy.addDevice}
+            </DialogTitle>
+            <DialogDescription>
+              {deviceSetupTask === "pending" ? copy.pendingRegistrationLead : copy.deviceSetupLead}
+            </DialogDescription>
+          </DialogHeader>
 
+          {/* Only the steps scroll, so the footer stays reachable in a short window. */}
+          <div
+            className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1"
+            data-testid="add-device-wizard"
+          >
             <div className="grid gap-4">
               {deviceSetupTask ? (
                 <nav
-                  className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+                  className="grid gap-2 sm:auto-cols-fr sm:grid-flow-col"
                   aria-label={copy.addDevice}
                   data-testid="add-device-stepper"
                 >
@@ -727,10 +878,10 @@ export default function DevicesPage() {
                           isAddDeviceStepComplete(index) ? "border-primary/40" : "",
                         ],
                       )}
-                      disabled={index > addDeviceStepIndex}
+                      disabled={index >= addDeviceStepIndex}
                       aria-current={addDeviceStep === step.id ? "step" : undefined}
                       data-testid={`add-device-step-${step.id}`}
-                      onClick={() => setDeviceSetupState({ step: step.id })}
+                      onClick={() => returnToAddDeviceStep(step.id)}
                     >
                       <span className="flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium">
                         {isAddDeviceStepComplete(index) ? (
@@ -889,8 +1040,9 @@ export default function DevicesPage() {
                           {authRequestHint ? (
                             <p
                               id="pending-node-key-hint"
+                              role="alert"
                               data-testid="pending-node-key-hint"
-                              className="text-xs leading-5 text-muted-foreground"
+                              className="text-xs leading-5 text-destructive"
                             >
                               {authRequestHint === "invalid"
                                 ? copy.authRequestInvalid
@@ -1028,25 +1180,41 @@ export default function DevicesPage() {
                                 data-testid="setup-tags-enabled"
                                 checked={inviteForm.aclTags.trim().length > 0}
                                 onCheckedChange={(value) =>
-                                  setInviteForm((current) => ({
-                                    ...current,
-                                    aclTags: value ? "tag:server" : "",
-                                  }))
+                                  changeInviteForm({ aclTags: value ? "tag:server" : "" })
                                 }
                               />
                             </div>
                             <Input
                               value={inviteForm.aclTags}
                               onChange={(event) =>
-                                setInviteForm((current) => ({
-                                  ...current,
-                                  aclTags: event.target.value,
-                                }))
+                                changeInviteForm({ aclTags: event.target.value })
                               }
                               id="setup-tags"
                               data-testid="setup-tags"
                               placeholder="tag:server"
+                              aria-invalid={setupError === "tags" ? true : undefined}
+                              aria-describedby={
+                                setupError === "tags" ? "setup-tags-error" : undefined
+                              }
                             />
+                            {setupError === "tags" ? (
+                              <p
+                                id="setup-tags-error"
+                                role="alert"
+                                className="text-xs leading-5 text-destructive"
+                                data-testid="setup-tags-error"
+                              >
+                                {copy.invalidTags}
+                              </p>
+                            ) : null}
+                            {undefinedTags.length > 0 ? (
+                              <p
+                                className="rounded-md bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                                data-testid="setup-tags-undefined"
+                              >
+                                {t("undefinedTags", { tags: undefinedTags.join(", ") })}
+                              </p>
+                            ) : null}
                             <button
                               type="button"
                               className="w-fit text-xs font-medium text-primary underline underline-offset-4"
@@ -1072,9 +1240,7 @@ export default function DevicesPage() {
                               aria-labelledby="setup-ephemeral-title"
                               aria-describedby="setup-ephemeral-description"
                               checked={inviteForm.ephemeral}
-                              onCheckedChange={(value) =>
-                                setInviteForm((current) => ({ ...current, ephemeral: value }))
-                              }
+                              onCheckedChange={(value) => changeInviteForm({ ephemeral: value })}
                               data-testid="setup-ephemeral"
                             />
                           </div>
@@ -1110,6 +1276,36 @@ export default function DevicesPage() {
                         </div>
                         <div className="grid gap-4">
                           <div className="grid gap-2">
+                            <Label htmlFor="setup-owner">{copy.inviteOwner}</Label>
+                            <NativeSelect
+                              id="setup-owner"
+                              data-testid="setup-owner"
+                              value={wizardOwner}
+                              onChange={(event) => changeInviteForm({ user: event.target.value })}
+                              aria-invalid={setupError === "owner" ? true : undefined}
+                              aria-describedby={
+                                setupError === "owner" ? "setup-owner-error" : undefined
+                              }
+                            >
+                              {draftUsers.map((user) => (
+                                <NativeSelectOption key={user.id} value={user.id}>
+                                  {authKeyDialogUser(user, copy.unknown).label}
+                                </NativeSelectOption>
+                              ))}
+                              <NativeSelectOption value="">{copy.inviteNoOwner}</NativeSelectOption>
+                            </NativeSelect>
+                            {setupError === "owner" ? (
+                              <p
+                                id="setup-owner-error"
+                                role="alert"
+                                className="text-xs leading-5 text-destructive"
+                                data-testid="setup-owner-error"
+                              >
+                                {copy.inviteTagsRequired}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="grid gap-2">
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <h3 id="setup-reusable-title" className="text-sm font-semibold">
@@ -1126,9 +1322,7 @@ export default function DevicesPage() {
                                 aria-labelledby="setup-reusable-title"
                                 aria-describedby="setup-reusable-description"
                                 checked={inviteForm.reusable}
-                                onCheckedChange={(value) =>
-                                  setInviteForm((current) => ({ ...current, reusable: value }))
-                                }
+                                onCheckedChange={(value) => changeInviteForm({ reusable: value })}
                                 data-testid="setup-reusable"
                               />
                             </div>
@@ -1148,23 +1342,27 @@ export default function DevicesPage() {
                                   data-testid="setup-expiration"
                                   inputMode="numeric"
                                   className="h-9 w-14 rounded-none border-0 text-center"
-                                  value={String(authKeyExpiryDays)}
-                                  onChange={(event) =>
-                                    setAuthKeyExpiryDays(Number(event.target.value))
-                                  }
+                                  aria-describedby="setup-expiration-hint"
+                                  value={expiryDraft ?? String(authKeyExpiryDays)}
+                                  onChange={(event) => setExpiryDraft(event.target.value)}
+                                  onBlur={commitExpiryDraft}
                                 />
                                 <button
                                   type="button"
-                                  className="h-9 border-s px-3 text-sm"
+                                  className="h-9 border-s px-3 text-sm disabled:opacity-50"
                                   data-testid="setup-expiration-decrement"
+                                  aria-label={copy.decreaseDays}
+                                  disabled={authKeyExpiryDays <= 1}
                                   onClick={() => setAuthKeyExpiryDays(authKeyExpiryDays - 1)}
                                 >
                                   -
                                 </button>
                                 <button
                                   type="button"
-                                  className="h-9 border-s px-3 text-sm"
+                                  className="h-9 border-s px-3 text-sm disabled:opacity-50"
                                   data-testid="setup-expiration-increment"
+                                  aria-label={copy.increaseDays}
+                                  disabled={authKeyExpiryDays >= 90}
                                   onClick={() => setAuthKeyExpiryDays(authKeyExpiryDays + 1)}
                                 >
                                   +
@@ -1172,7 +1370,11 @@ export default function DevicesPage() {
                               </div>
                               <span className="text-sm text-muted-foreground">{copy.days}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p
+                              id="setup-expiration-hint"
+                              className="text-xs text-muted-foreground"
+                              data-testid="setup-expiration-hint"
+                            >
                               {copy.mustBeBetweenDays}
                             </p>
                             <p className="rounded-md bg-muted/60 px-3 py-2 text-xs leading-5 text-muted-foreground">
@@ -1187,8 +1389,8 @@ export default function DevicesPage() {
                           <Badge variant="outline">
                             {deviceSetupTask === "server" ? copy.linuxServer : copy.clientDevice}
                           </Badge>
-                          {inviteForm.aclTags ? (
-                            <Badge variant="outline">{inviteForm.aclTags}</Badge>
+                          {wizardTags.length ? (
+                            <Badge variant="outline">{wizardTags.join(", ")}</Badge>
                           ) : null}
                           {inviteForm.reusable ? (
                             <Badge variant="outline">{copy.reusable}</Badge>
@@ -1201,12 +1403,25 @@ export default function DevicesPage() {
                           <Button
                             className="w-fit"
                             data-testid="generate-install-script"
-                            disabled={inviteDialogOpen || isActionPending("create-invite")}
-                            onClick={openInviteDialogFromDeviceSetup}
+                            disabled={isActionPending("create-invite")}
+                            onClick={() => void generateDeviceKey()}
                           >
-                            <KeyRound className="h-4 w-4" aria-hidden="true" />
-                            {copy.generateInstallScript}
+                            {isActionPending("create-invite") ? (
+                              <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            ) : (
+                              <KeyRound className="h-4 w-4" aria-hidden="true" />
+                            )}
+                            {copy.generateInstallCommand}
                           </Button>
+                          {actionError("create-invite") ? (
+                            <p
+                              role="alert"
+                              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                              data-testid="setup-generate-error"
+                            >
+                              {actionError("create-invite")}
+                            </p>
+                          ) : null}
                           {lastCreatedInvite ? (
                             <fieldset
                               ref={wizardKeyCardRef}
@@ -1221,21 +1436,59 @@ export default function DevicesPage() {
                                   {lastCreatedInvite}
                                 </code>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">{copy.installCommand}</p>
-                                <code className="mt-2 block break-all rounded-md bg-secondary px-2 py-1 text-xs">
-                                  {installCommand}
-                                </code>
+                              <div className="grid gap-2">
+                                <Label htmlFor="setup-login-server">{copy.loginServerUrl}</Label>
+                                <Input
+                                  id="setup-login-server"
+                                  data-testid="setup-login-server"
+                                  value={loginServerUrl}
+                                  onChange={(event) =>
+                                    setDeviceSetupState({ loginServer: event.target.value })
+                                  }
+                                  dir="ltr"
+                                  className="font-mono"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  aria-invalid={loginServerValid ? undefined : true}
+                                  aria-describedby="setup-login-server-hint"
+                                />
+                                {loginServerValid ? (
+                                  <p
+                                    id="setup-login-server-hint"
+                                    className="text-xs leading-5 text-muted-foreground"
+                                  >
+                                    {copy.loginServerUrlHint}
+                                  </p>
+                                ) : (
+                                  <p
+                                    id="setup-login-server-hint"
+                                    role="alert"
+                                    className="text-xs leading-5 text-destructive"
+                                    data-testid="setup-login-server-error"
+                                  >
+                                    {t("connectionInvalidUrl")}
+                                  </p>
+                                )}
                               </div>
-                              <CopyButton
-                                size="sm"
-                                variant="outline"
-                                className="w-fit"
-                                data-testid="copy-setup-install-command"
-                                value={installCommand}
-                              >
-                                {copy.copyCommand}
-                              </CopyButton>
+                              {installCommand ? (
+                                <>
+                                  <div>
+                                    <p className="text-sm font-medium">{copy.installCommand}</p>
+                                    <code className="mt-2 block break-all rounded-md bg-secondary px-2 py-1 text-xs">
+                                      {installCommand}
+                                    </code>
+                                  </div>
+                                  <CopyButton
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-fit"
+                                    data-testid="copy-setup-install-command"
+                                    value={installCommand}
+                                  >
+                                    {copy.copyCommand}
+                                  </CopyButton>
+                                </>
+                              ) : null}
                             </fieldset>
                           ) : null}
                         </div>
@@ -1245,38 +1498,61 @@ export default function DevicesPage() {
                 )}
               </div>
             </div>
+          </div>
 
-            {deviceSetupTask ? (
-              <DialogFooter className="gap-2 sm:justify-between">
+          {deviceSetupTask ? (
+            <DialogFooter className="gap-2 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                data-testid="add-device-prev"
+                disabled={wizardBusy}
+                onClick={goToPreviousAddDeviceStep}
+              >
+                {copy.previousStep}
+              </Button>
+              {nextStep ? (
                 <Button
                   type="button"
-                  variant="outline"
-                  data-testid="add-device-prev"
-                  onClick={goToPreviousAddDeviceStep}
+                  data-testid="add-device-next"
+                  disabled={addDeviceStep === "pending" && !lastRegisteredNode}
+                  onClick={() => goToNextAddDeviceStep(nextStep.id)}
                 >
-                  {copy.previousStep}
+                  {copy.nextStep}
                 </Button>
-                {nextStep ? (
-                  <Button
-                    type="button"
-                    data-testid="add-device-next"
-                    disabled={addDeviceStep === "pending" && !lastRegisteredNode}
-                    onClick={() => setDeviceSetupState({ step: nextStep.id })}
-                  >
-                    {copy.nextStep}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    data-testid="add-device-finish"
-                    onClick={closeDeviceSetupDialog}
-                  >
-                    {copy.finish}
-                  </Button>
-                )}
-              </DialogFooter>
-            ) : null}
-          </div>
+              ) : (
+                <Button
+                  type="button"
+                  data-testid="add-device-finish"
+                  disabled={wizardBusy}
+                  onClick={finishDeviceSetup}
+                >
+                  {copy.finish}
+                </Button>
+              )}
+            </DialogFooter>
+          ) : null}
+
+          <AlertDialog open={discardKeyOpen} onOpenChange={setDiscardKeyOpen}>
+            <AlertDialogContent data-testid="discard-key-dialog">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{copy.discardKeyTitle}</AlertDialogTitle>
+                <AlertDialogDescription>{copy.discardKeyDescription}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="discard-key-cancel">
+                  {copy.cancel}
+                </AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  data-testid="discard-key-confirm"
+                  onClick={closeDeviceSetupDialog}
+                >
+                  {copy.discardKeyConfirm}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DialogContent>
       </Dialog>
 
@@ -1313,7 +1589,13 @@ export default function DevicesPage() {
                     {copy.nodeId}: {selectedDetailNode.id}
                   </Badge>
                   {selectedDetailNode.registerMethod ? (
-                    <Badge variant="outline">{selectedDetailNode.registerMethod}</Badge>
+                    <Badge
+                      variant="outline"
+                      data-testid={`device-detail-register-method-${selectedDetailNode.id}`}
+                    >
+                      {copy.registerMethod}:{" "}
+                      {registerMethodLabel(selectedDetailNode.registerMethod, copy)}
+                    </Badge>
                   ) : null}
                 </div>
 
@@ -1336,9 +1618,12 @@ export default function DevicesPage() {
 
                   <section className="grid gap-2 rounded-md border bg-background p-3">
                     <h3 className="text-sm font-semibold">{copy.details}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {copy.lastSeen}: {formatDate(selectedDetailNode.lastSeen)}
-                    </p>
+                    {/* Headscale's last seen is the last disconnect, which reads stale while online. */}
+                    {selectedDetailNode.online ? null : (
+                      <p className="text-sm text-muted-foreground">
+                        {copy.lastSeen}: {formatDate(selectedDetailNode.lastSeen)}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {copy.expires}: {formatDate(selectedDetailNode.expiry)}
                     </p>
@@ -1375,22 +1660,38 @@ export default function DevicesPage() {
                 ) : null}
                 <section className="grid gap-2">
                   <h3 className="text-sm font-semibold">{copy.routes}</h3>
-                  <div className="flex flex-wrap gap-1">
-                    {nodePendingRoutes(selectedDetailNode).map((route) => (
-                      <Badge key={route} variant="outline" className={pendingRouteClass(route)}>
-                        <bdi dir="ltr">{route}</bdi>
-                      </Badge>
-                    ))}
-                    {selectedDetailNode.approvedRoutes.map((route) => (
-                      <Badge key={route} variant="outline" className={approvedRouteClass()}>
-                        <bdi dir="ltr">{route}</bdi>
-                      </Badge>
-                    ))}
-                    {nodePendingRoutes(selectedDetailNode).length === 0 &&
-                    selectedDetailNode.approvedRoutes.length === 0 ? (
-                      <span className="text-sm text-muted-foreground">{copy.noRouteValues}</span>
-                    ) : null}
-                  </div>
+                  {nodePendingRoutes(selectedDetailNode).length ? (
+                    <div
+                      className="grid gap-1"
+                      data-testid={`device-detail-pending-routes-${selectedDetailNode.id}`}
+                    >
+                      <h4 className="text-xs font-medium text-muted-foreground">
+                        {copy.pendingRoutes}
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {nodePendingRoutes(selectedDetailNode).map((route) =>
+                          routeBadge(route, false),
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                  {selectedDetailNode.approvedRoutes.length ? (
+                    <div
+                      className="grid gap-1"
+                      data-testid={`device-detail-approved-routes-${selectedDetailNode.id}`}
+                    >
+                      <h4 className="text-xs font-medium text-muted-foreground">
+                        {copy.approvedRoutes}
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedDetailNode.approvedRoutes.map((route) => routeBadge(route, true))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {selectedDetailNode.availableRoutes.length === 0 &&
+                  selectedDetailNode.approvedRoutes.length === 0 ? (
+                    <span className="text-sm text-muted-foreground">{copy.noRouteValues}</span>
+                  ) : null}
                 </section>
               </div>
             </>
@@ -1410,15 +1711,31 @@ export default function DevicesPage() {
               <Input
                 id="rename-node-dialog-input"
                 value={renameDraft}
-                onChange={(event) => setRenameDraft(event.target.value)}
+                onChange={(event) => {
+                  setRenameInvalid(false);
+                  setRenameDraft(event.target.value);
+                }}
                 data-testid="rename-node-dialog-input"
+                aria-invalid={renameInvalid || undefined}
+                aria-describedby={renameInvalid ? "rename-node-invalid" : undefined}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  // The Enter that confirms an input method candidate is not a submit.
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                     event.preventDefault();
                     void confirmRenameNode(selectedRenameNode);
                   }
                 }}
               />
+              {renameInvalid ? (
+                <p
+                  id="rename-node-invalid"
+                  role="alert"
+                  className="text-xs leading-5 text-destructive"
+                  data-testid="rename-node-invalid"
+                >
+                  {copy.invalidMachineName}
+                </p>
+              ) : null}
             </div>
             <DialogFooter>
               <Button
@@ -1431,7 +1748,7 @@ export default function DevicesPage() {
               </Button>
               <Button
                 data-testid="rename-node-confirm"
-                disabled={isActionPending("rename-node")}
+                disabled={isActionPending("rename-node") || !canRename}
                 onClick={() => void confirmRenameNode(selectedRenameNode)}
               >
                 {isActionPending("rename-node") ? (
@@ -1460,54 +1777,112 @@ export default function DevicesPage() {
               <DialogTitle>{copy.editNodeTagsTitle}</DialogTitle>
               <DialogDescription>{copy.editNodeTagsDescription}</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-2">
-              <Label htmlFor="node-tags-input">{copy.nodeTags}</Label>
-              <Input
-                value={tagsForm.tags}
-                onChange={(event) =>
-                  setTagsForm((current) => ({ ...current, tags: event.target.value }))
-                }
-                id="node-tags-input"
-                data-testid="node-tags-input"
-                readOnly={tagsSyncing}
-                aria-busy={tagsSyncing || undefined}
-                placeholder="tag:server, tag:router"
-              />
-              <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                {copy.replaceTagsWarning}
-              </p>
-            </div>
-            {actionError("node-tags") ? (
-              <p
-                role="alert"
-                className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                data-testid="node-tags-error"
-              >
-                {actionError("node-tags")}
-              </p>
-            ) : null}
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                data-testid="node-tags-cancel"
-                disabled={isActionPending("node-tags")}
-                onClick={closeTagsDialog}
-              >
-                {copy.cancel}
-              </Button>
-              <Button
-                type="button"
-                data-testid="node-tags-confirm"
-                disabled={isActionPending("node-tags") || tagsSyncing}
-                onClick={() => void confirmSetNodeTags(selectedTagsNode)}
-              >
-                {isActionPending("node-tags") ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <form
+              className="grid gap-4"
+              data-testid="node-tags-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void confirmSetNodeTags(selectedTagsNode);
+              }}
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="node-tags-input">{copy.nodeTags}</Label>
+                <Input
+                  value={tagsForm.tags}
+                  onChange={(event) => {
+                    setTagsInvalid(false);
+                    setTagsForm((current) => ({ ...current, tags: event.target.value }));
+                  }}
+                  id="node-tags-input"
+                  data-testid="node-tags-input"
+                  readOnly={tagsSyncing}
+                  aria-busy={tagsSyncing || undefined}
+                  aria-invalid={tagsInvalid || tagsWouldClear || undefined}
+                  aria-describedby={
+                    tagsInvalid
+                      ? "node-tags-invalid"
+                      : tagsWouldClear
+                        ? "node-tags-required"
+                        : undefined
+                  }
+                  placeholder="tag:server, tag:router"
+                />
+                {tagsInvalid ? (
+                  <p
+                    id="node-tags-invalid"
+                    role="alert"
+                    className="text-xs leading-5 text-destructive"
+                    data-testid="node-tags-invalid"
+                  >
+                    {copy.invalidTags}
+                  </p>
                 ) : null}
-                {copy.saveTags}
-              </Button>
-            </DialogFooter>
+                {tagsWouldClear ? (
+                  <p
+                    id="node-tags-required"
+                    role="alert"
+                    className="text-xs leading-5 text-destructive"
+                    data-testid="node-tags-required"
+                  >
+                    {copy.tagsRequiredForTaggedNode}
+                  </p>
+                ) : null}
+                <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  {copy.replaceTagsWarning}
+                </p>
+              </div>
+              {tagsWouldDropOwner ? (
+                <div className="grid gap-2" data-testid="node-tags-owner-warning">
+                  <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                    {t("tagUserNodeWarning", {
+                      owner: nodeOwner(selectedTagsNode) || copy.unknown,
+                    })}
+                  </p>
+                  <label
+                    className="flex items-start gap-2 rounded-md border bg-background p-3 text-sm"
+                    htmlFor="node-tags-acknowledge"
+                  >
+                    <Checkbox
+                      checked={tagsAcknowledged}
+                      onCheckedChange={(value) => setTagsAcknowledged(value)}
+                      id="node-tags-acknowledge"
+                      data-testid="node-tags-acknowledge"
+                    />
+                    <span>{copy.tagUserNodeAcknowledge}</span>
+                  </label>
+                </div>
+              ) : null}
+              {actionError("node-tags") ? (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  data-testid="node-tags-error"
+                >
+                  {actionError("node-tags")}
+                </p>
+              ) : null}
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-testid="node-tags-cancel"
+                  disabled={isActionPending("node-tags")}
+                  onClick={closeTagsDialog}
+                >
+                  {copy.cancel}
+                </Button>
+                <Button
+                  type="submit"
+                  data-testid="node-tags-confirm"
+                  disabled={isActionPending("node-tags") || tagsSyncing || !canSaveTags}
+                >
+                  {isActionPending("node-tags") ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  {copy.saveTags}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         ) : null}
       </Dialog>
@@ -1612,6 +1987,8 @@ export default function DevicesPage() {
               {copy.devicesSubtitle}{" "}
               <a
                 href="https://tailscale.com/kb/1017/install"
+                target="_blank"
+                rel="noreferrer"
                 className="cursor-pointer font-medium text-primary underline underline-offset-4"
                 data-testid="install-docs-link"
               >
@@ -1664,7 +2041,7 @@ export default function DevicesPage() {
         ) : (
           <div className="min-w-0 space-y-2" data-testid="machine-table-shell">
             <div
-              className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"
               data-testid="machine-toolbar"
             >
               <div className="w-full sm:max-w-sm">
@@ -1678,7 +2055,7 @@ export default function DevicesPage() {
                   />
                   <Input
                     value={deviceSearch}
-                    onChange={(event) => setDeviceSearch(event.target.value)}
+                    onChange={(event) => changeDeviceSearch(event.target.value)}
                     id="device-search"
                     data-testid="device-search"
                     className="ps-8"
@@ -1697,7 +2074,7 @@ export default function DevicesPage() {
                   />
                   <NativeSelect
                     value={machineFilter}
-                    onChange={(event) => setMachineFilter(event.target.value as MachineFilter)}
+                    onChange={(event) => changeMachineFilter(event.target.value as MachineFilter)}
                     id="machine-filter"
                     data-testid="machine-filter"
                     className="ps-8"
@@ -1711,8 +2088,42 @@ export default function DevicesPage() {
                   </NativeSelect>
                 </div>
               </div>
-              <p className="whitespace-nowrap text-xs text-muted-foreground sm:ms-auto">
-                {filteredNodes.length} / {snapshot.nodes.length}
+              {ownerFilter !== null ? (
+                <Badge
+                  variant="outline"
+                  className="h-7 w-fit gap-1 pe-1"
+                  data-testid="owner-filter-chip"
+                >
+                  <span>
+                    {copy.owner}:{" "}
+                    <bdi dir="auto">
+                      {ownerFilterUser ? userLabel(ownerFilterUser) : ownerFilter}
+                    </bdi>
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-sm p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={copy.removeOwnerFilter}
+                    onClick={() => updateFilterQuery({ user: undefined })}
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </Badge>
+              ) : null}
+              <p
+                role="status"
+                className="whitespace-nowrap text-xs text-muted-foreground sm:ms-auto"
+                data-testid="machine-count"
+              >
+                <span aria-hidden="true">
+                  {filteredNodes.length} / {snapshot.nodes.length}
+                </span>
+                <span className="sr-only">
+                  {t("machineCount", {
+                    shown: filteredNodes.length,
+                    total: snapshot.nodes.length,
+                  })}
+                </span>
               </p>
               <Button
                 type="button"
@@ -1760,13 +2171,13 @@ export default function DevicesPage() {
                     <TableHead>{copy.devicesTableUser}</TableHead>
                     <TableHead>{copy.devicesTableRoutes}</TableHead>
                     <TableHead>{copy.devicesTableActivity}</TableHead>
-                    <TableHead className="hidden md:table-cell">{copy.actions}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{copy.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNodes.map((node) => (
                     <TableRow key={node.id} data-testid={`device-${node.id}`}>
-                      <TableCell className="align-top md:min-w-64">
+                      <TableCell className="whitespace-normal align-top lg:min-w-64 lg:whitespace-nowrap">
                         <div className="flex min-w-0 items-center gap-2">
                           <Network
                             className="h-4 w-4 shrink-0 text-muted-foreground"
@@ -1807,7 +2218,7 @@ export default function DevicesPage() {
                             ))}
                           </div>
                         ) : null}
-                        <div className="mt-2 md:hidden">
+                        <div className="mt-2 lg:hidden">
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               render={
@@ -1821,8 +2232,10 @@ export default function DevicesPage() {
                             >
                               <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
                             </DropdownMenuTrigger>
+                            {/* Beside the trigger the menu can use the full window height. */}
                             <DropdownMenuContent
-                              align="start"
+                              side="inline-end"
+                              align="center"
                               className="w-64"
                               data-testid={`machine-actions-menu-mobile-${node.id}`}
                             >
@@ -1867,13 +2280,15 @@ export default function DevicesPage() {
                                     {copy.disableExpiry}
                                   </DropdownMenuItem>
                                 ) : null}
-                                <DropdownMenuItem
-                                  data-testid={`expire-node-action-mobile-${node.id}`}
-                                  onClick={() => openExpireDialog(node)}
-                                >
-                                  <Clock className="h-4 w-4" aria-hidden="true" />
-                                  {copy.expire}
-                                </DropdownMenuItem>
+                                {isTimestampExpired(node.expiry) ? null : (
+                                  <DropdownMenuItem
+                                    data-testid={`expire-node-action-mobile-${node.id}`}
+                                    onClick={() => openExpireDialog(node)}
+                                  >
+                                    <Clock className="h-4 w-4" aria-hidden="true" />
+                                    {copy.expire}
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   variant="destructive"
                                   data-testid={`remove-node-action-mobile-${node.id}`}
@@ -1887,7 +2302,7 @@ export default function DevicesPage() {
                           </DropdownMenu>
                         </div>
                       </TableCell>
-                      <TableCell className="align-top md:min-w-40">
+                      <TableCell className="whitespace-normal align-top lg:min-w-40 lg:whitespace-nowrap">
                         {hasVisibleUser(node.user) ? (
                           <div>
                             <button
@@ -1908,27 +2323,23 @@ export default function DevicesPage() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="align-top md:min-w-56">
+                      <TableCell className="whitespace-normal align-top lg:min-w-56 lg:whitespace-nowrap">
                         {nodePendingRoutes(node).length ? (
                           <button
                             type="button"
                             className="flex flex-wrap gap-1 rounded-md text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             data-testid={`device-pending-routes-${node.id}`}
+                            title={copy.viewRoutes}
                             onClick={() => jumpToRoutesForMachine(node)}
                           >
-                            {nodePendingRoutes(node).map((route, routeIndex) => (
-                              <Badge
-                                key={route}
-                                variant="outline"
-                                className={cn(
-                                  "cursor-pointer hover:opacity-90",
-                                  pendingRouteClass(route),
-                                )}
-                                data-testid={`device-pending-route-${node.id}-${routeIndex}`}
-                              >
-                                <bdi dir="ltr">{route}</bdi>
-                              </Badge>
-                            ))}
+                            {nodePendingRoutes(node).map((route, routeIndex) =>
+                              routeBadge(
+                                route,
+                                false,
+                                `device-pending-route-${node.id}-${routeIndex}`,
+                                "cursor-pointer hover:opacity-90",
+                              ),
+                            )}
                           </button>
                         ) : null}
                         {node.approvedRoutes.length ? (
@@ -1937,20 +2348,17 @@ export default function DevicesPage() {
                               "mt-2": nodePendingRoutes(node).length,
                             })}
                           >
-                            {node.approvedRoutes.map((route, routeIndex) => (
-                              <Badge
-                                key={route}
-                                variant="outline"
-                                className={approvedRouteClass()}
-                                data-testid={`device-approved-route-${node.id}-${routeIndex}`}
-                              >
-                                <bdi dir="ltr">{route}</bdi>
-                              </Badge>
-                            ))}
+                            {node.approvedRoutes.map((route, routeIndex) =>
+                              routeBadge(
+                                route,
+                                true,
+                                `device-approved-route-${node.id}-${routeIndex}`,
+                              ),
+                            )}
                           </div>
                         ) : null}
                       </TableCell>
-                      <TableCell className="align-top md:min-w-44">
+                      <TableCell className="whitespace-normal align-top lg:min-w-44 lg:whitespace-nowrap">
                         <Badge
                           variant="outline"
                           className={nodeStatusClass(node)}
@@ -1963,14 +2371,16 @@ export default function DevicesPage() {
                           )}
                           {nodeStatusLabel(node)}
                         </Badge>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {copy.lastSeen}: {formatDate(node.lastSeen)}
-                        </p>
+                        {node.online ? null : (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {copy.lastSeen}: {formatDate(node.lastSeen)}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           {copy.expires}: {formatDate(node.expiry)}
                         </p>
                       </TableCell>
-                      <TableCell className="hidden align-top md:table-cell md:min-w-16">
+                      <TableCell className="hidden align-top lg:table-cell lg:min-w-16">
                         <div className="flex justify-start">
                           <DropdownMenu>
                             <DropdownMenuTrigger
@@ -1985,8 +2395,10 @@ export default function DevicesPage() {
                             >
                               <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
                             </DropdownMenuTrigger>
+                            {/* Beside the trigger the menu can use the full window height. */}
                             <DropdownMenuContent
-                              align="end"
+                              side="inline-start"
+                              align="center"
                               className="w-64"
                               data-testid={`machine-actions-menu-${node.id}`}
                             >
@@ -2032,13 +2444,15 @@ export default function DevicesPage() {
                                     {copy.disableExpiry}
                                   </DropdownMenuItem>
                                 ) : null}
-                                <DropdownMenuItem
-                                  data-testid={`expire-node-action-${node.id}`}
-                                  onClick={() => openExpireDialog(node)}
-                                >
-                                  <Clock className="h-4 w-4" aria-hidden="true" />
-                                  {copy.expire}
-                                </DropdownMenuItem>
+                                {isTimestampExpired(node.expiry) ? null : (
+                                  <DropdownMenuItem
+                                    data-testid={`expire-node-action-${node.id}`}
+                                    onClick={() => openExpireDialog(node)}
+                                  >
+                                    <Clock className="h-4 w-4" aria-hidden="true" />
+                                    {copy.expire}
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   variant="destructive"
                                   data-testid={`remove-node-action-${node.id}`}
@@ -2067,20 +2481,6 @@ export default function DevicesPage() {
           </div>
         )}
       </div>
-
-      <CreateAuthKeyDialog
-        paused={stale !== null}
-        open={inviteDialogOpen}
-        users={authKeyDialogUsers}
-        defaults={inviteForm}
-        expirationDays={authKeyExpiryDays}
-        labels={authKeyDialogLabels(copy)}
-        finalFocus={false}
-        error={actionError("create-invite")}
-        onOpenChange={closeInviteDialog}
-        isSubmitting={isActionPending("create-invite")}
-        onSubmit={createInvite}
-      />
     </section>
   );
 }

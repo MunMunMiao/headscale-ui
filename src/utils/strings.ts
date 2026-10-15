@@ -24,6 +24,11 @@ export function parseList(value: string): string[] {
     .filter(Boolean);
 }
 
+export function isHttpUrl(value: string): boolean {
+  const url = value.trim();
+  return /^https?:\/\//i.test(url) && URL.canParse(url);
+}
+
 export function tailscaleUpCommand(
   baseUrl: string,
   authKey: string,

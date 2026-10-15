@@ -9,13 +9,14 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HeadscaleUser, PreAuthKey } from "@/api/contracts";
 import CreateAuthKeyDialog from "@/components/CreateAuthKeyDialog";
 import {
   type AuthKeyDialogDefaults,
   type AuthKeyDialogPayload,
   authKeyDialogLabels,
+  authKeyDialogUser,
   toAuthKeyDefaults,
 } from "@/components/create-auth-key-dialog";
 import {
@@ -64,21 +65,33 @@ import { useSessionDraft } from "@/composables/useSessionDraft";
 import { useSnapshot } from "@/composables/useSnapshot";
 import { useSegment } from "@/composables/useSnapshotSegment";
 import { isTimestampExpired as isExpired } from "@/domain/node-status";
+import { useHeadscaleI18n } from "@/i18n";
 import { keyEphemeralClass, keyKindClass, keyStatusClass, keyTagClass } from "@/utils/status-class";
-import { tailscaleUpCommand } from "@/utils/strings";
+import { isHttpUrl, tailscaleUpCommand } from "@/utils/strings";
 
 type InviteFilter = "all" | "ready" | "used" | "expired" | "tagged";
 type InviteActionTarget = { kind: "expire" | "delete"; key: PreAuthKey };
+/** Whether a listed key (`hskey-auth-<prefix>-***`, or a legacy key in full) is this one-time secret. */
+function isListedSecret(listed: string, secret: string) {
+  return listed.endsWith("***") ? secret.startsWith(listed.slice(0, -3)) : listed === secret;
+}
 export default function InvitesPage() {
   const { stale } = useStore(useSession().drafts);
   const { copy } = useProductCopy();
+  const { t } = useHeadscaleI18n();
   const { snapshot, getSnapshot } = useSnapshot();
   const { isRefreshing: isRefreshingSnapshot, refresh: refreshInvites } = useSegment("identity");
   const { settings } = useHeadscaleClient();
   const { isActionPending, actionError, clearActionFeedback } = useActionFeedback();
-  const { lastCreatedInvite } = useDeviceSetup();
+  const { lastCreatedInvite, loginServer, setState: setDeviceSetupState } = useDeviceSetup();
   const createdInviteRef = useRef<HTMLDivElement>(null);
-  useRevealCreatedInvite(createdInviteRef);
+  // One frame after mount: the router resets the scroll position after the navigation that opened this page.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setSettled(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  useRevealCreatedInvite(createdInviteRef, settled);
   const navigate = useNavigate();
   const [inviteSearch, setInviteSearch] = useState("");
   const [inviteFilter, setInviteFilter] = useState<InviteFilter>("all");
@@ -86,7 +99,7 @@ export default function InvitesPage() {
   const [pendingInviteAction, setPendingInviteAction] = useState<InviteActionTarget | null>(null);
   const [inviteForm, setInviteForm] = useState<AuthKeyDialogDefaults>({
     user: "1",
-    reusable: true,
+    reusable: false,
     ephemeral: false,
     aclTags: "",
   });
@@ -122,10 +135,13 @@ export default function InvitesPage() {
       (inviteFilter === "tagged" && key.aclTags.length > 0);
     return matchesSearch && matchesFilter;
   });
-  const authKeyDialogUsers = visibleUsers.map((user) => ({ id: user.id, label: userLabel(user) }));
-  const installCommand = lastCreatedInvite
-    ? tailscaleUpCommand(settings.baseUrl, lastCreatedInvite)
-    : "";
+  const authKeyDialogUsers = visibleUsers.map((user) => authKeyDialogUser(user, copy.unknown));
+  const loginServerUrl = loginServer ?? settings.baseUrl;
+  const loginServerValid = isHttpUrl(loginServerUrl);
+  const installCommand =
+    lastCreatedInvite && loginServerValid
+      ? tailscaleUpCommand(loginServerUrl, lastCreatedInvite)
+      : "";
   const { mutate } = useMutation();
   const createPreAuthKey = useCreatePreAuthKey();
   function openInviteDialog() {
@@ -135,7 +151,7 @@ export default function InvitesPage() {
     void inviteDialogGuard.refresh(token, () => {
       const users = getSnapshot().snapshot.users.filter(hasVisibleUser);
       setInviteForm((current) =>
-        users.some((user) => user.id === current.user)
+        current.user === "" || users.some((user) => user.id === current.user)
           ? current
           : { ...current, user: users[0]?.id ?? "" },
       );
@@ -168,7 +184,11 @@ export default function InvitesPage() {
         ? { endpoint: "expirePreAuthKey", input: { id: target.key.id } }
         : { endpoint: "deletePreAuthKey", input: { id: target.key.id } },
     );
-    if (completed) closeInviteActionDialog();
+    if (!completed) return;
+    // A one-time secret of a key that can no longer be used must not stay on screen.
+    if (isListedSecret(target.key.key, lastCreatedInvite))
+      setDeviceSetupState({ lastCreatedInvite: "" });
+    closeInviteActionDialog();
   }
   function openUserDetails(user: HeadscaleUser) {
     void navigate({ to: "/members", search: { user: user.id, from: "invites", popup: "user" } });
@@ -222,7 +242,7 @@ export default function InvitesPage() {
                 data-testid="invite-filter"
                 className="ps-8"
               >
-                <NativeSelectOption value="all">{copy.invitesTitle}</NativeSelectOption>
+                <NativeSelectOption value="all">{copy.allAuthKeys}</NativeSelectOption>
                 <NativeSelectOption value="ready">{copy.readyKeys}</NativeSelectOption>
                 <NativeSelectOption value="used">{copy.used}</NativeSelectOption>
                 <NativeSelectOption value="expired">{copy.expiredOnly}</NativeSelectOption>
@@ -362,13 +382,16 @@ export default function InvitesPage() {
                             <DropdownMenuGroup>
                               <DropdownMenuLabel>{copy.actions}</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                data-testid={`expire-invite-${key.id}`}
-                                onClick={() => requestInviteAction("expire", key)}
-                              >
-                                <Clock className="h-4 w-4" aria-hidden="true" />
-                                {copy.expireInvite}
-                              </DropdownMenuItem>
+                              {/* A used one-time key or an expired key can no longer be expired. */}
+                              {!isExpired(key.expiration) && !(key.used && !key.reusable) && (
+                                <DropdownMenuItem
+                                  data-testid={`expire-invite-${key.id}`}
+                                  onClick={() => requestInviteAction("expire", key)}
+                                >
+                                  <Clock className="h-4 w-4" aria-hidden="true" />
+                                  {copy.expireInvite}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 variant="destructive"
                                 data-testid={`delete-invite-${key.id}`}
@@ -388,7 +411,22 @@ export default function InvitesPage() {
               {filteredPreAuthKeys.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-6 text-sm text-muted-foreground">
-                    {copy.noAuthKeys}
+                    {snapshot.preAuthKeys.length > 0 ? (
+                      copy.noAuthKeys
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-3">
+                        {copy.noAuthKeysYet}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="empty-create-invite"
+                          onClick={openInviteDialog}
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                          {copy.createInvite}
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               )}
@@ -420,21 +458,57 @@ export default function InvitesPage() {
                 {copy.copy}
               </CopyButton>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">{copy.installCommand}</p>
-            <div className="mt-2 grid gap-2">
-              <code className="break-all rounded-md bg-secondary px-2 py-1 text-xs">
-                {installCommand}
-              </code>
-              <CopyButton
-                size="sm"
-                variant="outline"
-                className="w-full"
-                data-testid="copy-created-install-command"
-                value={installCommand}
-              >
-                {copy.copyCommand}
-              </CopyButton>
+            <div className="mt-4 grid gap-2">
+              <Label htmlFor="invite-login-server">{copy.loginServerUrl}</Label>
+              <Input
+                id="invite-login-server"
+                data-testid="invite-login-server"
+                value={loginServerUrl}
+                onChange={(event) => setDeviceSetupState({ loginServer: event.target.value })}
+                dir="ltr"
+                className="font-mono"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={loginServerValid ? undefined : true}
+                aria-describedby="invite-login-server-hint"
+              />
+              {loginServerValid ? (
+                <p
+                  id="invite-login-server-hint"
+                  className="text-xs leading-5 text-muted-foreground"
+                >
+                  {copy.loginServerUrlHint}
+                </p>
+              ) : (
+                <p
+                  id="invite-login-server-hint"
+                  role="alert"
+                  className="text-xs leading-5 text-destructive"
+                  data-testid="invite-login-server-error"
+                >
+                  {t("connectionInvalidUrl")}
+                </p>
+              )}
             </div>
+            {installCommand ? (
+              <>
+                <p className="mt-4 text-sm text-muted-foreground">{copy.installCommand}</p>
+                <div className="mt-2 grid gap-2">
+                  <code className="break-all rounded-md bg-secondary px-2 py-1 text-xs">
+                    {installCommand}
+                  </code>
+                  <CopyButton
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    data-testid="copy-created-install-command"
+                    value={installCommand}
+                  >
+                    {copy.copyCommand}
+                  </CopyButton>
+                </div>
+              </>
+            ) : null}
           </Card>
         )}
       </div>
@@ -471,8 +545,16 @@ export default function InvitesPage() {
                 {pendingInviteAction.kind === "expire"
                   ? copy.expireInviteDescription
                   : copy.deleteInviteDescription}
-                <span className="mt-2 block font-mono text-xs text-foreground">
-                  {shortSecret(pendingInviteAction.key.key)}
+                <code
+                  dir="ltr"
+                  className="mt-2 block break-all font-mono text-xs text-foreground"
+                  data-testid="invite-action-key"
+                >
+                  {pendingInviteAction.key.key}
+                </code>
+                <span className="mt-1 block text-foreground" data-testid="invite-action-owner">
+                  {copy.inviteOwner}:{" "}
+                  <bdi dir="auto">{ownerText(pendingInviteAction.key.user)}</bdi>
                 </span>
               </AlertDialogDescription>
             </AlertDialogHeader>

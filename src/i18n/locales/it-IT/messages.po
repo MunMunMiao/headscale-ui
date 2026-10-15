@@ -6,6 +6,14 @@ msgstr ""
 "Language: it-IT\n"
 
 #: src/i18n/descriptors.ts
+msgid "product.optionalField"
+msgstr "(facoltativo)"
+
+#: src/i18n/descriptors.ts
+msgid "plural.labelRemovalDevices"
+msgstr "{count, plural, one {{formattedCount} dispositivo ha questa etichetta. Mantiene il tag: eliminare l’etichetta qui non rimuove i tag dai dispositivi.} other {{formattedCount} dispositivi hanno questa etichetta. Mantengono il tag: eliminare l’etichetta qui non rimuove i tag dai dispositivi.}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.devicesTagged"
 msgstr "{count, plural, one {{formattedCount} dispositivo} other {{formattedCount} dispositivi}}"
 
@@ -22,8 +30,16 @@ msgid "plural.openAccessWarnings"
 msgstr "{count, plural, one {{formattedCount} regola consente a tutti di accedere a tutti i dispositivi.} other {{formattedCount} regole consentono a tutti di accedere a tutti i dispositivi.}}"
 
 #: src/i18n/descriptors.ts
+msgid "plural.moreItems"
+msgstr "{count, plural, one {+{formattedCount} altro} other {+{formattedCount} altri}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.cleanupOrphans"
 msgstr "{count, plural, one {Rimuovi {formattedCount} riferimento obsoleto} other {Rimuovi {formattedCount} riferimenti obsoleti}}"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginUnlockedNotice"
+msgstr "{name} è già sbloccato in questo browser."
 
 #: src/i18n/descriptors.ts
 msgid "product.dashboardSubtitle"
@@ -32,6 +48,22 @@ msgstr "Il punto di partenza per dispositivi, persone e route private."
 #: src/i18n/descriptors.ts
 msgid "product.inviteTagsRequired"
 msgstr "Una chiave senza proprietario richiede almeno un’etichetta ACL."
+
+#: src/i18n/descriptors.ts
+msgid "product.tagsRequiredForTaggedNode"
+msgstr "Un dispositivo con etichette deve mantenerne almeno una. Inserisci le etichette che sostituiscono quelle attuali."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorCannotRemoveAllTags"
+msgstr "Un dispositivo con etichette deve mantenerne almeno una. Headscale non può rimuovere tutte le sue etichette."
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameTaken"
+msgstr "Esiste già un utente con questo nome."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNameTaken"
+msgstr "Esiste già un utente con questo nome."
 
 #: src/i18n/descriptors.ts
 msgid "product.nav.access"
@@ -72,6 +104,10 @@ msgstr "Aggiungi server Linux"
 #: src/i18n/descriptors.ts
 msgid "product.addMemberToTeam"
 msgstr "Aggiungi membro"
+
+#: src/i18n/descriptors.ts
+msgid "product.addIpRule"
+msgstr "Aggiungi regola"
 
 #: src/i18n/descriptors.ts
 msgid "common.addServerProfile"
@@ -118,6 +154,14 @@ msgid "product.policyIdentityRemovalImpact"
 msgstr "Regole interessate: '{'rules'}'. Test della policy interessati: '{'tests'}'."
 
 #: src/i18n/descriptors.ts
+msgid "product.removeIpRuleConsequence"
+msgstr "Dopo il salvataggio, le connessioni consentite solo da questa regola verranno bloccate."
+
+#: src/i18n/descriptors.ts
+msgid "product.allAuthKeys"
+msgstr "Tutte le chiavi"
+
+#: src/i18n/descriptors.ts
 msgid "product.allMachines"
 msgstr "Tutti i dispositivi"
 
@@ -130,10 +174,6 @@ msgid "product.svcAllLabel"
 msgstr "Tutti i servizi"
 
 #: src/i18n/descriptors.ts
-msgid "product.allUsers"
-msgstr "Tutti gli utenti"
-
-#: src/i18n/descriptors.ts
 msgid "product.cleanupReferencesOption"
 msgstr "Rimuovi questo account anche dai riferimenti della policy indicati"
 
@@ -144,6 +184,10 @@ msgstr "Aggiorna anche quei riferimenti della policy al nuovo nome"
 #: src/i18n/descriptors.ts
 msgid "common.databaseBlockedDescription"
 msgstr "Una vecchia pagina mantiene aperto il database locale. Chiudi le altre schede di Headscale UI per continuare. Le connessioni salvate verranno conservate."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNameTaken"
+msgstr "Un altro dispositivo usa già questo nome."
 
 #: src/i18n/descriptors.ts
 msgid "common.databaseReloadDescription"
@@ -186,6 +230,10 @@ msgid "product.applyAssignment"
 msgstr "Applica"
 
 #: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationLead"
+msgstr "Approva un accesso del dispositivo o una verifica SSH in attesa su questo server."
+
+#: src/i18n/descriptors.ts
 msgid "product.approveRoutesTitle"
 msgstr "Approva route annunciate"
 
@@ -194,8 +242,8 @@ msgid "product.approveAll"
 msgstr "Approva tutte"
 
 #: src/i18n/descriptors.ts
-msgid "product.approveExitRouteTitle"
-msgstr "Approva route di uscita"
+msgid "product.approveExitNode"
+msgstr "Approva nodo di uscita"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveExitRoutesTitle"
@@ -222,6 +270,10 @@ msgid "product.approveSshCheck"
 msgstr "Approva verifica SSH"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusApproved"
+msgstr "Approvata"
+
+#: src/i18n/descriptors.ts
 msgid "product.routesApproved"
 msgstr "Approvate"
 
@@ -232,6 +284,10 @@ msgstr "Route approvate"
 #: src/i18n/descriptors.ts
 msgid "product.assignedBadgeLabel"
 msgstr "Assegnato"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodAuthKey"
+msgstr "Chiave di autenticazione"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteKey"
@@ -260,10 +316,6 @@ msgstr "Usa le etichette dei dispositivi per autenticare e controllare l''access
 #: src/i18n/descriptors.ts
 msgid "product.ephemeralDescription"
 msgstr "Rimuove automaticamente il dispositivo dalla tailnet quando va offline."
-
-#: src/i18n/descriptors.ts
-msgid "product.availableRoutes"
-msgstr "Route disponibili"
 
 #: src/i18n/descriptors.ts
 msgid "product.previousStep"
@@ -299,7 +351,7 @@ msgstr "Annulla modifica"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionChangePassphrase"
-msgstr "Cambia passphrase"
+msgstr "Cambia password del profilo"
 
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberDescription"
@@ -350,8 +402,12 @@ msgid "product.clearFilters"
 msgstr "Azzera filtri"
 
 #: src/i18n/descriptors.ts
-msgid "product.changesAutoSaveHint"
-msgstr "Fai clic su “Salva” in alto per inviare le modifiche ai dispositivi."
+msgid "product.clearSearch"
+msgstr "Cancella ricerca"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodCli"
+msgstr "CLI"
 
 #: src/i18n/descriptors.ts
 msgid "product.clientDevice"
@@ -362,6 +418,10 @@ msgid "common.close"
 msgstr "Chiudi"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardKeyConfirm"
+msgstr "Chiudi e scarta la chiave"
+
+#: src/i18n/descriptors.ts
 msgid "common.databaseBlockedTitle"
 msgstr "Chiudi le vecchie schede di Headscale UI"
 
@@ -370,8 +430,8 @@ msgid "common.discardProfileChangesTitle"
 msgstr "Chiudere senza aggiungere questo server?"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesCloseAnyway"
-msgstr "Chiudi senza salvare"
+msgid "product.discardKeyTitle"
+msgstr "Chiudere senza copiare la chiave di autenticazione?"
 
 #: src/i18n/descriptors.ts
 msgid "product.confirm"
@@ -379,7 +439,7 @@ msgstr "Conferma"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionConfirmPassphrase"
-msgstr "Conferma passphrase"
+msgstr "Conferma password del profilo"
 
 #: src/i18n/descriptors.ts
 msgid "common.connect"
@@ -388,6 +448,10 @@ msgstr "Connetti"
 #: src/i18n/descriptors.ts
 msgid "common.connection"
 msgstr "Connessione"
+
+#: src/i18n/descriptors.ts
+msgid "common.continueToServer"
+msgstr "Continua"
 
 #: src/i18n/descriptors.ts
 msgid "common.saveAnywayButton"
@@ -466,12 +530,16 @@ msgid "product.createMember"
 msgstr "Crea utente"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyCreatedAt"
+msgstr "Creata il"
+
+#: src/i18n/descriptors.ts
 msgid "product.createdApiKey"
 msgstr "Chiave API creata"
 
 #: src/i18n/descriptors.ts
 msgid "common.currentServerPassword"
-msgstr "Password attuale del server"
+msgstr "Password attuale del profilo"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomLabel"
@@ -480,6 +548,10 @@ msgstr "Porte personalizzate"
 #: src/i18n/descriptors.ts
 msgid "common.dark"
 msgstr "Scuro"
+
+#: src/i18n/descriptors.ts
+msgid "product.dataRefreshed"
+msgstr "Dati aggiornati"
 
 #: src/i18n/descriptors.ts
 msgid "common.database"
@@ -496,6 +568,10 @@ msgstr "Decidi quali persone e team possono accedere a quali dispositivi. Raggru
 #: src/i18n/descriptors.ts
 msgid "product.resourceAccessEmptyTitle"
 msgstr "Decidi chi può accedere a cosa"
+
+#: src/i18n/descriptors.ts
+msgid "product.decreaseDays"
+msgstr "Diminuisci i giorni"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagDetailDialogSubtitle"
@@ -610,12 +686,28 @@ msgid "product.disableExpiryTitle"
 msgstr "Disattivare la scadenza del dispositivo?"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesTitle"
+msgstr "Scartare tutte le modifiche non salvate?"
+
+#: src/i18n/descriptors.ts
 msgid "common.discardProfileChanges"
 msgstr "Annulla modifiche"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChanges"
+msgstr "Scarta modifiche"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsDiscard"
 msgstr "Elimina la bozza e continua"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogUnsavedChangesBody"
+msgstr "“Scarta queste modifiche” annulla solo le modifiche fatte in questa finestra. “Salva e chiudi” salva l’intera policy in Headscale. Per mantenere le modifiche non salvate, annulla e scegli “Fine”."
+
+#: src/i18n/descriptors.ts
+msgid "product.discardDialogChanges"
+msgstr "Scarta queste modifiche"
 
 #: src/i18n/descriptors.ts
 msgid "product.displayName"
@@ -630,12 +722,24 @@ msgid "product.finish"
 msgstr "Fine"
 
 #: src/i18n/descriptors.ts
+msgid "product.dialogChangesKeptHint"
+msgstr "“Fine” mantiene queste modifiche come non salvate. Dopo la chiusura, fai clic su “Salva” in alto nella pagina per applicarle."
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleTitle"
 msgstr "La bozza appartiene a un altro server"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomPlaceholder"
 msgstr "es. 8080, 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidTags"
+msgstr "Ogni etichetta deve iniziare con tag: seguito da un nome, ad esempio tag:server."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsPrefix"
+msgstr "Ogni etichetta deve iniziare con tag:, ad esempio tag:server."
 
 #: src/i18n/descriptors.ts
 msgid "product.editNodeTagsTitle"
@@ -670,8 +774,12 @@ msgid "product.authRequestInvalid"
 msgstr "Inserisci un ID richiesta che inizia con hskey-authreq- oppure incolla il link completo."
 
 #: src/i18n/descriptors.ts
-msgid "product.policyReferenceInvalidName"
-msgstr "Inserisci un nome di gruppo o tag valido."
+msgid "product.userNameRequired"
+msgstr "Inserisci un nome utente."
+
+#: src/i18n/descriptors.ts
+msgid "product.emailInvalid"
+msgstr "Inserisci un indirizzo email valido oppure lascia vuoto il campo."
 
 #: src/i18n/descriptors.ts
 msgid "common.connectionInvalidUrl"
@@ -683,19 +791,27 @@ msgstr "Inserisci una chiave API."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionSecretRequired"
-msgstr "Inserisci nuovamente la chiave API e la password di questo server prima di inviare."
+msgstr "Inserisci nuovamente la chiave API e la password di questo profilo prima di inviare."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationHasPort"
+msgstr "Inserisci la destinazione senza porta. Indica le porte nel campo “porte”."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "Inserisci la password del profilo."
 
 #: src/i18n/descriptors.ts
 msgid "common.connectSubtitle"
 msgstr "Inserisci l''indirizzo del server e il token di autorizzazione prima di aprire il pannello di controllo."
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPasswordRequired"
-msgstr "Inserisci la password del server."
-
-#: src/i18n/descriptors.ts
 msgid "product.ephemeral"
 msgstr "Dispositivo temporaneo"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesBody"
+msgstr "Tutte le modifiche non salvate in questa pagina tornano alla policy caricata per ultima da Headscale. L’operazione non può essere annullata."
 
 #: src/i18n/descriptors.ts
 msgid "product.highRiskConfirmDescription"
@@ -710,16 +826,20 @@ msgid "product.deviceLabelNameHint"
 msgstr "Esempio: server, workstation, database"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusExit"
+msgstr "Uscita"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNode"
+msgstr "Nodo di uscita"
+
+#: src/i18n/descriptors.ts
 msgid "product.exitRoute"
 msgstr "Route di uscita"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeExitRouteDescription"
 msgstr "Le route di uscita vengono revocate in coppia: le route IPv4 e IPv6 vengono rimosse insieme e i dispositivi smettono di inviare traffico Internet tramite questo dispositivo. Le altre route approvate rimarranno attive. Se la policy di accesso approva automaticamente le route di uscita, potrebbero essere approvate di nuovo alla successiva pubblicazione da parte del dispositivo."
-
-#: src/i18n/descriptors.ts
-msgid "product.approveExitRouteDescription"
-msgstr "Le route di uscita possono inoltrare il traffico Internet tramite questo dispositivo. Assicurati che il server sia affidabile per questo percorso."
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteExpiration"
@@ -778,16 +898,24 @@ msgid "product.selectAccessorSearchPlaceholder"
 msgstr "Cerca una persona, un team o un''etichetta…"
 
 #: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "Hai dimenticato la password di questo profilo? Annulla, poi usa l’icona di eliminazione sulla sua scheda per rimuovere solo questo profilo e aggiungi di nuovo il server con la sua chiave API. Il pulsante qui sotto cancella tutti i profili salvati."
+
+#: src/i18n/descriptors.ts
 msgid "product.source"
 msgstr "Da"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelBadge"
+msgstr "Dai dispositivi"
 
 #: src/i18n/descriptors.ts
 msgid "product.generate"
 msgstr "Genera"
 
 #: src/i18n/descriptors.ts
-msgid "product.generateInstallScript"
-msgstr "Genera script di installazione"
+msgid "product.generateInstallCommand"
+msgstr "Genera comando di installazione"
 
 #: src/i18n/descriptors.ts
 msgid "product.addAccessor"
@@ -818,6 +946,14 @@ msgid "common.apiKeyGuideDescription"
 msgstr "Prima che l''interfaccia possa connettersi, le chiavi API di Headscale vanno create dalla CLI del server."
 
 #: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "Headscale approva insieme le route di uscita IPv4 e IPv6. I dispositivi potranno quindi inoltrare il traffico Internet tramite questo dispositivo. Assicurati che il dispositivo sia affidabile per questo percorso."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorTagsNotPermitted"
+msgstr "Headscale non ha accettato queste etichette. Ogni etichetta deve avere un gestore in Controllo accessi (tagOwners) prima di poter essere assegnata."
+
+#: src/i18n/descriptors.ts
 msgid "common.headscaleDocs"
 msgstr "Documentazione di Headscale"
 
@@ -832,6 +968,10 @@ msgstr "Headscale è impostato per leggere la policy di accesso da un file (poli
 #: src/i18n/descriptors.ts
 msgid "product.policyUpdateDisabled"
 msgstr "Headscale legge la policy di accesso da un file (policy.mode: file), quindi le modifiche non possono essere salvate da qui. Modifica il file della policy sul server Headscale oppure imposta policy.mode su database per gestire le regole di accesso da questa app."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberOwnsDevices"
+msgstr "Headscale non elimina un utente che possiede ancora dispositivi. Rimuovi prima questi dispositivi:"
 
 #: src/i18n/descriptors.ts
 msgid "product.errorRequestFailed"
@@ -858,6 +998,14 @@ msgid "common.apiKeyGuideTitle"
 msgstr "Come ottenere una chiave API"
 
 #: src/i18n/descriptors.ts
+msgid "product.tagUserNodeAcknowledge"
+msgstr "Ho capito che il proprietario viene rimosso e che in seguito le etichette non potranno essere eliminate del tutto."
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillAcknowledge"
+msgstr "Ho capito che questa operazione aggiunge o rimuove indirizzi IP su tutti i nodi per allinearli ai prefissi configurati sul server."
+
+#: src/i18n/descriptors.ts
 msgid "product.currentApiKeyAcknowledge"
 msgstr "Ho capito che questa sessione perderà l’accesso."
 
@@ -866,12 +1014,12 @@ msgid "common.apiKeyGuideHint"
 msgstr "Se una chiave viene persa o scade, falla scadere sul server e creane una nuova."
 
 #: src/i18n/descriptors.ts
-msgid "common.forgotServerPasswordHint"
-msgstr "Se dimentichi la password di questo server, elimina il profilo salvato e aggiungilo nuovamente con la sua chiave API. Puoi conservare gli altri server."
+msgid "common.encryptionUnlockFailed"
+msgstr "Password del profilo errata."
 
 #: src/i18n/descriptors.ts
-msgid "common.encryptionUnlockFailed"
-msgstr "Passphrase errata."
+msgid "product.increaseDays"
+msgstr "Aumenta i giorni"
 
 #: src/i18n/descriptors.ts
 msgid "product.installCommand"
@@ -906,6 +1054,10 @@ msgid "product.deviceLabelName"
 msgstr "Nome dell''etichetta"
 
 #: src/i18n/descriptors.ts
+msgid "product.labelNameInvalid"
+msgstr "I nomi delle etichette devono iniziare con una lettera (A–Z) e non possono contenere spazi, virgole, due punti (:) o @."
+
+#: src/i18n/descriptors.ts
 msgid "common.language"
 msgstr "Lingua"
 
@@ -914,12 +1066,16 @@ msgid "product.lastSeen"
 msgstr "Ultimo accesso"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyLastUsed"
+msgstr "Ultimo utilizzo"
+
+#: src/i18n/descriptors.ts
 msgid "product.learnMore"
 msgstr "Scopri di più"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverCredentialEditHint"
-msgstr "Lascia vuoti la chiave API e la password per modificare solo il nome o dove viene salvato il profilo. Per modificare l’URL o la chiave API, servono la chiave API e la password attuale del server."
+msgstr "Lascia vuoti la chiave API e la password per modificare solo il nome o dove viene salvato il profilo. Per modificare l’URL o la chiave API, servono la chiave API e la password attuale del profilo."
 
 #: src/i18n/descriptors.ts
 msgid "common.light"
@@ -930,12 +1086,20 @@ msgid "product.linuxServer"
 msgstr "Server Linux"
 
 #: src/i18n/descriptors.ts
+msgid "product.membersLoading"
+msgstr "Caricamento degli utenti…"
+
+#: src/i18n/descriptors.ts
 msgid "common.encryptionLockedBadge"
 msgstr "Bloccato"
 
 #: src/i18n/descriptors.ts
 msgid "common.logout"
 msgstr "Disconnetti"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrl"
+msgstr "URL del server di accesso"
 
 #: src/i18n/descriptors.ts
 msgid "product.devicesTableMachine"
@@ -960,6 +1124,10 @@ msgstr "Dispositivi"
 #: src/i18n/descriptors.ts
 msgid "product.devicesTitle"
 msgstr "Dispositivi"
+
+#: src/i18n/descriptors.ts
+msgid "common.machineCount"
+msgstr "Dispositivi mostrati: {shown} di {total}"
 
 #: src/i18n/descriptors.ts
 msgid "common.primaryNavigation"
@@ -988,14 +1156,6 @@ msgstr "Gestisci i dispositivi connessi alla tailnet."
 #: src/i18n/descriptors.ts
 msgid "product.membersSubtitle"
 msgstr "Gestisci gli utenti della rete e le relative autorizzazioni."
-
-#: src/i18n/descriptors.ts
-msgid "product.roleMember"
-msgstr "Membro"
-
-#: src/i18n/descriptors.ts
-msgid "product.members"
-msgstr "Membri"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamMembersSection"
@@ -1035,7 +1195,7 @@ msgstr "Nuovo profilo"
 
 #: src/i18n/descriptors.ts
 msgid "common.newServerPassword"
-msgstr "Nuova password del server"
+msgstr "Nuova password del profilo"
 
 #: src/i18n/descriptors.ts
 msgid "product.newTeam"
@@ -1054,12 +1214,32 @@ msgid "product.noTeamAccess"
 msgstr "Qui non sono elencate autorizzazioni ACL da questo team alle etichette dei dispositivi."
 
 #: src/i18n/descriptors.ts
+msgid "product.noActiveAuthKeys"
+msgstr "Nessuna chiave di autenticazione attiva."
+
+#: src/i18n/descriptors.ts
 msgid "product.noRoutes"
 msgstr "Nessuna route annunciata è in attesa di verifica."
 
 #: src/i18n/descriptors.ts
+msgid "product.noApiKeys"
+msgstr "Nessuna chiave API da mostrare."
+
+#: src/i18n/descriptors.ts
 msgid "product.noAuthKeys"
 msgstr "Nessuna chiave di autenticazione corrisponde ai filtri."
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeysYet"
+msgstr "Non ci sono ancora chiavi di autenticazione. Creane una per aggiungere un dispositivo."
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNoChanges"
+msgstr "Nessuna modifica necessaria"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsMatch"
+msgstr "Nessuna etichetta dei dispositivi corrisponde alla ricerca."
 
 #: src/i18n/descriptors.ts
 msgid "product.noDeviceLabelsYet"
@@ -1068,6 +1248,10 @@ msgstr "Non ci sono ancora etichette dei dispositivi"
 #: src/i18n/descriptors.ts
 msgid "product.noGroupsAvailable"
 msgstr "Non ci sono ancora gruppi. Creane uno prima in Controllo accessi."
+
+#: src/i18n/descriptors.ts
+msgid "product.noIpRules"
+msgstr "Non ci sono ancora regole IP o per tutte le destinazioni."
 
 #: src/i18n/descriptors.ts
 msgid "product.noDevices"
@@ -1094,6 +1278,14 @@ msgid "product.noPolicyGroupMembers"
 msgstr "Non ci sono ancora membri."
 
 #: src/i18n/descriptors.ts
+msgid "product.emptyTeamWarning"
+msgstr "Non ci sono ancora membri. Questo team non concede l’accesso a nessuno finché non aggiungi persone."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeNoSession"
+msgstr "Nessun’altra scheda aperta manteneva la sessione sbloccata, quindi ricaricare o riaprire la pagina l’ha bloccata. Inserisci la password del profilo per continuare."
+
+#: src/i18n/descriptors.ts
 msgid "product.inviteNoOwner"
 msgstr "Nessun proprietario (solo etichette)"
 
@@ -1108,6 +1300,10 @@ msgstr "Nessun dispositivo personale."
 #: src/i18n/descriptors.ts
 msgid "product.noPolicyReferences"
 msgstr "Nessun riferimento nella policy."
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerTitle"
+msgstr "Nessuna regola consente l’accesso"
 
 #: src/i18n/descriptors.ts
 msgid "product.noTagsAvailable"
@@ -1126,6 +1322,10 @@ msgid "product.noUsersMatch"
 msgstr "Nessun utente corrisponde ai filtri."
 
 #: src/i18n/descriptors.ts
+msgid "product.noUsersYet"
+msgstr "Ancora nessun utente. Aggiungi un utente per iniziare."
+
+#: src/i18n/descriptors.ts
 msgid "product.nodeId"
 msgstr "ID dispositivo"
 
@@ -1142,12 +1342,24 @@ msgid "product.noRouteValues"
 msgstr "Nessuna"
 
 #: src/i18n/descriptors.ts
+msgid "common.undefinedTags"
+msgstr "Non definite nella policy di accesso: {tags}. Le chiavi con queste etichette non funzionano finché non vengono aggiunte in Controllo accessi."
+
+#: src/i18n/descriptors.ts
+msgid "product.notReported"
+msgstr "Non disponibile"
+
+#: src/i18n/descriptors.ts
 msgid "common.offline"
 msgstr "Offline"
 
 #: src/i18n/descriptors.ts
 msgid "product.offlineOnly"
 msgstr "Offline"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodOidc"
+msgstr "OIDC"
 
 #: src/i18n/descriptors.ts
 msgid "product.oneTimeKey"
@@ -1194,12 +1406,8 @@ msgid "product.inviteOwner"
 msgstr "Proprietario"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleOwner"
-msgstr "Proprietario"
-
-#: src/i18n/descriptors.ts
-msgid "product.owners"
-msgstr "Proprietari"
+msgid "common.loginNoticePasswordChanged"
+msgstr "Password modificata. Sblocca il server con la nuova password del profilo."
 
 #: src/i18n/descriptors.ts
 msgid "common.apiKeyGuideStepPaste"
@@ -1208,6 +1416,10 @@ msgstr "Incolla qui la chiave insieme all''URL HTTPS di Headscale."
 #: src/i18n/descriptors.ts
 msgid "product.authRequestHelp"
 msgstr "Incolla il link o l’ID mostrato da tailscale up o da un prompt di verifica SSH. Gli ID delle richieste hanno una durata breve."
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusPending"
+msgstr "In attesa"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRoutes"
@@ -1236,6 +1448,10 @@ msgstr "Scegli i gruppi a cui deve appartenere l''utente. Le modifiche vengono s
 #: src/i18n/descriptors.ts
 msgid "product.assignTagOwnershipsDescription"
 msgstr "Scegli le etichette che l''utente deve poter gestire. Le modifiche vengono salvate nella policy quando le applichi."
+
+#: src/i18n/descriptors.ts
+msgid "product.createMemberDescription"
+msgstr "Le policy e la CLI di Headscale fanno riferimento a questo utente tramite il nome utente. Nome visualizzato ed email sono facoltativi."
 
 #: src/i18n/descriptors.ts
 msgid "common.policy"
@@ -1286,16 +1502,16 @@ msgid "common.profileName"
 msgstr "Nome del profilo"
 
 #: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "Password del profilo"
+
+#: src/i18n/descriptors.ts
 msgid "product.unused"
 msgstr "Pronta"
 
 #: src/i18n/descriptors.ts
 msgid "product.readyKeys"
 msgstr "Chiavi pronte"
-
-#: src/i18n/descriptors.ts
-msgid "product.readyToSave"
-msgstr "Pronto per il salvataggio"
 
 #: src/i18n/descriptors.ts
 msgid "product.recentDevices"
@@ -1382,6 +1598,14 @@ msgid "product.removeTeamMember"
 msgstr "Rimuovi membro"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeOwnerFilter"
+msgstr "Rimuovi filtro proprietario"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionUrlParts"
+msgstr "Rimuovi nome utente, password, query (?…) o frammento (#…) dall’URL del server."
+
+#: src/i18n/descriptors.ts
 msgid "product.confirmRemovePolicyItemTitle"
 msgstr "Rimuovere questo elemento?"
 
@@ -1400,6 +1624,14 @@ msgstr "Rinomina utente"
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberTitle"
 msgstr "Rinomina utente"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceTitle"
+msgstr "Sostituire l’accesso aperto con questo modello?"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceConfirm"
+msgstr "Sostituisci regole"
 
 #: src/i18n/descriptors.ts
 msgid "product.authRequestLabel"
@@ -1438,16 +1670,16 @@ msgid "product.wizardStepResultDescription"
 msgstr "Controlla il risultato e continua."
 
 #: src/i18n/descriptors.ts
+msgid "product.revokeExitNode"
+msgstr "Revoca nodo di uscita"
+
+#: src/i18n/descriptors.ts
 msgid "product.revokeRoute"
 msgstr "Revoca route"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeRouteTitle"
 msgstr "Revoca approvazione route"
-
-#: src/i18n/descriptors.ts
-msgid "product.role"
-msgstr "Ruolo"
 
 #: src/i18n/descriptors.ts
 msgid "product.exitNodeDescription"
@@ -1498,6 +1730,10 @@ msgid "common.saveAndUnlock"
 msgstr "Salva e sblocca"
 
 #: src/i18n/descriptors.ts
+msgid "common.saveAnywayEditButton"
+msgstr "Salva comunque"
+
+#: src/i18n/descriptors.ts
 msgid "product.saveName"
 msgstr "Salva nome"
 
@@ -1526,12 +1762,28 @@ msgid "common.resetMetadataWarning"
 msgstr "I dati salvati sono stati cancellati, ma non è stato possibile rimuovere le impostazioni temporanee di questa scheda. Chiudila e aprine una nuova."
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableRecordsNotice"
+msgstr "Record di profili salvati illeggibili e non elencati: {count}. Cancellando tutti i profili salvati vengono rimossi."
+
+#: src/i18n/descriptors.ts
 msgid "product.policySavedNewerEdits"
 msgstr "La policy inviata è stata salvata. Le modifiche successive non sono ancora state salvate."
 
 #: src/i18n/descriptors.ts
+msgid "common.savingProfile"
+msgstr "Salvataggio in corso"
+
+#: src/i18n/descriptors.ts
 msgid "product.replaceTagsWarning"
 msgstr "Il salvataggio sostituisce le etichette attuali invece di aggiungerne altre."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyDescription"
+msgstr "Script e integrazioni che usano questa chiave perdono subito l’accesso al server e la chiave viene rimossa definitivamente. L’operazione non può essere annullata."
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyDescription"
+msgstr "Script e integrazioni che usano questa chiave perdono subito l’accesso al server. La chiave resta nell’elenco come scaduta e non può essere rinnovata."
 
 #: src/i18n/descriptors.ts
 msgid "product.searchDevices"
@@ -1566,8 +1818,8 @@ msgid "product.templateSplitEnvDescription"
 msgstr "Separa i team di sviluppo e operazioni, dando a ciascuno accesso ai propri server etichettati."
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPassword"
-msgstr "Password del server"
+msgid "product.inviteTagsHint"
+msgstr "Separa le etichette con virgole. Ogni etichetta inizia con tag:, ad esempio tag:server."
 
 #: src/i18n/descriptors.ts
 msgid "product.openServerSettings"
@@ -1586,14 +1838,6 @@ msgid "product.ports"
 msgstr "Servizio"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleServiceAccount"
-msgstr "Account di servizio"
-
-#: src/i18n/descriptors.ts
-msgid "product.serviceAccounts"
-msgstr "Account di servizio"
-
-#: src/i18n/descriptors.ts
 msgid "product.linuxServerDescription"
 msgstr "Servizi in esecuzione su VM, container e router."
 
@@ -1603,7 +1847,7 @@ msgstr "Solo sessione"
 
 #: src/i18n/descriptors.ts
 msgid "common.profileMigrationHint"
-msgstr "Imposta una password per questo server per migrare la connessione salvata. Se la migrazione non riesce, i dati esistenti restano invariati."
+msgstr "Imposta una password del profilo per migrare questa connessione salvata. Se la migrazione non riesce, i dati esistenti restano invariati."
 
 #: src/i18n/descriptors.ts
 msgid "product.authKeyExpirationDescription"
@@ -1702,6 +1946,10 @@ msgid "product.taggedKeys"
 msgstr "Chiavi con etichetta"
 
 #: src/i18n/descriptors.ts
+msgid "common.tagUserNodeWarning"
+msgstr "Assegnare etichette a questo dispositivo rimuove il proprietario {owner}; il dispositivo apparterrà alle sue etichette. In seguito le etichette potranno solo essere sostituite, mai eliminate del tutto."
+
+#: src/i18n/descriptors.ts
 msgid "product.tags"
 msgstr "Etichette dei dispositivi"
 
@@ -1712,6 +1960,10 @@ msgstr "Panoramica della tailnet"
 #: src/i18n/descriptors.ts
 msgid "product.teamName"
 msgstr "Nome del team"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameInvalid"
+msgstr "I nomi dei team non possono contenere spazi, virgole, due punti (:) o @."
 
 #: src/i18n/descriptors.ts
 msgid "product.teamsSection"
@@ -1728,6 +1980,14 @@ msgstr "Questo nome di gruppo o tag è già in uso."
 #: src/i18n/descriptors.ts
 msgid "common.sessionChanged"
 msgstr "Il server attivo è cambiato. Controlla questa pagina prima di riprovare."
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrlHint"
+msgstr "Indirizzo usato dai dispositivi per raggiungere Headscale. Modificalo se questa console accede all’API tramite un proxy."
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyDescription"
+msgstr "La chiave di autenticazione non verrà più mostrata. Copiala prima oppure crea una nuova chiave in seguito."
 
 #: src/i18n/descriptors.ts
 msgid "common.preferencesReloadFailed"
@@ -1758,6 +2018,10 @@ msgid "common.discardProfileChangesDescription"
 msgstr "I dati del profilo sono cambiati. Chiudendo ora perderai le modifiche non salvate."
 
 #: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "La password del profilo è stata modificata. Sbloccalo nuovamente quando necessario."
+
+#: src/i18n/descriptors.ts
 msgid "common.requestUnreachable"
 msgstr "La richiesta non è stata completata. Controlla l’URL del server, la connessione di rete e le impostazioni CORS del server. Se stavi salvando una modifica, controlla lo stato attuale del server prima di riprovare."
 
@@ -1774,16 +2038,20 @@ msgid "common.requestUnexpectedResponse"
 msgstr "Il server ha risposto in modo inatteso (HTTP {status}). Verifica che l’URL punti a Headscale e che l’eventuale reverse proxy funzioni correttamente."
 
 #: src/i18n/descriptors.ts
-msgid "common.profilePasswordChanged"
-msgstr "La password del server è stata modificata. Sbloccalo nuovamente quando necessario."
-
-#: src/i18n/descriptors.ts
 msgid "common.sessionSavedLocked"
 msgstr "Il profilo del server è stato salvato, ma è ancora bloccato. Inserisci la password per sbloccarlo."
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeExpired"
+msgstr "La sessione si è bloccata dopo 30 minuti di inattività. Inserisci la password del profilo per continuare."
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionUnavailable"
 msgstr "La sessione condivisa non è disponibile. Riconnettiti e sblocca il server per continuare."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeClockReversed"
+msgstr "L’orologio di sistema è tornato indietro, quindi la sessione è stata bloccata. Inserisci la password del profilo per continuare."
 
 #: src/i18n/descriptors.ts
 msgid "common.themeNotSaved"
@@ -1811,11 +2079,19 @@ msgstr "Queste operazioni riguardano l''intero server. Usale solo per riparare o
 
 #: src/i18n/descriptors.ts
 msgid "product.ipRulesSectionHint"
-msgstr "Queste regole consentono l''accesso a indirizzi IP, intervalli di rete o tutte le destinazioni. Puoi modificarle o eliminarle qui."
+msgstr "Queste regole consentono l’accesso a indirizzi IP, intervalli di rete o tutte le destinazioni (*). Puoi aggiungerle, modificarle o eliminarle qui."
+
+#: src/i18n/descriptors.ts
+msgid "common.insecureServerUrlWarning"
+msgstr "Questo indirizzo usa HTTP non cifrato, quindi la chiave API viaggia in chiaro sulla rete. Usa HTTPS, a meno che la rete non sia attendibile."
 
 #: src/i18n/descriptors.ts
 msgid "product.approveRoutesDescription"
 msgstr "Approva tutte le route attualmente annunciate dal dispositivo."
+
+#: src/i18n/descriptors.ts
+msgid "common.clearAllProfilesHint"
+msgstr "Questa azione cancella tutti i profili salvati in questo browser. Per rimuoverne solo uno, disconnettiti e usa l’icona di eliminazione sulla sua scheda."
 
 #: src/i18n/descriptors.ts
 msgid "common.clearProfilesDescription"
@@ -1846,8 +2122,16 @@ msgid "product.expireInviteDescription"
 msgstr "Questa chiave non accetterà più nuovi dispositivi."
 
 #: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelHint"
+msgstr "Questa etichetta proviene dai dispositivi e non è definita nella policy, quindi non può essere rinominata o eliminata qui. Concedi l’accesso o aggiungi un gestore dell’etichetta per definirla."
+
+#: src/i18n/descriptors.ts
 msgid "product.disableExpiryDescription"
 msgstr "Questo dispositivo non scadrà più e manterrà l’accesso senza dover accedere di nuovo finché non lo farai scadere."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorInvalidDnsLabel"
+msgstr "Questo nome non è valido. Usa al massimo 63 lettere, cifre o trattini, iniziando e terminando con una lettera o una cifra."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionReloadRequired"
@@ -1868,6 +2152,10 @@ msgstr "Questa policy contiene campi che non possono essere aggiornati in sicure
 #: src/i18n/descriptors.ts
 msgid "product.policyReadOnlyError"
 msgstr "Impossibile leggere questa policy in modo sicuro. Le modifiche sono disabilitate. Correggila in Headscale e aggiorna la pagina."
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyProfileMigrateFirst"
+msgstr "Questo profilo usa un vecchio formato di archiviazione. Aprilo dalla sua scheda per migrarlo prima di modificarne l’URL o la chiave API. Puoi rinominarlo qui."
 
 #: src/i18n/descriptors.ts
 msgid "product.cleanupOrphanRefsConfirmBody"
@@ -1894,6 +2182,10 @@ msgid "product.deleteMemberDescription"
 msgstr "Rimuove l''utente da Headscale. Controlla i suoi dispositivi e le chiavi di autenticazione prima di continuare."
 
 #: src/i18n/descriptors.ts
+msgid "product.removeReferenceDescription"
+msgstr "L’utente viene rimosso da questa voce della policy e la policy viene salvata subito sul server."
+
+#: src/i18n/descriptors.ts
 msgid "product.policyTagRenameScope"
 msgstr "Questo rinomina il tag nella policy. I tag dei dispositivi e la configurazione esterna restano invariati."
 
@@ -1906,12 +2198,24 @@ msgid "product.policyAdvancedRuleHint"
 msgstr "Questa regola contiene restrizioni aggiuntive. Modifica i servizi consentiti nella policy di Headscale."
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableProfileRepair"
+msgstr "Questo profilo salvato non è leggibile. Inserisci l’URL del server e la chiave API e scegli una nuova password del profilo per sostituirlo, oppure eliminalo dalla sua scheda."
+
+#: src/i18n/descriptors.ts
 msgid "common.unsupportedServerVersion"
 msgstr "Questo server indica Headscale {version}, ma questa app è pensata per la versione 0.29.x. Alcune pagine potrebbero non caricarsi o mostrare dati incompleti."
 
 #: src/i18n/descriptors.ts
 msgid "common.serverVersionUnreadable"
 msgstr "Questo server indica Headscale {version}, versione non supportata da questa app, e non è stato possibile leggerne la risposta. Usa un server Headscale 0.29.x."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeProfileChanged"
+msgstr "Il profilo salvato di questo server è stato modificato, ad esempio la sua password, quindi la sessione è stata bloccata. Inserisci la password del profilo per continuare."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceBody"
+msgstr "Questo modello rimuove le regole qui sotto, che consentono a ogni dispositivo di raggiungere tutti gli altri. Dopo il salvataggio, solo le regole del modello consentono l’accesso: i dispositivi senza tag e quelli con tag non coperti dal modello perdono l’accesso, a meno che un’altra regola non li copra."
 
 #: src/i18n/descriptors.ts
 msgid "product.userImpactOnDeleteHeading"
@@ -1966,12 +2270,24 @@ msgid "product.unsavedChangesBadge"
 msgstr "Non salvato"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeDiscardedPolicy"
+msgstr "Le modifiche non salvate al controllo degli accessi sono state scartate quando la sessione si è bloccata."
+
+#: src/i18n/descriptors.ts
 msgid "product.unsavedChangesTitle"
 msgstr "Modifiche non salvate"
 
 #: src/i18n/descriptors.ts
 msgid "common.updatedProfile"
 msgstr "Aggiornato"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidMachineName"
+msgstr "Usa da 1 a 63 lettere, cifre o trattini, iniziando e terminando con una lettera o una cifra."
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordMinLength"
+msgstr "Usa almeno 8 caratteri."
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRegistrationDescription"
@@ -2014,6 +2330,10 @@ msgid "product.memberName"
 msgstr "Nome utente"
 
 #: src/i18n/descriptors.ts
+msgid "product.userNameInvalid"
+msgstr "Il nome utente non può contenere spazi o caratteri di controllo."
+
+#: src/i18n/descriptors.ts
 msgid "product.errorUserNotFound"
 msgstr "Utente non trovato"
 
@@ -2040,6 +2360,14 @@ msgstr "Utenti"
 #: src/i18n/descriptors.ts
 msgid "product.optionGroupUsers"
 msgstr "Utenti"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoadFailed"
+msgstr "Impossibile caricare gli utenti."
+
+#: src/i18n/descriptors.ts
+msgid "common.usersShown"
+msgstr "Utenti mostrati: {shown} di {total}"
 
 #: src/i18n/descriptors.ts
 msgid "product.viewDetails"
@@ -2070,12 +2398,20 @@ msgid "product.svcWebLabel"
 msgstr "Web"
 
 #: src/i18n/descriptors.ts
+msgid "common.rememberConnectionHint"
+msgstr "Se deselezionato, questo profilo compare solo in questa scheda e nelle schede aperte da essa. In ogni caso, la sua chiave API cifrata resta in questo browser finché non elimini il profilo o cancelli i dati locali."
+
+#: src/i18n/descriptors.ts
 msgid "product.tagAccessorsSection"
 msgstr "Chi può accedere a questi dispositivi"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagOwnersSection"
 msgstr "Chi può applicare questa etichetta ai dispositivi"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerBody"
+msgstr "Con questa policy i dispositivi non possono raggiungersi tra loro. Aggiungi una regola o parti da un modello per consentire l’accesso."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleBody"
@@ -2086,8 +2422,8 @@ msgid "product.policyUnsavedBlocked"
 msgstr "Hai modifiche non salvate alla policy nella pagina Controllo accessi. Salvale o scartale lì prima di modificare la policy da qui."
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesBody"
-msgstr "Le modifiche restano solo in questo browser finché non fai clic su Salva. Vuoi chiudere comunque?"
+msgid "common.loginNoticeLoggedOut"
+msgstr "Ti sei disconnesso in questa o in un’altra scheda. Inserisci la password del profilo per continuare."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionExpired"

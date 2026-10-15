@@ -2085,7 +2085,7 @@ test("keeps core dialogs usable on a short mobile viewport", async () => {
   ) as HTMLElement | null;
   expect(memberToRemove).not.toBeNull();
   memberToRemove?.click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   expectDialogUsableInViewport("unsaved-changes-dialog");
   expectTestIdFitsViewport("unsaved-changes-keep-editing");
@@ -2407,6 +2407,47 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
     downloadStub.restore();
   }
 
+  const phoneExpiry = async () =>
+    normalizeHeadscaleNode(
+      (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "3" } })).node,
+    ).expiry;
+  // The seeded phone is already expired, so its menu offers only "Disable expiry"; disabling first
+  // makes it expirable again for the expire flow below.
+  const expiredMenu = await (async () => {
+    await clickVisibleDomTestId("machine-actions-trigger-3");
+    await expect.element(page.getByTestId("machine-actions-menu-3")).toBeVisible();
+    const offersExpire = document.querySelector('[data-testid="expire-node-action-3"]') !== null;
+    await userEvent.keyboard("{Escape}");
+    return offersExpire;
+  })();
+  expect(expiredMenu).toBe(false);
+  // Disabling the expiry is a separate dialog and a separate write.
+  const deviceCopy = getProductCopy("en-US");
+  const expiresBeforeDisable = await operationCount("node.expire");
+  await clickVisibleDomTestId("machine-actions-trigger-3");
+  await clickVisibleDomTestId("disable-expiry-node-action-3");
+  await expect.element(page.getByTestId("expire-node-dialog")).toBeVisible();
+  await expect
+    .element(page.getByTestId("expire-node-dialog"))
+    .toMatchTextContent(deviceCopy.disableExpiryTitle);
+  await page.getByTestId("expire-node-cancel").click();
+  await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
+  expect(await operationCount("node.expire")).toBe(expiresBeforeDisable);
+  await clickVisibleDomTestId("machine-actions-trigger-3");
+  await clickVisibleDomTestId("disable-expiry-node-action-3");
+  await expect.element(page.getByTestId("expire-node-dialog")).toBeVisible();
+  await page.getByTestId("expire-node-confirm").click();
+  await expect.poll(() => operationCount("node.expire")).toBe(expiresBeforeDisable + 1);
+  await waitForActionFinished("expire-node");
+  await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
+  expect(await phoneExpiry()).toBeUndefined();
+  await expect
+    .element(page.getByTestId("device-3"))
+    .toMatchTextContent(`${deviceCopy.expires}: ${deviceCopy.never}`);
+  await expect.poll(() => visibleText("device-status-3")).toBe("Offline");
+  await page.getByTestId("machine-filter").selectOptions("expired");
+  await expect.poll(listedDevices).toEqual([]);
+  await page.getByTestId("machine-filter").selectOptions("all");
   await clickVisibleDomTestId("machine-actions-trigger-3");
   await expect.element(page.getByTestId("machine-actions-menu-3")).toBeVisible();
   const expireCallsBefore =
@@ -2435,10 +2476,6 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
   // The request carries no client-chosen expiry (the recorder keeps only the path, so the server stamp is the
   // evidence): Headscale stamps "now", which is also what the badge and the Expired filter must report.
-  const phoneExpiry = async () =>
-    normalizeHeadscaleNode(
-      (await request(adopted().read, { endpoint: "getNode", input: { nodeId: "3" } })).node,
-    ).expiry;
   await expect
     .poll(async () => {
       const expiry = Date.parse((await phoneExpiry()) ?? "");
@@ -2450,33 +2487,6 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   await expect.poll(listedDevices).toEqual(["device-3"]);
   await page.getByTestId("machine-filter").selectOptions("all");
 
-  // Disabling the expiry is a separate dialog and a separate write.
-  const deviceCopy = getProductCopy("en-US");
-  const expiresBeforeDisable = await operationCount("node.expire");
-  await clickVisibleDomTestId("machine-actions-trigger-3");
-  await clickVisibleDomTestId("disable-expiry-node-action-3");
-  await expect.element(page.getByTestId("expire-node-dialog")).toBeVisible();
-  await expect
-    .element(page.getByTestId("expire-node-dialog"))
-    .toMatchTextContent(deviceCopy.disableExpiryTitle);
-  await page.getByTestId("expire-node-cancel").click();
-  await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
-  expect(await operationCount("node.expire")).toBe(expiresBeforeDisable);
-  await clickVisibleDomTestId("machine-actions-trigger-3");
-  await clickVisibleDomTestId("disable-expiry-node-action-3");
-  await expect.element(page.getByTestId("expire-node-dialog")).toBeVisible();
-  await page.getByTestId("expire-node-confirm").click();
-  await expect.poll(() => operationCount("node.expire")).toBe(expiresBeforeDisable + 1);
-  await waitForActionFinished("expire-node");
-  await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
-  expect(await phoneExpiry()).toBeUndefined();
-  await expect
-    .element(page.getByTestId("device-3"))
-    .toMatchTextContent(`${deviceCopy.expires}: ${deviceCopy.never}`);
-  await expect.poll(() => visibleText("device-status-3")).toBe("Offline");
-  await page.getByTestId("machine-filter").selectOptions("expired");
-  await expect.poll(listedDevices).toEqual([]);
-  await page.getByTestId("machine-filter").selectOptions("all");
   await clickVisibleDomTestId("machine-actions-trigger-3");
   await expect.element(page.getByTestId("machine-actions-menu-3")).toBeVisible();
   const deleteCallsBefore =
@@ -2510,7 +2520,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
   ).toBe(false);
 });
 
-test("keeps failed destructive member actions busy and error-visible", async () => {
+test("refuses to delete a member who still owns machines before any write", async () => {
   await renderLogin();
   await connectWithDefaults();
   const client = adopted();
@@ -2532,23 +2542,12 @@ test("keeps failed destructive member actions busy and error-visible", async () 
   const policyBefore = (await request(client.read, { endpoint: "getPolicy" })).policy;
   const policySetsBefore = await operationCount("policy.set");
   const userDeletesBefore = await operationCount("user.delete");
-  await page.getByTestId("confirm-delete-member").click();
-
-  const confirmButton = document.querySelector<HTMLButtonElement>(
-    '[data-testid="confirm-delete-member"]',
-  );
-  expect(confirmButton?.disabled).toBe(true);
-  expect(confirmButton?.querySelector(".animate-spin")).toBeTruthy();
-  // Since the error mapping localizes Headscale's "user not empty: node(s) found", the dialog shows
-  // the product copy, not the raw upstream text.
-  await expect
-    .poll(() => visibleText("delete-member-error"), { timeout: 10_000 })
-    .toBe(getProductCopy("en-US").errorUserStillOwns);
-  await expect.element(page.getByTestId("delete-member-dialog")).toBeVisible();
+  // Headscale refuses to delete a user that owns nodes ("user not empty"), so the dialog names the
+  // machines and keeps the confirmation disabled instead of sending a request that must fail.
+  await expect.element(page.getByTestId("delete-member-devices")).toBeVisible();
+  await expect.element(page.getByTestId("confirm-delete-member")).toBeDisabled();
   await expect.element(page.getByTestId("member-alice")).toBeVisible();
-  // Fails when the policy cleanup is written before Headscale has accepted the delete: the
-  // rejected delete would leave alice present with her group and tag owner entries stripped.
-  expect(await operationCount("user.delete")).toBe(userDeletesBefore + 1);
+  expect(await operationCount("user.delete")).toBe(userDeletesBefore);
   expect(await operationCount("policy.set")).toBe(policySetsBefore);
   expect((await request(client.read, { endpoint: "getPolicy" })).policy).toBe(policyBefore);
 });
@@ -2870,7 +2869,7 @@ test("accepts a policy save without replacing edits made while its response was 
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-name-input").fill("submitted-ops");
   await userEvent.keyboard("{Enter}");
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await commands.interceptHeadscaleRequest("PUT", "^/api/v1/policy$");
   const savesBefore = await operationCount("policy.set");
@@ -2934,7 +2933,7 @@ test("persists complete group and tag references and restores the accepted Heads
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-name-input").fill("renamed-ops");
   await userEvent.keyboard("{Enter}");
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await waitForActionFinished("save-policy");
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
@@ -2944,7 +2943,7 @@ test("persists complete group and tag references and restores the accepted Heads
   await page.getByTestId("tag-card-tag:staged").click();
   await page.getByTestId("tag-name-input").fill("planned_v2");
   await userEvent.keyboard("{Enter}");
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await waitForActionFinished("save-policy");
   const accepted = documentFor("group:renamed-ops", "tag:planned_v2");
@@ -3045,7 +3044,9 @@ test("renames a machine reached from a user detail navigation", async () => {
   await expect.element(page.getByTestId("member-actions-trigger-alice")).toBeVisible();
   await clickVisibleDomTestId("member-actions-trigger-alice");
   await clickVisibleDomTestId("view-member-machines-alice");
-  await expect.element(page.getByTestId("device-search")).toHaveValue("alice@example.com");
+  // "View machines" filters by the exact owner ID, not by a free-text search that could match others.
+  await expect.element(page.getByTestId("owner-filter-chip")).toBeVisible();
+  await expect.element(page.getByTestId("device-search")).toHaveValue("");
   await clickVisibleDomTestId("machine-actions-trigger-1");
   await clickVisibleDomTestId("edit-node-tags-action-1");
   await expect.element(page.getByTestId("node-tags-dialog")).toBeVisible();
@@ -3181,17 +3182,14 @@ test("covers user filters, user export and member deletion", async () => {
   await page.getByTestId("cancel-create-invite").click();
   await clickDomTestId("member-actions-trigger-charlie");
   await clickVisibleDomTestId("view-member-machines-charlie");
-  await expect.element(page.getByTestId("device-search")).toHaveValue("charlie@example.com");
+  await expect.element(page.getByTestId("owner-filter-chip")).toBeVisible();
   await expect.element(page.getByTestId("device-3")).toBeVisible();
   await page.getByTestId("section-members").click();
   await expect.element(page.getByTestId("member-alice")).toBeVisible();
   inputDomTestId("user-search", "charlie");
   await expect.poll(() => document.querySelector('[data-testid="member-alice"]')).toBeNull();
   inputDomTestId("user-search", "");
-  await selectDomTestId("user-filter", "service");
-  expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
-  await expect.element(page.getByTestId("user-table")).toMatchTextContent("No users match");
-  expect(document.querySelector('[data-testid="member-charlie"]')).toBeNull();
+  await expect.element(page.getByTestId("member-charlie")).toBeVisible();
 
   const downloadStub = stubDownloads();
   try {
@@ -3201,7 +3199,16 @@ test("covers user filters, user export and member deletion", async () => {
     downloadStub.restore();
   }
 
-  await selectDomTestId("user-filter", "all");
+  // Headscale has no user roles, so there is no role filter; a search that matches nobody is the
+  // "no match" state, and exporting an empty table is disabled.
+  expect(document.querySelector('[data-testid="user-filter"]')).toBeNull();
+  inputDomTestId("user-search", "no-such-user");
+  expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
+  await expect.element(page.getByTestId("user-table")).toMatchTextContent("No users match");
+  expect(document.querySelector('[data-testid="member-charlie"]')).toBeNull();
+  await expect.element(page.getByTestId("export-users")).toBeDisabled();
+
+  inputDomTestId("user-search", "");
   await openCreateMemberDialog();
   await page.getByTestId("member-name").fill("erin");
   await page.getByTestId("member-display").fill("Erin");
@@ -3282,9 +3289,10 @@ test("preserves edited auth-key options while its opening refresh completes", as
     await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
     await expect.element(page.getByTestId("invite-user")).toHaveValue("3");
     await expect.element(page.getByTestId("invite-tags")).toHaveValue("tag:server");
+    // The generic dialog defaults to a single-use key, so the click above made it reusable.
     await expect
       .element(page.getByTestId("invite-reusable"))
-      .toHaveAttribute("aria-checked", "false");
+      .toHaveAttribute("aria-checked", "true");
     await expect
       .element(page.getByTestId("invite-ephemeral"))
       .toHaveAttribute("aria-checked", "true");
@@ -3293,7 +3301,7 @@ test("preserves edited auth-key options while its opening refresh completes", as
     const createdKey = (
       (await request(adopted().read, { endpoint: "listPreAuthKeys" })).preAuthKeys ?? []
     ).find((key) => key.user?.id === "3" && key.aclTags?.includes("tag:server"));
-    expect(createdKey).toMatchObject({ reusable: false, ephemeral: true });
+    expect(createdKey).toMatchObject({ reusable: true, ephemeral: true });
   } finally {
     await commands.releaseHeadscaleRequest();
   }
@@ -3422,6 +3430,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await page.getByTestId("invite-owner-link-1").click();
   await expect.element(page.getByTestId("user-detail-dialog")).toMatchTextContent("Alice Ops");
   await clickLastByTestIdPrefix("remove-user-policy-reference-");
+  await page.getByTestId("confirm-remove-user-policy-reference").click();
   await closeLayerWithEscape("user-detail-dialog");
   expect(
     document
@@ -3753,7 +3762,7 @@ test("creates a team, adds a member, saves and reopens it", async () => {
 
   // Dialog is dirty (a member was added) — "Done" routes through the unsaved-
   // changes confirm. Save-and-close persists the policy in one step.
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-save").click();
   await expect
@@ -3775,7 +3784,7 @@ test("creates a team, adds a member, saves and reopens it", async () => {
     .toBeNull();
   // Removing the member made the dialog dirty again. Discard returns to the
   // last saved state, and the global "unsaved" badge must disappear with it.
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-discard").click();
   await expect
@@ -3822,7 +3831,7 @@ test("creates a device label with an accessor + label manager and saves the rule
   await expect.element(page.getByTestId("tag-owner-row-group:ops")).toBeVisible();
 
   // Tag dialog is dirty — close routes through the unsaved-changes confirm.
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-save").click();
   await expect
@@ -3881,7 +3890,7 @@ test("saves a no-email CLI user as a device-label manager with name@", async () 
   await page.getByTestId(`tag-add-owner-option-${principal}`).click();
   await expect.element(page.getByTestId(`tag-owner-row-${principal}`)).toBeVisible();
 
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-save").click();
   await expect
@@ -3920,7 +3929,7 @@ test("removes an accessor row from a tag detail dialog", async () => {
   // The dialog can be re-portaled after removing the accessor; re-query the close button.
   await expect.element(page.getByTestId("tag-detail-dialog")).toBeVisible();
   // Dirty (we created a tag + removed an accessor) — discard to return to baseline.
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
 });
 
@@ -3938,7 +3947,7 @@ test("removes a tag owner and saves the cleanup", async () => {
     .poll(() => document.querySelector('[data-testid="tag-owner-row-alice@example.com"]'))
     .toBeNull();
   // Dialog is dirty — close routes through the unsaved-changes confirm.
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect
     .poll(async () =>
@@ -4025,7 +4034,7 @@ test("high-risk confirm appears when a service expands to all", async () => {
     .poll(() => document.querySelector('[data-testid="high-risk-confirm-dialog"]') === null)
     .toBe(true);
   // Adding the accessor made the dialog dirty — discard to clean up.
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
 });
 
@@ -4049,6 +4058,9 @@ test("empty state renders templates and applies one", async () => {
   await page.getByTestId("tag-detail-close").click();
 
   await page.getByTestId("template-apply-small-team").click();
+  // The template replaces the implicit allow-all, so it asks first.
+  await expect.element(page.getByTestId("template-confirm-dialog")).toBeVisible();
+  await page.getByTestId("template-confirm-apply").click();
   await expect.element(page.getByTestId("team-card-group:team")).toBeVisible();
   await expect.element(page.getByTestId("tag-card-tag:shared")).toBeVisible();
   expect(document.querySelector('[data-testid="resource-access-empty"]')).toBeNull();
@@ -4068,6 +4080,8 @@ test("applying a template replaces the open default rule in the saved Headscale 
 
   await expect.element(page.getByTestId("resource-access-empty")).toBeVisible();
   await page.getByTestId("template-apply-small-team").click();
+  await expect.element(page.getByTestId("template-confirm-removed")).toMatchTextContent("*");
+  await page.getByTestId("template-confirm-apply").click();
   await expect.element(page.getByTestId("team-card-group:team")).toBeVisible();
   await expect.element(page.getByTestId("open-access-banner")).not.toBeInTheDocument();
   await page.getByTestId("save-policy").click();
@@ -4104,7 +4118,7 @@ test("blank policy: edits still trigger the unsaved-changes guard", async () => 
   await expect.element(page.getByTestId("team-members-section")).toBeVisible();
 
   // Closing the dirty dialog must now route through the unsaved-changes guard.
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-discard").click();
   await expect
@@ -4141,6 +4155,7 @@ test("IP-only rules collapse into the direct-device section", async () => {
   await clickLastByTestIdPrefix("ip-rule-save-");
   await expect.element(page.getByTestId("ip-rules-section")).toMatchTextContent("bob@example.com");
   await clickLastByTestIdPrefix("ip-rule-remove-");
+  await page.getByTestId("confirm-remove-policy-item").click();
   await expect.poll(() => document.querySelectorAll('[data-testid^="ip-rule-"]').length).toBe(0);
 });
 
@@ -4151,6 +4166,10 @@ test("mobile save button posts a policy update", async () => {
   await openAccessSection();
   await commands.clearHeadscaleOperationCalls();
 
+  // Save is disabled on a clean draft, so make an edit first (the fixture is reset per test).
+  await expect.element(page.getByTestId("save-policy")).toBeDisabled();
+  await clickLastByTestIdPrefix("ip-rule-remove-");
+  await page.getByTestId("confirm-remove-policy-item").click();
   await page.getByTestId("save-policy").click();
   await expect
     .poll(async () =>
@@ -4463,6 +4482,9 @@ test("covers task navigation and the client-device setup branch", async () => {
   ).toBeTruthy();
   await expect.element(page.getByTestId("setup-device-step")).toBeVisible();
   await expect.element(page.getByTestId("setup-tags")).toHaveValue("");
+  // A personal client is not ephemeral by default: Headscale would delete it after it goes offline.
+  await expect.element(page.getByTestId("setup-ephemeral")).not.toBeChecked();
+  await clickDomTestId("setup-ephemeral");
   await expect.element(page.getByTestId("setup-ephemeral")).toBeChecked();
   await clickDomTestId("setup-ephemeral");
   await expect.element(page.getByTestId("setup-ephemeral")).not.toBeChecked();
@@ -4506,6 +4528,14 @@ test("copies generated auth keys and install commands", async () => {
     expect(generatedKey).toBeTruthy();
     await page.getByTestId("copy-created-invite").click();
     await page.getByTestId("copy-created-install-command").click();
+    // 登录控制端点与 API 地址可以不同，并且跨页面保留；这里只生成文本，不访问该域名。
+    await page.getByTestId("invite-login-server").fill("https://control.example.test/");
+    await page.getByTestId("copy-created-install-command").click();
+    expect(
+      clipboard.writes.includes(
+        `tailscale up --login-server https://control.example.test --authkey ${generatedKey}`,
+      ),
+    ).toBe(true);
 
     await page.getByTestId("section-devices").click();
     await page.getByTestId("add-device-toggle").click();
@@ -4515,9 +4545,12 @@ test("copies generated auth keys and install commands", async () => {
     await clickDomTestId("setup-exit-node");
     await page.getByTestId("add-device-next").click();
     await page.getByTestId("add-device-next").click();
+    // Generating creates the key directly from the wizard's options (no second create dialog).
     await page.getByTestId("generate-install-script").click();
-    await expect.element(page.getByTestId("invite-create-dialog")).toBeVisible();
-    await page.getByTestId("create-invite").click();
+    await expect
+      .element(page.getByTestId("setup-login-server"))
+      .toHaveValue("https://control.example.test/");
+    await page.getByTestId("setup-login-server").fill(dockerSettings().baseUrl);
     // Fails when the wizard command lacks --login-server (it only joined the default control server).
     await expect
       .element(page.getByTestId("created-invite"))
@@ -4541,7 +4574,7 @@ test("copies generated auth keys and install commands", async () => {
     expect(clipboard.writes.includes(expectedCommand(setupKey, " --advertise-exit-node"))).toBe(
       true,
     );
-    expect(clipboard.writes.filter((value) => value.includes("tailscale up")).length).toBe(2);
+    expect(clipboard.writes.filter((value) => value.includes("tailscale up")).length).toBe(3);
   } finally {
     clipboard.restore();
   }
@@ -4584,7 +4617,7 @@ test("keeps every core function usable on mobile", async () => {
   await closeLayerWithEscape("user-detail-dialog");
   await clickVisibleDomTestId("member-actions-trigger-mobile-mobile");
   await clickVisibleDomTestId("view-member-machines-mobile-mobile");
-  await expect.element(page.getByTestId("device-search")).toHaveValue("mobile");
+  await expect.element(page.getByTestId("owner-filter-chip")).toBeVisible();
   await selectSectionTab("members");
   await clickVisibleDomTestId("member-actions-trigger-mobile-mobile");
   await clickVisibleDomTestId("create-invite-for-member-mobile-mobile");
@@ -4722,8 +4755,20 @@ test("keeps every core function usable on mobile", async () => {
   await expect.element(page.getByTestId("teams-section")).toBeVisible();
   await expect.element(page.getByTestId("device-labels-section")).toBeVisible();
   await commands.clearHeadscaleOperationCalls();
+  // 未修改策略时不可保存；通过移动端新增规则后，再验证真实的策略写入。
+  await expect.element(page.getByTestId("save-policy")).toBeDisabled();
+  await page.getByTestId("add-ip-rule").click();
+  await page.getByTestId("ip-rule-source-new").fill("*");
+  await page.getByTestId("ip-rule-destination-new").fill("100.64.0.99");
+  await page.getByTestId("ip-rule-ports-new").fill("443");
+  await page.getByTestId("ip-rule-save-new").click();
+  await expect.element(page.getByTestId("save-policy")).toBeEnabled();
   await page.getByTestId("save-policy").click();
-  await latestSavedPolicy();
+  expect((await latestSavedPolicy()).acls).toContainEqual({
+    action: "accept",
+    src: ["*"],
+    dst: ["100.64.0.99:443"],
+  });
   await expect
     .poll(async () =>
       (await commands.headscaleOperationCalls())?.some((call) => call.id === "policy.set"),
@@ -4767,7 +4812,7 @@ test("defaults to English and switches through every supported BCP47 locale", as
     "设备",
   );
   expect(document.querySelector('[data-testid="user-table"]')?.textContent).not.toContain("台设备");
-  await selectDomTestId("user-filter", "service");
+  inputDomTestId("user-search", "no-such-user");
   expect(document.querySelector('[data-testid="member-tagged-devices"]')).toBeNull();
   await expect.element(page.getByTestId("user-table")).toMatchTextContent("没有匹配筛选条件的用户");
 
@@ -4781,7 +4826,7 @@ test("defaults to English and switches through every supported BCP47 locale", as
   await expect
     .element(page.getByTestId("user-table"))
     .toMatchTextContent("沒有相符篩選條件的使用者");
-  await selectDomTestId("user-filter", "all");
+  inputDomTestId("user-search", "");
 
   const appLocales = new Set<string>();
   for (const code of SUPPORTED_LOCALES) {
@@ -4932,7 +4977,6 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
 
   await selectSectionTab("members");
   await expect.element(page.getByTestId("user-table")).toBeVisible();
-  expectNativeSelectIconMirrorsInlineEnd("user-filter");
   await page.getByTestId("open-create-member").click();
   await expect.element(page.getByTestId("member-create-dialog")).toBeVisible();
   expectDialogMirrorsInlineEnd("member-create-dialog");
@@ -5086,8 +5130,6 @@ test("uses a Tailscale-style add device setup dialog", async () => {
   await expect.element(page.getByTestId("setup-generate-step")).toBeVisible();
 
   await page.getByTestId("generate-install-script").click();
-  await expect.element(page.getByTestId("invite-create-dialog")).toBeVisible();
-  await page.getByTestId("create-invite").click();
   await expect
     .element(page.getByTestId("created-invite"))
     .toMatchTextContent(`tailscale up --login-server ${dockerSettings().baseUrl}`);
@@ -5441,6 +5483,12 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   // fill() waits until the open-time node refresh has made the field editable.
   await page.getByTestId("node-tags-input").fill("tag:test-01");
   const nodeSetTagsBeforeSave = await operationCount("node.setTags");
+  // 个人设备转为标签设备会丢失所属用户，必须先确认不可逆影响。
+  await expect.element(page.getByTestId("node-tags-owner-warning")).toBeVisible();
+  await expect.element(page.getByTestId("node-tags-confirm")).toBeDisabled();
+  expect(await operationCount("node.setTags")).toBe(nodeSetTagsBeforeSave);
+  await page.getByTestId("node-tags-acknowledge").click();
+  await expect.element(page.getByTestId("node-tags-confirm")).toBeEnabled();
   await clickVisibleDomTestId("node-tags-confirm");
   await waitForActionFinished("node-tags");
   await expectUiOperationDelta("node.setTags", nodeSetTagsBeforeSave, observedUiOperationIds);
@@ -5529,6 +5577,12 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expect.element(page.getByTestId("revoke-route-dialog")).not.toBeInTheDocument();
 
   await openAccessSection();
+  await expect.element(page.getByTestId("save-policy")).toBeDisabled();
+  await page.getByTestId("add-ip-rule").click();
+  await page.getByTestId("ip-rule-source-new").fill("group:test-01");
+  await page.getByTestId("ip-rule-destination-new").fill("100.64.0.99");
+  await page.getByTestId("ip-rule-ports-new").fill("443");
+  await page.getByTestId("ip-rule-save-new").click();
   // Check is a dry run: the very payload that Save accepts below passes, and nothing is written.
   const policyChecksBeforeCheck = await operationCount("policy.check");
   const policySetsBeforeCheck = await operationCount("policy.set");
@@ -5541,8 +5595,13 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await page.getByTestId("save-policy").click();
   await latestSavedPolicy();
   await expectUiOperationDelta("policy.set", policySetsBeforeSave, observedUiOperationIds);
-  const persistedPolicy = await readPolicy(client.read);
-  expect(JSON.parse(persistedPolicy.policy).groups["group:test-01"]).toContain("admin-test@");
+  const persistedPolicy = JSON.parse((await readPolicy(client.read)).policy);
+  expect(persistedPolicy.groups["group:test-01"]).toContain("admin-test@");
+  expect(persistedPolicy.acls).toContainEqual({
+    action: "accept",
+    src: ["group:test-01"],
+    dst: ["100.64.0.99:443"],
+  });
 
   const apiKeyIdsBefore = new Set(
     ((await request(client.read, { endpoint: "listApiKeys" })).apiKeys ?? []).map((key) => key.id),
@@ -5803,7 +5862,7 @@ test("saves a live CLI user without email as a device-label manager against Head
   await page.getByTestId("tag-add-owner-option-issue7-live@").click();
   await expect.element(page.getByTestId("tag-owner-row-issue7-live@")).toBeVisible();
 
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-save").click();
   await expect
@@ -5875,6 +5934,7 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
         }
 
         await clickLastByTestIdPrefix("ip-rule-remove-");
+        await page.getByTestId("confirm-remove-policy-item").click();
         await expect
           .poll(() => document.querySelector('[data-testid="open-access-banner"]'))
           .toBeNull();
@@ -5883,7 +5943,8 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
         if (releaseAt === "before-save") {
           await commands.releaseHeadscaleRequest();
           await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
-          expect(document.querySelector('[data-testid="ip-rules-section"]')).toBeNull();
+          // The IP rule section stays available (with "Add rule"); only the removed rule is gone.
+          expect(document.querySelectorAll('[data-testid^="ip-rule-remove-"]')).toHaveLength(0);
           await expect.element(page.getByTestId("save-policy-dirty-badge")).toBeVisible();
         }
 
@@ -5893,7 +5954,8 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
           .poll(async () => await operationCount("policy.set"))
           .toBe(policySetsBeforeSave + 1);
         expect((await latestSavedPolicy()).acls).toEqual([]);
-        await expect.element(page.getByTestId("save-policy")).toBeEnabled();
+        // A clean draft has nothing to save.
+        await expect.element(page.getByTestId("save-policy")).toBeDisabled();
         expect(document.querySelector('[data-testid="save-policy-error"]')).toBeNull();
         await expect
           .poll(() => document.querySelector('[data-testid="save-policy-dirty-badge"]'))
@@ -5901,7 +5963,7 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
 
         await commands.releaseHeadscaleRequest();
         await expect.poll(() => session().snapshot.isRefreshing).toBe(false);
-        expect(document.querySelector('[data-testid="ip-rules-section"]')).toBeNull();
+        expect(document.querySelectorAll('[data-testid^="ip-rule-remove-"]')).toHaveLength(0);
         expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
         expect(document.querySelector('[data-testid="save-policy-dirty-badge"]')).toBeNull();
 
@@ -5913,8 +5975,8 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
           .toEqual([]);
         await session().snapshot.refreshSnapshot();
         await expect
-          .poll(() => document.querySelector('[data-testid="ip-rules-section"]'))
-          .toBeNull();
+          .poll(() => document.querySelectorAll('[data-testid^="ip-rule-remove-"]').length)
+          .toBe(0);
         expect(document.querySelector('[data-testid="open-access-banner"]')).toBeNull();
       } finally {
         await commands.releaseHeadscaleRequest();

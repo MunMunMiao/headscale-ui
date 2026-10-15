@@ -236,8 +236,10 @@ async function setup(kind: "devices" | "members", search = "", policyText?: stri
 }
 afterEach(() => vi.restoreAllMocks());
 // Page tests run on the system clock because session and bridge timers read Date.now().
+// The delete dialog blocks a user that still owns machines in the snapshot, so both are released.
 function releaseNodes(ctx: Awaited<ReturnType<typeof setup>>, userId: string) {
   ctx.backend.nodes = ctx.backend.nodes.filter((n) => n.user?.id !== userId);
+  ctx.session.snapshot.applyPatch({ nodes: structuredClone(ctx.backend.nodes) });
 }
 function expectAboutDaysFromNow(value: unknown, days: number) {
   const delta = Date.parse(String(value)) - (Date.now() + days * 86_400_000);
@@ -364,10 +366,10 @@ test("device rename preserves the draft during late refresh and retries an inlin
 // Catches destructive writes before confirmation and lost retry/error state.
 test("device expire and remove require confirmation and keep failures visible", async () => {
   const ctx = await setup("devices");
-  await deviceAction("expire", "2");
+  await deviceAction("expire", "1");
   expect(ctx.calls.filter((c) => c.method !== "GET")).toEqual([]);
   await page.getByTestId("expire-node-cancel").click();
-  await deviceAction("expire", "2");
+  await deviceAction("expire", "1");
   ctx.fail("Cannot expire");
   await page.getByTestId("expire-node-confirm").click();
   await expect.element(page.getByTestId("expire-node-error")).toMatchTextContent("Cannot expire");
@@ -547,13 +549,13 @@ test("the request input stays left-to-right in Arabic", async () => {
   await expect.element(page.getByTestId("pending-node-key")).toHaveAttribute("dir", "ltr");
 });
 // Catches dropped owner/email fields, incorrect roles, or refresh including unrelated fabric.
-test("members hide invisible users and compose search with role filters", async () => {
+test("members hide invisible users and filter by search", async () => {
   const ctx = await setup("members");
   await expect.element(page.getByTestId("member-tagged-devices")).not.toBeInTheDocument();
   await page.getByTestId("user-search").fill("bob@example");
   await expect.element(page.getByTestId("member-bob")).toBeVisible();
   await expect.element(page.getByTestId("member-alice")).not.toBeInTheDocument();
-  await page.getByTestId("user-filter").selectOptions("owner");
+  await page.getByTestId("user-search").fill("bob@example zzz");
   await expect.element(page.getByTestId("user-table")).toMatchTextContent("No users match");
   await page.getByTestId("refresh-users").click();
   await expect.poll(() => ctx.calls.some((c) => c.path === "/api/v1/user")).toBe(true);
@@ -632,17 +634,17 @@ for (const task of ["server", "client"] as const) {
       .toHaveValue(task === "server" ? "tag:server" : "");
     await expect
       .element(page.getByTestId("setup-ephemeral"))
-      .toHaveAttribute("aria-checked", task === "client" ? "true" : "false");
+      .toHaveAttribute("aria-checked", "false");
     await page.getByTestId("add-device-next").click();
     await expect
       .element(page.getByTestId("setup-reusable"))
       .toHaveAttribute("aria-checked", task === "server" ? "true" : "false");
+    await expect.element(page.getByTestId("setup-owner")).toHaveValue("1");
     await page.getByTestId("setup-expiration").fill("95");
+    await userEvent.tab();
     await expect.element(page.getByTestId("setup-expiration")).toHaveValue("90");
     await page.getByTestId("add-device-next").click();
     await page.getByTestId("generate-install-script").click();
-    await expect.element(page.getByTestId("invite-user")).toHaveValue("1");
-    await page.getByTestId("create-invite").click();
     await expect.element(page.getByTestId("add-device-dialog")).toBeVisible();
     await expect
       .element(page.getByTestId("created-invite"))
@@ -652,7 +654,7 @@ for (const task of ["server", "client"] as const) {
     const created = ctx.backend.preAuthKeys.find((k) => k.id === "2");
     expect(created).toMatchObject({
       reusable: task === "server",
-      ephemeral: task === "client",
+      ephemeral: false,
       aclTags: task === "server" ? ["tag:server"] : [],
     });
     const expiry = new Date(created?.expiration ?? "").getTime();
@@ -742,16 +744,23 @@ test("empty exports download only the header row", async () => {
   await expect.element(page.getByTestId("export-machines")).toBeEnabled();
   await page.getByTestId("export-machines").click();
   expect(await csv.text()).toBe(
-    header(["name", "owner", "status", "addresses", "tags", "routes", "lastSeen", "expires"]),
+    header([
+      "name",
+      "owner",
+      "status",
+      "addresses",
+      "tags",
+      "advertisedRoutes",
+      "approvedRoutes",
+      "lastSeen",
+      "expires",
+    ]),
   );
   await devices.unmount();
   await setup("members");
   await page.getByTestId("user-search").fill("zzz-no-match");
-  await expect.element(page.getByTestId("export-users")).toBeEnabled();
-  await page.getByTestId("export-users").click();
-  expect(await csv.text()).toBe(
-    header(["name", "email", "role", "provider", "machines", "joined"]),
-  );
+  // The members export is disabled instead of downloading an empty file.
+  await expect.element(page.getByTestId("export-users")).toBeDisabled();
 });
 
 // Catches server-controlled names that a spreadsheet would evaluate as formulas.
@@ -798,13 +807,15 @@ test("a local user exports an empty provider cell", async () => {
   await setup("members");
   await page.getByTestId("user-search").fill("alice");
   await page.getByTestId("export-users").click();
-  expect(await csv.text()).toMatch(/\n"Alice","alice@example.com","[^"]*","","\d+",/);
+  expect(await csv.text()).toMatch(/\n"Alice","alice@example.com","","\d+",/);
 });
 
 // Catches a live policy write that precedes a deletion only Headscale can authorize.
 test("a rejected member deletion leaves the live policy untouched", async () => {
   const ctx = await setup("members");
   const before = ctx.backend.policy?.policy;
+  releaseNodes(ctx, "1");
+  ctx.fail("user not empty: node(s) found", "/api/v1/user/1");
   await memberAction("delete", "alice");
   await page.getByTestId("confirm-delete-member").click();
   await expect
@@ -823,6 +834,8 @@ test("a rejected member deletion leaves the live policy untouched", async () => 
 
 test("rejected deletion with cleanup unchecked sends only DELETE", async () => {
   const ctx = await setup("members");
+  releaseNodes(ctx, "1");
+  ctx.fail("user not empty: node(s) found", "/api/v1/user/1");
   await memberAction("delete", "alice");
   await page.getByTestId("delete-member-cleanup-policy").click();
   await page.getByTestId("confirm-delete-member").click();
@@ -969,8 +982,10 @@ test("removing a policy reference cannot overwrite edits made during its PUT", a
     '[data-testid^="remove-user-policy-reference-group-"]',
   );
   if (!remove) throw new Error("Missing membership reference");
-  const release = ctx.pauseWrites();
   remove.click();
+  await expect.element(page.getByTestId("confirm-remove-user-policy-reference")).toBeVisible();
+  const release = ctx.pauseWrites();
+  await page.getByTestId("confirm-remove-user-policy-reference").click();
   await expect.poll(() => ctx.calls.some((call) => call.method === "PUT")).toBe(true);
   const state = ctx.session.policy.policyDesignerState;
   ctx.session.policy.commitState({
@@ -1029,8 +1044,8 @@ test("failed member invite stores no key and stays on members until a deliberate
   await expect.poll(() => ctx.router.state.location.pathname).toBe("/invites");
   expect(ctx.session.deviceSetup.getSnapshot().lastCreatedInvite).toBe("created-key");
 });
-// Catches an earlier one-time key staying on screen after a newer create attempt failed.
-test("a failed member invite clears the earlier one-time key and stays on members", async () => {
+// Catches a failed create discarding the earlier one-time key, which Headscale never shows again.
+test("a failed member invite keeps the earlier one-time key and stays on members", async () => {
   const ctx = await setup("members");
   ctx.session.deviceSetup.setState({ lastCreatedInvite: "old" });
   await openMemberInvite(ctx);
@@ -1039,7 +1054,7 @@ test("a failed member invite clears the earlier one-time key and stays on member
   await expect
     .element(page.getByTestId("create-invite-error"))
     .toHaveTextContent("Create rejected");
-  expect(ctx.session.deviceSetup.getSnapshot().lastCreatedInvite).toBe("");
+  expect(ctx.session.deviceSetup.getSnapshot().lastCreatedInvite).toBe("old");
   expect(ctx.router.state.location.pathname).toBe("/members");
 });
 // Catches optimistic assignment changing its baseline after a failed save and disabling retries.
@@ -1276,6 +1291,7 @@ test("member details remove group and tag references only after successful polic
   expect(groupRemove).toBeTruthy();
   expect(tagRemove).toBeTruthy();
   await page.getByTestId(groupRemove as string).click();
+  await page.getByTestId("confirm-remove-user-policy-reference").click();
   await expect
     .element(page.getByTestId((groupRemove as string).replace("remove-", "")))
     .toBeVisible();
@@ -1284,10 +1300,12 @@ test("member details remove group and tag references only after successful polic
     .toContain("Policy removal denied");
   ctx.fail("");
   await page.getByTestId(groupRemove as string).click();
+  await page.getByTestId("confirm-remove-user-policy-reference").click();
   await expect
     .element(page.getByTestId((groupRemove as string).replace("remove-", "")))
     .not.toBeInTheDocument();
   await page.getByTestId(tagRemove as string).click();
+  await page.getByTestId("confirm-remove-user-policy-reference").click();
   await expect
     .element(page.getByTestId((tagRemove as string).replace("remove-", "")))
     .not.toBeInTheDocument();
@@ -1372,7 +1390,7 @@ test("mobile member menus expose details rename memberships tags invites and del
   await page.getByTestId("member-actions-trigger-mobile-alice").click();
   await page.getByTestId("view-member-machines-mobile-alice").click();
   await expect.poll(() => ctx.router.state.location.pathname).toBe("/devices");
-  expect(ctx.router.state.location.search).toEqual({ search: "alice@example.com" });
+  expect(ctx.router.state.location.search).toEqual({ user: "1" });
 });
 
 // Both table detail entry points must expose active keys and machine navigation; closing an origin popup returns to that origin.
@@ -1393,24 +1411,12 @@ test("member detail links and desktop actions retain popup origin and machine se
   await page.getByTestId("member-actions-trigger-alice").click();
   await page.getByTestId("view-member-machines-alice").click();
   await expect.poll(() => table.router.state.location.pathname).toBe("/devices");
-  expect(table.router.state.location.search).toEqual({ search: "alice@example.com" });
+  expect(table.router.state.location.search).toEqual({ user: "1" });
 });
 
-// System users must remain distinguishable from ordinary users, including deliberate deletion without policy cleanup.
-test("service account role filters and explicit deletion without reference cleanup remain available", async () => {
+// Deleting deliberately without policy cleanup stays available.
+test("explicit deletion without reference cleanup remains available", async () => {
   const ctx = await setup("members");
-  const service = {
-    id: "4",
-    name: "automation",
-    provider: "system",
-    email: "automation@example.com",
-  };
-  ctx.backend.users.push(service);
-  ctx.session.snapshot.applyPatch({ users: structuredClone(ctx.backend.users) });
-  await page.getByTestId("user-filter").selectOptions("service");
-  await expect.element(page.getByTestId("member-automation")).toMatchTextContent("Service account");
-  await expect.element(page.getByTestId("member-alice")).not.toBeInTheDocument();
-  await page.getByTestId("user-filter").selectOptions("all");
   releaseNodes(ctx, "1");
   await memberAction("delete", "alice");
   await page.getByTestId("delete-member-cleanup-policy").click();
@@ -1632,7 +1638,7 @@ test("nodes owned by nobody or by the hidden tagged-devices user stay out of mem
   await ctx.session.snapshot.refreshSnapshot();
   await expect
     .element(page.getByTestId("member-device-tag-alice-1"))
-    .toHaveTextContent("edge-renamed");
+    .toMatchTextContent("edge-renamed");
   expect(
     Array.from(document.querySelectorAll('[data-testid^="member-device-tag-"]'), (button) =>
       button.getAttribute("data-testid"),
@@ -1696,13 +1702,15 @@ test("the rename field submits only on Enter and a repeated Enter while pending 
   expect(summary(ctx)).toEqual(["POST /api/v1/user/2/rename/bob2"]);
 });
 
-// Catches an unchanged name still sending a policy write that rewrites a reference to itself.
-test("renaming a referenced member to its current name sends no policy write", async () => {
+// Catches an unchanged name, or a new name with the same name@ principal, still sending a policy write.
+test("renaming a referenced member to its current name or principal sends no policy write", async () => {
   const ctx = await setup("members", "", RENAME_POLICY);
   await memberAction("rename", "alice");
+  await expect.element(page.getByTestId("confirm-rename-member")).toBeDisabled();
+  await page.getByTestId("rename-member-name").fill("alice@");
   await page.getByTestId("confirm-rename-member").click();
   await expect.element(page.getByTestId("rename-member-dialog")).not.toBeInTheDocument();
-  expect(summary(ctx)).toEqual(["POST /api/v1/user/1/rename/alice"]);
+  expect(summary(ctx)).toEqual(["POST /api/v1/user/1/rename/alice%40"]);
 });
 
 // Catches a reference rewrite built from a policy that became unreadable while the rename was in flight.
@@ -1804,19 +1812,19 @@ for (const kind of ["groups", "tags"] as const) {
   });
 }
 
-// Catches an empty name or missing email producing an empty search or an assignable empty principal.
-for (const [label, user, search] of [
-  ["no email", { id: "5", name: "untagged-lab" }, "untagged-lab"],
-  ["neither email nor name", { id: "6", name: "", displayName: "Display Only" }, "Display Only"],
+// Catches an empty name or missing email producing an empty or ambiguous machines link.
+for (const [label, user] of [
+  ["no email", { id: "5", name: "untagged-lab" }],
+  ["neither email nor name", { id: "6", name: "", displayName: "Display Only" }],
 ] as const) {
-  test(`a member with ${label} still gets a machines search`, async () => {
+  test(`a member with ${label} still gets a machines link`, async () => {
     const ctx = await setup("members");
     ctx.backend.users.push({ ...user });
     await ctx.session.snapshot.refreshSnapshot();
     await page.getByTestId(`member-actions-trigger-${user.name}`).click();
     await page.getByTestId(`view-member-machines-${user.name}`).click();
     await expect.poll(() => ctx.router.state.location.pathname).toBe("/devices");
-    expect(ctx.router.state.location.search).toEqual({ search });
+    expect(ctx.router.state.location.search).toEqual({ user: user.id });
   });
 }
 
@@ -1835,14 +1843,14 @@ test("a member without email or name is shown but cannot be assigned to groups o
   expect(summary(ctx)).toEqual([]);
 });
 
-test("a member without an email shows the localized unknown email in its details", async () => {
+test("a member without an email shows the list placeholder in its details", async () => {
   const ctx = await setup("members");
   ctx.backend.users.push({ id: "5", name: "untagged-lab" });
   await ctx.session.snapshot.refreshSnapshot();
   await page.getByTestId("member-detail-link-untagged-lab").click();
   await expect
     .element(page.getByTestId("user-detail-dialog"))
-    .toMatchTextContent(`Email: ${copy.unknown}`);
+    .toMatchTextContent(`${copy.email}: -`);
 });
 
 // Catches the reference list or its "no references" text claiming a state the unreadable policy cannot know.
@@ -1989,24 +1997,14 @@ test("switching servers during a held cleanup write leaves the new server's draf
   expect(ctx.session.policy.isPolicyDirty).toBe(false);
 });
 
-// Catches a name that merely contains "tagged" being treated as a service account, and per-row device loss.
-test("roles follow the auth source and a user's devices all appear in its row", async () => {
+// Catches per-row device loss.
+test("a user's devices all appear in its row", async () => {
   const ctx = await setup("members");
-  ctx.backend.users.push({ id: "5", name: "untagged-lab" }, { id: "6", name: "retagged-ops" });
   const source = ctx.backend.nodes[0];
   if (!source) throw new Error("Missing fixture node");
   ctx.backend.nodes.push({ ...source, id: "3", name: "edge2", givenName: "edge-two" });
-  ctx.session.snapshot.applyPatch({
-    users: structuredClone(ctx.backend.users),
-    nodes: structuredClone(ctx.backend.nodes),
-  });
-  await page.getByTestId("user-filter").selectOptions("member");
-  for (const name of ["untagged-lab", "retagged-ops"])
-    await expect.element(page.getByTestId(`member-role-${name}`)).toHaveTextContent("Member");
-  await page.getByTestId("user-filter").selectOptions("service");
-  for (const name of ["untagged-lab", "retagged-ops"])
-    await expect.element(page.getByTestId(`member-${name}`)).not.toBeInTheDocument();
-  await page.getByTestId("user-filter").selectOptions("all");
+  ctx.session.snapshot.applyPatch({ nodes: structuredClone(ctx.backend.nodes) });
+  await expect.element(page.getByTestId("member-device-tag-alice-3")).toBeInTheDocument();
   const tags = document.querySelector('[data-testid="member-device-tags-alice"]');
   expect(tags?.querySelector('[data-testid="member-device-tag-alice-1"]')).not.toBeNull();
   expect(tags?.querySelector('[data-testid="member-device-tag-alice-3"]')).not.toBeNull();
@@ -2151,10 +2149,10 @@ test("machine filters list exactly the nodes whose badge shows that status", asy
 // Catches a client clock being sent as the expiry instant.
 test("expiring a machine sends no client time", async () => {
   const ctx = await setup("devices");
-  await deviceAction("expire", "2");
+  await deviceAction("expire", "1");
   await page.getByTestId("expire-node-confirm").click();
   await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
-  expect(writes(ctx)).toEqual([{ method: "POST", path: "/api/v1/node/2/expire", body: {} }]);
+  expect(writes(ctx)).toEqual([{ method: "POST", path: "/api/v1/node/1/expire", body: {} }]);
 });
 
 // Catches an invisible dialog whose draft still blocks server switching.
@@ -2163,9 +2161,9 @@ test.each(["expire", "remove"])(
   async (action) => {
     const ctx = await setup("devices");
     const release = ctx.pause();
-    await deviceAction(action, "2");
+    await deviceAction(action, "1");
     await expect.element(page.getByTestId(`${action}-node-dialog`)).toBeVisible();
-    ctx.backend.nodes = ctx.backend.nodes.filter((n) => n.id !== "2");
+    ctx.backend.nodes = ctx.backend.nodes.filter((n) => n.id !== "1");
     release();
     await expect.element(page.getByTestId(`${action}-node-dialog`)).not.toBeInTheDocument();
     expect(ctx.session.drafts.hold({ id: "p", name: "P" })).toBe(false);
@@ -2176,11 +2174,11 @@ test.each(["expire", "remove"])(
 // Catches a pending write losing its dialog because the row disappeared.
 test("a held expire write keeps its dialog until it settles", async () => {
   const ctx = await setup("devices");
-  await deviceAction("expire", "2");
+  await deviceAction("expire", "1");
   const release = ctx.pauseWrites("POST");
   await page.getByTestId("expire-node-confirm").click();
   await expect.poll(() => writes(ctx).length).toBe(1);
-  ctx.session.snapshot.applyPatch({ nodes: structuredClone(ctx.backend.nodes.slice(0, 1)) });
+  ctx.session.snapshot.applyPatch({ nodes: structuredClone(ctx.backend.nodes.slice(1)) });
   await expect.element(page.getByTestId("expire-node-dialog")).toBeVisible();
   release();
   await expect.element(page.getByTestId("expire-node-dialog")).not.toBeInTheDocument();
@@ -2366,7 +2364,6 @@ test("the wizard labels its switches, advertises the exit node and focuses the c
     .toBeVisible();
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("generate-install-script").click();
-  await page.getByTestId("create-invite").click();
   await expect
     .element(page.getByTestId("created-invite"))
     .toMatchTextContent("--advertise-exit-node");
@@ -2396,7 +2393,7 @@ test("a rejected clipboard write on the install command says so", async () => {
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("generate-install-script").click();
-  await page.getByTestId("create-invite").click();
+  await expect.element(page.getByTestId("created-invite")).toBeVisible();
   vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
   await page.getByTestId("copy-setup-install-command").click();
   await expect
@@ -2436,7 +2433,9 @@ test("tag-owned machines have no owner link, owner text or owner search match", 
   expect(cells).toContain("-");
   await page.getByTestId("device-detail-link-3").click();
   const dialog = page.getByTestId("device-detail-dialog");
-  await expect.element(dialog).toMatchTextContent("REGISTER_METHOD_AUTH_KEY");
+  await expect
+    .element(dialog)
+    .toMatchTextContent(`${copy.registerMethod}: ${copy.registerMethodAuthKey}`);
   await expect.element(page.getByTestId("device-detail-owner-3")).not.toBeInTheDocument();
   await expect.element(dialog).toMatchTextContent(new RegExp(`${copy.owner}\\s*-`));
   await userEvent.keyboard("{Escape}");
@@ -2444,7 +2443,7 @@ test("tag-owned machines have no owner link, owner text or owner search match", 
   await page.getByTestId("device-search").fill("");
   await page.getByTestId("device-detail-link-2").click();
   await expect.element(dialog).toBeVisible();
-  await expect.element(dialog).not.toHaveTextContent("REGISTER_METHOD_AUTH_KEY");
+  await expect.element(dialog).not.toMatchTextContent(copy.registerMethod);
 });
 
 // Catches the route and tag filters swapping their conditions.
@@ -2475,38 +2474,40 @@ test("a ?search= link prefills the machine search", async () => {
 });
 
 // Catches non-numeric input in the expiry field producing NaN or an out-of-range key lifetime.
-test("non-numeric text in the key expiry field falls back to 7 days", async () => {
+test("non-numeric or empty text in the key expiry field keeps the last valid days", async () => {
   await setup("devices");
   await page.getByTestId("add-device-toggle").click();
   await page.getByTestId("add-linux-device").click();
   await page.getByTestId("add-device-next").click();
   const input = page.getByTestId("setup-expiration");
   await input.fill("40");
+  await userEvent.tab();
   await expect.element(input).toHaveValue("40");
   await input.fill("abc");
-  await expect.element(input).toHaveValue("7");
-  await input.fill("40");
+  await userEvent.tab();
+  await expect.element(input).toHaveValue("40");
   await input.fill("");
-  await expect.element(input).toHaveValue("1");
+  await userEvent.tab();
+  await expect.element(input).toHaveValue("40");
 });
 
 // Catches a close during key creation dropping the dialog (and the key response) mid-request.
-test("the invite dialog cannot be dismissed while the key is being created", async () => {
+test("the wizard cannot be dismissed while the key is being created", async () => {
   const ctx = await setup("devices");
   await page.getByTestId("add-device-toggle").click();
   await page.getByTestId("add-linux-device").click();
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("add-device-next").click();
-  await page.getByTestId("generate-install-script").click();
   const release = ctx.pauseWrites("POST");
-  await page.getByTestId("create-invite").click();
+  await page.getByTestId("generate-install-script").click();
   await expect.poll(() => writes(ctx).length).toBe(1);
   await userEvent.keyboard("{Escape}");
-  expect(isDialogOpen("invite-create-dialog")).toBe(true);
+  expect(isDialogOpen("add-device-dialog")).toBe(true);
+  await expect.element(page.getByTestId("add-device-finish")).toBeDisabled();
+  await expect.element(page.getByTestId("add-device-prev")).toBeDisabled();
   release();
-  await expect.element(page.getByTestId("invite-create-dialog")).not.toBeInTheDocument();
-  await expect.element(page.getByTestId("add-device-dialog")).toBeVisible();
   await expect.element(page.getByTestId("created-invite")).toMatchTextContent("created-key");
+  expect(isDialogOpen("add-device-dialog")).toBe(true);
   expect(writes(ctx)).toHaveLength(1);
 });
 
@@ -2566,7 +2567,7 @@ test("closing details opened from another page returns there without a user", as
 // Catches Escape or an outside press discarding a dialog while its write is in flight.
 test("Escape cannot dismiss the expire dialog while its write is held", async () => {
   const ctx = await setup("devices");
-  await deviceAction("expire", "2");
+  await deviceAction("expire", "1");
   const release = ctx.pauseWrites("POST");
   await page.getByTestId("expire-node-confirm").click();
   await expect.poll(() => writes(ctx).length).toBe(1);
@@ -2639,14 +2640,15 @@ test("a rejected remove keeps the machine and the dialog", async () => {
   await expect.element(page.getByTestId("device-2")).not.toBeInTheDocument();
 });
 
-// Catches an empty rename reaching Headscale, which rejects it.
-test("saving a blank machine name keeps the current name", async () => {
+// Catches an empty rename reaching Headscale, or the old name being sent as if it were new.
+test("a blank machine name cannot be saved", async () => {
   const ctx = await setup("devices");
   await deviceAction("rename", "2");
   await page.getByTestId("rename-node-dialog-input").fill("");
-  await page.getByTestId("rename-node-confirm").click();
-  await expect.element(page.getByTestId("rename-node-dialog")).not.toBeInTheDocument();
-  expect(writes(ctx)).toEqual([{ method: "POST", path: "/api/v1/node/2/rename/laptop", body: {} }]);
+  await expect.element(page.getByTestId("rename-node-confirm")).toBeDisabled();
+  await userEvent.keyboard("{Enter}");
+  await expect.element(page.getByTestId("rename-node-dialog")).toBeVisible();
+  expect(writes(ctx)).toEqual([]);
 });
 
 // Catches ordinary typing in the rename field submitting the form early.

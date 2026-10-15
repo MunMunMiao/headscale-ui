@@ -136,7 +136,7 @@ test("locked React controls render and reject mutation and policy clicks without
               endpoint: "createUser",
               input: { name: "member" },
             });
-            setResult(saved ? "Created" : feedback.getSnapshot().lastError);
+            setResult(saved ? "Created" : feedback.actionError("create-member"));
           }}
         >
           Locked create
@@ -145,7 +145,7 @@ test("locked React controls render and reject mutation and policy clicks without
           type="button"
           onClick={async () => {
             const saved = await policySave.savePolicy("save-policy", policy.policyDesignerState);
-            setResult(saved.ok ? "Saved" : feedback.getSnapshot().lastError);
+            setResult(saved.ok ? "Saved" : feedback.actionError("save-policy"));
           }}
         >
           Locked policy

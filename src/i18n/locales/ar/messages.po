@@ -6,6 +6,14 @@ msgstr ""
 "Language: ar\n"
 
 #: src/i18n/descriptors.ts
+msgid "product.optionalField"
+msgstr "(اختياري)"
+
+#: src/i18n/descriptors.ts
+msgid "plural.labelRemovalDevices"
+msgstr "{count, plural, zero {لا توجد أجهزة تحمل هذا الوسم.} one {يحمل جهاز واحد هذا الوسم. سيحتفظ بالوسم: حذف الوسم هنا لا يزيل الوسوم من الأجهزة.} two {يحمل جهازان هذا الوسم. سيحتفظان بالوسم: حذف الوسم هنا لا يزيل الوسوم من الأجهزة.} few {يحمل {formattedCount} أجهزة هذا الوسم. ستحتفظ بالوسم: حذف الوسم هنا لا يزيل الوسوم من الأجهزة.} many {يحمل {formattedCount} جهازًا هذا الوسم. ستحتفظ بالوسم: حذف الوسم هنا لا يزيل الوسوم من الأجهزة.} other {يحمل {formattedCount} جهاز هذا الوسم. ستحتفظ بالوسم: حذف الوسم هنا لا يزيل الوسوم من الأجهزة.}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.devicesTagged"
 msgstr "{count, plural, zero {لا توجد أجهزة} one {جهاز واحد} two {جهازان} few {{formattedCount} أجهزة} many {{formattedCount} جهازًا} other {{formattedCount} جهاز}}"
 
@@ -22,8 +30,16 @@ msgid "plural.openAccessWarnings"
 msgstr "{count, plural, zero {لا توجد قواعد وصول مفتوح.} one {قاعدة واحدة تتيح للجميع الوصول إلى كل الأجهزة.} two {قاعدتان تتيحان للجميع الوصول إلى كل الأجهزة.} few {{formattedCount} قواعد تتيح للجميع الوصول إلى كل الأجهزة.} many {{formattedCount} قاعدة تتيح للجميع الوصول إلى كل الأجهزة.} other {{formattedCount} قاعدة تتيح للجميع الوصول إلى كل الأجهزة.}}"
 
 #: src/i18n/descriptors.ts
+msgid "plural.moreItems"
+msgstr "{count, plural, zero {+{formattedCount}} one {+{formattedCount} آخر} two {+{formattedCount} آخران} few {+{formattedCount} أخرى} many {+{formattedCount} أخرى} other {+{formattedCount} أخرى}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.cleanupOrphans"
 msgstr "{count, plural, zero {لا توجد مراجع لتنظيفها} one {نظّف مرجعًا واحدًا غير صالح} two {نظّف مرجعين غير صالحين} few {نظّف {formattedCount} مراجع غير صالحة} many {نظّف {formattedCount} مرجعًا غير صالح} other {نظّف {formattedCount} مرجع غير صالح}}"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginUnlockedNotice"
+msgstr "تم فتح قفل {name} بالفعل في هذا المتصفح."
 
 #: src/i18n/descriptors.ts
 msgid "product.dashboardSubtitle"
@@ -32,6 +48,22 @@ msgstr "مركز لإدارة الأجهزة والمستخدمين والمسا
 #: src/i18n/descriptors.ts
 msgid "product.inviteTagsRequired"
 msgstr "يحتاج المفتاح بلا مالك إلى وسم ACL واحد على الأقل."
+
+#: src/i18n/descriptors.ts
+msgid "product.tagsRequiredForTaggedNode"
+msgstr "يجب أن يحتفظ الجهاز الموسوم بوسم واحد على الأقل. أدخل الوسوم التي تحل محل الوسوم الحالية."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorCannotRemoveAllTags"
+msgstr "يجب أن يحتفظ الجهاز الموسوم بوسم واحد على الأقل. لا يمكن لـ Headscale إزالة جميع وسومه."
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameTaken"
+msgstr "يوجد مستخدم بهذا الاسم بالفعل."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNameTaken"
+msgstr "يوجد مستخدم بهذا الاسم بالفعل."
 
 #: src/i18n/descriptors.ts
 msgid "product.nav.access"
@@ -72,6 +104,10 @@ msgstr "إضافة خادم Linux"
 #: src/i18n/descriptors.ts
 msgid "product.addMemberToTeam"
 msgstr "إضافة عضو"
+
+#: src/i18n/descriptors.ts
+msgid "product.addIpRule"
+msgstr "إضافة قاعدة"
 
 #: src/i18n/descriptors.ts
 msgid "common.addServerProfile"
@@ -118,6 +154,14 @@ msgid "product.policyIdentityRemovalImpact"
 msgstr "القواعد المتأثرة: '{'rules'}'. اختبارات السياسة المتأثرة: '{'tests'}'."
 
 #: src/i18n/descriptors.ts
+msgid "product.removeIpRuleConsequence"
+msgstr "بعد الحفظ، سيتم حظر الاتصالات التي تسمح بها هذه القاعدة وحدها."
+
+#: src/i18n/descriptors.ts
+msgid "product.allAuthKeys"
+msgstr "جميع المفاتيح"
+
+#: src/i18n/descriptors.ts
 msgid "product.allMachines"
 msgstr "كل الأجهزة"
 
@@ -130,10 +174,6 @@ msgid "product.svcAllLabel"
 msgstr "كل الخدمات"
 
 #: src/i18n/descriptors.ts
-msgid "product.allUsers"
-msgstr "كل المستخدمين"
-
-#: src/i18n/descriptors.ts
 msgid "product.cleanupReferencesOption"
 msgstr "إزالة هذا المستخدم أيضا من مراجع السياسة هذه"
 
@@ -144,6 +184,10 @@ msgstr "تحديث مراجع السياسة هذه إلى الاسم الجدي
 #: src/i18n/descriptors.ts
 msgid "common.databaseBlockedDescription"
 msgstr "تُبقي صفحة قديمة قاعدة البيانات المحلية مفتوحة. أغلق علامات تبويب Headscale UI الأخرى للمتابعة. سيتم الاحتفاظ باتصالاتك المحفوظة."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNameTaken"
+msgstr "يستخدم جهاز آخر هذا الاسم بالفعل."
 
 #: src/i18n/descriptors.ts
 msgid "common.databaseReloadDescription"
@@ -186,6 +230,10 @@ msgid "product.applyAssignment"
 msgstr "تطبيق"
 
 #: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationLead"
+msgstr "وافق على تسجيل دخول جهاز أو فحص SSH ينتظر على هذا الخادم."
+
+#: src/i18n/descriptors.ts
 msgid "product.approveRoutesTitle"
 msgstr "اعتماد المسارات المعلنة"
 
@@ -194,8 +242,8 @@ msgid "product.approveAll"
 msgstr "اعتماد الكل"
 
 #: src/i18n/descriptors.ts
-msgid "product.approveExitRouteTitle"
-msgstr "اعتماد مسار الخروج"
+msgid "product.approveExitNode"
+msgstr "اعتماد عقدة الخروج"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveExitRoutesTitle"
@@ -222,6 +270,10 @@ msgid "product.approveSshCheck"
 msgstr "الموافقة على فحص SSH"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusApproved"
+msgstr "معتمد"
+
+#: src/i18n/descriptors.ts
 msgid "product.routesApproved"
 msgstr "معتمدة"
 
@@ -232,6 +284,10 @@ msgstr "المسارات المعتمدة"
 #: src/i18n/descriptors.ts
 msgid "product.assignedBadgeLabel"
 msgstr "تم الإسناد"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodAuthKey"
+msgstr "مفتاح المصادقة"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteKey"
@@ -260,10 +316,6 @@ msgstr "استخدم وسوم الأجهزة للمصادقة والتحكم ب�
 #: src/i18n/descriptors.ts
 msgid "product.ephemeralDescription"
 msgstr "إزالة الجهاز تلقائيا من شبكة Tailnet عندما يصبح غير متصل."
-
-#: src/i18n/descriptors.ts
-msgid "product.availableRoutes"
-msgstr "المسارات المتاحة"
 
 #: src/i18n/descriptors.ts
 msgid "product.previousStep"
@@ -299,7 +351,7 @@ msgstr "إلغاء التعديل"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionChangePassphrase"
-msgstr "تغيير عبارة المرور"
+msgstr "تغيير كلمة مرور الملف الشخصي"
 
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberDescription"
@@ -350,8 +402,12 @@ msgid "product.clearFilters"
 msgstr "مسح عوامل التصفية"
 
 #: src/i18n/descriptors.ts
-msgid "product.changesAutoSaveHint"
-msgstr "انقر على «حفظ» أعلى الصفحة لكتابة هذه التغييرات في السياسة."
+msgid "product.clearSearch"
+msgstr "مسح البحث"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodCli"
+msgstr "سطر الأوامر"
 
 #: src/i18n/descriptors.ts
 msgid "product.clientDevice"
@@ -362,6 +418,10 @@ msgid "common.close"
 msgstr "إغلاق"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardKeyConfirm"
+msgstr "الإغلاق وتجاهل المفتاح"
+
+#: src/i18n/descriptors.ts
 msgid "common.databaseBlockedTitle"
 msgstr "أغلق علامات تبويب Headscale UI القديمة"
 
@@ -370,8 +430,8 @@ msgid "common.discardProfileChangesTitle"
 msgstr "الإغلاق من دون إضافة هذا الخادم؟"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesCloseAnyway"
-msgstr "الإغلاق من دون حفظ"
+msgid "product.discardKeyTitle"
+msgstr "هل تريد الإغلاق دون نسخ مفتاح المصادقة؟"
 
 #: src/i18n/descriptors.ts
 msgid "product.confirm"
@@ -379,7 +439,7 @@ msgstr "تأكيد"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionConfirmPassphrase"
-msgstr "تأكيد عبارة المرور"
+msgstr "تأكيد كلمة مرور الملف الشخصي"
 
 #: src/i18n/descriptors.ts
 msgid "common.connect"
@@ -388,6 +448,10 @@ msgstr "اتصال"
 #: src/i18n/descriptors.ts
 msgid "common.connection"
 msgstr "الاتصال"
+
+#: src/i18n/descriptors.ts
+msgid "common.continueToServer"
+msgstr "متابعة"
 
 #: src/i18n/descriptors.ts
 msgid "common.saveAnywayButton"
@@ -466,12 +530,16 @@ msgid "product.createMember"
 msgstr "إنشاء مستخدم"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyCreatedAt"
+msgstr "تاريخ الإنشاء"
+
+#: src/i18n/descriptors.ts
 msgid "product.createdApiKey"
 msgstr "تم إنشاء مفتاح API"
 
 #: src/i18n/descriptors.ts
 msgid "common.currentServerPassword"
-msgstr "كلمة مرور الخادم الحالية"
+msgstr "كلمة مرور الملف الشخصي الحالية"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomLabel"
@@ -480,6 +548,10 @@ msgstr "منافذ مخصصة"
 #: src/i18n/descriptors.ts
 msgid "common.dark"
 msgstr "داكن"
+
+#: src/i18n/descriptors.ts
+msgid "product.dataRefreshed"
+msgstr "تم تحديث البيانات"
 
 #: src/i18n/descriptors.ts
 msgid "common.database"
@@ -496,6 +568,10 @@ msgstr "حدد الأشخاص والفرق التي يمكنها الوصول إ
 #: src/i18n/descriptors.ts
 msgid "product.resourceAccessEmptyTitle"
 msgstr "حدد من يمكنه الوصول إلى ماذا"
+
+#: src/i18n/descriptors.ts
+msgid "product.decreaseDays"
+msgstr "تقليل عدد الأيام"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagDetailDialogSubtitle"
@@ -610,12 +686,28 @@ msgid "product.disableExpiryTitle"
 msgstr "تعطيل انتهاء صلاحية الجهاز؟"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesTitle"
+msgstr "هل تريد تجاهل كل التغييرات غير المحفوظة؟"
+
+#: src/i18n/descriptors.ts
 msgid "common.discardProfileChanges"
+msgstr "تجاهل التغييرات"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChanges"
 msgstr "تجاهل التغييرات"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsDiscard"
 msgstr "تجاهل المسودة والمتابعة"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogUnsavedChangesBody"
+msgstr "يتراجع «تجاهل هذه التغييرات» عن التغييرات التي أجريتها في مربع الحوار هذا فقط. يحفظ «الحفظ والإغلاق» السياسة بالكامل في Headscale. للاحتفاظ بالتغييرات دون حفظ، ألغِ ثم اختر «إنهاء»."
+
+#: src/i18n/descriptors.ts
+msgid "product.discardDialogChanges"
+msgstr "تجاهل هذه التغييرات"
 
 #: src/i18n/descriptors.ts
 msgid "product.displayName"
@@ -630,12 +722,24 @@ msgid "product.finish"
 msgstr "إنهاء"
 
 #: src/i18n/descriptors.ts
+msgid "product.dialogChangesKeptHint"
+msgstr "يحتفظ «إنهاء» بهذه التغييرات كتعديلات غير محفوظة. بعد الإغلاق، انقر على «حفظ» أعلى الصفحة لتطبيقها."
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleTitle"
 msgstr "المسودة تخص خادمًا آخر"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomPlaceholder"
 msgstr "مثال: 8080 أو 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidTags"
+msgstr "يجب أن يبدأ كل وسم بـ tag: متبوعا باسم، مثل tag:server."
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsPrefix"
+msgstr "يجب أن يبدأ كل وسم بـ tag: مثل tag:server."
 
 #: src/i18n/descriptors.ts
 msgid "product.editNodeTagsTitle"
@@ -670,8 +774,12 @@ msgid "product.authRequestInvalid"
 msgstr "أدخل معرّف طلب يبدأ بـ hskey-authreq- أو الصق الرابط كاملًا."
 
 #: src/i18n/descriptors.ts
-msgid "product.policyReferenceInvalidName"
-msgstr "أدخل اسم مجموعة أو وسم صالحًا."
+msgid "product.userNameRequired"
+msgstr "أدخل اسم مستخدم."
+
+#: src/i18n/descriptors.ts
+msgid "product.emailInvalid"
+msgstr "أدخل عنوان بريد إلكتروني صالحًا، أو اترك هذا الحقل فارغًا."
 
 #: src/i18n/descriptors.ts
 msgid "common.connectionInvalidUrl"
@@ -683,19 +791,27 @@ msgstr "أدخل مفتاح API."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionSecretRequired"
-msgstr "أعد إدخال مفتاح API وكلمة مرور هذا الخادم قبل الإرسال."
+msgstr "أعد إدخال مفتاح API وكلمة مرور هذا الملف الشخصي قبل الإرسال."
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationHasPort"
+msgstr "أدخل الوجهة من دون منفذ. ضع المنافذ في حقل «المنافذ»."
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "أدخل كلمة مرور الملف الشخصي."
 
 #: src/i18n/descriptors.ts
 msgid "common.connectSubtitle"
 msgstr "أدخل عنوان الخادم ورمز التفويض قبل فتح لوحة التحكم."
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPasswordRequired"
-msgstr "أدخل كلمة مرور الخادم."
-
-#: src/i18n/descriptors.ts
 msgid "product.ephemeral"
 msgstr "جهاز مؤقت"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesBody"
+msgstr "ستُعاد كل التغييرات غير المحفوظة في هذه الصفحة إلى آخر سياسة تم تحميلها من Headscale. لا يمكن التراجع عن ذلك."
 
 #: src/i18n/descriptors.ts
 msgid "product.highRiskConfirmDescription"
@@ -710,16 +826,20 @@ msgid "product.deviceLabelNameHint"
 msgstr "مثال: server أو workstation أو database"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusExit"
+msgstr "خروج"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNode"
+msgstr "عقدة خروج"
+
+#: src/i18n/descriptors.ts
 msgid "product.exitRoute"
 msgstr "مسار خروج"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeExitRouteDescription"
 msgstr "يتم إلغاء مسارات الخروج كزوج: تُزال مسارا IPv4 وIPv6 معا، وتتوقف الأجهزة عن إرسال حركة الإنترنت عبر هذا الجهاز. وتبقى المسارات المعتمدة الأخرى مفعلة. إذا كانت سياسة الوصول تعتمد مسارات الخروج تلقائيا، فقد تُعتمد مرة أخرى عند إعلان الجهاز عنها في المرة التالية."
-
-#: src/i18n/descriptors.ts
-msgid "product.approveExitRouteDescription"
-msgstr "يمكن لمسار الخروج تمرير حركة الإنترنت عبر هذا الجهاز. تأكد من أن هذا الخادم موثوق لهذا المسار."
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteExpiration"
@@ -778,16 +898,24 @@ msgid "product.selectAccessorSearchPlaceholder"
 msgstr "البحث عن شخص أو فريق أو وسم جهاز…"
 
 #: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "هل نسيت كلمة مرور هذا الملف الشخصي؟ ألغِ، ثم استخدم أيقونة الحذف على بطاقته لحذف هذا الملف وحده، وأضف الخادم مجددًا باستخدام مفتاح API الخاص به. يمسح الزر أدناه كل الملفات المحفوظة."
+
+#: src/i18n/descriptors.ts
 msgid "product.source"
 msgstr "من"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelBadge"
+msgstr "من الأجهزة"
 
 #: src/i18n/descriptors.ts
 msgid "product.generate"
 msgstr "إنشاء"
 
 #: src/i18n/descriptors.ts
-msgid "product.generateInstallScript"
-msgstr "إنشاء نص التثبيت"
+msgid "product.generateInstallCommand"
+msgstr "إنشاء أمر التثبيت"
 
 #: src/i18n/descriptors.ts
 msgid "product.addAccessor"
@@ -818,6 +946,14 @@ msgid "common.apiKeyGuideDescription"
 msgstr "يتم إنشاء مفاتيح API الخاصة بـ Headscale من CLI على الخادم قبل أن تتمكن الواجهة من الاتصال."
 
 #: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "يعتمد Headscale مساري الخروج IPv4 وIPv6 معًا. بعد ذلك يمكن للأجهزة تمرير حركة الإنترنت عبر هذا الجهاز. تأكد من أن هذا الجهاز موثوق لهذا المسار."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorTagsNotPermitted"
+msgstr "لم يقبل Headscale هذه الوسوم. يجب تحديد مالك لكل وسم في التحكم بالوصول (tagOwners) قبل إسناده."
+
+#: src/i18n/descriptors.ts
 msgid "common.headscaleDocs"
 msgstr "وثائق Headscale"
 
@@ -832,6 +968,10 @@ msgstr "تم ضبط Headscale على قراءة سياسة الوصول من م�
 #: src/i18n/descriptors.ts
 msgid "product.policyUpdateDisabled"
 msgstr "يقرأ Headscale سياسة الوصول من ملف (policy.mode: file)، لذا لا يمكن حفظ التغييرات من هنا. عدّل ملف السياسة على خادم Headscale، أو اضبط policy.mode على database لإدارة قواعد الوصول من هذا التطبيق."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberOwnsDevices"
+msgstr "يرفض Headscale حذف مستخدم لا يزال يملك أجهزة. أزل هذه الأجهزة أولًا:"
 
 #: src/i18n/descriptors.ts
 msgid "product.errorRequestFailed"
@@ -858,6 +998,14 @@ msgid "common.apiKeyGuideTitle"
 msgstr "كيفية الحصول على مفتاح API"
 
 #: src/i18n/descriptors.ts
+msgid "product.tagUserNodeAcknowledge"
+msgstr "أدرك أن المالك سيُزال وأنه لا يمكن مسح الوسوم لاحقا."
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillAcknowledge"
+msgstr "أفهم أن هذا الإجراء يضيف عناوين IP إلى كل الأجهزة أو يزيلها منها لتطابق البادئات المضبوطة على الخادم."
+
+#: src/i18n/descriptors.ts
 msgid "product.currentApiKeyAcknowledge"
 msgstr "أدرك أن هذه الجلسة ستفقد الوصول."
 
@@ -866,12 +1014,12 @@ msgid "common.apiKeyGuideHint"
 msgstr "إذا فقد المفتاح أو انتهت صلاحيته، فأنه صلاحيته وأنشئ مفتاحا جديدا على الخادم."
 
 #: src/i18n/descriptors.ts
-msgid "common.forgotServerPasswordHint"
-msgstr "إذا نسيت كلمة مرور هذا الخادم، فاحذف ملفه المحفوظ ثم أضفه مجددًا باستخدام مفتاح API الخاص به. يمكنك الاحتفاظ بالخوادم الأخرى."
+msgid "common.encryptionUnlockFailed"
+msgstr "كلمة مرور الملف الشخصي غير صحيحة."
 
 #: src/i18n/descriptors.ts
-msgid "common.encryptionUnlockFailed"
-msgstr "عبارة المرور غير صحيحة."
+msgid "product.increaseDays"
+msgstr "زيادة عدد الأيام"
 
 #: src/i18n/descriptors.ts
 msgid "product.installCommand"
@@ -906,6 +1054,10 @@ msgid "product.deviceLabelName"
 msgstr "اسم الوسم"
 
 #: src/i18n/descriptors.ts
+msgid "product.labelNameInvalid"
+msgstr "يجب أن تبدأ أسماء الوسوم بحرف لاتيني (A–Z) ولا يمكن أن تحتوي على مسافات أو فواصل أو نقطتين (:) أو @."
+
+#: src/i18n/descriptors.ts
 msgid "common.language"
 msgstr "اللغة"
 
@@ -914,12 +1066,16 @@ msgid "product.lastSeen"
 msgstr "آخر ظهور"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyLastUsed"
+msgstr "آخر استخدام"
+
+#: src/i18n/descriptors.ts
 msgid "product.learnMore"
 msgstr "معرفة المزيد"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverCredentialEditHint"
-msgstr "اترك مفتاح API وكلمة المرور فارغين لتغيير الاسم أو مكان حفظ الملف فقط. يتطلب تغيير العنوان أو مفتاح API إدخال مفتاح API وكلمة مرور الخادم الحالية معًا."
+msgstr "اترك مفتاح API وكلمة المرور فارغين لتغيير الاسم أو مكان حفظ الملف فقط. يتطلب تغيير العنوان أو مفتاح API إدخال مفتاح API وكلمة مرور الملف الشخصي الحالية معًا."
 
 #: src/i18n/descriptors.ts
 msgid "common.light"
@@ -930,12 +1086,20 @@ msgid "product.linuxServer"
 msgstr "خادم Linux"
 
 #: src/i18n/descriptors.ts
+msgid "product.membersLoading"
+msgstr "جارٍ تحميل المستخدمين…"
+
+#: src/i18n/descriptors.ts
 msgid "common.encryptionLockedBadge"
 msgstr "مقفل"
 
 #: src/i18n/descriptors.ts
 msgid "common.logout"
 msgstr "تسجيل الخروج"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrl"
+msgstr "عنوان خادم تسجيل الدخول"
 
 #: src/i18n/descriptors.ts
 msgid "product.devicesTableMachine"
@@ -960,6 +1124,10 @@ msgstr "الأجهزة"
 #: src/i18n/descriptors.ts
 msgid "product.devicesTitle"
 msgstr "الأجهزة"
+
+#: src/i18n/descriptors.ts
+msgid "common.machineCount"
+msgstr "الأجهزة المعروضة: {shown} من {total}"
 
 #: src/i18n/descriptors.ts
 msgid "common.primaryNavigation"
@@ -988,14 +1156,6 @@ msgstr "إدارة الأجهزة المتصلة بشبكة Tailnet."
 #: src/i18n/descriptors.ts
 msgid "product.membersSubtitle"
 msgstr "إدارة مستخدمي شبكتك وصلاحياتهم."
-
-#: src/i18n/descriptors.ts
-msgid "product.roleMember"
-msgstr "عضو"
-
-#: src/i18n/descriptors.ts
-msgid "product.members"
-msgstr "الأعضاء"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamMembersSection"
@@ -1035,7 +1195,7 @@ msgstr "خادم جديد"
 
 #: src/i18n/descriptors.ts
 msgid "common.newServerPassword"
-msgstr "كلمة مرور الخادم الجديدة"
+msgstr "كلمة مرور الملف الشخصي الجديدة"
 
 #: src/i18n/descriptors.ts
 msgid "product.newTeam"
@@ -1054,12 +1214,32 @@ msgid "product.noTeamAccess"
 msgstr "لا تُعرض هنا أذونات ACL من هذا الفريق إلى تسميات الأجهزة."
 
 #: src/i18n/descriptors.ts
+msgid "product.noActiveAuthKeys"
+msgstr "لا توجد مفاتيح مصادقة نشطة."
+
+#: src/i18n/descriptors.ts
 msgid "product.noRoutes"
 msgstr "لا توجد مسارات معلنة بانتظار المراجعة."
 
 #: src/i18n/descriptors.ts
+msgid "product.noApiKeys"
+msgstr "لا توجد مفاتيح API لعرضها."
+
+#: src/i18n/descriptors.ts
 msgid "product.noAuthKeys"
 msgstr "لا توجد مفاتيح مصادقة تطابق عوامل التصفية."
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeysYet"
+msgstr "لا توجد مفاتيح مصادقة بعد. أنشئ مفتاحًا لإضافة جهاز."
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNoChanges"
+msgstr "لم تكن هناك حاجة إلى أي تغييرات"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsMatch"
+msgstr "لا توجد وسوم أجهزة تطابق بحثك."
 
 #: src/i18n/descriptors.ts
 msgid "product.noDeviceLabelsYet"
@@ -1068,6 +1248,10 @@ msgstr "لا توجد وسوم أجهزة بعد"
 #: src/i18n/descriptors.ts
 msgid "product.noGroupsAvailable"
 msgstr "لا توجد مجموعات بعد. أضف واحدة من التحكم بالوصول أولا."
+
+#: src/i18n/descriptors.ts
+msgid "product.noIpRules"
+msgstr "لا توجد بعد قواعد لعناوين IP أو لجميع الوجهات."
 
 #: src/i18n/descriptors.ts
 msgid "product.noDevices"
@@ -1094,6 +1278,14 @@ msgid "product.noPolicyGroupMembers"
 msgstr "لا يوجد أعضاء بعد."
 
 #: src/i18n/descriptors.ts
+msgid "product.emptyTeamWarning"
+msgstr "لا يوجد أعضاء بعد. لن يمنح هذا الفريق حق الوصول لأي شخص حتى تضيف أعضاء."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeNoSession"
+msgstr "لم تُبقِ أي علامة تبويب مفتوحة أخرى الجلسة مفتوحة القفل، لذلك قُفلت عند إعادة تحميل الصفحة أو فتحها مجددًا. أدخل كلمة مرور الملف الشخصي للمتابعة."
+
+#: src/i18n/descriptors.ts
 msgid "product.inviteNoOwner"
 msgstr "بلا مالك (وسوم فقط)"
 
@@ -1108,6 +1300,10 @@ msgstr "لا توجد أجهزة شخصية."
 #: src/i18n/descriptors.ts
 msgid "product.noPolicyReferences"
 msgstr "لا توجد مراجع في السياسة."
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerTitle"
+msgstr "لا توجد قاعدة تسمح بأي وصول"
 
 #: src/i18n/descriptors.ts
 msgid "product.noTagsAvailable"
@@ -1126,6 +1322,10 @@ msgid "product.noUsersMatch"
 msgstr "لا يوجد مستخدمون يطابقون عوامل التصفية."
 
 #: src/i18n/descriptors.ts
+msgid "product.noUsersYet"
+msgstr "لا يوجد مستخدمون بعد. أضف مستخدمًا للبدء."
+
+#: src/i18n/descriptors.ts
 msgid "product.nodeId"
 msgstr "معرف الجهاز"
 
@@ -1142,12 +1342,24 @@ msgid "product.noRouteValues"
 msgstr "لا شيء"
 
 #: src/i18n/descriptors.ts
+msgid "common.undefinedTags"
+msgstr "غير معرّفة في سياسة الوصول: {tags}. ستفشل المفاتيح التي تحمل هذه الوسوم إلى أن تضاف الوسوم من التحكم بالوصول."
+
+#: src/i18n/descriptors.ts
+msgid "product.notReported"
+msgstr "غير متوفر"
+
+#: src/i18n/descriptors.ts
 msgid "common.offline"
 msgstr "غير متصل"
 
 #: src/i18n/descriptors.ts
 msgid "product.offlineOnly"
 msgstr "غير متصلة"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodOidc"
+msgstr "OIDC"
 
 #: src/i18n/descriptors.ts
 msgid "product.oneTimeKey"
@@ -1194,12 +1406,8 @@ msgid "product.inviteOwner"
 msgstr "المالك"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleOwner"
-msgstr "المالك"
-
-#: src/i18n/descriptors.ts
-msgid "product.owners"
-msgstr "المالكون"
+msgid "common.loginNoticePasswordChanged"
+msgstr "تم تغيير كلمة المرور. افتح قفل الخادم باستخدام كلمة مرور الملف الشخصي الجديدة."
 
 #: src/i18n/descriptors.ts
 msgid "common.apiKeyGuideStepPaste"
@@ -1208,6 +1416,10 @@ msgstr "الصق المفتاح هنا مع عنوان HTTPS الخاص بـ Hea
 #: src/i18n/descriptors.ts
 msgid "product.authRequestHelp"
 msgstr "الصق الرابط أو المعرّف الذي يعرضه الأمر tailscale up أو موجّه فحص SSH. معرّفات الطلبات قصيرة العمر."
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusPending"
+msgstr "منتظر"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRoutes"
@@ -1236,6 +1448,10 @@ msgstr "اختر المجموعات التي يجب أن ينتمي إليها �
 #: src/i18n/descriptors.ts
 msgid "product.assignTagOwnershipsDescription"
 msgstr "اختر وسوم الأجهزة التي يمكن لهذا المستخدم امتلاكها. تكتب التغييرات في السياسة عند الضغط على «تطبيق»."
+
+#: src/i18n/descriptors.ts
+msgid "product.createMemberDescription"
+msgstr "تشير السياسات وواجهة Headscale CLI إلى هذا المستخدم باسم المستخدم. الاسم المعروض والبريد الإلكتروني اختياريان."
 
 #: src/i18n/descriptors.ts
 msgid "common.policy"
@@ -1286,16 +1502,16 @@ msgid "common.profileName"
 msgstr "اسم الإعداد"
 
 #: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "كلمة مرور الملف الشخصي"
+
+#: src/i18n/descriptors.ts
 msgid "product.unused"
 msgstr "جاهز"
 
 #: src/i18n/descriptors.ts
 msgid "product.readyKeys"
 msgstr "المفاتيح الجاهزة"
-
-#: src/i18n/descriptors.ts
-msgid "product.readyToSave"
-msgstr "جاهز للحفظ"
 
 #: src/i18n/descriptors.ts
 msgid "product.recentDevices"
@@ -1382,6 +1598,14 @@ msgid "product.removeTeamMember"
 msgstr "إزالة العضو"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeOwnerFilter"
+msgstr "إزالة عامل تصفية المالك"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionUrlParts"
+msgstr "أزل اسم المستخدم أو كلمة المرور أو الاستعلام (?…) أو الجزء (#…) من عنوان الخادم."
+
+#: src/i18n/descriptors.ts
 msgid "product.confirmRemovePolicyItemTitle"
 msgstr "إزالة هذا العنصر؟"
 
@@ -1400,6 +1624,14 @@ msgstr "إعادة تسمية المستخدم"
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberTitle"
 msgstr "إعادة تسمية المستخدم"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceTitle"
+msgstr "هل تريد استبدال الوصول المفتوح بهذا القالب؟"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceConfirm"
+msgstr "استبدال القواعد"
 
 #: src/i18n/descriptors.ts
 msgid "product.authRequestLabel"
@@ -1438,16 +1670,16 @@ msgid "product.wizardStepResultDescription"
 msgstr "راجع النتيجة ثم تابع."
 
 #: src/i18n/descriptors.ts
+msgid "product.revokeExitNode"
+msgstr "إلغاء اعتماد عقدة الخروج"
+
+#: src/i18n/descriptors.ts
 msgid "product.revokeRoute"
 msgstr "إلغاء اعتماد المسار"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeRouteTitle"
 msgstr "إلغاء اعتماد المسار"
-
-#: src/i18n/descriptors.ts
-msgid "product.role"
-msgstr "الدور"
 
 #: src/i18n/descriptors.ts
 msgid "product.exitNodeDescription"
@@ -1498,6 +1730,10 @@ msgid "common.saveAndUnlock"
 msgstr "الحفظ وفتح القفل"
 
 #: src/i18n/descriptors.ts
+msgid "common.saveAnywayEditButton"
+msgstr "الحفظ على أي حال"
+
+#: src/i18n/descriptors.ts
 msgid "product.saveName"
 msgstr "حفظ الاسم"
 
@@ -1526,12 +1762,28 @@ msgid "common.resetMetadataWarning"
 msgstr "تم مسح البيانات المحفوظة، لكن تعذّر إزالة الإعدادات المؤقتة لعلامة التبويب هذه. أغلقها وافتح علامة تبويب جديدة."
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableRecordsNotice"
+msgstr "سجلات ملفات شخصية محفوظة لا يمكن قراءتها وغير معروضة: {count}. يؤدي مسح كل الملفات المحفوظة إلى إزالتها."
+
+#: src/i18n/descriptors.ts
 msgid "product.policySavedNewerEdits"
 msgstr "تم حفظ السياسة المُرسلة. لم تُحفظ التعديلات الأحدث بعد."
 
 #: src/i18n/descriptors.ts
+msgid "common.savingProfile"
+msgstr "جار الحفظ"
+
+#: src/i18n/descriptors.ts
 msgid "product.replaceTagsWarning"
 msgstr "يستبدل الحفظ الوسوم الحالية بدلا من الإضافة إليها."
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyDescription"
+msgstr "تفقد البرامج النصية والتكاملات التي تستخدم هذا المفتاح الوصول إلى الخادم فورًا، ويُحذف المفتاح نهائيًا. لا يمكن التراجع عن ذلك."
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyDescription"
+msgstr "تفقد البرامج النصية والتكاملات التي تستخدم هذا المفتاح الوصول إلى الخادم فورًا. يبقى المفتاح في القائمة بحالة منتهي الصلاحية ولا يمكن تجديده."
 
 #: src/i18n/descriptors.ts
 msgid "product.searchDevices"
@@ -1566,8 +1818,8 @@ msgid "product.templateSplitEnvDescription"
 msgstr "افصل فريقي التطوير والعمليات، واجعل لكل منهما وصولا إلى خوادمه الموسومة."
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPassword"
-msgstr "كلمة مرور الخادم"
+msgid "product.inviteTagsHint"
+msgstr "افصل بين الوسوم بفواصل. يبدأ كل وسم بـ tag: مثل tag:server."
 
 #: src/i18n/descriptors.ts
 msgid "product.openServerSettings"
@@ -1586,14 +1838,6 @@ msgid "product.ports"
 msgstr "الخدمة"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleServiceAccount"
-msgstr "حساب خدمة"
-
-#: src/i18n/descriptors.ts
-msgid "product.serviceAccounts"
-msgstr "حسابات الخدمة"
-
-#: src/i18n/descriptors.ts
 msgid "product.linuxServerDescription"
 msgstr "خدمات تعمل على أجهزة افتراضية أو حاويات أو موجهات."
 
@@ -1603,7 +1847,7 @@ msgstr "للجلسة فقط"
 
 #: src/i18n/descriptors.ts
 msgid "common.profileMigrationHint"
-msgstr "عيّن كلمة مرور لهذا الخادم لترحيل الاتصال المحفوظ. إذا فشل الترحيل، تبقى البيانات الحالية دون تغيير."
+msgstr "عيّن كلمة مرور للملف الشخصي لترحيل هذا الاتصال المحفوظ. إذا فشل الترحيل، تبقى البيانات الحالية دون تغيير."
 
 #: src/i18n/descriptors.ts
 msgid "product.authKeyExpirationDescription"
@@ -1702,6 +1946,10 @@ msgid "product.taggedKeys"
 msgstr "المفاتيح ذات الوسوم"
 
 #: src/i18n/descriptors.ts
+msgid "common.tagUserNodeWarning"
+msgstr "يؤدي وسم هذا الجهاز إلى إزالة مالكه {owner}، وسيصبح تابعا لوسومه بدلا من ذلك. بعد ذلك يمكن استبدال وسومه فقط ولا يمكن مسحها."
+
+#: src/i18n/descriptors.ts
 msgid "product.tags"
 msgstr "وسوم الأجهزة"
 
@@ -1712,6 +1960,10 @@ msgstr "نظرة عامة على Tailnet"
 #: src/i18n/descriptors.ts
 msgid "product.teamName"
 msgstr "اسم الفريق"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameInvalid"
+msgstr "لا يمكن أن تحتوي أسماء الفرق على مسافات أو فواصل أو نقطتين (:) أو @."
 
 #: src/i18n/descriptors.ts
 msgid "product.teamsSection"
@@ -1728,6 +1980,14 @@ msgstr "اسم المجموعة أو الوسم هذا مستخدم بالفعل
 #: src/i18n/descriptors.ts
 msgid "common.sessionChanged"
 msgstr "تغيّر الخادم النشط. راجع هذه الصفحة قبل المحاولة مجددًا."
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrlHint"
+msgstr "العنوان الذي تستخدمه الأجهزة للوصول إلى Headscale. غيّره إذا كانت هذه الواجهة تصل إلى واجهة API عبر وكيل."
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyDescription"
+msgstr "لن يظهر مفتاح المصادقة مرة أخرى. انسخه أولا أو أنشئ مفتاحا جديدا لاحقا."
 
 #: src/i18n/descriptors.ts
 msgid "common.preferencesReloadFailed"
@@ -1758,6 +2018,10 @@ msgid "common.discardProfileChangesDescription"
 msgstr "تغيرت إعدادات الخادم. سيؤدي الإغلاق الآن إلى تجاهل التعديلات غير المحفوظة."
 
 #: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "تم تغيير كلمة مرور الملف الشخصي. افتح قفله مجددًا عند الحاجة."
+
+#: src/i18n/descriptors.ts
 msgid "common.requestUnreachable"
 msgstr "لم يكتمل الطلب. تحقق من عنوان الخادم واتصالك بالشبكة وإعدادات CORS في الخادم. إذا كنت تحفظ تغييرًا، فتحقق من الحالة الحالية للخادم قبل المحاولة مرة أخرى."
 
@@ -1774,16 +2038,20 @@ msgid "common.requestUnexpectedResponse"
 msgstr "أجاب الخادم باستجابة غير متوقعة (HTTP {status}). تأكد من أن العنوان يشير إلى Headscale وأن أي وكيل عكسي يعمل بشكل صحيح."
 
 #: src/i18n/descriptors.ts
-msgid "common.profilePasswordChanged"
-msgstr "تم تغيير كلمة مرور الخادم. افتح قفله مجددًا عند الحاجة."
-
-#: src/i18n/descriptors.ts
 msgid "common.sessionSavedLocked"
 msgstr "حُفظ ملف الخادم، لكنه ما زال مقفلاً. أدخل كلمة مروره لفتح القفل."
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeExpired"
+msgstr "قُفلت الجلسة بعد 30 دقيقة دون نشاط. أدخل كلمة مرور الملف الشخصي للمتابعة."
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionUnavailable"
 msgstr "الجلسة المشتركة غير متاحة. أعد الاتصال وافتح قفل الخادم للمتابعة."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeClockReversed"
+msgstr "رجعت ساعة النظام إلى الوراء، لذلك قُفلت الجلسة. أدخل كلمة مرور الملف الشخصي للمتابعة."
 
 #: src/i18n/descriptors.ts
 msgid "common.themeNotSaved"
@@ -1811,11 +2079,19 @@ msgstr "تؤثر هذه الإجراءات في الخادم كله. استخد�
 
 #: src/i18n/descriptors.ts
 msgid "product.ipRulesSectionHint"
-msgstr "تسمح هذه القواعد بالوصول إلى عناوين IP أو نطاقات الشبكة أو جميع الوجهات. يمكنك تعديلها أو حذفها هنا."
+msgstr "تسمح هذه القواعد بالوصول إلى عناوين IP أو نطاقات الشبكة أو جميع الوجهات (*). يمكنك إضافتها أو تعديلها أو حذفها هنا."
+
+#: src/i18n/descriptors.ts
+msgid "common.insecureServerUrlWarning"
+msgstr "يستخدم هذا العنوان HTTP غير المشفر، لذا يُرسل مفتاح API عبر الشبكة دون تشفير. استخدم HTTPS ما لم تكن الشبكة موثوقة."
 
 #: src/i18n/descriptors.ts
 msgid "product.approveRoutesDescription"
 msgstr "يعتمد هذا كل المسارات التي يعلنها الجهاز حاليا."
+
+#: src/i18n/descriptors.ts
+msgid "common.clearAllProfilesHint"
+msgstr "يمسح هذا كل الملفات الشخصية المحفوظة في هذا المتصفح. لحذف ملف واحد فقط، سجّل الخروج واستخدم أيقونة الحذف على بطاقته."
 
 #: src/i18n/descriptors.ts
 msgid "common.clearProfilesDescription"
@@ -1846,8 +2122,16 @@ msgid "product.expireInviteDescription"
 msgstr "لن يقبل هذا المفتاح أجهزة جديدة."
 
 #: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelHint"
+msgstr "يأتي هذا الوسم من الأجهزة وغير معرّف في السياسة، لذا لا يمكن إعادة تسميته أو حذفه هنا. امنح حق الوصول أو أضف مديرًا للوسم لتعريفه."
+
+#: src/i18n/descriptors.ts
 msgid "product.disableExpiryDescription"
 msgstr "لن تنتهي صلاحية هذا الجهاز بعد الآن وسيحتفظ بالوصول دون تسجيل الدخول مجددا إلى أن تنهي صلاحيته يدويا."
+
+#: src/i18n/descriptors.ts
+msgid "product.errorInvalidDnsLabel"
+msgstr "هذا الاسم غير صالح. استخدم 63 حرفًا أو رقمًا أو شرطة كحد أقصى، على أن يبدأ وينتهي بحرف أو رقم."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionReloadRequired"
@@ -1868,6 +2152,10 @@ msgstr "تحتوي هذه السياسة على حقول لا يمكن تحدي�
 #: src/i18n/descriptors.ts
 msgid "product.policyReadOnlyError"
 msgstr "تعذرت قراءة هذه السياسة بأمان، لذا تم تعطيل تعديلها. صحّح السياسة في Headscale ثم أعد تحميل الصفحة."
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyProfileMigrateFirst"
+msgstr "يستخدم هذا الملف الشخصي تنسيق تخزين قديمًا. افتحه من بطاقته لترحيله قبل تغيير عنوانه أو مفتاح API. يمكنك إعادة تسميته هنا."
 
 #: src/i18n/descriptors.ts
 msgid "product.cleanupOrphanRefsConfirmBody"
@@ -1894,6 +2182,10 @@ msgid "product.deleteMemberDescription"
 msgstr "يزيل هذا المستخدم من Headscale. راجع أجهزته ومفاتيح المصادقة قبل المتابعة."
 
 #: src/i18n/descriptors.ts
+msgid "product.removeReferenceDescription"
+msgstr "يزيل هذا المستخدم من إدخال السياسة هذا ويحفظ السياسة على الخادم فورًا."
+
+#: src/i18n/descriptors.ts
 msgid "product.policyTagRenameScope"
 msgstr "سيُعاد تسمية الوسم في السياسة. ستبقى وسوم الأجهزة والإعدادات الخارجية دون تغيير."
 
@@ -1906,12 +2198,24 @@ msgid "product.policyAdvancedRuleHint"
 msgstr "تتضمن هذه القاعدة قيودًا إضافية. عدّل الخدمات المسموح بها في سياسة Headscale."
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableProfileRepair"
+msgstr "لا يمكن قراءة هذا الملف الشخصي المحفوظ. أدخل عنوان الخادم ومفتاح API واختر كلمة مرور جديدة للملف الشخصي لاستبداله، أو احذفه من بطاقته."
+
+#: src/i18n/descriptors.ts
 msgid "common.unsupportedServerVersion"
 msgstr "يعلن هذا الخادم أنه يستخدم Headscale {version}، بينما يستهدف هذا التطبيق الإصدار 0.29.x. قد تفشل بعض الصفحات في التحميل أو تعرض بيانات ناقصة."
 
 #: src/i18n/descriptors.ts
 msgid "common.serverVersionUnreadable"
 msgstr "يعلن هذا الخادم أنه يستخدم Headscale {version}، وهو إصدار لا يدعمه هذا التطبيق، وتعذّرت قراءة استجابته. استخدم خادم Headscale بالإصدار 0.29.x."
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeProfileChanged"
+msgstr "تغيّر الملف الشخصي المحفوظ لهذا الخادم، مثل كلمة مروره، لذلك قُفلت الجلسة. أدخل كلمة مرور الملف الشخصي للمتابعة."
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceBody"
+msgstr "يحذف هذا القالب القواعد أدناه، التي تسمح لكل جهاز بالوصول إلى جميع الأجهزة الأخرى. بعد الحفظ، لن تسمح بالوصول إلا قواعد القالب: ستفقد الأجهزة غير الموسومة، والأجهزة التي لا يغطي القالب وسومها، إمكانية الوصول ما لم تغطها قاعدة أخرى."
 
 #: src/i18n/descriptors.ts
 msgid "product.userImpactOnDeleteHeading"
@@ -1966,12 +2270,24 @@ msgid "product.unsavedChangesBadge"
 msgstr "غير محفوظ"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeDiscardedPolicy"
+msgstr "تم تجاهل تغييرات التحكم في الوصول غير المحفوظة عند قفل الجلسة."
+
+#: src/i18n/descriptors.ts
 msgid "product.unsavedChangesTitle"
 msgstr "تغييرات غير محفوظة"
 
 #: src/i18n/descriptors.ts
 msgid "common.updatedProfile"
 msgstr "آخر تحديث"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidMachineName"
+msgstr "استخدم من 1 إلى 63 حرفا لاتينيا أو رقما أو شرطة، على أن يبدأ الاسم وينتهي بحرف أو رقم."
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordMinLength"
+msgstr "استخدم 8 أحرف على الأقل."
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRegistrationDescription"
@@ -2014,6 +2330,10 @@ msgid "product.memberName"
 msgstr "اسم المستخدم"
 
 #: src/i18n/descriptors.ts
+msgid "product.userNameInvalid"
+msgstr "لا يمكن أن يحتوي اسم المستخدم على مسافات أو أحرف تحكم."
+
+#: src/i18n/descriptors.ts
 msgid "product.errorUserNotFound"
 msgstr "لم يتم العثور على المستخدم."
 
@@ -2040,6 +2360,14 @@ msgstr "المستخدمون"
 #: src/i18n/descriptors.ts
 msgid "product.optionGroupUsers"
 msgstr "المستخدمون"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoadFailed"
+msgstr "تعذر تحميل المستخدمين."
+
+#: src/i18n/descriptors.ts
+msgid "common.usersShown"
+msgstr "المستخدمون المعروضون: {shown} من {total}"
 
 #: src/i18n/descriptors.ts
 msgid "product.viewDetails"
@@ -2070,12 +2398,20 @@ msgid "product.svcWebLabel"
 msgstr "الويب"
 
 #: src/i18n/descriptors.ts
+msgid "common.rememberConnectionHint"
+msgstr "عند إلغاء التحديد، يظهر هذا الملف الشخصي في علامة التبويب هذه والعلامات المفتوحة منها فقط. وفي الحالتين، يبقى مفتاح API المشفّر في هذا المتصفح حتى تحذف الملف أو تمسح البيانات المحلية."
+
+#: src/i18n/descriptors.ts
 msgid "product.tagAccessorsSection"
 msgstr "من يمكنه الوصول إلى هذه الأجهزة"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagOwnersSection"
 msgstr "من يمكنه إسناد هذا الوسم إلى الأجهزة"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerBody"
+msgstr "بهذه السياسة لا يمكن للأجهزة الوصول إلى بعضها. أضف قاعدة أو ابدأ من قالب للسماح بالوصول."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleBody"
@@ -2086,8 +2422,8 @@ msgid "product.policyUnsavedBlocked"
 msgstr "لديك تغييرات غير محفوظة في السياسة على صفحة التحكم بالوصول. احفظها أو تجاهلها هناك قبل تغيير السياسة من هنا."
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesBody"
-msgstr "لا تزال تغييراتك محفوظة في هذا المتصفح فقط. هل تريد الإغلاق من دون حفظ؟"
+msgid "common.loginNoticeLoggedOut"
+msgstr "سجّلت الخروج في علامة التبويب هذه أو في علامة تبويب أخرى. أدخل كلمة مرور الملف الشخصي للمتابعة."
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionExpired"

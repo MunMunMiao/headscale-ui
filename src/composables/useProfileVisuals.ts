@@ -15,7 +15,12 @@ export function createProfileVisuals(getSessionSnapshot: () => PublicSessionSnap
   }
   function profileAvatarLabel(profile: ProfileSummary) {
     const source = profile.name || profile.baseUrl;
-    return source.trim().slice(0, 2).toUpperCase() || "HS";
+    // Whole user-perceived characters, so an emoji or a supplementary ideograph is never split.
+    const characters = Array.from(
+      new Intl.Segmenter().segment(source.trim()),
+      (part) => part.segment,
+    );
+    return characters.slice(0, 2).join("").toUpperCase() || "HS";
   }
   return { profileVisualState, profileAvatarLabel };
 }

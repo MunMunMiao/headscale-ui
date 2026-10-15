@@ -631,4 +631,43 @@ describe("useSnapshot", () => {
     expect(api.getSnapshot().snapshot.health?.serverReachable).toBe(true);
     expect(api.isRefreshing).toBe(false);
   });
+
+  test("a refresh the user asked for announces only its own success in the current session", async () => {
+    const failing = new Set<string>();
+    let held: ReturnType<typeof Promise.withResolvers<Response>> | null = null;
+    useTransport(async (path) => {
+      if (held && path === "/api/v1/user") return held.promise;
+      return failing.has(path)
+        ? Response.json({ message: "denied" }, { status: 403 })
+        : responseFor(path);
+    });
+    const notice = () => snapshotStore.getSnapshot().refreshNotice;
+    expect(notice()).toBe(false);
+    await snapshotStore.refreshByUser(["identity"]);
+    expect(notice()).toBe(true);
+    snapshotStore.clearRefreshNotice();
+    expect(notice()).toBe(false);
+
+    failing.add("/api/v1/node");
+    await snapshotStore.refreshByUser(["identity"]);
+    expect(notice()).toBe(true);
+    // Starting another refresh withdraws the previous notice; a failed segment reports its error.
+    await snapshotStore.refreshByUser();
+    expect(notice()).toBe(false);
+    expect(snapshotStore.getSnapshot().refreshErrors.fabric).toBe("denied");
+
+    failing.clear();
+    held = Promise.withResolvers<Response>();
+    const replaced = snapshotStore.refreshByUser(["identity"]);
+    snapshotStore.setAuthorized(false);
+    snapshotStore.setAuthorized(true);
+    held.resolve(responseFor("/api/v1/user"));
+    await replaced;
+    expect(notice()).toBe(false);
+
+    held = null;
+    snapshotStore.setAuthorized(false);
+    await snapshotStore.refreshByUser(["identity"]);
+    expect(notice()).toBe(false);
+  });
 });

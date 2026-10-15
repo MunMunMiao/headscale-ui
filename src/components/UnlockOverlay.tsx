@@ -1,5 +1,5 @@
 import { useRouter, useSearch } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { type RefObject, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +23,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useActionFeedback } from "@/composables/useActionFeedback";
-import { useProfiles } from "@/composables/useProfiles";
+import { MIN_PROFILE_PASSWORD_LENGTH, useProfiles } from "@/composables/useProfiles";
 import { useResetLocalData } from "@/composables/useResetLocalData";
 import { useHeadscaleI18n } from "@/i18n";
 import type { ProfileSummary } from "@/lib/profile-storage";
-import { parseSearch } from "@/router/search";
+import { cn } from "@/lib/utils";
+import { redirectTarget } from "@/router/search";
 import { storageErrorMessage } from "@/utils/storage-error";
 
 type UnlockProps = { reloadPage?: (href: string) => void };
@@ -41,6 +42,7 @@ export default function UnlockOverlay(props: UnlockProps) {
     />
   ) : null;
 }
+type Field = "passphrase" | "new" | "confirm";
 function ProfileUnlockDialog({
   profile,
   reloadPage = window.location.assign.bind(window.location),
@@ -56,9 +58,15 @@ function ProfileUnlockDialog({
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [invalid, setInvalid] = useState<Field | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const inFlight = useRef(false);
+  const fields: Record<Field, RefObject<HTMLInputElement | null>> = {
+    passphrase: useRef(null),
+    new: useRef(null),
+    confirm: useRef(null),
+  };
   const { clearing, clearAll } = useResetLocalData({
     inFlight,
     search: { cleared: "1" },
@@ -66,10 +74,13 @@ function ProfileUnlockDialog({
     onStart() {
       setClearConfirmOpen(false);
       setErrorMessage("");
+      setInvalid(null);
       clearSecrets();
     },
     onError: setErrorMessage,
   });
+  // The page-level banner is hidden while this dialog is open, so profile errors are shown here once.
+  const shownError = errorMessage || feedback.lastError;
   function clearSecrets() {
     setPassphrase("");
     setNewPassword("");
@@ -79,16 +90,30 @@ function ProfileUnlockDialog({
     clearSecrets();
     profiles.closeUnlockDialog();
   }
+  function reject(field: Field, message = "") {
+    setErrorMessage(message);
+    setInvalid(field);
+    fields[field].current?.focus();
+  }
+  function invalidProps(field: Field, describedBy?: string) {
+    const ids = [describedBy, invalid === field && shownError ? "unlock-error" : undefined];
+    return {
+      "aria-invalid": invalid === field,
+      "aria-describedby": ids.filter(Boolean).join(" ") || undefined,
+    };
+  }
 
   async function submit() {
     if (inFlight.current) return;
-    if (migration ? !newPassword || newPassword !== confirmation : !passphrase) {
-      setErrorMessage(t(migration ? "passwordsMismatch" : "sessionSecretRequired"));
-      return;
-    }
+    if ((!migration || needsPreviousPassword) && !passphrase)
+      return reject("passphrase", t("sessionSecretRequired"));
+    if (migration && newPassword.length < MIN_PROFILE_PASSWORD_LENGTH)
+      return reject("new", t("profilePasswordMinLength"));
+    if (migration && newPassword !== confirmation) return reject("confirm", t("passwordsMismatch"));
     inFlight.current = true;
     setSubmitting(true);
     setErrorMessage("");
+    setInvalid(null);
     try {
       const unlocking = migration
         ? profiles.migrateAndEnterProfile(
@@ -99,25 +124,11 @@ function ProfileUnlockDialog({
         : profiles.enterProfile(profile, passphrase);
       clearSecrets();
       if (!(await unlocking)) {
-        setErrorMessage(feedback.getSnapshot().lastError);
+        // The cleared password is the field to fill in again; the store error says why.
+        reject(needsPreviousPassword || !migration ? "passphrase" : "new");
         return;
       }
-      const redirect = typeof query.redirect === "string" ? query.redirect : "/";
-      const target = new URL(redirect, "http://headscale.local");
-      const pinned = target.searchParams.get("profile");
-      // A redirect pinned to a different or stale profile would bounce back to /login via guardRoute,
-      // and its ids and hash belong to another server.
-      const foreign = pinned !== null && pinned !== profile.id;
-      await router.navigate(
-        foreign
-          ? { to: target.pathname, search: {}, hash: "", replace: true }
-          : {
-              to: target.pathname,
-              search: parseSearch(target.search),
-              hash: target.hash.slice(1),
-              replace: true,
-            },
-      );
+      await router.navigate(redirectTarget(query.redirect, profile.id));
     } catch (error) {
       const message = storageErrorMessage(error);
       setErrorMessage(message);
@@ -127,6 +138,8 @@ function ProfileUnlockDialog({
       setSubmitting(false);
     }
   }
+  // A migrated profile reopens this dialog while its unlock is still running.
+  const busy = submitting || clearing || profiles.authenticatingProfileId === profile.id;
   return (
     // Always open and trigger-less, so Base UI only reports closing (Escape, backdrop, close button).
     <Dialog open onOpenChange={close}>
@@ -155,6 +168,7 @@ function ProfileUnlockDialog({
                 {t(needsPreviousPassword ? "legacyPasswordLabel" : "serverPassword")}
               </Label>
               <Input
+                ref={fields.passphrase}
                 id="unlock-passphrase"
                 type="password"
                 data-testid={
@@ -163,7 +177,8 @@ function ProfileUnlockDialog({
                 autoComplete="current-password"
                 value={passphrase}
                 onChange={(event) => setPassphrase(event.target.value)}
-                disabled={submitting || clearing}
+                readOnly={busy}
+                {...invalidProps("passphrase")}
               />
             </div>
           )}
@@ -172,39 +187,55 @@ function ProfileUnlockDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="migration-new-password">{t("newServerPassword")}</Label>
                 <Input
+                  ref={fields.new}
                   id="migration-new-password"
                   data-testid="migration-new-password"
                   type="password"
                   autoComplete="new-password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
-                  disabled={submitting || clearing}
+                  readOnly={busy}
+                  {...invalidProps("new", "migration-password-length")}
                 />
+                <p
+                  id="migration-password-length"
+                  className={cn(
+                    "text-xs",
+                    invalid === "new" && errorMessage
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {t("profilePasswordMinLength")}
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="migration-confirm-password">
                   {t("encryptionConfirmPassphrase")}
                 </Label>
                 <Input
+                  ref={fields.confirm}
                   id="migration-confirm-password"
                   data-testid="migration-confirm-password"
                   type="password"
                   autoComplete="new-password"
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
-                  disabled={submitting || clearing}
+                  readOnly={busy}
+                  {...invalidProps("confirm")}
                 />
               </div>
               <p className="text-xs text-muted-foreground">{t("serverPasswordHint")}</p>
             </>
           )}
-          {errorMessage && (
+          {shownError && (
             <p
+              id="unlock-error"
               role="alert"
               data-testid="unlock-error"
               className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
-              {errorMessage}
+              {shownError}
             </p>
           )}
           <DialogFooter className="flex-row">
@@ -215,8 +246,7 @@ function ProfileUnlockDialog({
               type="submit"
               data-testid={migration ? "migration-submit" : "unlock-submit"}
               disabled={
-                submitting ||
-                clearing ||
+                busy ||
                 (migration
                   ? !newPassword || !confirmation || (needsPreviousPassword && !passphrase)
                   : !passphrase)
@@ -230,12 +260,7 @@ function ProfileUnlockDialog({
         <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
           <AlertDialogTrigger
             render={
-              <Button
-                type="button"
-                variant="ghost"
-                data-testid="unlock-forgot"
-                disabled={submitting || clearing}
-              />
+              <Button type="button" variant="ghost" data-testid="unlock-forgot" disabled={busy} />
             }
           >
             {t("encryptionForgottenButton")}

@@ -20,9 +20,10 @@ export function createSegmentStore(
   return { ...state, refresh };
 }
 
+/** A page's refresh button: the shell announces its success (snapshot `refreshNotice`). */
 export function useSegment(...segments: SnapshotSegment[]) {
   const { snapshot } = useSession();
-  const store = useMemo(() => createSegmentStore(snapshot.refreshSegments), [snapshot]);
+  const store = useMemo(() => createSegmentStore(snapshot.refreshByUser), [snapshot]);
   const current = useStore(store);
   return { isRefreshing: current.inFlight > 0, refresh: () => current.refresh(segments) };
 }

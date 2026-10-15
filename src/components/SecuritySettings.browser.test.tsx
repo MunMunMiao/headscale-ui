@@ -110,7 +110,7 @@ test("per-server settings offer change and reset without global enable or disabl
     .toBeVisible();
 });
 
-test("native crypto rejects a wrong current password, clears submitted secrets and only changes this server", async () => {
+test("native crypto rejects a wrong current password once, keeps the new password and only changes this server", async () => {
   const { session, profile } = await setup();
   await session.profiles.loadProfile("__new__");
   session.profiles.setConnectionForm({
@@ -130,13 +130,20 @@ test("native crypto rejects a wrong current password, clears submitted secrets a
   await page.getByTestId("security-change-passphrase").click();
   await fillChange("wrong password");
   await page.getByTestId("security-change-submit").click();
-  await expect.element(page.getByTestId("security-error")).toBeVisible();
-  for (const id of [
-    "security-current-passphrase",
-    "security-change-new-passphrase",
-    "security-change-confirm-passphrase",
-  ])
-    await expect.element(page.getByTestId(id)).toHaveValue("");
+  await expect.element(page.getByTestId("security-error")).toMatchTextContent("Incorrect");
+  const current = page.getByTestId("security-current-passphrase");
+  await expect.element(current).toHaveValue("");
+  await expect.element(current).toHaveFocus();
+  await expect.element(current).toHaveAttribute("aria-invalid", "true");
+  await expect.element(current).toHaveAccessibleDescription(expect.stringContaining("Incorrect"));
+  await expect
+    .element(page.getByTestId("security-change-new-passphrase"))
+    .toHaveValue("second password");
+  await expect
+    .element(page.getByTestId("security-change-confirm-passphrase"))
+    .toHaveValue("second password");
+  // The dialog shows the failure, so the page-level banner does not repeat it.
+  expect(session.feedback.getSnapshot().lastError).toBe("");
   expect(await idbGet("profiles", profile.id)).toEqual(before);
   await fillChange();
   await page.getByTestId("security-change-submit").click();
@@ -155,13 +162,56 @@ test("matching passwords are required and cancel clears the local form", async (
   const before = await idbGet("profiles", profile.id);
   await renderSessionPage(session, <SecuritySettings profile={profile} />, "/settings");
   await page.getByTestId("security-change-passphrase").click();
-  await fillChange("first password", "next", "different");
+  await fillChange("first password", "next password", "different");
   await page.getByTestId("security-change-submit").click();
   await expect.element(page.getByTestId("security-error")).toMatchTextContent("do not match");
+  await expect
+    .element(page.getByTestId("security-change-confirm-passphrase"))
+    .toHaveAttribute("aria-invalid", "true");
+  await expect.element(page.getByTestId("security-change-confirm-passphrase")).toHaveFocus();
+  await fillChange("first password", "short", "short");
+  await page.getByTestId("security-change-submit").click();
+  await expect.element(page.getByTestId("security-error")).toMatchTextContent("at least 8");
+  await expect
+    .element(page.getByTestId("security-change-new-passphrase"))
+    .toHaveAttribute("aria-invalid", "true");
+  await expect
+    .element(page.getByTestId("security-change-confirm-passphrase"))
+    .toHaveAttribute("aria-invalid", "false");
+  await page.getByTestId("security-current-passphrase").fill("");
+  document.querySelector("form")?.requestSubmit();
+  await expect
+    .element(page.getByTestId("security-error"))
+    .toHaveTextContent("Enter the profile password.");
+  await expect.element(page.getByTestId("security-current-passphrase")).toHaveFocus();
   expect(await idbGet("profiles", profile.id)).toEqual(before);
   await page.getByTestId("security-change-cancel").click();
   await page.getByTestId("security-change-passphrase").click();
   await expect.element(page.getByTestId("security-current-passphrase")).toHaveValue("");
+});
+
+test("a password change that fails after settings closed leaves its error for the remaining page", async () => {
+  const { session, profile } = await setup();
+  const started = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  const decrypt = crypto.subtle.decrypt.bind(crypto.subtle);
+  vi.spyOn(crypto.subtle, "decrypt").mockImplementation(async (...args) => {
+    started.resolve();
+    await release.promise;
+    return decrypt(...args);
+  });
+  const screen = await renderSessionPage(
+    session,
+    <SecuritySettings profile={profile} />,
+    "/settings",
+  );
+  await page.getByTestId("security-change-passphrase").click();
+  await fillChange("wrong password");
+  await page.getByTestId("security-change-submit").click();
+  await started.promise;
+  await screen.unmount();
+  release.resolve();
+  await expect.poll(() => session.feedback.getSnapshot().lastError).toContain("Incorrect");
 });
 
 test("no visible current profile exposes only shared-session information and reset", async () => {
@@ -182,7 +232,13 @@ test("confirmed clear removes native records through the shared session and relo
     <SecuritySettings profile={profile} reloadPage={reloadPage} />,
     "/settings",
   );
+  await expect
+    .element(page.getByText("To remove only one, log out", { exact: false }))
+    .toBeVisible();
   await page.getByTestId("security-clear-all").click();
+  expect(document.querySelector("[data-slot=alert-dialog-title]")?.textContent).toBe(
+    "Clear all encrypted data?",
+  );
   expect(document.querySelector("[data-slot=alert-dialog-description]")?.textContent).toContain(
     "locks the shared session",
   );

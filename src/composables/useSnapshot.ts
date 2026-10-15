@@ -18,6 +18,8 @@ interface SnapshotState {
   isReady: boolean;
   refreshSnapshotInFlight: number;
   refreshErrors: Partial<Record<SnapshotSegment, string>>;
+  /** A refresh the user asked for finished without errors; failures show in refreshErrors. */
+  refreshNotice: boolean;
 }
 
 export function createSnapshotStore(
@@ -39,6 +41,7 @@ export function createSnapshotStore(
     isReady: false,
     refreshSnapshotInFlight: 0,
     refreshErrors: {},
+    refreshNotice: false,
   });
   let onApplySnapshot: ApplySnapshotHook | null = null;
   const emptySnapshot = state.getSnapshot().snapshot;
@@ -56,7 +59,7 @@ export function createSnapshotStore(
   function changeSession() {
     supersedeRequests();
     loadedSegments.clear();
-    state.setState({ isReady: false, refreshErrors: {} });
+    state.setState({ isReady: false, refreshErrors: {}, refreshNotice: false });
     feedback.clearAllActionFeedback();
   }
   function setAuthorized(isAuthorized: boolean) {
@@ -145,6 +148,18 @@ export function createSnapshotStore(
   async function refreshSnapshot() {
     await refreshSegments(ALL_SEGMENTS);
   }
+  async function refreshByUser(segments: readonly SnapshotSegment[] = ALL_SEGMENTS) {
+    const requestSession = sessionRevision;
+    state.setState({ refreshNotice: false });
+    await refreshSegments(segments);
+    const { isAuthorized, refreshErrors } = state.getSnapshot();
+    if (
+      isAuthorized &&
+      requestSession === sessionRevision &&
+      !segments.some((s) => refreshErrors[s])
+    )
+      state.setState({ refreshNotice: true });
+  }
   return {
     getSnapshot: state.getSnapshot,
     subscribe: state.subscribe,
@@ -176,6 +191,10 @@ export function createSnapshotStore(
     applyOfflineHealth,
     refreshSnapshot,
     refreshSegments,
+    refreshByUser,
+    clearRefreshNotice() {
+      state.setState({ refreshNotice: false });
+    },
     invalidatePolicyRefreshes() {
       ++policyRevision;
       controllers.policy?.abort();
@@ -209,4 +228,36 @@ export function useSnapshot() {
   const view = useStore(useSession().snapshot);
   useExpiryTick(view.snapshot.nodes, view.snapshot.preAuthKeys);
   return view;
+}
+
+const AUTO_REFRESH_MS = 30_000;
+
+/**
+ * Re-reads the server every 30 s while the page is visible, and once when it becomes visible again,
+ * so device status and new devices appear without a manual refresh. It waits while a refresh runs
+ * or a draft or dialog is open or held, so open forms keep their data. Reads are not user activity:
+ * polling never renews the session (README "Shared session and logout").
+ */
+export function useAutoRefresh() {
+  const { snapshot, drafts } = useSession();
+  const { isAuthorized } = useStore(snapshot);
+  useEffect(() => {
+    if (!isAuthorized) return;
+    function refresh() {
+      if (
+        document.visibilityState !== "visible" ||
+        snapshot.isRefreshing ||
+        drafts.hasActiveDrafts() ||
+        !drafts.isCurrent()
+      )
+        return;
+      void snapshot.refreshSnapshot();
+    }
+    const timer = setInterval(refresh, AUTO_REFRESH_MS);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [snapshot, drafts, isAuthorized]);
 }

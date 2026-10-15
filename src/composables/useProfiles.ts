@@ -19,6 +19,8 @@ import { useSession, useStore } from "./session-context";
 import type { createActionFeedbackStore } from "./useActionFeedback";
 
 export const newProfileId = "__new__";
+/** Applies to passwords chosen from now on; existing passwords keep unlocking. */
+export const MIN_PROFILE_PASSWORD_LENGTH = 8;
 export interface ConnectionForm {
   profileId: string;
   profileName: string;
@@ -43,6 +45,9 @@ interface ProfilesState {
   profileValidationError: string;
   pendingDeleteProfile: ProfileSummary | null;
   unlockProfile: ProfileSummary | null;
+  /** Login notices: this tab changed the active password, or a lock ended unsaved Access edits. */
+  passwordChanged: boolean;
+  discardedPolicyDraft: boolean;
 }
 function defaultConnectionForm(): ConnectionForm {
   return {
@@ -72,6 +77,8 @@ export function createProfilesStore(
     profileValidationError: "",
     pendingDeleteProfile: null,
     unlockProfile: null,
+    passwordChanged: false,
+    discardedPolicyDraft: false,
   });
   let formGeneration = 0;
   let submissionGeneration = 0;
@@ -167,10 +174,16 @@ export function createProfilesStore(
     const ticket = ++submissionGeneration;
     const profile = store.getSnapshot().profiles.find((item) => item.id === form.profileId) ?? null;
     const scope = form.remember ? "persistent" : "session";
+    // An unreadable row keeps nothing worth renaming: it can only be replaced with new credentials.
     const metadataOnly =
-      !!profile && normalizedBaseUrl(form.baseUrl) === profile.baseUrl && !form.apiKey;
+      !!profile &&
+      profile.credentialKind !== "unreadable" &&
+      normalizedBaseUrl(form.baseUrl) === profile.baseUrl &&
+      !form.apiKey;
     if (validation === "skip" && (!form.apiKey.trim() || !form.password))
       throw new Error(t("sessionSecretRequired"));
+    if (!metadataOnly && profile?.credentialKind.startsWith("legacy-"))
+      throw new Error(t("legacyProfileMigrateFirst"));
     let input: ProfileSaveInput;
     if (metadataOnly)
       input = { kind: "metadata", expected: expected(profile), name: form.profileName, scope };
@@ -323,6 +336,10 @@ export function createProfilesStore(
       if (!migrated.ok) throw new ApiError(migrated.error);
       committed = true;
       adoptCommittedProfile(migrated.value);
+      // The open dialog now holds a password credential, so a failed unlock retries as an unlock.
+      store.setState((state) =>
+        state.unlockProfile?.id === profile.id ? { unlockProfile: migrated.value.profile } : {},
+      );
       await reloadProfiles();
       if (ticket !== submissionGeneration) return false;
       const current = bridge.getSessionSnapshot()?.identity;
@@ -371,6 +388,8 @@ export function createProfilesStore(
       profileValidationError: "",
       pendingDeleteProfile: null,
       unlockProfile: null,
+      passwordChanged: false,
+      discardedPolicyDraft: false,
     });
     feedback.setState({ lastError: "" });
   }
@@ -449,6 +468,7 @@ export function createProfilesStore(
         if (ticket !== submissionGeneration) return false;
         if (!result.ok) throw new ApiError(result.error);
         adoptCommittedProfile(result.value);
+        store.setState({ passwordChanged: true });
         await reloadProfiles().catch((error: unknown) => {
           if (ticket === submissionGeneration && formTicket === formGeneration)
             feedback.setState({ lastError: storageErrorMessage(error) });

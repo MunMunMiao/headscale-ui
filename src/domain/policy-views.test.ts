@@ -14,6 +14,7 @@ import {
   upsertTagOwner,
 } from "./policy-designer";
 import {
+  destinationHasPort,
   getGroupAccess,
   getIpRules,
   getOpenAccessWarnings,
@@ -754,5 +755,35 @@ describe("integration: setTagAccessor + getTagAccessors round-trip", () => {
     const after = getTagAccessors(state, "tag:server");
     expect(after).toHaveLength(1);
     expect(after[0]?.who).toBe("alice@example.com");
+  });
+});
+
+describe("destinationHasPort", () => {
+  test.each([
+    "10.0.0.1:22",
+    "*:*",
+    "router:80-90",
+    "alice@:22",
+    "10.0.0.0/8:443",
+    "fd7a::/48:22",
+    "10.0.0.2, 10.0.0.1:22",
+  ])("flags %s", (destination) => {
+    expect(destinationHasPort(destination)).toBe(true);
+  });
+
+  test.each([
+    "10.0.0.1",
+    "*",
+    "10.0.0.0/8",
+    "::/0",
+    "fd7a::1",
+    "tag:server",
+    "group:123",
+    "autogroup:internet",
+    "router:http",
+    "alice@example.com",
+    "",
+  ])("accepts %s", (destination) => {
+    expect(destinationHasPort(destination)).toBe(false);
   });
 });

@@ -70,13 +70,14 @@ export default function CreateAuthKeyDialog({
     aclTags: "",
   });
   const [expirationInvalid, setExpirationInvalid] = useState(false);
-  const [tagsRequired, setTagsRequired] = useState(false);
+  const [tagsError, setTagsError] = useState<"required" | "prefix" | null>(null);
   const tagsInput = useRef<HTMLInputElement>(null);
   const wasOpen = useRef(false);
   useEffect(() => {
     if (paused) return;
+    // "" is the remembered no-owner choice, not a missing owner.
     const resolveUser = () =>
-      ownerOptions.some((user) => user.id === defaults.user)
+      defaults.user === "" || ownerOptions.some((user) => user.id === defaults.user)
         ? defaults.user
         : (ownerOptions[0]?.id ?? "");
     if (open && !wasOpen.current) {
@@ -88,7 +89,7 @@ export default function CreateAuthKeyDialog({
         aclTags: defaults.aclTags,
       });
       setExpirationInvalid(false);
-      setTagsRequired(false);
+      setTagsError(null);
     } else if (open) {
       setForm((current) =>
         current.user === "" || ownerOptions.some((user) => user.id === current.user)
@@ -103,11 +104,19 @@ export default function CreateAuthKeyDialog({
   }
   function submitForm() {
     const expirationValid = isFutureExpiration(form.expirationLocal);
-    const ownerlessWithoutTags = form.user === "" && parseList(form.aclTags).length === 0;
-    if (!expirationValid || ownerlessWithoutTags) {
+    const aclTags = parseList(form.aclTags);
+    // Headscale rejects a tag without the `tag:` prefix; say so before sending.
+    const nextTagsError = aclTags.some((tag) => tag.length <= 4 || !tag.startsWith("tag:"))
+      ? "prefix"
+      : form.user === "" && aclTags.length === 0
+        ? "required"
+        : null;
+    if (!expirationValid || nextTagsError) {
       setExpirationInvalid(!expirationValid);
-      setTagsRequired(ownerlessWithoutTags);
-      if (expirationValid) tagsInput.current?.focus();
+      setTagsError(nextTagsError);
+      // Focus the first invalid field, in form order.
+      if (!expirationValid) document.getElementById("invite-expiration")?.focus();
+      else tagsInput.current?.focus();
       return;
     }
     onSubmit({
@@ -115,7 +124,7 @@ export default function CreateAuthKeyDialog({
       reusable: form.reusable,
       ephemeral: form.ephemeral,
       expiration: dateTimeLocalToIso(form.expirationLocal),
-      aclTags: parseList(form.aclTags),
+      aclTags,
     });
   }
   return (
@@ -144,7 +153,7 @@ export default function CreateAuthKeyDialog({
                 id="invite-user"
                 value={form.user}
                 onChange={(event) => {
-                  setTagsRequired(false);
+                  setTagsError(null);
                   setForm((current) => ({ ...current, user: event.target.value }));
                 }}
                 data-testid="invite-user"
@@ -186,23 +195,29 @@ export default function CreateAuthKeyDialog({
               value={form.aclTags}
               ref={tagsInput}
               onChange={(event) => {
-                setTagsRequired(false);
+                setTagsError(null);
                 setForm((current) => ({ ...current, aclTags: event.target.value }));
               }}
               data-testid="invite-tags"
               className="mt-2"
               placeholder="tag:server"
               disabled={isSubmitting}
-              aria-invalid={tagsRequired ? true : undefined}
-              aria-describedby={tagsRequired ? "invite-tags-error" : undefined}
+              aria-invalid={tagsError ? true : undefined}
+              aria-describedby={
+                tagsError ? "invite-tags-error invite-tags-hint" : "invite-tags-hint"
+              }
             />
-            {tagsRequired && (
+            <p id="invite-tags-hint" className="mt-2 text-xs text-muted-foreground">
+              {copy.inviteTagsHint}
+            </p>
+            {tagsError && (
               <p
                 id="invite-tags-error"
+                role="alert"
                 data-testid="invite-tags-error"
                 className="mt-2 text-sm text-destructive"
               >
-                {copy.inviteTagsRequired}
+                {tagsError === "prefix" ? copy.inviteTagsPrefix : copy.inviteTagsRequired}
               </p>
             )}
           </div>

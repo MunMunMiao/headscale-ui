@@ -121,6 +121,7 @@ async function observe(
   page: Page,
   tab: string,
   connections: DeploymentConnection[],
+  current: DeploymentConnection,
 ): Promise<Observation> {
   await page.bringToFront();
   await page.getByTestId("refresh-users").waitFor({ state: "visible" });
@@ -136,8 +137,17 @@ async function observe(
     );
   await waitUntil(async () => reads().some(({ entry }) => entry.status === 200));
   await waitUntil(() => page.getByTestId("refresh-users").isEnabled());
-  assert.equal(reads().length, 1, "one refresh means one authenticated user request");
-  const source = reads()[0];
+  // 切换前台会触发可见性刷新，30 秒轮询也可能与手动刷新相邻；检查全部读取的来源，
+  // 不把合法的额外读取当作失败，也不能只检查第一条而漏掉旧服务器请求。
+  const observed = reads();
+  for (const { connection } of observed)
+    assert.equal(
+      connection.baseUrl,
+      current.baseUrl,
+      `${tab}: every refresh uses the current server`,
+    );
+  const source = observed.find(({ entry }) => entry.status === 200 && !entry.aborted);
+  assert.ok(source, `${tab}: refresh completes with an authenticated response`);
   await page.getByTestId(`member-${source.connection.user}`).waitFor({ state: "visible" });
   const users: string[] = [];
   for (const connection of connections)
@@ -228,8 +238,8 @@ export async function checkSession(
     await pageA.getByTestId(`member-${b.user}`).waitFor({ state: "visible" });
     await members(pageB, b);
     const observations = [
-      await observe(pageA, "A-after-B-login", [a, b]),
-      await observe(pageB, "B-after-B-login", [a, b]),
+      await observe(pageA, "A-after-B-login", [a, b], b),
+      await observe(pageB, "B-after-B-login", [a, b], b),
     ];
     assertSingleCurrentServer(observations, b);
     console.log(
@@ -292,7 +302,7 @@ export async function checkSession(
           timeoutMsg: "Closing a port must abort its held read before the HTTP timeout",
         },
       );
-      await observe(pageB, "B-after-peer-disconnect", [a, b]);
+      await observe(pageB, "B-after-peer-disconnect", [a, b], a);
       assert.equal((await hello(pageB, workerUrl)).snapshot?.status, "unlocked");
     } finally {
       await pending.release();
@@ -354,7 +364,7 @@ export async function checkSession(
         0,
         "the previous server's members are gone after discard",
       );
-      assertSingleCurrentServer([await observe(pageA, "A-after-discard", [a, b])], b);
+      assertSingleCurrentServer([await observe(pageA, "A-after-discard", [a, b], b)], b);
     } finally {
       await oldRead.release();
     }

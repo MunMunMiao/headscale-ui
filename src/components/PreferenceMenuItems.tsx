@@ -34,7 +34,10 @@ export function LocaleRadioItems({ onChosen }: ChosenProps) {
             onChosen?.();
           }}
         >
-          {LOCALE_META[option].nativeLabel}
+          {/* Screen readers pronounce each name in its own language (WCAG 3.1.2). */}
+          <span lang={option} dir={LOCALE_META[option].dir}>
+            {LOCALE_META[option].nativeLabel}
+          </span>
         </DropdownMenuRadioItem>
       ))}
     </DropdownMenuRadioGroup>

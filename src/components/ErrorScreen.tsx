@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { t } from "@/i18n";
 import type { DatabaseStatus } from "@/lib/idb";
 import { VaultDataError } from "@/lib/vault-state";
@@ -23,6 +23,10 @@ export default function ErrorScreen(props: {
   const vaultData = !databaseRecovery && props.error instanceof VaultDataError;
   const [phase, setPhase] = useState<ResetPhase>("idle");
   const [message, setMessage] = useState("");
+  const id = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  // The screen replaces the page, so keyboard and screen reader users start from its title.
+  useEffect(() => titleRef.current?.focus(), []);
 
   function describe(err: unknown): string {
     if (err instanceof Error) return `${err.name}: ${err.message}`;
@@ -59,9 +63,18 @@ export default function ErrorScreen(props: {
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-background p-4 text-foreground"
       data-testid="error-screen"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-description`}
     >
       <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="text-lg font-semibold">
+        <h1
+          id={`${id}-title`}
+          ref={titleRef}
+          tabIndex={-1}
+          className="text-lg font-semibold outline-none"
+        >
           {blocked
             ? t("databaseBlockedTitle")
             : reloadRequired
@@ -70,7 +83,7 @@ export default function ErrorScreen(props: {
                 ? t("appTitle")
                 : t("appErrorTitle")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p id={`${id}-description`} className="mt-2 text-sm text-muted-foreground">
           {blocked
             ? t("databaseBlockedDescription")
             : reloadRequired

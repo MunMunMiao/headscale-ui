@@ -295,6 +295,21 @@ test("logout clears unsaved server editors and a fresh login cannot receive the 
   expect(policy.isPolicyDirty).toBe(false);
 });
 
+test("a lock records that it discarded unsaved Access edits, and a clean lock does not", async () => {
+  const { session, profile, password } = await fixture();
+  const { policy, profiles } = session;
+  await session.profiles.logout();
+  expect(profiles.getSnapshot().discardedPolicyDraft).toBe(false);
+  expect(await profiles.enterProfile(profile, password)).toBe(true);
+  await expect.poll(() => policy.getSnapshot().policyRules.length).toBeGreaterThan(0);
+  policy.commitState(
+    removeRuleById(policy.policyDesignerState, policy.getSnapshot().policyRules[0].id),
+  );
+  await profiles.logout();
+  expect(profiles.getSnapshot().discardedPolicyDraft).toBe(true);
+  expect(policy.isPolicyDirty).toBe(false);
+});
+
 test.each([true, false])(
   "old server save completion cannot change new feedback or release new state (accepted: %s)",
   async (accepted) => {

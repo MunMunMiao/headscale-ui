@@ -13,32 +13,22 @@ describe("useActionFeedback", () => {
     expect(feedback.actionError("create-member")).toBe("");
   });
 
-  test("clearing a key also clears the banner it produced, and only that one", async () => {
+  test("a failure is reported inline only and clearing it leaves keyless banners alone", async () => {
     const feedback = createActionFeedbackStore();
-    await feedback.runAction("create-member", async () => {
-      throw new Error("boom");
-    });
-    expect(feedback.getSnapshot().lastError).toBe("boom");
-    feedback.clearActionFeedback("create-member");
-    expect(feedback.actionError("create-member")).toBe("");
-    expect(feedback.getSnapshot().lastError).toBe("");
+    feedback.setState({ lastError: "earlier" });
+    for (const key of ["api-key-create", "approve-auth-request", "reject-auth-request"] as const) {
+      await feedback.runAction(key, async () => {
+        throw new Error(`${key} failed`);
+      });
+      expect(feedback.actionError(key)).toBe(`${key} failed`);
+      expect(feedback.getSnapshot().lastError).toBe("");
+    }
 
     feedback.setState({ lastError: "storage" });
-    feedback.setState({ actionErrors: { "delete-member": "other" } });
-    feedback.clearActionFeedback("create-member");
+    feedback.clearActionFeedback("approve-auth-request");
+    expect(feedback.actionError("approve-auth-request")).toBe("");
+    expect(feedback.actionError("reject-auth-request")).toBe("reject-auth-request failed");
     expect(feedback.getSnapshot().lastError).toBe("storage");
-    feedback.clearActionFeedback("delete-member");
-    expect(feedback.getSnapshot().lastError).toBe("storage");
-
-    await feedback.runAction("create-member", async () => {
-      throw new Error("first");
-    });
-    await feedback.runAction("save-policy", async () => {
-      throw new Error("second");
-    });
-    feedback.clearActionFeedback("create-member");
-    expect(feedback.actionError("save-policy")).toBe("second");
-    expect(feedback.getSnapshot().lastError).toBe("second");
   });
 
   test("returns a result and rejects re-entry while an action is pending", async () => {
@@ -66,7 +56,7 @@ describe("useActionFeedback", () => {
       }),
     ).toEqual({ ok: false });
     expect(feedback.actionError("create-member")).toBe("failed");
-    expect(feedback.getSnapshot().lastError).toBe("failed");
+    expect(feedback.getSnapshot().lastError).toBe("");
 
     await feedback.runAction("delete-member", async () => {
       throw 404;

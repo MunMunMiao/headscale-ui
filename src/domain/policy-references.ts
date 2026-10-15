@@ -348,6 +348,11 @@ export function removePolicyTag(state: PolicyDesignerState, tag: string): Policy
   return update(state, "tag", tag, null);
 }
 
+// Every group, tag and user name the policy references in a supported position.
+export function policyAliases(state: PolicyDesignerState): ReadonlySet<string> {
+  return transform(state, new Set(), null).aliases;
+}
+
 export type UserReferencePlan =
   | { ok: true; state: PolicyDesignerState; sections: string[] }
   | { ok: false; issue: PolicyReferenceIssue; mentioned: boolean };

@@ -2,6 +2,8 @@ import { createStore } from "@/lib/store";
 import { getErrorMessage } from "@/utils/error-mapping";
 import { useSession, useStore } from "./session-context";
 
+// Each keyed action reports its failure once, inline in the dialog or form that ran it; the page
+// banner (lastError) is left to keyless profile and storage messages.
 export type ActionFeedbackKey =
   | "api-key-action"
   | "api-key-create"
@@ -46,16 +48,9 @@ export function createActionFeedbackStore() {
     return state.getSnapshot().actionErrors[key] ?? "";
   }
   function clearActionFeedback(key: ActionFeedbackKey) {
-    const { actionErrors, lastError } = state.getSnapshot();
-    const message = actionErrors[key];
-    const next = { ...actionErrors };
+    const next = { ...state.getSnapshot().actionErrors };
     delete next[key];
-    // lastError is also written by profile/storage code without a key, so compare by message.
-    state.setState(
-      message !== undefined && message === lastError
-        ? { actionErrors: next, lastError: "" }
-        : { actionErrors: next },
-    );
+    state.setState({ actionErrors: next });
   }
   function clearAllActionFeedback() {
     state.setState({ actionPending: {}, actionErrors: {}, lastError: "" });
@@ -80,7 +75,6 @@ export function createActionFeedbackStore() {
       const message = mapper(error);
       state.setState((current) => ({
         actionErrors: { ...current.actionErrors, [key]: message },
-        lastError: message,
       }));
       return { ok: false };
     } finally {

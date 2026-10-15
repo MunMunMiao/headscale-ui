@@ -6,6 +6,14 @@ msgstr ""
 "Language: ja-JP\n"
 
 #: src/i18n/descriptors.ts
+msgid "product.optionalField"
+msgstr "（任意）"
+
+#: src/i18n/descriptors.ts
+msgid "plural.labelRemovalDevices"
+msgstr "{count, plural, other {このラベルが付いたデバイスが {formattedCount} 台あります。デバイスのタグはそのまま残ります。ここでラベルを削除しても、デバイスからタグは削除されません。}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.devicesTagged"
 msgstr "{count, plural, other {デバイス {formattedCount} 台}}"
 
@@ -22,8 +30,16 @@ msgid "plural.openAccessWarnings"
 msgstr "{count, plural, other {全員がすべてのデバイスにアクセスできるルールが {formattedCount} 件あります。}}"
 
 #: src/i18n/descriptors.ts
+msgid "plural.moreItems"
+msgstr "{count, plural, other {他 {formattedCount} 件}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.cleanupOrphans"
 msgstr "{count, plural, other {無効な参照を {formattedCount} 件削除}}"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginUnlockedNotice"
+msgstr "{name} はこのブラウザーですでにロック解除されています。"
 
 #: src/i18n/descriptors.ts
 msgid "product.dashboardSubtitle"
@@ -32,6 +48,22 @@ msgstr "デバイス、ユーザー、プライベートルートをまとめて
 #: src/i18n/descriptors.ts
 msgid "product.inviteTagsRequired"
 msgstr "所有者のないキーには、ACL タグが少なくとも 1 つ必要です。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagsRequiredForTaggedNode"
+msgstr "タグ付きデバイスには少なくとも 1 つのタグが必要です。現在のタグを置き換えるタグを入力してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorCannotRemoveAllTags"
+msgstr "タグ付きのデバイスには少なくとも 1 つのタグが必要です。Headscale ではすべてのタグを外すことはできません。"
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameTaken"
+msgstr "この名前のユーザーは既に存在します。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNameTaken"
+msgstr "同じ名前のユーザーがすでに存在します。"
 
 #: src/i18n/descriptors.ts
 msgid "product.nav.access"
@@ -72,6 +104,10 @@ msgstr "Linux サーバーを追加"
 #: src/i18n/descriptors.ts
 msgid "product.addMemberToTeam"
 msgstr "メンバーを追加"
+
+#: src/i18n/descriptors.ts
+msgid "product.addIpRule"
+msgstr "ルールを追加"
 
 #: src/i18n/descriptors.ts
 msgid "common.addServerProfile"
@@ -118,6 +154,14 @@ msgid "product.policyIdentityRemovalImpact"
 msgstr "影響を受けるルール：'{'rules'}'。影響を受けるポリシーテスト：'{'tests'}'。"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeIpRuleConsequence"
+msgstr "保存後、このルールでのみ許可されている接続はブロックされます。"
+
+#: src/i18n/descriptors.ts
+msgid "product.allAuthKeys"
+msgstr "すべてのキー"
+
+#: src/i18n/descriptors.ts
 msgid "product.allMachines"
 msgstr "すべてのデバイス"
 
@@ -130,10 +174,6 @@ msgid "product.svcAllLabel"
 msgstr "すべてのサービス"
 
 #: src/i18n/descriptors.ts
-msgid "product.allUsers"
-msgstr "すべてのユーザー"
-
-#: src/i18n/descriptors.ts
 msgid "product.cleanupReferencesOption"
 msgstr "ポリシー内の該当参照からもこのユーザーを削除する"
 
@@ -144,6 +184,10 @@ msgstr "ポリシー内の該当参照も新しい名前に更新する"
 #: src/i18n/descriptors.ts
 msgid "common.databaseBlockedDescription"
 msgstr "古いページがローカルデータベースを開いたままにしています。続行するには、他の Headscale UI のタブを閉じてください。保存済みの接続は保持されます。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNameTaken"
+msgstr "この名前はほかのデバイスで使われています。"
 
 #: src/i18n/descriptors.ts
 msgid "common.databaseReloadDescription"
@@ -186,6 +230,10 @@ msgid "product.applyAssignment"
 msgstr "適用"
 
 #: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationLead"
+msgstr "このサーバーで承認待ちのデバイスのサインインまたは SSH チェックを承認します。"
+
+#: src/i18n/descriptors.ts
 msgid "product.approveRoutesTitle"
 msgstr "通知済みルートを承認"
 
@@ -194,8 +242,8 @@ msgid "product.approveAll"
 msgstr "すべて承認"
 
 #: src/i18n/descriptors.ts
-msgid "product.approveExitRouteTitle"
-msgstr "出口ルートを承認"
+msgid "product.approveExitNode"
+msgstr "出口ノードを承認"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveExitRoutesTitle"
@@ -222,6 +270,10 @@ msgid "product.approveSshCheck"
 msgstr "SSH チェックを承認"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusApproved"
+msgstr "承認済み"
+
+#: src/i18n/descriptors.ts
 msgid "product.routesApproved"
 msgstr "承認済み"
 
@@ -232,6 +284,10 @@ msgstr "承認済みルート"
 #: src/i18n/descriptors.ts
 msgid "product.assignedBadgeLabel"
 msgstr "割り当て済み"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodAuthKey"
+msgstr "認証キー"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteKey"
@@ -260,10 +316,6 @@ msgstr "タグを使ってデバイスを認証し、アクセスを制御しま
 #: src/i18n/descriptors.ts
 msgid "product.ephemeralDescription"
 msgstr "デバイスがオフラインになると tailnet から自動的に削除します。"
-
-#: src/i18n/descriptors.ts
-msgid "product.availableRoutes"
-msgstr "利用可能なルート"
 
 #: src/i18n/descriptors.ts
 msgid "product.previousStep"
@@ -299,7 +351,7 @@ msgstr "編集をキャンセル"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionChangePassphrase"
-msgstr "パスフレーズを変更"
+msgstr "プロファイルのパスワードを変更"
 
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberDescription"
@@ -350,8 +402,12 @@ msgid "product.clearFilters"
 msgstr "フィルターを解除"
 
 #: src/i18n/descriptors.ts
-msgid "product.changesAutoSaveHint"
-msgstr "変更をデバイスへ反映するには、画面上部の「保存」を押してください。"
+msgid "product.clearSearch"
+msgstr "検索をクリア"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodCli"
+msgstr "CLI"
 
 #: src/i18n/descriptors.ts
 msgid "product.clientDevice"
@@ -362,6 +418,10 @@ msgid "common.close"
 msgstr "閉じる"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardKeyConfirm"
+msgstr "閉じてキーを破棄"
+
+#: src/i18n/descriptors.ts
 msgid "common.databaseBlockedTitle"
 msgstr "古い Headscale UI のタブを閉じてください"
 
@@ -370,8 +430,8 @@ msgid "common.discardProfileChangesTitle"
 msgstr "このサーバーを追加せずに閉じますか？"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesCloseAnyway"
-msgstr "保存せず閉じる"
+msgid "product.discardKeyTitle"
+msgstr "認証キーをコピーせずに閉じますか？"
 
 #: src/i18n/descriptors.ts
 msgid "product.confirm"
@@ -379,7 +439,7 @@ msgstr "確認"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionConfirmPassphrase"
-msgstr "パスフレーズを確認"
+msgstr "プロファイルのパスワードを確認"
 
 #: src/i18n/descriptors.ts
 msgid "common.connect"
@@ -388,6 +448,10 @@ msgstr "接続"
 #: src/i18n/descriptors.ts
 msgid "common.connection"
 msgstr "接続"
+
+#: src/i18n/descriptors.ts
+msgid "common.continueToServer"
+msgstr "続行"
 
 #: src/i18n/descriptors.ts
 msgid "common.saveAnywayButton"
@@ -466,12 +530,16 @@ msgid "product.createMember"
 msgstr "ユーザーを作成"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyCreatedAt"
+msgstr "作成日時"
+
+#: src/i18n/descriptors.ts
 msgid "product.createdApiKey"
 msgstr "作成した API キー"
 
 #: src/i18n/descriptors.ts
 msgid "common.currentServerPassword"
-msgstr "現在のサーバーパスワード"
+msgstr "現在のプロファイルのパスワード"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomLabel"
@@ -480,6 +548,10 @@ msgstr "カスタムポート"
 #: src/i18n/descriptors.ts
 msgid "common.dark"
 msgstr "ダーク"
+
+#: src/i18n/descriptors.ts
+msgid "product.dataRefreshed"
+msgstr "データを更新しました"
 
 #: src/i18n/descriptors.ts
 msgid "common.database"
@@ -496,6 +568,10 @@ msgstr "誰がどのデバイスへアクセスできるかを設定します。
 #: src/i18n/descriptors.ts
 msgid "product.resourceAccessEmptyTitle"
 msgstr "誰が何へアクセスできるかを設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.decreaseDays"
+msgstr "日数を減らす"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagDetailDialogSubtitle"
@@ -610,12 +686,28 @@ msgid "product.disableExpiryTitle"
 msgstr "デバイスの有効期限を無効にしますか？"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesTitle"
+msgstr "未保存の変更をすべて破棄しますか？"
+
+#: src/i18n/descriptors.ts
 msgid "common.discardProfileChanges"
+msgstr "変更を破棄"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChanges"
 msgstr "変更を破棄"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsDiscard"
 msgstr "下書きを破棄して続ける"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogUnsavedChangesBody"
+msgstr "「これらの変更を破棄」は、このダイアログで行った変更だけを元に戻します。「保存して閉じる」はポリシー全体を Headscale に保存します。未保存のまま変更を残すには、キャンセルして「完了」を押してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardDialogChanges"
+msgstr "これらの変更を破棄"
 
 #: src/i18n/descriptors.ts
 msgid "product.displayName"
@@ -630,12 +722,24 @@ msgid "product.finish"
 msgstr "完了"
 
 #: src/i18n/descriptors.ts
+msgid "product.dialogChangesKeptHint"
+msgstr "「完了」を押すと、これらの変更は未保存のまま保持されます。閉じた後、画面上部の「保存」を押すと反映されます。"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleTitle"
 msgstr "下書きは別のサーバーのものです"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomPlaceholder"
 msgstr "例：8080、9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidTags"
+msgstr "各タグは tag: で始まり、名前が続く必要があります（例: tag:server）。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsPrefix"
+msgstr "各タグは tag: で始める必要があります（例: tag:server）。"
 
 #: src/i18n/descriptors.ts
 msgid "product.editNodeTagsTitle"
@@ -670,8 +774,12 @@ msgid "product.authRequestInvalid"
 msgstr "hskey-authreq- で始まるリクエスト ID を入力するか、リンク全体を貼り付けてください。"
 
 #: src/i18n/descriptors.ts
-msgid "product.policyReferenceInvalidName"
-msgstr "有効なグループ名またはタグ名を入力してください。"
+msgid "product.userNameRequired"
+msgstr "ユーザー名を入力してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.emailInvalid"
+msgstr "有効なメールアドレスを入力するか、空欄のままにしてください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.connectionInvalidUrl"
@@ -683,19 +791,27 @@ msgstr "API キーを入力してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionSecretRequired"
-msgstr "送信する前に、API キーとこのサーバーのパスワードを再入力してください。"
+msgstr "送信する前に、API キーとこのプロファイルのパスワードを再入力してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationHasPort"
+msgstr "アクセス先にはポートを含めず、ポートは「ポート」欄に入力してください。"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "プロファイルのパスワードを入力してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.connectSubtitle"
 msgstr "管理画面を開く前に、サーバーアドレスと認証トークンを入力してください。"
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPasswordRequired"
-msgstr "サーバーのパスワードを入力してください。"
-
-#: src/i18n/descriptors.ts
 msgid "product.ephemeral"
 msgstr "一時デバイス"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesBody"
+msgstr "このページの未保存の変更はすべて、Headscale から最後に読み込んだポリシーに戻されます。この操作は元に戻せません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.highRiskConfirmDescription"
@@ -710,16 +826,20 @@ msgid "product.deviceLabelNameHint"
 msgstr "例：server、workstation、database"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusExit"
+msgstr "出口"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNode"
+msgstr "出口ノード"
+
+#: src/i18n/descriptors.ts
 msgid "product.exitRoute"
 msgstr "出口ルート"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeExitRouteDescription"
 msgstr "出口ルートはペアで取り消されます。IPv4 と IPv6 のルートがまとめて削除され、各デバイスはこのデバイス経由でインターネット向け通信を送らなくなります。承認済みのその他のルートは有効なままです。アクセスポリシーで出口ルートが自動承認される場合、デバイスが次にそれらをアドバタイズしたときに再び承認されることがあります。"
-
-#: src/i18n/descriptors.ts
-msgid "product.approveExitRouteDescription"
-msgstr "出口ルートでは、このデバイスを経由してインターネット向け通信を転送できます。この経路にこのサーバーを使用してよいか確認してください。"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteExpiration"
@@ -778,16 +898,24 @@ msgid "product.selectAccessorSearchPlaceholder"
 msgstr "ユーザー、チーム、ラベルを検索…"
 
 #: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "このプロファイルのパスワードを忘れた場合は、キャンセルしてからカードの削除アイコンでこのプロファイルだけを削除し、API キーを使ってサーバーを再度追加してください。下のボタンは保存済みのプロファイルをすべて消去します。"
+
+#: src/i18n/descriptors.ts
 msgid "product.source"
 msgstr "アクセス元"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelBadge"
+msgstr "デバイス由来"
 
 #: src/i18n/descriptors.ts
 msgid "product.generate"
 msgstr "生成"
 
 #: src/i18n/descriptors.ts
-msgid "product.generateInstallScript"
-msgstr "インストールスクリプトを生成"
+msgid "product.generateInstallCommand"
+msgstr "インストールコマンドを生成"
 
 #: src/i18n/descriptors.ts
 msgid "product.addAccessor"
@@ -818,6 +946,14 @@ msgid "common.apiKeyGuideDescription"
 msgstr "UI から接続するには、先にサーバーの CLI で Headscale API キーを作成します。"
 
 #: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "Headscale は IPv4 と IPv6 の出口ルートをまとめて承認します。承認後は、このデバイスを経由してインターネット向け通信を転送できます。この経路にこのデバイスを使用してよいか確認してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorTagsNotPermitted"
+msgstr "Headscale はこれらのタグを受け付けませんでした。タグを割り当てる前に、「アクセス制御」で各タグの所有者（tagOwners）を設定してください。"
+
+#: src/i18n/descriptors.ts
 msgid "common.headscaleDocs"
 msgstr "Headscale ドキュメント"
 
@@ -832,6 +968,10 @@ msgstr "Headscale はアクセスポリシーをファイル（policy.mode: file
 #: src/i18n/descriptors.ts
 msgid "product.policyUpdateDisabled"
 msgstr "Headscale はアクセスポリシーをファイル（policy.mode: file）から読み込むため、ここから変更を保存できません。Headscale サーバー上のポリシーファイルを編集するか、policy.mode を database にしてこのアプリでアクセスルールを管理してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberOwnsDevices"
+msgstr "Headscale はデバイスを所有しているユーザーの削除を拒否します。先に次のデバイスを削除してください:"
 
 #: src/i18n/descriptors.ts
 msgid "product.errorRequestFailed"
@@ -858,6 +998,14 @@ msgid "common.apiKeyGuideTitle"
 msgstr "API キーの取得方法"
 
 #: src/i18n/descriptors.ts
+msgid "product.tagUserNodeAcknowledge"
+msgstr "所有者が外れ、後でタグをすべて削除できなくなることを理解しました。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillAcknowledge"
+msgstr "サーバーで設定されたプレフィックスに合わせて、すべてのデバイスの IP アドレスが追加または削除されることを理解しました。"
+
+#: src/i18n/descriptors.ts
 msgid "product.currentApiKeyAcknowledge"
 msgstr "このセッションがアクセス権を失うことを理解しました。"
 
@@ -866,12 +1014,12 @@ msgid "common.apiKeyGuideHint"
 msgstr "キーを紛失した、または期限が切れた場合は、古いキーを失効させて新しく作成してください。"
 
 #: src/i18n/descriptors.ts
-msgid "common.forgotServerPasswordHint"
-msgstr "このサーバーのパスワードを忘れた場合は、保存済みプロファイルを削除し、API キーを使って再度追加してください。他のサーバープロファイルは保持できます。"
+msgid "common.encryptionUnlockFailed"
+msgstr "プロファイルのパスワードが正しくありません。"
 
 #: src/i18n/descriptors.ts
-msgid "common.encryptionUnlockFailed"
-msgstr "パスフレーズが正しくありません。"
+msgid "product.increaseDays"
+msgstr "日数を増やす"
 
 #: src/i18n/descriptors.ts
 msgid "product.installCommand"
@@ -906,6 +1054,10 @@ msgid "product.deviceLabelName"
 msgstr "ラベル名"
 
 #: src/i18n/descriptors.ts
+msgid "product.labelNameInvalid"
+msgstr "ラベル名は英字 (A–Z) で始める必要があり、スペース、カンマ、コロン (:)、@ を含めることはできません。"
+
+#: src/i18n/descriptors.ts
 msgid "common.language"
 msgstr "言語"
 
@@ -914,12 +1066,16 @@ msgid "product.lastSeen"
 msgstr "最終接続"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyLastUsed"
+msgstr "最終使用"
+
+#: src/i18n/descriptors.ts
 msgid "product.learnMore"
 msgstr "詳しく見る"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverCredentialEditHint"
-msgstr "名前や保存先だけを変更する場合は、API キーとパスワードを空欄にしてください。URL または API キーの変更には、API キーと現在のサーバーパスワードの両方が必要です。"
+msgstr "名前や保存先だけを変更する場合は、API キーとパスワードを空欄にしてください。URL または API キーの変更には、API キーと現在のプロファイルのパスワードの両方が必要です。"
 
 #: src/i18n/descriptors.ts
 msgid "common.light"
@@ -930,12 +1086,20 @@ msgid "product.linuxServer"
 msgstr "Linux サーバー"
 
 #: src/i18n/descriptors.ts
+msgid "product.membersLoading"
+msgstr "ユーザーを読み込んでいます…"
+
+#: src/i18n/descriptors.ts
 msgid "common.encryptionLockedBadge"
 msgstr "ロック中"
 
 #: src/i18n/descriptors.ts
 msgid "common.logout"
 msgstr "ログアウト"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrl"
+msgstr "ログインサーバー URL"
 
 #: src/i18n/descriptors.ts
 msgid "product.devicesTableMachine"
@@ -960,6 +1124,10 @@ msgstr "デバイス"
 #: src/i18n/descriptors.ts
 msgid "product.devicesTitle"
 msgstr "デバイス"
+
+#: src/i18n/descriptors.ts
+msgid "common.machineCount"
+msgstr "表示中のデバイス: {shown} / {total}"
 
 #: src/i18n/descriptors.ts
 msgid "common.primaryNavigation"
@@ -988,14 +1156,6 @@ msgstr "tailnet に接続しているデバイスを管理します。"
 #: src/i18n/descriptors.ts
 msgid "product.membersSubtitle"
 msgstr "ネットワークのユーザーと権限を管理します。"
-
-#: src/i18n/descriptors.ts
-msgid "product.roleMember"
-msgstr "メンバー"
-
-#: src/i18n/descriptors.ts
-msgid "product.members"
-msgstr "メンバー"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamMembersSection"
@@ -1035,7 +1195,7 @@ msgstr "新しいプロファイル"
 
 #: src/i18n/descriptors.ts
 msgid "common.newServerPassword"
-msgstr "新しいサーバーパスワード"
+msgstr "新しいプロファイルのパスワード"
 
 #: src/i18n/descriptors.ts
 msgid "product.newTeam"
@@ -1054,12 +1214,32 @@ msgid "product.noTeamAccess"
 msgstr "このチームからデバイスラベルへの ACL 許可は、ここには表示されていません。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noActiveAuthKeys"
+msgstr "有効な認証キーはありません。"
+
+#: src/i18n/descriptors.ts
 msgid "product.noRoutes"
 msgstr "確認待ちの通知済みルートはありません。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noApiKeys"
+msgstr "表示できる API キーはありません。"
+
+#: src/i18n/descriptors.ts
 msgid "product.noAuthKeys"
 msgstr "条件に一致する認証キーはありません。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeysYet"
+msgstr "認証キーはまだありません。作成するとデバイスを追加できます。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNoChanges"
+msgstr "変更は必要ありませんでした"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsMatch"
+msgstr "検索に一致するデバイスラベルはありません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.noDeviceLabelsYet"
@@ -1068,6 +1248,10 @@ msgstr "デバイスラベルはまだありません"
 #: src/i18n/descriptors.ts
 msgid "product.noGroupsAvailable"
 msgstr "グループがありません。先にアクセス制御で追加してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noIpRules"
+msgstr "IP またはすべての宛先へのルールはまだありません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.noDevices"
@@ -1094,6 +1278,14 @@ msgid "product.noPolicyGroupMembers"
 msgstr "メンバーはまだいません。"
 
 #: src/i18n/descriptors.ts
+msgid "product.emptyTeamWarning"
+msgstr "メンバーはまだいません。メンバーを追加するまで、このチームは誰にもアクセスを許可しません。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeNoSession"
+msgstr "セッションのロックを解除したまま開いているタブが他にないため、ページの再読み込みまたは再表示でセッションがロックされました。続行するにはプロファイルのパスワードを入力してください。"
+
+#: src/i18n/descriptors.ts
 msgid "product.inviteNoOwner"
 msgstr "所有者なし（タグのみ）"
 
@@ -1108,6 +1300,10 @@ msgstr "個人用デバイスはありません。"
 #: src/i18n/descriptors.ts
 msgid "product.noPolicyReferences"
 msgstr "ポリシー内の参照はありません。"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerTitle"
+msgstr "アクセスを許可するルールがありません"
 
 #: src/i18n/descriptors.ts
 msgid "product.noTagsAvailable"
@@ -1126,6 +1322,10 @@ msgid "product.noUsersMatch"
 msgstr "条件に一致するユーザーはいません。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noUsersYet"
+msgstr "ユーザーはまだいません。ユーザーを追加して始めましょう。"
+
+#: src/i18n/descriptors.ts
 msgid "product.nodeId"
 msgstr "デバイス ID"
 
@@ -1142,12 +1342,24 @@ msgid "product.noRouteValues"
 msgstr "なし"
 
 #: src/i18n/descriptors.ts
+msgid "common.undefinedTags"
+msgstr "アクセスポリシーで未定義: {tags}。アクセス制御でこれらのタグを追加するまで、このタグ付きのキーは使えません。"
+
+#: src/i18n/descriptors.ts
+msgid "product.notReported"
+msgstr "記録なし"
+
+#: src/i18n/descriptors.ts
 msgid "common.offline"
 msgstr "オフライン"
 
 #: src/i18n/descriptors.ts
 msgid "product.offlineOnly"
 msgstr "オフライン"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodOidc"
+msgstr "OIDC"
 
 #: src/i18n/descriptors.ts
 msgid "product.oneTimeKey"
@@ -1194,12 +1406,8 @@ msgid "product.inviteOwner"
 msgstr "所有者"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleOwner"
-msgstr "所有者"
-
-#: src/i18n/descriptors.ts
-msgid "product.owners"
-msgstr "所有者"
+msgid "common.loginNoticePasswordChanged"
+msgstr "パスワードを変更しました。新しいプロファイルのパスワードでサーバーのロックを解除してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.apiKeyGuideStepPaste"
@@ -1208,6 +1416,10 @@ msgstr "キーと HTTPS の Headscale URL をここに貼り付けます。"
 #: src/i18n/descriptors.ts
 msgid "product.authRequestHelp"
 msgstr "tailscale up または SSH チェックのプロンプトに表示されるリンクまたは ID を貼り付けてください。リクエスト ID の有効期間は短く設定されています。"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusPending"
+msgstr "承認待ち"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRoutes"
@@ -1236,6 +1448,10 @@ msgstr "このユーザーが所属するグループを選びます。適用す
 #: src/i18n/descriptors.ts
 msgid "product.assignTagOwnershipsDescription"
 msgstr "このユーザーが所有できるタグを選びます。適用すると変更がポリシーに保存されます。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createMemberDescription"
+msgstr "ポリシーと Headscale CLI はユーザー名でこのユーザーを参照します。表示名とメールアドレスは任意です。"
 
 #: src/i18n/descriptors.ts
 msgid "common.policy"
@@ -1286,16 +1502,16 @@ msgid "common.profileName"
 msgstr "プロファイル名"
 
 #: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "プロファイルのパスワード"
+
+#: src/i18n/descriptors.ts
 msgid "product.unused"
 msgstr "利用可能"
 
 #: src/i18n/descriptors.ts
 msgid "product.readyKeys"
 msgstr "利用可能なキー"
-
-#: src/i18n/descriptors.ts
-msgid "product.readyToSave"
-msgstr "保存できます"
 
 #: src/i18n/descriptors.ts
 msgid "product.recentDevices"
@@ -1382,6 +1598,14 @@ msgid "product.removeTeamMember"
 msgstr "メンバーを削除"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeOwnerFilter"
+msgstr "所有者フィルターを解除"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionUrlParts"
+msgstr "サーバー URL からユーザー名、パスワード、クエリ（?…）、フラグメント（#…）を削除してください。"
+
+#: src/i18n/descriptors.ts
 msgid "product.confirmRemovePolicyItemTitle"
 msgstr "削除しますか？"
 
@@ -1400,6 +1624,14 @@ msgstr "ユーザー名を変更"
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberTitle"
 msgstr "ユーザー名を変更"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceTitle"
+msgstr "全体公開をこのテンプレートで置き換えますか？"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceConfirm"
+msgstr "ルールを置き換える"
 
 #: src/i18n/descriptors.ts
 msgid "product.authRequestLabel"
@@ -1438,16 +1670,16 @@ msgid "product.wizardStepResultDescription"
 msgstr "結果を確認して次へ進みます。"
 
 #: src/i18n/descriptors.ts
+msgid "product.revokeExitNode"
+msgstr "出口ノードの承認を取り消す"
+
+#: src/i18n/descriptors.ts
 msgid "product.revokeRoute"
 msgstr "ルートの承認を取り消す"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeRouteTitle"
 msgstr "ルートの承認の取り消し"
-
-#: src/i18n/descriptors.ts
-msgid "product.role"
-msgstr "ロール"
 
 #: src/i18n/descriptors.ts
 msgid "product.exitNodeDescription"
@@ -1498,6 +1730,10 @@ msgid "common.saveAndUnlock"
 msgstr "保存してロック解除"
 
 #: src/i18n/descriptors.ts
+msgid "common.saveAnywayEditButton"
+msgstr "そのまま保存"
+
+#: src/i18n/descriptors.ts
 msgid "product.saveName"
 msgstr "名前を保存"
 
@@ -1526,12 +1762,28 @@ msgid "common.resetMetadataWarning"
 msgstr "保存済みデータは消去されましたが、このタブの一時設定を削除できませんでした。このタブを閉じて新しいタブを開いてください。"
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableRecordsNotice"
+msgstr "読み取れないため一覧に表示されていない保存済みプロファイルのレコード: {count} 件。保存済みプロファイルをすべて消去すると削除されます。"
+
+#: src/i18n/descriptors.ts
 msgid "product.policySavedNewerEdits"
 msgstr "送信したポリシーを保存しました。その後の編集はまだ保存されていません。"
 
 #: src/i18n/descriptors.ts
+msgid "common.savingProfile"
+msgstr "保存中"
+
+#: src/i18n/descriptors.ts
 msgid "product.replaceTagsWarning"
 msgstr "保存すると、現在のタグへの追加ではなく置き換えになります。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyDescription"
+msgstr "このキーを使うスクリプトや連携は、ただちにサーバーへアクセスできなくなり、キーは完全に削除されます。この操作は元に戻せません。"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyDescription"
+msgstr "このキーを使うスクリプトや連携は、ただちにサーバーへアクセスできなくなります。キーは失効済みとして一覧に残り、再び有効にすることはできません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.searchDevices"
@@ -1566,8 +1818,8 @@ msgid "product.templateSplitEnvDescription"
 msgstr "開発チームと運用チームを分け、それぞれのラベル付きサーバーへのアクセスを許可します。"
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPassword"
-msgstr "サーバーのパスワード"
+msgid "product.inviteTagsHint"
+msgstr "複数のタグはカンマで区切ります。各タグは tag: で始めます（例: tag:server）。"
 
 #: src/i18n/descriptors.ts
 msgid "product.openServerSettings"
@@ -1586,14 +1838,6 @@ msgid "product.ports"
 msgstr "サービス"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleServiceAccount"
-msgstr "サービスアカウント"
-
-#: src/i18n/descriptors.ts
-msgid "product.serviceAccounts"
-msgstr "サービスアカウント"
-
-#: src/i18n/descriptors.ts
 msgid "product.linuxServerDescription"
 msgstr "VM、コンテナ、ルーターで動作するサービス向けです。"
 
@@ -1603,7 +1847,7 @@ msgstr "セッションのみ"
 
 #: src/i18n/descriptors.ts
 msgid "common.profileMigrationHint"
-msgstr "このサーバーのパスワードを設定して、保存済みの接続を移行してください。移行に失敗した場合、元のデータは変更されません。"
+msgstr "プロファイルのパスワードを設定して、保存済みの接続を移行してください。移行に失敗した場合、元のデータは変更されません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.authKeyExpirationDescription"
@@ -1702,6 +1946,10 @@ msgid "product.taggedKeys"
 msgstr "タグ付きキー"
 
 #: src/i18n/descriptors.ts
+msgid "common.tagUserNodeWarning"
+msgstr "このデバイスにタグを付けると所有者 {owner} が外れ、タグの所有になります。その後、タグは置き換えのみ可能で、すべて削除することはできません。"
+
+#: src/i18n/descriptors.ts
 msgid "product.tags"
 msgstr "タグ"
 
@@ -1712,6 +1960,10 @@ msgstr "tailnet の概要"
 #: src/i18n/descriptors.ts
 msgid "product.teamName"
 msgstr "チーム名"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameInvalid"
+msgstr "チーム名にはスペース、カンマ、コロン (:)、@ を使用できません。"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamsSection"
@@ -1728,6 +1980,14 @@ msgstr "そのグループ名またはタグ名はすでに使用されていま
 #: src/i18n/descriptors.ts
 msgid "common.sessionChanged"
 msgstr "使用中のサーバーが切り替わりました。このページを確認してから再試行してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrlHint"
+msgstr "デバイスが Headscale に接続するときのアドレスです。このコンソールがプロキシ経由で API に接続している場合は変更してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyDescription"
+msgstr "認証キーは再表示されません。先にコピーするか、後で新しいキーを作成してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.preferencesReloadFailed"
@@ -1758,6 +2018,10 @@ msgid "common.discardProfileChangesDescription"
 msgstr "プロファイルが変更されています。閉じると未保存の内容は失われます。"
 
 #: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "プロファイルのパスワードを変更しました。必要なときに再度ロックを解除してください。"
+
+#: src/i18n/descriptors.ts
 msgid "common.requestUnreachable"
 msgstr "リクエストが完了しませんでした。サーバーの URL、ネットワーク接続、サーバーの CORS 設定を確認してください。変更を保存していた場合は、再試行する前にサーバーの現在の状態を確認してください。"
 
@@ -1774,16 +2038,20 @@ msgid "common.requestUnexpectedResponse"
 msgstr "サーバーから予期しない応答が返されました（HTTP {status}）。URL が Headscale を指していること、およびリバースプロキシが正常に動作していることを確認してください。"
 
 #: src/i18n/descriptors.ts
-msgid "common.profilePasswordChanged"
-msgstr "サーバーのパスワードを変更しました。必要なときに再度ロックを解除してください。"
-
-#: src/i18n/descriptors.ts
 msgid "common.sessionSavedLocked"
 msgstr "サーバープロファイルは保存されましたが、まだロックされています。パスワードを入力してロックを解除してください。"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeExpired"
+msgstr "30 分間操作がなかったため、セッションがロックされました。続行するにはプロファイルのパスワードを入力してください。"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionUnavailable"
 msgstr "共有セッションを利用できません。再接続し、サーバーのロックを解除して続行してください。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeClockReversed"
+msgstr "システムの時刻が巻き戻ったため、セッションがロックされました。続行するにはプロファイルのパスワードを入力してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.themeNotSaved"
@@ -1811,11 +2079,19 @@ msgstr "これらの操作はサーバー全体に影響します。Headscale �
 
 #: src/i18n/descriptors.ts
 msgid "product.ipRulesSectionHint"
-msgstr "これらのルールは、IP アドレス、ネットワーク範囲、またはすべての宛先へのアクセスを許可します。ここで直接編集・削除できます。"
+msgstr "これらのルールは、IP アドレス、ネットワーク範囲、またはすべての宛先 (*) へのアクセスを許可します。ここで追加・編集・削除できます。"
+
+#: src/i18n/descriptors.ts
+msgid "common.insecureServerUrlWarning"
+msgstr "このアドレスは暗号化されていない HTTP を使用するため、API キーは暗号化されずにネットワーク上を送信されます。信頼できるネットワークでない限り HTTPS を使用してください。"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveRoutesDescription"
 msgstr "このデバイスが現在通知しているすべてのルートを承認します。"
+
+#: src/i18n/descriptors.ts
+msgid "common.clearAllProfilesHint"
+msgstr "このブラウザーに保存されたプロファイルをすべて消去します。1 つだけ削除するには、ログアウトしてそのカードの削除アイコンを使ってください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.clearProfilesDescription"
@@ -1846,8 +2122,16 @@ msgid "product.expireInviteDescription"
 msgstr "このキーでは新しいデバイスを認証できなくなります。"
 
 #: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelHint"
+msgstr "このラベルはデバイスに由来し、ポリシーでは定義されていないため、ここで名前の変更や削除はできません。アクセス権を付与するか、ラベル管理者を追加すると定義されます。"
+
+#: src/i18n/descriptors.ts
 msgid "product.disableExpiryDescription"
 msgstr "このデバイスは有効期限切れにならなくなり、手動で失効させるまで再ログインなしでアクセスを維持します。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorInvalidDnsLabel"
+msgstr "この名前は使用できません。英字・数字・ハイフンで 63 文字以内にし、先頭と末尾は英字か数字にしてください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionReloadRequired"
@@ -1868,6 +2152,10 @@ msgstr "このポリシーには安全に更新できないフィールドが含
 #: src/i18n/descriptors.ts
 msgid "product.policyReadOnlyError"
 msgstr "このポリシーを安全に読み取れないため、変更は無効になっています。Headscale でポリシーを修正してから再読み込みしてください。"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyProfileMigrateFirst"
+msgstr "このプロファイルは古い保存形式を使用しています。URL または API キーを変更する前に、カードから開いて移行してください。名前はここで変更できます。"
 
 #: src/i18n/descriptors.ts
 msgid "product.cleanupOrphanRefsConfirmBody"
@@ -1894,6 +2182,10 @@ msgid "product.deleteMemberDescription"
 msgstr "Headscale からユーザーを削除します。続行する前に、そのユーザーのデバイスと認証キーを確認してください。"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeReferenceDescription"
+msgstr "このポリシー項目からユーザーを削除し、すぐにサーバー上のポリシーを保存します。"
+
+#: src/i18n/descriptors.ts
 msgid "product.policyTagRenameScope"
 msgstr "ポリシー内のタグ名を変更します。デバイスのタグと外部設定は変更されません。"
 
@@ -1906,12 +2198,24 @@ msgid "product.policyAdvancedRuleHint"
 msgstr "このルールには追加の制限があります。許可するサービスは Headscale のポリシーで編集してください。"
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableProfileRepair"
+msgstr "この保存済みプロファイルは読み取れません。サーバー URL と API キーを入力し、新しいプロファイルのパスワードを設定して置き換えるか、カードから削除してください。"
+
+#: src/i18n/descriptors.ts
 msgid "common.unsupportedServerVersion"
 msgstr "このサーバーは Headscale {version} と報告していますが、このアプリは 0.29.x を対象としています。一部のページが読み込めない、またはデータが不完全に表示される可能性があります。"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverVersionUnreadable"
 msgstr "このサーバーは Headscale {version} と報告していますが、このアプリは対応しておらず、応答も読み取れませんでした。Headscale 0.29.x のサーバーを使用してください。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeProfileChanged"
+msgstr "このサーバーの保存済みプロファイル（パスワードなど）が変更されたため、セッションがロックされました。続行するにはプロファイルのパスワードを入力してください。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceBody"
+msgstr "このテンプレートは、すべてのデバイスが相互にアクセスできるようにしている下記のルールを削除します。保存後は、テンプレートのルールだけがアクセスを許可します。タグのないデバイスや、テンプレートの対象外のタグを持つデバイスは、別のルールで許可されない限りアクセスできなくなります。"
 
 #: src/i18n/descriptors.ts
 msgid "product.userImpactOnDeleteHeading"
@@ -1966,12 +2270,24 @@ msgid "product.unsavedChangesBadge"
 msgstr "未保存"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeDiscardedPolicy"
+msgstr "セッションがロックされたため、保存していないアクセス制御の変更は破棄されました。"
+
+#: src/i18n/descriptors.ts
 msgid "product.unsavedChangesTitle"
 msgstr "未保存の変更"
 
 #: src/i18n/descriptors.ts
 msgid "common.updatedProfile"
 msgstr "更新済み"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidMachineName"
+msgstr "1～63 文字の英字、数字、ハイフンを使い、先頭と末尾は英字か数字にしてください。"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordMinLength"
+msgstr "8 文字以上で入力してください。"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRegistrationDescription"
@@ -2014,6 +2330,10 @@ msgid "product.memberName"
 msgstr "ユーザー名"
 
 #: src/i18n/descriptors.ts
+msgid "product.userNameInvalid"
+msgstr "ユーザー名にスペースや制御文字は使用できません。"
+
+#: src/i18n/descriptors.ts
 msgid "product.errorUserNotFound"
 msgstr "ユーザーが見つかりません"
 
@@ -2040,6 +2360,14 @@ msgstr "ユーザー"
 #: src/i18n/descriptors.ts
 msgid "product.optionGroupUsers"
 msgstr "ユーザー"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoadFailed"
+msgstr "ユーザーを読み込めませんでした。"
+
+#: src/i18n/descriptors.ts
+msgid "common.usersShown"
+msgstr "表示中のユーザー: {total} 人中 {shown} 人"
 
 #: src/i18n/descriptors.ts
 msgid "product.viewDetails"
@@ -2070,12 +2398,20 @@ msgid "product.svcWebLabel"
 msgstr "Web"
 
 #: src/i18n/descriptors.ts
+msgid "common.rememberConnectionHint"
+msgstr "オフにすると、このプロファイルはこのタブと、このタブから開いたタブにだけ表示されます。いずれの場合も、暗号化された API キーはプロファイルを削除するかローカルデータを消去するまで、このブラウザーに保存されます。"
+
+#: src/i18n/descriptors.ts
 msgid "product.tagAccessorsSection"
 msgstr "このデバイスへアクセスできるユーザー"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagOwnersSection"
 msgstr "デバイスへこのラベルを付けられるユーザー"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerBody"
+msgstr "このポリシーでは、デバイス同士は互いにアクセスできません。アクセスを許可するには、ルールを追加するかテンプレートから始めてください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleBody"
@@ -2086,8 +2422,8 @@ msgid "product.policyUnsavedBlocked"
 msgstr "アクセス制御ページに未保存のポリシー変更があります。ここからポリシーを変更する前に、そのページで保存または破棄してください。"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesBody"
-msgstr "「保存」を押すまで、変更はこのブラウザー内だけに保持されます。このまま閉じますか？"
+msgid "common.loginNoticeLoggedOut"
+msgstr "このタブまたは別のタブでログアウトしました。続行するにはプロファイルのパスワードを入力してください。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionExpired"

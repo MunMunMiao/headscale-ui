@@ -126,6 +126,7 @@ describe("CSV", () => {
       },
     });
 
+    vi.useFakeTimers();
     try {
       downloadCsv(
         "devices.csv",
@@ -135,7 +136,11 @@ describe("CSV", () => {
           { name: "Second", active: undefined, count: 3 },
         ],
       );
+      // Revoking during click() can cancel a download that has not read the blob yet.
+      expect(revokedUrl).toBe("");
+      vi.runAllTimers();
     } finally {
+      vi.useRealTimers();
       if (documentDescriptor) {
         Object.defineProperty(globalThis, "document", documentDescriptor);
       } else {
@@ -150,7 +155,10 @@ describe("CSV", () => {
     expect(clicks).toBe(1);
     expect(revokedUrl).toBe("blob:test-csv");
     expect(blob?.type).toBe("text/csv;charset=utf-8");
-    expect(await blob?.text()).toBe(
+    // The UTF-8 byte order mark makes Excel read non-ASCII names correctly.
+    const bytes = new Uint8Array(await (blob as Blob).arrayBuffer());
+    expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    expect(new TextDecoder().decode(bytes)).toBe(
       '"name","active","count"\n"A ""quoted"" device","true","2"\n"Second","","3"',
     );
   });

@@ -1,17 +1,21 @@
 import { Check, Pencil, Trash2, X } from "lucide-react";
-import { type KeyboardEvent, useEffect, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProductCopy } from "@/composables/useProductCopy";
-import type { IpRule } from "@/domain/policy-views";
+import { joinCommaList, parseCommaList } from "@/domain/policy-designer";
+import { destinationHasPort, type IpRule } from "@/domain/policy-views";
+
+const blank = (value: string) => parseCommaList(value).length === 0;
 
 interface Props {
   rule: IpRule;
   isEditing: boolean;
-  onEditStart: () => void;
+  // A rule that is not in the policy yet is only ever shown in edit mode.
+  onEditStart?: () => void;
   onEditCancel: () => void;
   onUpdate: (patch: { source: string; destination: string; ports: string }) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }
 
 export default function IpRuleRow({
@@ -36,23 +40,35 @@ export default function IpRuleRow({
       setPortsDraft(rule.ports);
     }
   }, [isEditing, rule.source, rule.destination, rule.ports]);
+  // Focus follows the mode switch: into the first field, then back to this row's edit button unless
+  // another row has already taken focus.
+  const firstField = useRef<HTMLInputElement>(null);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(isEditing);
+  useEffect(() => {
+    if (isEditing) firstField.current?.focus();
+    else if (wasEditing.current && document.activeElement === document.body)
+      editButton.current?.focus();
+    wasEditing.current = isEditing;
+  }, [isEditing]);
   function commit() {
     const source = sourceDraft.trim();
     const destination = destinationDraft.trim();
-    const ports = portsDraft.trim();
+    const ports = joinCommaList(parseCommaList(portsDraft));
+    if (blank(source) || blank(destination) || !ports || destinationHasPort(destination)) {
+      setSubmitted(true);
+      return;
+    }
     if (source === rule.source && destination === rule.destination && ports === rule.ports) {
       onEditCancel();
       return;
     }
-    if (!source || !destination || !ports) {
-      setSubmitted(true);
-      return;
-    }
     onUpdate({ source, destination, ports });
   }
-  const invalid = (value: string) => submitted && !value.trim();
-  const fieldProps = (value: string) =>
-    invalid(value) ? { "aria-invalid": true, "aria-describedby": errorId } : {};
+  const missing = submitted && [sourceDraft, destinationDraft, portsDraft].some(blank);
+  const portInDestination = submitted && destinationHasPort(destinationDraft);
+  const fieldProps = (invalid: boolean) =>
+    invalid ? { "aria-invalid": true, "aria-describedby": errorId } : {};
   function keyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -84,6 +100,7 @@ export default function IpRuleRow({
         </p>
         <div className="flex shrink-0 items-center gap-1">
           <Button
+            ref={editButton}
             variant="ghost"
             size="sm"
             aria-label={`${copy.editIpRule} ${rule.source} -> ${rule.destination}`}
@@ -111,11 +128,13 @@ export default function IpRuleRow({
     >
       <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto_1fr_auto_minmax(6rem,1fr)]">
         <Input
+          ref={firstField}
           value={sourceDraft}
           onChange={(event) => setSourceDraft(event.target.value)}
           className="font-mono text-xs"
           dir="ltr"
-          {...fieldProps(sourceDraft)}
+          {...fieldProps(submitted && blank(sourceDraft))}
+          aria-label={copy.ipRuleSourcePlaceholder}
           placeholder={copy.ipRuleSourcePlaceholder}
           data-testid={`ip-rule-source-${rule.ruleId}`}
           onKeyDown={keyDown}
@@ -126,7 +145,8 @@ export default function IpRuleRow({
           onChange={(event) => setDestinationDraft(event.target.value)}
           className="font-mono text-xs"
           dir="ltr"
-          {...fieldProps(destinationDraft)}
+          {...fieldProps((submitted && blank(destinationDraft)) || portInDestination)}
+          aria-label={copy.ipRuleDestinationPlaceholder}
           placeholder={copy.ipRuleDestinationPlaceholder}
           data-testid={`ip-rule-destination-${rule.ruleId}`}
           onKeyDown={keyDown}
@@ -137,15 +157,16 @@ export default function IpRuleRow({
           onChange={(event) => setPortsDraft(event.target.value)}
           className="font-mono text-xs"
           dir="ltr"
-          {...fieldProps(portsDraft)}
+          {...fieldProps(submitted && blank(portsDraft))}
+          aria-label={copy.ipRulePortsPlaceholder}
           placeholder={copy.ipRulePortsPlaceholder}
           data-testid={`ip-rule-ports-${rule.ruleId}`}
           onKeyDown={keyDown}
         />
       </div>
-      {(invalid(sourceDraft) || invalid(destinationDraft) || invalid(portsDraft)) && (
+      {(missing || portInDestination) && (
         <p id={errorId} role="alert" data-testid={errorId} className="text-xs text-destructive">
-          {copy.ipRuleFieldsRequired}
+          {missing ? copy.ipRuleFieldsRequired : copy.ipRuleDestinationHasPort}
         </p>
       )}
       <div className="flex justify-end gap-1">

@@ -30,3 +30,12 @@ test("closed or unmounted editors do not block a switch; an unmounted dirty poli
   expect(drafts.hold({ id: "a", name: "A" })).toBe(false);
   expect(drafts.hold({ id: "a", name: "A" }, true)).toBe(true);
 });
+test("reports whether any editor is open", () => {
+  const drafts = createSessionDrafts();
+  const editor = {};
+  expect(drafts.hasActiveDrafts()).toBe(false);
+  drafts.setActive(editor, true);
+  expect(drafts.hasActiveDrafts()).toBe(true);
+  drafts.release(editor);
+  expect(drafts.hasActiveDrafts()).toBe(false);
+});

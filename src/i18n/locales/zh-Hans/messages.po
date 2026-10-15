@@ -6,6 +6,14 @@ msgstr ""
 "Language: zh-Hans\n"
 
 #: src/i18n/descriptors.ts
+msgid "product.optionalField"
+msgstr "（可选）"
+
+#: src/i18n/descriptors.ts
+msgid "plural.labelRemovalDevices"
+msgstr "{count, plural, other {有 {formattedCount} 台设备带有此标签。这些设备会保留该标签：在此删除标签不会移除设备上的标签。}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.devicesTagged"
 msgstr "{count, plural, other {{formattedCount} 台设备}}"
 
@@ -22,8 +30,16 @@ msgid "plural.openAccessWarnings"
 msgstr "{count, plural, other {有 {formattedCount} 条规则允许所有人访问所有设备。}}"
 
 #: src/i18n/descriptors.ts
+msgid "plural.moreItems"
+msgstr "{count, plural, other {还有 {formattedCount} 项}}"
+
+#: src/i18n/descriptors.ts
 msgid "plural.cleanupOrphans"
 msgstr "{count, plural, other {清理 {formattedCount} 处失效引用}}"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginUnlockedNotice"
+msgstr "{name} 已在此浏览器中解锁。"
 
 #: src/i18n/descriptors.ts
 msgid "product.dashboardSubtitle"
@@ -32,6 +48,22 @@ msgstr "集中管理设备、成员和私有路由。"
 #: src/i18n/descriptors.ts
 msgid "product.inviteTagsRequired"
 msgstr "没有所属用户的密钥至少需要一个 ACL 标签。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagsRequiredForTaggedNode"
+msgstr "带标签的设备必须保留至少一个标签。请输入用于替换当前标签的标签。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorCannotRemoveAllTags"
+msgstr "已打标签的设备必须至少保留一个标签。Headscale 无法移除其全部标签。"
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameTaken"
+msgstr "已存在同名用户。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNameTaken"
+msgstr "已存在同名用户。"
 
 #: src/i18n/descriptors.ts
 msgid "product.nav.access"
@@ -74,6 +106,10 @@ msgid "product.addMemberToTeam"
 msgstr "添加成员"
 
 #: src/i18n/descriptors.ts
+msgid "product.addIpRule"
+msgstr "添加规则"
+
+#: src/i18n/descriptors.ts
 msgid "common.addServerProfile"
 msgstr "添加服务器"
 
@@ -107,7 +143,7 @@ msgstr "地址"
 
 #: src/i18n/descriptors.ts
 msgid "product.advertisedRoutes"
-msgstr "待审路由"
+msgstr "已公布路由"
 
 #: src/i18n/descriptors.ts
 msgid "product.routeAdvertisers"
@@ -116,6 +152,14 @@ msgstr "公布路由"
 #: src/i18n/descriptors.ts
 msgid "product.policyIdentityRemovalImpact"
 msgstr "受影响的规则：'{'rules'}'。受影响的策略测试：'{'tests'}'。"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeIpRuleConsequence"
+msgstr "保存后，仅由此规则允许的连接将被阻止。"
+
+#: src/i18n/descriptors.ts
+msgid "product.allAuthKeys"
+msgstr "全部密钥"
 
 #: src/i18n/descriptors.ts
 msgid "product.allMachines"
@@ -130,10 +174,6 @@ msgid "product.svcAllLabel"
 msgstr "全部服务"
 
 #: src/i18n/descriptors.ts
-msgid "product.allUsers"
-msgstr "全部用户"
-
-#: src/i18n/descriptors.ts
 msgid "product.cleanupReferencesOption"
 msgstr "同时从这些策略条目中移除该用户"
 
@@ -144,6 +184,10 @@ msgstr "同时将这些策略条目更新为新名称"
 #: src/i18n/descriptors.ts
 msgid "common.databaseBlockedDescription"
 msgstr "旧页面仍占用本地数据库。请关闭其他 Headscale UI 标签页以继续。已保存的连接将被保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNameTaken"
+msgstr "已有其他设备使用此名称。"
 
 #: src/i18n/descriptors.ts
 msgid "common.databaseReloadDescription"
@@ -186,6 +230,10 @@ msgid "product.applyAssignment"
 msgstr "应用"
 
 #: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationLead"
+msgstr "批准正在等待此服务器处理的设备登录或 SSH 检查。"
+
+#: src/i18n/descriptors.ts
 msgid "product.approveRoutesTitle"
 msgstr "批准公布路由"
 
@@ -194,8 +242,8 @@ msgid "product.approveAll"
 msgstr "全部批准"
 
 #: src/i18n/descriptors.ts
-msgid "product.approveExitRouteTitle"
-msgstr "批准出口路由"
+msgid "product.approveExitNode"
+msgstr "批准出口节点"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveExitRoutesTitle"
@@ -222,6 +270,10 @@ msgid "product.approveSshCheck"
 msgstr "批准 SSH 检查"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusApproved"
+msgstr "已批准"
+
+#: src/i18n/descriptors.ts
 msgid "product.routesApproved"
 msgstr "已批准"
 
@@ -232,6 +284,10 @@ msgstr "已批准路由"
 #: src/i18n/descriptors.ts
 msgid "product.assignedBadgeLabel"
 msgstr "已分配"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodAuthKey"
+msgstr "认证密钥"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteKey"
@@ -260,10 +316,6 @@ msgstr "使用标签认证并控制设备访问权限。带标签服务器不需
 #: src/i18n/descriptors.ts
 msgid "product.ephemeralDescription"
 msgstr "设备离线后自动从 tailnet 移除。"
-
-#: src/i18n/descriptors.ts
-msgid "product.availableRoutes"
-msgstr "待批准路由"
 
 #: src/i18n/descriptors.ts
 msgid "product.previousStep"
@@ -299,7 +351,7 @@ msgstr "取消编辑"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionChangePassphrase"
-msgstr "修改密码"
+msgstr "修改配置密码"
 
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberDescription"
@@ -350,8 +402,12 @@ msgid "product.clearFilters"
 msgstr "清除筛选"
 
 #: src/i18n/descriptors.ts
-msgid "product.changesAutoSaveHint"
-msgstr "还需要点击页面顶部的「保存」，才能把更改写入策略。"
+msgid "product.clearSearch"
+msgstr "清除搜索"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodCli"
+msgstr "命令行"
 
 #: src/i18n/descriptors.ts
 msgid "product.clientDevice"
@@ -362,6 +418,10 @@ msgid "common.close"
 msgstr "关闭"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardKeyConfirm"
+msgstr "关闭并丢弃密钥"
+
+#: src/i18n/descriptors.ts
 msgid "common.databaseBlockedTitle"
 msgstr "关闭旧的 Headscale UI 标签页"
 
@@ -370,8 +430,8 @@ msgid "common.discardProfileChangesTitle"
 msgstr "不保存这台服务器？"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesCloseAnyway"
-msgstr "暂不保存，关闭"
+msgid "product.discardKeyTitle"
+msgstr "不复制认证密钥就关闭？"
 
 #: src/i18n/descriptors.ts
 msgid "product.confirm"
@@ -379,7 +439,7 @@ msgstr "确定"
 
 #: src/i18n/descriptors.ts
 msgid "common.encryptionConfirmPassphrase"
-msgstr "确认密码"
+msgstr "确认配置密码"
 
 #: src/i18n/descriptors.ts
 msgid "common.connect"
@@ -388,6 +448,10 @@ msgstr "连接"
 #: src/i18n/descriptors.ts
 msgid "common.connection"
 msgstr "连接"
+
+#: src/i18n/descriptors.ts
+msgid "common.continueToServer"
+msgstr "继续"
 
 #: src/i18n/descriptors.ts
 msgid "common.saveAnywayButton"
@@ -466,12 +530,16 @@ msgid "product.createMember"
 msgstr "创建用户"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyCreatedAt"
+msgstr "创建时间"
+
+#: src/i18n/descriptors.ts
 msgid "product.createdApiKey"
 msgstr "已创建 API 密钥"
 
 #: src/i18n/descriptors.ts
 msgid "common.currentServerPassword"
-msgstr "当前服务器密码"
+msgstr "当前配置密码"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomLabel"
@@ -480,6 +548,10 @@ msgstr "自定义端口"
 #: src/i18n/descriptors.ts
 msgid "common.dark"
 msgstr "深色"
+
+#: src/i18n/descriptors.ts
+msgid "product.dataRefreshed"
+msgstr "数据已更新"
 
 #: src/i18n/descriptors.ts
 msgid "common.database"
@@ -496,6 +568,10 @@ msgstr "为设备添加标签、把用户组成团队，再决定谁能访问哪
 #: src/i18n/descriptors.ts
 msgid "product.resourceAccessEmptyTitle"
 msgstr "为你的网络设置访问权限"
+
+#: src/i18n/descriptors.ts
+msgid "product.decreaseDays"
+msgstr "减少天数"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagDetailDialogSubtitle"
@@ -610,12 +686,28 @@ msgid "product.disableExpiryTitle"
 msgstr "禁用设备过期？"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesTitle"
+msgstr "放弃所有未保存的更改？"
+
+#: src/i18n/descriptors.ts
 msgid "common.discardProfileChanges"
 msgstr "丢弃修改"
 
 #: src/i18n/descriptors.ts
+msgid "product.discardPolicyChanges"
+msgstr "放弃更改"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsDiscard"
 msgstr "放弃草稿并继续"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogUnsavedChangesBody"
+msgstr "「放弃这些更改」只撤销在此对话框中所做的更改。「保存并关闭」会把整个策略保存到 Headscale。若要暂时保留未保存的更改，请取消并点击「完成」。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardDialogChanges"
+msgstr "放弃这些更改"
 
 #: src/i18n/descriptors.ts
 msgid "product.displayName"
@@ -630,12 +722,24 @@ msgid "product.finish"
 msgstr "完成"
 
 #: src/i18n/descriptors.ts
+msgid "product.dialogChangesKeptHint"
+msgstr "点击「完成」会把这些更改保留为未保存的修改。关闭后，点击页面顶部的「保存」即可应用。"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleTitle"
 msgstr "草稿属于另一台服务器"
 
 #: src/i18n/descriptors.ts
 msgid "product.svcCustomPlaceholder"
 msgstr "如 8080, 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidTags"
+msgstr "每个标签都必须以 tag: 开头并带有名称，例如 tag:server。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsPrefix"
+msgstr "每个标签都必须以 tag: 开头，例如 tag:server。"
 
 #: src/i18n/descriptors.ts
 msgid "product.editNodeTagsTitle"
@@ -670,8 +774,12 @@ msgid "product.authRequestInvalid"
 msgstr "请输入以 hskey-authreq- 开头的请求 ID，或粘贴完整链接。"
 
 #: src/i18n/descriptors.ts
-msgid "product.policyReferenceInvalidName"
-msgstr "请输入有效的组名或标签名。"
+msgid "product.userNameRequired"
+msgstr "请输入用户名。"
+
+#: src/i18n/descriptors.ts
+msgid "product.emailInvalid"
+msgstr "请输入有效的邮箱地址，或将此项留空。"
 
 #: src/i18n/descriptors.ts
 msgid "common.connectionInvalidUrl"
@@ -683,19 +791,27 @@ msgstr "请输入 API 密钥。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionSecretRequired"
-msgstr "请重新输入 API 密钥和此服务器的密码后再提交。"
+msgstr "请重新输入 API 密钥和此配置的密码后再提交。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationHasPort"
+msgstr "目标中请勿包含端口，端口请填写在「端口」栏。"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "请输入配置密码。"
 
 #: src/i18n/descriptors.ts
 msgid "common.connectSubtitle"
 msgstr "先输入服务器地址和授权令牌，再进入控制台。"
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPasswordRequired"
-msgstr "请输入服务器密码。"
-
-#: src/i18n/descriptors.ts
 msgid "product.ephemeral"
 msgstr "临时设备"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesBody"
+msgstr "此页面上所有未保存的更改都将还原为最近一次从 Headscale 加载的策略。此操作无法撤销。"
 
 #: src/i18n/descriptors.ts
 msgid "product.highRiskConfirmDescription"
@@ -710,16 +826,20 @@ msgid "product.deviceLabelNameHint"
 msgstr "例如：server、workstation、database"
 
 #: src/i18n/descriptors.ts
+msgid "product.routeStatusExit"
+msgstr "出口"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNode"
+msgstr "出口节点"
+
+#: src/i18n/descriptors.ts
 msgid "product.exitRoute"
 msgstr "出口路由"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeExitRouteDescription"
 msgstr "出口路由会成对撤销：IPv4 和 IPv6 路由会一并移除，其他设备将不再通过这台设备发送公网流量。其余已批准的路由保持启用。如果访问策略会自动批准出口路由，则这台设备下次通告它们时，它们可能被再次批准。"
-
-#: src/i18n/descriptors.ts
-msgid "product.approveExitRouteDescription"
-msgstr "出口路由可能承载公网流量，请确认可以信任这台设备作为该路径的出口。"
 
 #: src/i18n/descriptors.ts
 msgid "product.inviteExpiration"
@@ -778,16 +898,24 @@ msgid "product.selectAccessorSearchPlaceholder"
 msgstr "查找人、团队或标签…"
 
 #: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "忘记了此配置的密码？请先取消，再点击其卡片上的删除图标，只删除这一个配置，然后用 API 密钥重新添加服务器。下面的按钮会清除所有已保存的配置。"
+
+#: src/i18n/descriptors.ts
 msgid "product.source"
 msgstr "来源"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelBadge"
+msgstr "来自设备"
 
 #: src/i18n/descriptors.ts
 msgid "product.generate"
 msgstr "生成"
 
 #: src/i18n/descriptors.ts
-msgid "product.generateInstallScript"
-msgstr "生成安装脚本"
+msgid "product.generateInstallCommand"
+msgstr "生成安装命令"
 
 #: src/i18n/descriptors.ts
 msgid "product.addAccessor"
@@ -818,6 +946,14 @@ msgid "common.apiKeyGuideDescription"
 msgstr "请先在服务端 CLI 创建 Headscale API 密钥，再连接 UI。"
 
 #: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "Headscale 会同时批准 IPv4 和 IPv6 两条出口路由，之后其他设备可以经由这台设备访问公网。请确认可以信任这台设备作为该路径的出口。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorTagsNotPermitted"
+msgstr "Headscale 未接受这些标签。每个标签都需要先在“访问控制”中设置管理员（tagOwners），才能分配给设备。"
+
+#: src/i18n/descriptors.ts
 msgid "common.headscaleDocs"
 msgstr "Headscale 文档"
 
@@ -832,6 +968,10 @@ msgstr "Headscale 被设置为从文件读取访问策略（policy.mode: file）
 #: src/i18n/descriptors.ts
 msgid "product.policyUpdateDisabled"
 msgstr "Headscale 从文件读取访问策略（policy.mode: file），因此无法在此处保存更改。请在 Headscale 服务器上编辑策略文件，或将 policy.mode 设为 database，以便在本应用中管理访问规则。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberOwnsDevices"
+msgstr "Headscale 不允许删除仍拥有设备的用户。请先移除以下设备："
 
 #: src/i18n/descriptors.ts
 msgid "product.errorRequestFailed"
@@ -858,6 +998,14 @@ msgid "common.apiKeyGuideTitle"
 msgstr "如何获取 API 密钥"
 
 #: src/i18n/descriptors.ts
+msgid "product.tagUserNodeAcknowledge"
+msgstr "我了解所属用户将被移除，且之后无法清空标签。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillAcknowledge"
+msgstr "我了解此操作会按服务器配置的地址前缀，为所有设备添加或移除 IP 地址。"
+
+#: src/i18n/descriptors.ts
 msgid "product.currentApiKeyAcknowledge"
 msgstr "我了解当前会话将失去访问权限。"
 
@@ -866,12 +1014,12 @@ msgid "common.apiKeyGuideHint"
 msgstr "如果密钥丢失或过期，请在服务器上停用旧密钥并创建新密钥。"
 
 #: src/i18n/descriptors.ts
-msgid "common.forgotServerPasswordHint"
-msgstr "如果忘记此服务器的密码，请删除对应的已保存配置，并使用其 API 密钥重新添加。其他服务器的配置可以保留。"
+msgid "common.encryptionUnlockFailed"
+msgstr "配置密码不正确。"
 
 #: src/i18n/descriptors.ts
-msgid "common.encryptionUnlockFailed"
-msgstr "密码不正确。"
+msgid "product.increaseDays"
+msgstr "增加天数"
 
 #: src/i18n/descriptors.ts
 msgid "product.installCommand"
@@ -906,6 +1054,10 @@ msgid "product.deviceLabelName"
 msgstr "标签名称"
 
 #: src/i18n/descriptors.ts
+msgid "product.labelNameInvalid"
+msgstr "标签名称必须以英文字母 (A–Z) 开头，且不能包含空格、逗号、冒号 (:) 或 @。"
+
+#: src/i18n/descriptors.ts
 msgid "common.language"
 msgstr "语言"
 
@@ -914,12 +1066,16 @@ msgid "product.lastSeen"
 msgstr "最后在线"
 
 #: src/i18n/descriptors.ts
+msgid "product.apiKeyLastUsed"
+msgstr "最后使用"
+
+#: src/i18n/descriptors.ts
 msgid "product.learnMore"
 msgstr "了解更多"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverCredentialEditHint"
-msgstr "只修改名称或保存位置时，请留空 API 密钥和密码。修改网址或 API 密钥时，必须重新输入 API 密钥和当前服务器密码。"
+msgstr "只修改名称或保存位置时，请留空 API 密钥和密码。修改网址或 API 密钥时，必须重新输入 API 密钥和当前配置密码。"
 
 #: src/i18n/descriptors.ts
 msgid "common.light"
@@ -930,12 +1086,20 @@ msgid "product.linuxServer"
 msgstr "Linux 服务器"
 
 #: src/i18n/descriptors.ts
+msgid "product.membersLoading"
+msgstr "正在加载用户…"
+
+#: src/i18n/descriptors.ts
 msgid "common.encryptionLockedBadge"
 msgstr "已锁定"
 
 #: src/i18n/descriptors.ts
 msgid "common.logout"
 msgstr "退出"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrl"
+msgstr "登录服务器地址"
 
 #: src/i18n/descriptors.ts
 msgid "product.devicesTableMachine"
@@ -960,6 +1124,10 @@ msgstr "设备"
 #: src/i18n/descriptors.ts
 msgid "product.devicesTitle"
 msgstr "设备"
+
+#: src/i18n/descriptors.ts
+msgid "common.machineCount"
+msgstr "显示的设备：{shown} / {total}"
 
 #: src/i18n/descriptors.ts
 msgid "common.primaryNavigation"
@@ -988,14 +1156,6 @@ msgstr "管理已经接入这个 tailnet 的设备。"
 #: src/i18n/descriptors.ts
 msgid "product.membersSubtitle"
 msgstr "管理网络中的用户和他们的权限。"
-
-#: src/i18n/descriptors.ts
-msgid "product.roleMember"
-msgstr "成员"
-
-#: src/i18n/descriptors.ts
-msgid "product.members"
-msgstr "成员"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamMembersSection"
@@ -1035,7 +1195,7 @@ msgstr "新服务器"
 
 #: src/i18n/descriptors.ts
 msgid "common.newServerPassword"
-msgstr "新的服务器密码"
+msgstr "新的配置密码"
 
 #: src/i18n/descriptors.ts
 msgid "product.newTeam"
@@ -1054,12 +1214,32 @@ msgid "product.noTeamAccess"
 msgstr "这里没有列出该团队到设备标签的 ACL 授权。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noActiveAuthKeys"
+msgstr "没有有效的认证密钥。"
+
+#: src/i18n/descriptors.ts
 msgid "product.noRoutes"
 msgstr "当前没有待审核路由。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noApiKeys"
+msgstr "没有可显示的 API 密钥。"
+
+#: src/i18n/descriptors.ts
 msgid "product.noAuthKeys"
 msgstr "没有符合筛选条件的认证密钥。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeysYet"
+msgstr "还没有认证密钥。创建一个即可添加设备。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNoChanges"
+msgstr "无需任何更改"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsMatch"
+msgstr "没有与搜索匹配的设备标签。"
 
 #: src/i18n/descriptors.ts
 msgid "product.noDeviceLabelsYet"
@@ -1068,6 +1248,10 @@ msgstr "还没有设备标签"
 #: src/i18n/descriptors.ts
 msgid "product.noGroupsAvailable"
 msgstr "尚无用户组。请先在访问控制中创建。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noIpRules"
+msgstr "暂无 IP 或全部目标规则。"
 
 #: src/i18n/descriptors.ts
 msgid "product.noDevices"
@@ -1094,6 +1278,14 @@ msgid "product.noPolicyGroupMembers"
 msgstr "暂无成员。"
 
 #: src/i18n/descriptors.ts
+msgid "product.emptyTeamWarning"
+msgstr "暂无成员。添加成员之前，此团队不会给任何人授予访问权限。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeNoSession"
+msgstr "没有其他打开的标签页保持会话解锁，因此刷新或重新打开页面后会话已锁定。请输入配置密码继续。"
+
+#: src/i18n/descriptors.ts
 msgid "product.inviteNoOwner"
 msgstr "无所属用户（仅标签）"
 
@@ -1108,6 +1300,10 @@ msgstr "没有个人设备。"
 #: src/i18n/descriptors.ts
 msgid "product.noPolicyReferences"
 msgstr "没有策略引用。"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerTitle"
+msgstr "没有任何规则允许访问"
 
 #: src/i18n/descriptors.ts
 msgid "product.noTagsAvailable"
@@ -1126,6 +1322,10 @@ msgid "product.noUsersMatch"
 msgstr "没有匹配筛选条件的用户。"
 
 #: src/i18n/descriptors.ts
+msgid "product.noUsersYet"
+msgstr "还没有用户。添加一个用户即可开始。"
+
+#: src/i18n/descriptors.ts
 msgid "product.nodeId"
 msgstr "设备 ID"
 
@@ -1142,12 +1342,24 @@ msgid "product.noRouteValues"
 msgstr "无"
 
 #: src/i18n/descriptors.ts
+msgid "common.undefinedTags"
+msgstr "访问策略中未定义：{tags}。在访问控制中添加这些标签之前，带有这些标签的密钥将无法使用。"
+
+#: src/i18n/descriptors.ts
+msgid "product.notReported"
+msgstr "未报告"
+
+#: src/i18n/descriptors.ts
 msgid "common.offline"
 msgstr "离线"
 
 #: src/i18n/descriptors.ts
 msgid "product.offlineOnly"
 msgstr "离线"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodOidc"
+msgstr "OIDC"
 
 #: src/i18n/descriptors.ts
 msgid "product.oneTimeKey"
@@ -1194,12 +1406,8 @@ msgid "product.inviteOwner"
 msgstr "所属用户"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleOwner"
-msgstr "管理员"
-
-#: src/i18n/descriptors.ts
-msgid "product.owners"
-msgstr "管理员"
+msgid "common.loginNoticePasswordChanged"
+msgstr "密码已修改。请使用新的配置密码解锁服务器。"
 
 #: src/i18n/descriptors.ts
 msgid "common.apiKeyGuideStepPaste"
@@ -1208,6 +1416,10 @@ msgstr "把密钥和 Headscale HTTPS URL 粘贴到这里。"
 #: src/i18n/descriptors.ts
 msgid "product.authRequestHelp"
 msgstr "粘贴 tailscale up 或 SSH 检查提示中显示的链接或 ID。请求 ID 的有效期很短。"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusPending"
+msgstr "待审"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRoutes"
@@ -1236,6 +1448,10 @@ msgstr "勾选该用户应隶属的用户组。点击应用后即写入策略。
 #: src/i18n/descriptors.ts
 msgid "product.assignTagOwnershipsDescription"
 msgstr "勾选该用户可拥有的标签。点击应用后即写入策略。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createMemberDescription"
+msgstr "策略和 Headscale CLI 通过用户名引用此用户。显示名称和邮箱为可选项。"
 
 #: src/i18n/descriptors.ts
 msgid "common.policy"
@@ -1286,16 +1502,16 @@ msgid "common.profileName"
 msgstr "配置名称"
 
 #: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "配置密码"
+
+#: src/i18n/descriptors.ts
 msgid "product.unused"
 msgstr "可使用"
 
 #: src/i18n/descriptors.ts
 msgid "product.readyKeys"
 msgstr "可用密钥"
-
-#: src/i18n/descriptors.ts
-msgid "product.readyToSave"
-msgstr "可以保存"
 
 #: src/i18n/descriptors.ts
 msgid "product.recentDevices"
@@ -1382,6 +1598,14 @@ msgid "product.removeTeamMember"
 msgstr "移除成员"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeOwnerFilter"
+msgstr "移除归属筛选"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionUrlParts"
+msgstr "请从服务器地址中移除用户名、密码、查询参数（?…）或片段（#…）。"
+
+#: src/i18n/descriptors.ts
 msgid "product.confirmRemovePolicyItemTitle"
 msgstr "删除这一项？"
 
@@ -1400,6 +1624,14 @@ msgstr "重命名用户"
 #: src/i18n/descriptors.ts
 msgid "product.renameMemberTitle"
 msgstr "重命名用户"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceTitle"
+msgstr "要用此模板替换开放访问吗？"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceConfirm"
+msgstr "替换规则"
 
 #: src/i18n/descriptors.ts
 msgid "product.authRequestLabel"
@@ -1438,16 +1670,16 @@ msgid "product.wizardStepResultDescription"
 msgstr "检查执行结果并继续。"
 
 #: src/i18n/descriptors.ts
+msgid "product.revokeExitNode"
+msgstr "撤销出口节点"
+
+#: src/i18n/descriptors.ts
 msgid "product.revokeRoute"
 msgstr "撤销此路由"
 
 #: src/i18n/descriptors.ts
 msgid "product.revokeRouteTitle"
 msgstr "撤销路由批准"
-
-#: src/i18n/descriptors.ts
-msgid "product.role"
-msgstr "角色"
 
 #: src/i18n/descriptors.ts
 msgid "product.exitNodeDescription"
@@ -1498,6 +1730,10 @@ msgid "common.saveAndUnlock"
 msgstr "保存并解锁"
 
 #: src/i18n/descriptors.ts
+msgid "common.saveAnywayEditButton"
+msgstr "仍然保存"
+
+#: src/i18n/descriptors.ts
 msgid "product.saveName"
 msgstr "保存名称"
 
@@ -1526,12 +1762,28 @@ msgid "common.resetMetadataWarning"
 msgstr "已清除保存的数据，但无法移除此标签页的临时设置。请关闭此标签页并打开新标签页。"
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableRecordsNotice"
+msgstr "无法读取且未列出的已保存配置记录：{count} 条。清除所有已保存的配置会将其移除。"
+
+#: src/i18n/descriptors.ts
 msgid "product.policySavedNewerEdits"
 msgstr "已保存提交的策略。之后的编辑仍未保存。"
 
 #: src/i18n/descriptors.ts
+msgid "common.savingProfile"
+msgstr "保存中"
+
+#: src/i18n/descriptors.ts
 msgid "product.replaceTagsWarning"
 msgstr "保存会替换当前标签，而不是追加标签。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyDescription"
+msgstr "使用此密钥的脚本和集成将立即失去对服务器的访问权限，且该密钥会被永久删除。此操作无法撤销。"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyDescription"
+msgstr "使用此密钥的脚本和集成将立即失去对服务器的访问权限。该密钥会以“已过期”状态保留在列表中，且无法恢复。"
 
 #: src/i18n/descriptors.ts
 msgid "product.searchDevices"
@@ -1566,8 +1818,8 @@ msgid "product.templateSplitEnvDescription"
 msgstr "把开发和运维分成两个团队，各自访问带有对应标签的服务器。"
 
 #: src/i18n/descriptors.ts
-msgid "common.serverPassword"
-msgstr "服务器密码"
+msgid "product.inviteTagsHint"
+msgstr "多个标签用逗号分隔，每个标签都以 tag: 开头，例如 tag:server。"
 
 #: src/i18n/descriptors.ts
 msgid "product.openServerSettings"
@@ -1586,14 +1838,6 @@ msgid "product.ports"
 msgstr "服务"
 
 #: src/i18n/descriptors.ts
-msgid "product.roleServiceAccount"
-msgstr "服务账号"
-
-#: src/i18n/descriptors.ts
-msgid "product.serviceAccounts"
-msgstr "服务账号"
-
-#: src/i18n/descriptors.ts
 msgid "product.linuxServerDescription"
 msgstr "运行在虚拟机、容器和路由器上的服务。"
 
@@ -1603,7 +1847,7 @@ msgstr "仅本次会话"
 
 #: src/i18n/descriptors.ts
 msgid "common.profileMigrationHint"
-msgstr "请为此服务器设置独立密码，以迁移已保存的连接。迁移失败时，原有数据保持不变。"
+msgstr "请设置配置密码，以迁移已保存的连接。迁移失败时，原有数据保持不变。"
 
 #: src/i18n/descriptors.ts
 msgid "product.authKeyExpirationDescription"
@@ -1702,6 +1946,10 @@ msgid "product.taggedKeys"
 msgstr "带标签密钥"
 
 #: src/i18n/descriptors.ts
+msgid "common.tagUserNodeWarning"
+msgstr "为此设备添加标签会移除其所属用户 {owner}，设备将改为归属于标签。此后标签只能替换，不能清空。"
+
+#: src/i18n/descriptors.ts
 msgid "product.tags"
 msgstr "标签"
 
@@ -1712,6 +1960,10 @@ msgstr "Tailnet 概览"
 #: src/i18n/descriptors.ts
 msgid "product.teamName"
 msgstr "团队名字"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameInvalid"
+msgstr "团队名称不能包含空格、逗号、冒号 (:) 或 @。"
 
 #: src/i18n/descriptors.ts
 msgid "product.teamsSection"
@@ -1728,6 +1980,14 @@ msgstr "该组名或标签名已被使用。"
 #: src/i18n/descriptors.ts
 msgid "common.sessionChanged"
 msgstr "当前服务器已切换。请检查此页面后重试。"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrlHint"
+msgstr "设备连接 Headscale 时使用的地址。如果此控制台通过代理访问 API，请修改它。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyDescription"
+msgstr "认证密钥不会再次显示。请先复制，或稍后重新创建密钥。"
 
 #: src/i18n/descriptors.ts
 msgid "common.preferencesReloadFailed"
@@ -1758,6 +2018,10 @@ msgid "common.discardProfileChangesDescription"
 msgstr "服务器配置已经修改。现在关闭会丢弃未保存的内容。"
 
 #: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "配置密码已修改，需要使用时请重新解锁。"
+
+#: src/i18n/descriptors.ts
 msgid "common.requestUnreachable"
 msgstr "请求未完成。请检查服务器地址、网络连接和服务器的跨域（CORS）设置。如果你正在保存更改，请先检查服务器的当前状态再重试。"
 
@@ -1774,16 +2038,20 @@ msgid "common.requestUnexpectedResponse"
 msgstr "服务器返回了意外的响应（HTTP {status}）。请确认地址指向 Headscale，且前置反向代理工作正常。"
 
 #: src/i18n/descriptors.ts
-msgid "common.profilePasswordChanged"
-msgstr "服务器密码已修改，需要使用时请重新解锁。"
-
-#: src/i18n/descriptors.ts
 msgid "common.sessionSavedLocked"
 msgstr "服务器配置已保存，但尚未解锁。请输入其密码以解锁。"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeExpired"
+msgstr "会话在 30 分钟无操作后已锁定。请输入配置密码继续。"
+
+#: src/i18n/descriptors.ts
 msgid "common.sessionUnavailable"
 msgstr "共享会话不可用。请重新连接并解锁服务器后继续。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeClockReversed"
+msgstr "系统时钟被回拨，会话因此已锁定。请输入配置密码继续。"
 
 #: src/i18n/descriptors.ts
 msgid "common.themeNotSaved"
@@ -1811,11 +2079,19 @@ msgstr "这些操作会影响整个服务端。仅在修复或核验 Headscale �
 
 #: src/i18n/descriptors.ts
 msgid "product.ipRulesSectionHint"
-msgstr "这些规则允许访问指定的 IP 地址、网段或全部目标，可以在此直接编辑或删除。"
+msgstr "这些规则允许访问指定的 IP 地址、网段或全部目标 (*)，可以在此添加、编辑或删除。"
+
+#: src/i18n/descriptors.ts
+msgid "common.insecureServerUrlWarning"
+msgstr "此地址使用未加密的 HTTP，API 密钥会以明文在网络上传输。除非网络可信，否则请使用 HTTPS。"
 
 #: src/i18n/descriptors.ts
 msgid "product.approveRoutesDescription"
 msgstr "这会批准这台设备当前公布的全部路由。"
+
+#: src/i18n/descriptors.ts
+msgid "common.clearAllProfilesHint"
+msgstr "这会清除此浏览器中所有已保存的配置。如果只想删除一个，请退出后点击其卡片上的删除图标。"
 
 #: src/i18n/descriptors.ts
 msgid "common.clearProfilesDescription"
@@ -1846,8 +2122,16 @@ msgid "product.expireInviteDescription"
 msgstr "这个密钥将不再接受新设备接入。"
 
 #: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelHint"
+msgstr "此标签来自设备，尚未在策略中定义，因此无法在此重命名或删除。授予访问或添加标签管理员即可定义它。"
+
+#: src/i18n/descriptors.ts
 msgid "product.disableExpiryDescription"
 msgstr "这台设备将不再过期，在手动使其过期之前，无需重新登录即可保持访问权限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorInvalidDnsLabel"
+msgstr "此名称无效。请使用不超过 63 个字母、数字或连字符，且必须以字母或数字开头和结尾。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionReloadRequired"
@@ -1868,6 +2152,10 @@ msgstr "此策略包含无法安全更新的字段。"
 #: src/i18n/descriptors.ts
 msgid "product.policyReadOnlyError"
 msgstr "无法安全读取此策略，已禁止修改。请在 Headscale 中修正策略后刷新。"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyProfileMigrateFirst"
+msgstr "此配置使用旧的存储格式。修改其网址或 API 密钥前，请先从卡片打开并完成迁移。你可以在这里重命名。"
 
 #: src/i18n/descriptors.ts
 msgid "product.cleanupOrphanRefsConfirmBody"
@@ -1894,6 +2182,10 @@ msgid "product.deleteMemberDescription"
 msgstr "这会从 Headscale 删除该用户。继续前请检查其设备和认证密钥。"
 
 #: src/i18n/descriptors.ts
+msgid "product.removeReferenceDescription"
+msgstr "这会将该用户从此策略条目中移除，并立即在服务器上保存策略。"
+
+#: src/i18n/descriptors.ts
 msgid "product.policyTagRenameScope"
 msgstr "这会重命名策略中的标签。设备标签和外部配置保持不变。"
 
@@ -1906,12 +2198,24 @@ msgid "product.policyAdvancedRuleHint"
 msgstr "此规则包含额外限制，请在 Headscale 策略中编辑它允许的服务。"
 
 #: src/i18n/descriptors.ts
+msgid "common.unreadableProfileRepair"
+msgstr "无法读取此已保存的配置。请输入服务器地址和 API 密钥，并设置新的配置密码来替换它，或在其卡片上删除它。"
+
+#: src/i18n/descriptors.ts
 msgid "common.unsupportedServerVersion"
 msgstr "此服务器报告的版本为 Headscale {version}，而本应用面向 0.29.x。部分页面可能无法加载或显示不完整的数据。"
 
 #: src/i18n/descriptors.ts
 msgid "common.serverVersionUnreadable"
 msgstr "此服务器报告的版本为 Headscale {version}，本应用不支持该版本，且无法读取其响应。请使用 Headscale 0.29.x 服务器。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeProfileChanged"
+msgstr "此服务器已保存的配置已被修改（例如密码），会话因此已锁定。请输入配置密码继续。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceBody"
+msgstr "此模板会删除下列规则，这些规则目前允许所有设备互相访问。保存后，只有模板中的规则允许访问：未打标签的设备，以及标签不在模板范围内的设备，除非有其他规则覆盖，否则将失去访问权限。"
 
 #: src/i18n/descriptors.ts
 msgid "product.userImpactOnDeleteHeading"
@@ -1966,12 +2270,24 @@ msgid "product.unsavedChangesBadge"
 msgstr "未保存"
 
 #: src/i18n/descriptors.ts
+msgid "common.loginNoticeDiscardedPolicy"
+msgstr "会话锁定时，未保存的访问控制修改已被丢弃。"
+
+#: src/i18n/descriptors.ts
 msgid "product.unsavedChangesTitle"
 msgstr "改动尚未保存"
 
 #: src/i18n/descriptors.ts
 msgid "common.updatedProfile"
 msgstr "更新时间"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidMachineName"
+msgstr "请使用 1 到 63 个字母、数字或连字符，并以字母或数字开头和结尾。"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordMinLength"
+msgstr "至少使用 8 个字符。"
 
 #: src/i18n/descriptors.ts
 msgid "product.pendingRegistrationDescription"
@@ -2014,6 +2330,10 @@ msgid "product.memberName"
 msgstr "用户名"
 
 #: src/i18n/descriptors.ts
+msgid "product.userNameInvalid"
+msgstr "用户名不能包含空格或控制字符。"
+
+#: src/i18n/descriptors.ts
 msgid "product.errorUserNotFound"
 msgstr "未找到用户。"
 
@@ -2040,6 +2360,14 @@ msgstr "用户"
 #: src/i18n/descriptors.ts
 msgid "product.optionGroupUsers"
 msgstr "用户"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoadFailed"
+msgstr "无法加载用户。"
+
+#: src/i18n/descriptors.ts
+msgid "common.usersShown"
+msgstr "已显示 {shown} 个用户，共 {total} 个"
 
 #: src/i18n/descriptors.ts
 msgid "product.viewDetails"
@@ -2070,12 +2398,20 @@ msgid "product.svcWebLabel"
 msgstr "网页"
 
 #: src/i18n/descriptors.ts
+msgid "common.rememberConnectionHint"
+msgstr "取消勾选后，此配置只会显示在当前标签页及从它打开的标签页中。无论是否勾选，加密后的 API 密钥都会保存在此浏览器中，直到你删除此配置或清除本地数据。"
+
+#: src/i18n/descriptors.ts
 msgid "product.tagAccessorsSection"
 msgstr "谁可以访问带此标签的设备"
 
 #: src/i18n/descriptors.ts
 msgid "product.tagOwnersSection"
 msgstr "谁可以为设备添加此标签"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerBody"
+msgstr "按此策略，设备之间无法互相访问。请添加规则或从模板开始以允许访问。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionDraftsStaleBody"
@@ -2086,8 +2422,8 @@ msgid "product.policyUnsavedBlocked"
 msgstr "访问控制页面中有未保存的策略更改。请先在该页面保存或放弃更改，再从这里修改策略。"
 
 #: src/i18n/descriptors.ts
-msgid "product.unsavedChangesBody"
-msgstr "更改目前只保存在浏览器中，尚未写入策略。确定关闭吗？"
+msgid "common.loginNoticeLoggedOut"
+msgstr "你已在此标签页或其他标签页中退出。请输入配置密码继续。"
 
 #: src/i18n/descriptors.ts
 msgid "common.sessionExpired"

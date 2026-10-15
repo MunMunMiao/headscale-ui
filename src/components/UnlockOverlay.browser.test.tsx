@@ -26,7 +26,11 @@ import {
 import { idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
 import UnlockOverlay from "./UnlockOverlay";
 
-afterEach(() => vi.restoreAllMocks());
+let serverDown = false;
+afterEach(() => {
+  serverDown = false;
+  vi.restoreAllMocks();
+});
 async function setup(legacy?: "device" | "password" | "plaintext") {
   const requests: string[] = [];
   const snapshot = snapshotFixture();
@@ -34,6 +38,7 @@ async function setup(legacy?: "device" | "password" | "plaintext") {
     const request = input instanceof Request ? input : new Request(input, init);
     const path = new URL(request.url).pathname;
     requests.push(path);
+    if (serverDown) return Response.json({ message: "Server unreachable" }, { status: 503 });
     const response: Record<string, unknown> = {
       "/api/v1/health": snapshot.health,
       "/version": snapshot.version,
@@ -145,7 +150,11 @@ test("a per-server unlock clears wrong passwords without HTTP and preserves redi
   await page.getByTestId("unlock-passphrase").fill("wrong password");
   await page.getByTestId("unlock-submit").click();
   await expect.element(page.getByTestId("unlock-error")).toBeVisible();
-  await expect.element(page.getByTestId("unlock-passphrase")).toHaveValue("");
+  const field = page.getByTestId("unlock-passphrase");
+  await expect.element(field).toHaveValue("");
+  await expect.element(field).toHaveFocus();
+  await expect.element(field).toHaveAttribute("aria-invalid", "true");
+  await expect.element(field).toHaveAccessibleDescription("Incorrect profile password.");
   expect(requests).toEqual([]);
   expect(await idbGet("profiles", profile.id)).toEqual(before);
   await page.getByTestId("unlock-passphrase").fill("server password");
@@ -185,6 +194,52 @@ test.each(["device", "password", "plaintext"] as const)(
     });
   },
 );
+
+test("a migration whose unlock fails reopens as an unlock and retries without a storage conflict", async () => {
+  const { session, profile } = await setup("device");
+  await renderSessionPage(session, <UnlockOverlay />, "/login");
+  serverDown = true;
+  await page.getByTestId("migration-new-password").fill("new server password");
+  await page.getByTestId("migration-confirm-password").fill("new server password");
+  await page.getByTestId("migration-submit").click();
+  await expect.element(page.getByTestId("unlock-passphrase")).toBeVisible();
+  await expect.element(page.getByTestId("unlock-error")).toBeVisible();
+  expect(document.querySelector('[data-testid="migration-new-password"]')).toBeNull();
+  expect(await idbGet("profiles", profile.id)).toMatchObject({ apiKey: { v: 2 } });
+  serverDown = false;
+  await page.getByTestId("unlock-passphrase").fill("new server password");
+  await page.getByTestId("unlock-submit").click();
+  await expect.poll(() => session.auth.getSessionSnapshot()?.status).toBe("unlocked");
+  expect(session.feedback.getSnapshot().lastError).toBe("");
+});
+
+test("a new migration password needs at least 8 characters before anything is stored", async () => {
+  const { session, profile, requests } = await setup("device");
+  const before = await idbGet("profiles", profile.id);
+  await renderSessionPage(session, <UnlockOverlay />, "/login");
+  await page.getByTestId("migration-new-password").fill("short");
+  await page.getByTestId("migration-confirm-password").fill("short");
+  await page.getByTestId("migration-submit").click();
+  const field = page.getByTestId("migration-new-password");
+  await expect.element(page.getByTestId("unlock-error")).toMatchTextContent("at least 8");
+  await expect.element(field).toHaveAttribute("aria-invalid", "true");
+  await expect.element(field).toHaveFocus();
+  await expect.element(field).toHaveValue("short");
+  expect(requests).toEqual([]);
+  expect(await idbGet("profiles", profile.id)).toEqual(before);
+});
+
+test("a redirect back to a login screen continues to the console instead", async () => {
+  const { session } = await setup();
+  const { router } = await renderSessionPage(
+    session,
+    <UnlockOverlay />,
+    `/login?redirect=${encodeURIComponent("/login?redirect=%2Fdevices")}`,
+  );
+  await page.getByTestId("unlock-passphrase").fill("server password");
+  await page.getByTestId("unlock-submit").click();
+  await expect.poll(() => router.state.location.pathname).toBe("/");
+});
 
 test("closing a pending unlock cancels its candidate without discarding an unrelated ordinary draft", async () => {
   const { session } = await setup();
@@ -307,6 +362,9 @@ test("migration requires matching fresh passwords before touching the legacy rec
   await page.getByTestId("migration-confirm-password").fill("different password");
   await page.getByTestId("migration-submit").click();
   await expect.element(page.getByTestId("unlock-error")).toMatchTextContent("do not match");
+  await expect
+    .element(page.getByTestId("migration-confirm-password"))
+    .toHaveAttribute("aria-invalid", "true");
   expect(requests).toEqual([]);
   expect(await idbGet("profiles", profile.id)).toEqual(before);
 });

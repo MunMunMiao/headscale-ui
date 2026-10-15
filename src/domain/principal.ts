@@ -11,6 +11,12 @@ function withUserSuffix(value: string): string {
   return value.includes("@") ? value : `${value}@`;
 }
 
+/** The principal that refers to a user by name (`name@`), or "" for a blank name. */
+export function userNamePrincipal(name: string): string {
+  const value = name.trim();
+  return value ? withUserSuffix(value) : "";
+}
+
 export function policyPrincipalForUser(
   user: Pick<HeadscaleUser, "name" | "email" | "providerId">,
 ): string {

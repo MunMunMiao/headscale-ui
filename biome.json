@@ -9,6 +9,7 @@
     "ignoreUnknown": false,
     "includes": [
       "**",
+      "!!.claude",
       "!!.superpowers",
       "!dist",
       "!node_modules",

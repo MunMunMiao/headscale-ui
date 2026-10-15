@@ -352,11 +352,13 @@ test.each([
           direction === "rtl" ? width - popupBounds.right : popupBounds.left,
         ).toBeLessThanOrEqual(1);
       } else {
-        const overlap =
-          direction === "rtl"
-            ? parentBounds.right - popupBounds.left
-            : popupBounds.right - parentBounds.left;
-        expect(Math.abs(overlap - 16)).toBeLessThanOrEqual(1);
+        // The submenu sits beside the profile menu instead of covering its edge.
+        const menu = document
+          .querySelector('[data-testid="profile-menu"]')
+          ?.getBoundingClientRect();
+        expect.assert(menu);
+        if (direction === "rtl") expect(popupBounds.left).toBeGreaterThanOrEqual(menu.right);
+        else expect(popupBounds.right).toBeLessThanOrEqual(menu.left);
       }
       await option.click();
       await expect.element(id("profile-menu")).not.toBeInTheDocument();
@@ -718,7 +720,7 @@ test("theme and language are radio items with exactly one checked entry that mov
 test.for([
   ["an omitted changes list", {}],
   ["an empty changes list", { changes: [] }],
-])("a maintenance run with %s reports that it is ready", async ([, backfillResponse]) => {
+])("a maintenance run with %s reports that nothing changed", async ([, backfillResponse]) => {
   await setup(true, { backfillResponse });
   await openSettings();
   await id("server-tab-maintenance").click();
@@ -726,7 +728,7 @@ test.for([
   await id("backfill-node-ips-confirmed").click();
   await id("confirm-backfill-node-ips").click();
   await expect.element(id("backfill-node-ips-dialog")).not.toBeInTheDocument();
-  await expect.element(id("backfill-node-ips-result")).toMatchTextContent("Ready to save");
+  await expect.element(id("backfill-node-ips-result")).toMatchTextContent("No changes were needed");
 });
 
 test("reports an activated language that could not be saved", async () => {

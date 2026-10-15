@@ -126,6 +126,79 @@ test("a peer server switch drops the obsolete profile route hint while preservin
   expect(f.session.auth.getSessionSnapshot()?.profile?.name).toBe("Peer server");
 });
 
+test("a lock that arrives while the page is already leaving for login keeps the page it left", async () => {
+  const f = await fixture();
+  const held = Promise.withResolvers<void>();
+  const root = createRootRoute();
+  const router = createRouter({
+    isServer: false,
+    origin: "http://localhost",
+    history: createMemoryHistory({ initialEntries: ["/secure"] }),
+    routeTree: root.addChildren([
+      createRoute({
+        getParentRoute: () => root,
+        path: "/secure",
+        staticData: { requiresAuth: true },
+      }),
+      createRoute({ getParentRoute: () => root, path: "/login", beforeLoad: () => held.promise }),
+    ]),
+  });
+  await router.load();
+  cleanup.push(createSessionRestoration(f.session, router).start());
+  const leaving = router.navigate({ to: "/login", search: { redirect: "/secure" } });
+  await f.session.profiles.logout();
+  held.resolve();
+  await leaving;
+  await expect.poll(() => router.state.status).toBe("idle");
+  expect(router.state.location.pathname).toBe("/login");
+  expect(router.state.location.search).toEqual({ redirect: "/secure" });
+});
+
+async function lockedOnLogin() {
+  const f = await fixture();
+  const profile = f.session.profiles.getSnapshot().profiles[0];
+  expect.assert(profile);
+  // The fixture router keeps TanStack's JSON search format, so a number stays unquoted.
+  await f.router.navigate({ to: "/secure", search: { node: 7 }, hash: "d" });
+  cleanup.push(f.restoration.start());
+  await f.session.profiles.logout();
+  await expect.poll(() => f.router.state.location.pathname).toBe("/login");
+  const peer = await f.peer("owner-b");
+  return { ...f, profile, unlockPeer: () => peer.profiles.enterProfile(profile, f.form.password) };
+}
+
+test("a login page continues to its redirect target when another tab unlocks", async () => {
+  const f = await lockedOnLogin();
+  await f.session.profiles.enterProfile(f.profile);
+  expect(f.session.profiles.getSnapshot().unlockProfile?.id).toBe(f.profile.id);
+  expect(await f.unlockPeer()).toBe(true);
+  await expect.poll(() => f.router.state.location.pathname).toBe("/secure");
+  expect(f.router.state.location.search).toEqual({ node: "7" });
+  expect(f.router.state.location.hash).toBe("d");
+  expect(f.session.profiles.getSnapshot().unlockProfile).toBeNull();
+});
+
+test.each(["connection dialog", "discarded edits"] as const)(
+  "a login page with a %s waits for the user when another tab unlocks",
+  async (reason) => {
+    const f = await lockedOnLogin();
+    f.session.profiles.setState(
+      reason === "connection dialog"
+        ? { connectionDialogOpen: true }
+        : { discardedPolicyDraft: true },
+    );
+    expect(await f.unlockPeer()).toBe(true);
+    await expect.poll(() => f.session.snapshot.getSnapshot().isAuthorized).toBe(true);
+    expect(f.router.state.location.pathname).toBe("/login");
+  },
+);
+
+test("this tab's own unlock leaves navigation to the page that started it", async () => {
+  const f = await lockedOnLogin();
+  expect(await f.session.profiles.enterProfile(f.profile, f.form.password)).toBe(true);
+  expect(f.router.state.location.pathname).toBe("/login");
+});
+
 test("setup cleanup setup checks the authority without re-unlocking and cleanup releases route and lock listeners", async () => {
   const f = await fixture();
   const before = f.server.requests.length;

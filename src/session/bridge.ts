@@ -106,17 +106,24 @@ export function createSessionBridge(options: SessionBridgeOptions) {
     snapshot = Object.freeze(next);
     for (const listener of listeners) listener();
   }
+  /** Everything subscribers render; a renewal changes only the expiry and revision. */
+  const visible = ({ expiresAt: _expiry, revision: _revision, ...rest }: PublicSessionSnapshot) =>
+    JSON.stringify(rest);
   function update(session: PublicSessionSnapshot) {
     if (session.identity && session.identity.workerId !== snapshot.workerId) return;
     if (snapshot.session && session.revision <= snapshot.session.revision) return;
     // struct.parse built these objects for this message alone, so they can be frozen in place.
     if (session.identity) Object.freeze(session.identity);
     if (session.profile) Object.freeze(session.profile);
-    publish({
+    const next: SessionBridgeSnapshot = {
       ...snapshot,
       status: session.status === "locked" ? "ready-locked" : "ready-unlocked",
       session: Object.freeze(session),
-    });
+    };
+    // Activity renews the session about once a second; reads see the new expiry without re-rendering every page.
+    if (snapshot.session && visible(snapshot.session) === visible(session))
+      snapshot = Object.freeze(next);
+    else publish(next);
     flush();
   }
   function matches(expected: SessionIdentity) {

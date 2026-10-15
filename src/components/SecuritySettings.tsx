@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useActionFeedback } from "@/composables/useActionFeedback";
-import { useProfiles } from "@/composables/useProfiles";
+import { MIN_PROFILE_PASSWORD_LENGTH, useProfiles } from "@/composables/useProfiles";
 import { useResetLocalData } from "@/composables/useResetLocalData";
 import { useHeadscaleI18n } from "@/i18n";
 import type { ProfileSummary } from "@/lib/profile-storage";
+import { cn } from "@/lib/utils";
+
+type Field = "current" | "new" | "confirm";
 
 export default function SecuritySettings({
   profile,
@@ -35,12 +38,25 @@ export default function SecuritySettings({
   const [newPassphrase, setNewPassphrase] = useState("");
   const [confirmPassphrase, setConfirmPassphrase] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [invalid, setInvalid] = useState<Field | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const inFlight = useRef(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const currentRef = useRef<HTMLInputElement>(null);
+  const fields: Record<Field, RefObject<HTMLInputElement | null>> = {
+    current: currentRef,
+    new: useRef(null),
+    confirm: useRef(null),
+  };
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const wasOpen = useRef(false);
   useEffect(() => {
     if (showChangeForm) currentRef.current?.focus();
@@ -68,25 +84,45 @@ export default function SecuritySettings({
     clearSecrets();
     setShowChangeForm(false);
     setErrorMessage("");
+    setInvalid(null);
     setSuccessMessage("");
+  }
+  function reject(field: Field, message: string) {
+    setErrorMessage(message);
+    setInvalid(field);
+    fields[field].current?.focus();
+  }
+  function invalidProps(field: Field, describedBy?: string) {
+    const ids = [describedBy, invalid === field ? "security-error" : undefined];
+    return {
+      "aria-invalid": invalid === field,
+      "aria-describedby": ids.filter(Boolean).join(" ") || undefined,
+    };
   }
   async function changeIt() {
     if (inFlight.current || !profile) return;
-    if (!currentPassphrase || !newPassphrase || newPassphrase !== confirmPassphrase) {
-      setErrorMessage(t("passwordsMismatch"));
-      return;
-    }
+    if (!currentPassphrase) return reject("current", t("serverPasswordRequired"));
+    if (newPassphrase.length < MIN_PROFILE_PASSWORD_LENGTH)
+      return reject("new", t("profilePasswordMinLength"));
+    if (newPassphrase !== confirmPassphrase) return reject("confirm", t("passwordsMismatch"));
     inFlight.current = true;
     setSubmitting(true);
     setErrorMessage("");
+    setInvalid(null);
     setSuccessMessage("");
     try {
       const changing = profiles.changeProfilePassword(profile, currentPassphrase, newPassphrase);
-      clearSecrets();
+      // The new password stays typed for a retry; only the rejected current password is cleared.
+      setCurrentPassphrase("");
       if (await changing) {
+        clearSecrets();
         setShowChangeForm(false);
         setSuccessMessage(t("profilePasswordChanged"));
-      } else setErrorMessage(feedback.getSnapshot().lastError);
+      } else if (mounted.current) {
+        // Shown once, here; a page that already left for login keeps it as its banner.
+        reject("current", feedback.getSnapshot().lastError);
+        feedback.setState({ lastError: "" });
+      }
     } finally {
       inFlight.current = false;
       setSubmitting(false);
@@ -141,31 +177,45 @@ export default function SecuritySettings({
               value={currentPassphrase}
               onChange={(event) => setCurrentPassphrase(event.target.value)}
               autoComplete="current-password"
-              disabled={submitting}
+              readOnly={submitting}
+              {...invalidProps("current")}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="enc-new-c">{t("newServerPassword")}</Label>
             <Input
+              ref={fields.new}
               id="enc-new-c"
               type="password"
               data-testid="security-change-new-passphrase"
               value={newPassphrase}
               onChange={(event) => setNewPassphrase(event.target.value)}
               autoComplete="new-password"
-              disabled={submitting}
+              readOnly={submitting}
+              {...invalidProps("new", "enc-new-length")}
             />
+            <p
+              id="enc-new-length"
+              className={cn(
+                "text-xs",
+                invalid === "new" ? "text-destructive" : "text-muted-foreground",
+              )}
+            >
+              {t("profilePasswordMinLength")}
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="enc-confirm-c">{t("encryptionConfirmPassphrase")}</Label>
             <Input
+              ref={fields.confirm}
               id="enc-confirm-c"
               type="password"
               data-testid="security-change-confirm-passphrase"
               value={confirmPassphrase}
               onChange={(event) => setConfirmPassphrase(event.target.value)}
               autoComplete="new-password"
-              disabled={submitting}
+              readOnly={submitting}
+              {...invalidProps("confirm")}
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -190,6 +240,7 @@ export default function SecuritySettings({
       )}
       {errorMessage && (
         <p
+          id="security-error"
           data-testid="security-error"
           className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
           role="alert"
@@ -204,7 +255,7 @@ export default function SecuritySettings({
       )}
       <div className="grid gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
         <p className="text-sm font-medium text-destructive">{t("encryptionForgottenButton")}</p>
-        <p className="text-xs text-muted-foreground">{t("forgotServerPasswordHint")}</p>
+        <p className="text-xs text-muted-foreground">{t("clearAllProfilesHint")}</p>
         <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
           <AlertDialogTrigger
             render={
@@ -221,7 +272,7 @@ export default function SecuritySettings({
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{t("encryptionForgottenButton")}</AlertDialogTitle>
+              <AlertDialogTitle>{t("forgotConfirmTitle")}</AlertDialogTitle>
               <AlertDialogDescription>{t("clearProfilesDescription")}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

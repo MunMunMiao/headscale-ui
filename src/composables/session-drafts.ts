@@ -10,6 +10,7 @@ export function createSessionDrafts() {
     getSnapshot: state.getSnapshot,
     subscribe: state.subscribe,
     isCurrent: () => state.getSnapshot().stale === null,
+    hasActiveDrafts: () => editors.size > 0,
     setActive(owner: object, active: boolean) {
       if (active) editors.add(owner);
       else editors.delete(owner);

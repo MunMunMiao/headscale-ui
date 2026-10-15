@@ -172,6 +172,24 @@ test.each(["en-US", "zh-Hans"] as const)("localizes Headscale phrases in %s", as
     [404, "node not found", copy.errorNodeNotFound],
     [404, "node not found: 5", copy.errorNodeNotFound],
     [500, "update is disabled for modes other than 'database'", copy.policyUpdateDisabled],
+    // Raw Headscale v0.29.4 texts seen in the browser walkthrough.
+    [
+      500,
+      'renaming node: "Bad Name!" is not a valid DNS label: "Bad Name!" is not a valid DNS label',
+      copy.errorInvalidDnsLabel,
+    ],
+    [500, "renaming node: node name is not unique: laptop", copy.errorNodeNameTaken],
+    [400, "requested tags [tag:test] are invalid or not permitted", copy.errorTagsNotPermitted],
+    [
+      400,
+      "cannot remove all tags from a node - tagged nodes must have at least one tag",
+      copy.errorCannotRemoveAllTags,
+    ],
+    [
+      500,
+      "creating user: creating user: constraint failed: UNIQUE constraint failed: users.name (2067)",
+      copy.errorUserNameTaken,
+    ],
   ];
   for (const [status, message, expected] of rows) {
     const error = await failureFrom(() => Response.json({ code: 2, message }, { status }));

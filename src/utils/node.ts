@@ -7,6 +7,23 @@ export function nodeDisplayName(node: HeadscaleNode): string {
   return node.givenName || node.name;
 }
 
+/** Tags as an admin types them: separated by commas, spaces or newlines. */
+export function parseNodeTags(value: string): string[] {
+  return value.split(/[\s,]+/).filter(Boolean);
+}
+
+/** Headscale only accepts `tag:` followed by a name. */
+export function isNodeTag(tag: string): boolean {
+  return tag.startsWith("tag:") && tag.length > "tag:".length;
+}
+
+// Headscale stores a machine name as one DNS label.
+const DNS_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
+
+export function isValidNodeName(name: string): boolean {
+  return DNS_LABEL.test(name);
+}
+
 /** Routes the node has advertised but the admin hasn't approved yet. */
 export function nodePendingRoutes(node: HeadscaleNode): string[] {
   return node.availableRoutes.filter((route) => !node.approvedRoutes.includes(route));

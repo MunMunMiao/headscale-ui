@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { parsePolicy, serializePolicy, toMemberRef } from "./policy-designer";
 import {
+  policyAliases,
   removePolicyGroup,
   removePolicyTag,
   renamePolicyGroup,
@@ -650,4 +651,14 @@ describe("retargetUserReferences", () => {
       mentioned: false,
     });
   });
+});
+
+test("policy aliases list every referenced name, including names only used outside ACLs", () => {
+  const aliases = policyAliases(
+    policy({ ssh: [{ action: "accept", src: ["tag:ci"], dst: ["tag:server"], users: ["root"] }] }),
+  );
+  expect(aliases.has("tag:server")).toBe(true);
+  expect(aliases.has("tag:ci")).toBe(true);
+  expect(aliases.has("group:ops2")).toBe(true);
+  expect(aliases.has("tag:absent")).toBe(false);
 });

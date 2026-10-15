@@ -4,6 +4,7 @@ import {
   API_KEY_EXPIRY_DAYS,
   AUTH_KEY_EXPIRY_DAYS,
   authKeyDialogLabels,
+  authKeyDialogUser,
   dateTimeLocalToIso,
   defaultExpirationLocal,
   isFutureExpiration,
@@ -107,5 +108,18 @@ describe("authKeyDialogLabels", () => {
       hour: copy.hour,
       minute: copy.minute,
     });
+  });
+});
+
+describe("authKeyDialogUser", () => {
+  // Two people may share a display name; the username tells them apart.
+  test.each([
+    [{ id: "1", name: "alice", displayName: "Alice Ops" }, "Alice Ops (alice)"],
+    [{ id: "2", name: "bob", displayName: "bob" }, "bob"],
+    [{ id: "3", name: "carol" }, "carol"],
+    [{ id: "4", name: "", displayName: "Dana", email: "dana@example.com" }, "Dana"],
+    [{ id: "5", name: "" }, "Unknown"],
+  ])("labels %o as %s", (user, label) => {
+    expect(authKeyDialogUser(user, "Unknown")).toEqual({ id: user.id, label });
   });
 });

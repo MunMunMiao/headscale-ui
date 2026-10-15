@@ -40,7 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -81,8 +81,9 @@ import { useMutation } from "@/composables/useMutation";
 import { useProductCopy } from "@/composables/useProductCopy";
 import { useProfiles } from "@/composables/useProfiles";
 import { useSessionDraft } from "@/composables/useSessionDraft";
-import { useSnapshot } from "@/composables/useSnapshot";
+import { useAutoRefresh, useSnapshot } from "@/composables/useSnapshot";
 import { useTheme } from "@/composables/useTheme";
+import { listedApiKeyPrefix } from "@/domain/api-key";
 import { isTimestampExpired } from "@/domain/node-status";
 import { isolateVersion, serverVersionSupport } from "@/domain/server-version";
 import { useHeadscaleI18n } from "@/i18n";
@@ -90,6 +91,7 @@ import { cn } from "@/lib/utils";
 import { apiKeyStatusClass } from "@/utils/status-class";
 
 type ProductSection = "home" | "devices" | "members" | "invites" | "routes" | "access";
+type PreferenceMenu = "language" | "theme";
 type ApiKeyActionTarget = {
   kind: "expire" | "delete";
   key: ApiKey;
@@ -173,8 +175,12 @@ function AppLayoutContent() {
     isReady,
     isRefreshing: isRefreshingSnapshot,
     refreshSnapshot,
+    refreshByUser,
     refreshErrors,
+    refreshNotice,
+    clearRefreshNotice,
   } = useSnapshot();
+  useAutoRefresh();
   const {
     lastError,
     isActionPending,
@@ -186,7 +192,8 @@ function AppLayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpenState] = useState(false);
+  const [preferenceMenu, setPreferenceMenu] = useState<PreferenceMenu | null>(null);
   const [serverSettingsDialogOpen, setServerSettingsDialogOpen] = useState(false);
   const [serverSettingsTab, setServerSettingsTab] = useState("apiKeys");
   const [createdApiKey, setCreatedApiKey] = useState("");
@@ -209,10 +216,27 @@ function AppLayoutContent() {
     ? (section as ProductSection)
     : "home";
 
+  function setProfileMenuOpen(open: boolean) {
+    setProfileMenuOpenState(open);
+    if (!open) setPreferenceMenu(null);
+  }
+
+  // Base UI opens these submenus on hover and ignores mouse presses; a click opens one at once.
+  function preferenceSubmenu(menu: PreferenceMenu) {
+    return {
+      open: preferenceMenu === menu,
+      onOpenChange: (open: boolean) =>
+        setPreferenceMenu((current) => (open ? menu : current === menu ? null : current)),
+    };
+  }
+  function openPreferenceMenu(menu: PreferenceMenu) {
+    if (preferenceMenu !== menu) setPreferenceMenu(menu);
+  }
+
   function logoutToLogin() {
     setProfileMenuOpen(false);
     logout();
-    void navigate({ to: "/login" });
+    void navigate({ to: "/login", search: { redirect: location.href } });
   }
 
   function openServerSettings() {
@@ -282,6 +306,8 @@ function AppLayoutContent() {
           input: { prefix: target.key.prefix },
         }));
     if (completed) {
+      // The one-time secret of a key that no longer works must not stay on screen.
+      if (listedApiKeyPrefix(createdApiKey) === target.key.prefix) setCreatedApiKey("");
       closeApiKeyActionDialog();
     }
   }
@@ -308,7 +334,9 @@ function AppLayoutContent() {
       input: { confirmed: true },
     });
     if (backfilled.ok) {
-      setBackfillNodeIpsResult((backfilled.result.changes ?? []).join(", ") || copy.readyToSave);
+      setBackfillNodeIpsResult(
+        (backfilled.result.changes ?? []).join(", ") || copy.backfillNoChanges,
+      );
       closeBackfillNodeIpsDialog();
     }
   }
@@ -331,6 +359,12 @@ function AppLayoutContent() {
     if (createdApiKey) createdApiKeyRef.current?.focus();
   }, [createdApiKey]);
 
+  useEffect(() => {
+    if (!refreshNotice) return;
+    const timer = setTimeout(clearRefreshNotice, 4000);
+    return () => clearTimeout(timer);
+  }, [refreshNotice, clearRefreshNotice]);
+
   const backfillResultRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (backfillNodeIpsResult) backfillResultRef.current?.scrollIntoView({ block: "nearest" });
@@ -350,10 +384,16 @@ function AppLayoutContent() {
           className="flex min-h-screen flex-col items-center justify-center gap-3 p-4 text-sm text-muted-foreground"
           data-testid="session-loading"
         >
-          <div role="status" className="flex items-center gap-3">
-            <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-            <span>{t("checkingCredentials")}</span>
-          </div>
+          {Object.keys(refreshErrors).length === 0 || isRefreshingSnapshot ? (
+            <div
+              role="status"
+              className="flex items-center gap-3"
+              data-testid="session-loading-progress"
+            >
+              <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+              <span>{t("checkingCredentials")}</span>
+            </div>
+          ) : null}
           <ServerVersionNotice version={snapshot.version?.version} />
           {Object.keys(refreshErrors).length > 0 && (
             <>
@@ -398,17 +438,17 @@ function AppLayoutContent() {
                 </div>
 
                 <div className="ms-auto flex shrink-0 items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <a
+                    className={buttonVariants({ variant: "ghost", size: "icon" })}
+                    href={githubRepositoryUrl}
+                    target="_blank"
+                    rel="noreferrer"
                     title="GitHub"
                     aria-label="GitHub"
                     data-testid="github-repository-link"
-                    render={<a href={githubRepositoryUrl} target="_blank" rel="noreferrer" />}
-                    nativeButton={false}
                   >
                     <GithubIcon className="h-5 w-5" aria-hidden="true" />
-                  </Button>
+                  </a>
 
                   <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
                     <DropdownMenuTrigger
@@ -431,10 +471,11 @@ function AppLayoutContent() {
                           <span className="min-w-0 truncate">{currentProfileLabel}</span>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuSub>
+                        <DropdownMenuSub {...preferenceSubmenu("language")}>
                           <DropdownMenuSubTrigger
                             data-testid="language-menu-trigger"
                             aria-busy={pendingLocale !== null}
+                            onClick={() => openPreferenceMenu("language")}
                           >
                             <Languages className="h-4 w-4" aria-hidden="true" />
                             <span>{t("language")}</span>
@@ -442,7 +483,7 @@ function AppLayoutContent() {
                           <DropdownMenuSubContent
                             className="w-48"
                             side="inline-start"
-                            sideOffset={-16}
+                            sideOffset={8}
                             alignOffset={0}
                             collisionPadding={0}
                             collisionAvoidance={{
@@ -454,15 +495,18 @@ function AppLayoutContent() {
                             <LocaleRadioItems onChosen={() => setProfileMenuOpen(false)} />
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger data-testid="theme-menu-trigger">
+                        <DropdownMenuSub {...preferenceSubmenu("theme")}>
+                          <DropdownMenuSubTrigger
+                            data-testid="theme-menu-trigger"
+                            onClick={() => openPreferenceMenu("theme")}
+                          >
                             <ThemeModeIcon mode={colorMode} className="h-4 w-4" />
                             <span>{t("theme")}</span>
                           </DropdownMenuSubTrigger>
                           <DropdownMenuSubContent
                             className="w-44"
                             side="inline-start"
-                            sideOffset={-16}
+                            sideOffset={8}
                             alignOffset={0}
                             collisionPadding={0}
                             collisionAvoidance={{
@@ -531,6 +575,17 @@ function AppLayoutContent() {
             data-testid="page-body"
           >
             <ServerVersionNotice version={snapshot.version?.version} />
+            <p
+              role="status"
+              data-testid="refresh-status"
+              className={
+                refreshNotice
+                  ? "fixed bottom-4 end-4 z-40 rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground shadow-sm"
+                  : "sr-only"
+              }
+            >
+              {refreshNotice ? copy.dataRefreshed : null}
+            </p>
             {lastError ? (
               <div
                 role="alert"
@@ -590,7 +645,8 @@ function AppLayoutContent() {
             ) : null}
             <Dialog open={serverSettingsDialogOpen} onOpenChange={closeServerSettings}>
               <DialogContent
-                className="max-h-[85vh] overflow-y-auto sm:max-w-4xl"
+                // Top-anchored: switching tabs changes the height without moving the tab bar.
+                className="top-8 max-h-[85vh] translate-y-0 overflow-y-auto sm:max-w-4xl"
                 data-testid="server-settings-dialog"
               >
                 <DialogHeader>
@@ -637,7 +693,7 @@ function AppLayoutContent() {
                         aria-label={copy.refreshData}
                         title={copy.refreshData}
                         disabled={isRefreshingSnapshot}
-                        onClick={refreshSnapshot}
+                        onClick={() => void refreshByUser()}
                       >
                         {isRefreshingSnapshot ? (
                           <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -730,13 +786,24 @@ function AppLayoutContent() {
                           <TableRow>
                             <TableHead>{copy.apiKeyPrefix}</TableHead>
                             <TableHead>{copy.status}</TableHead>
-                            <TableHead>{copy.joined}</TableHead>
+                            <TableHead>{copy.apiKeyCreatedAt}</TableHead>
                             <TableHead>{copy.expires}</TableHead>
-                            <TableHead>{copy.lastSeen}</TableHead>
+                            <TableHead>{copy.apiKeyLastUsed}</TableHead>
                             <TableHead>{copy.actions}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
+                          {snapshot.apiKeys.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="py-6 text-center text-sm text-muted-foreground"
+                                data-testid="api-key-empty"
+                              >
+                                {copy.noApiKeys}
+                              </TableCell>
+                            </TableRow>
+                          ) : null}
                           {snapshot.apiKeys.map((key) => (
                             <TableRow key={key.id} data-testid={`api-key-row-${key.prefix}`}>
                               <TableCell className="font-mono text-xs">
@@ -769,8 +836,12 @@ function AppLayoutContent() {
                               <TableCell className="text-sm text-muted-foreground">
                                 {formatDate(key.expiration)}
                               </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatDate(key.lastSeen)}
+                              <TableCell
+                                className="text-sm text-muted-foreground"
+                                data-testid={`api-key-last-used-${key.prefix}`}
+                              >
+                                {/* Headscale v0.29 does not record when an API key was last used. */}
+                                {key.lastSeen ? formatDate(key.lastSeen) : copy.notReported}
                               </TableCell>
                               <TableCell>
                                 <div className="flex justify-start">
@@ -796,13 +867,15 @@ function AppLayoutContent() {
                                       <DropdownMenuGroup>
                                         <DropdownMenuLabel>{copy.actions}</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          data-testid={`expire-api-key-${key.prefix}`}
-                                          onClick={() => requestApiKeyAction("expire", key)}
-                                        >
-                                          <Clock className="h-4 w-4" aria-hidden="true" />
-                                          {copy.expireApiKeyTitle}
-                                        </DropdownMenuItem>
+                                        {isTimestampExpired(key.expiration) ? null : (
+                                          <DropdownMenuItem
+                                            data-testid={`expire-api-key-${key.prefix}`}
+                                            onClick={() => requestApiKeyAction("expire", key)}
+                                          >
+                                            <Clock className="h-4 w-4" aria-hidden="true" />
+                                            {copy.expireApiKeyTitle}
+                                          </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem
                                           variant="destructive"
                                           data-testid={`delete-api-key-${key.prefix}`}
@@ -893,7 +966,9 @@ function AppLayoutContent() {
                         : copy.deleteApiKeyTitle}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      {copy.apiKeysDescription}
+                      {pendingApiKeyAction.kind === "expire"
+                        ? copy.expireApiKeyDescription
+                        : copy.deleteApiKeyDescription}
                       <span className="mt-2 block font-mono text-xs text-foreground">
                         {pendingApiKeyAction.key.prefix}
                       </span>
@@ -981,7 +1056,7 @@ function AppLayoutContent() {
                     id="backfill-node-ips-confirmed"
                     data-testid="backfill-node-ips-confirmed"
                   />
-                  <span>{copy.maintenanceDescription}</span>
+                  <span>{copy.backfillAcknowledge}</span>
                 </label>
                 <AlertDialogFooter>
                   <AlertDialogCancel

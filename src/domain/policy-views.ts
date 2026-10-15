@@ -316,6 +316,22 @@ export function updateIpRule(
   };
 }
 
+// A port typed into the destination would be saved as "host:22:22". Prefixed aliases and bare IPv6
+// addresses look like "host:port" too, so only unambiguous forms are flagged.
+export function destinationHasPort(destination: string): boolean {
+  return parseCommaList(destination).some((target) => {
+    const slash = target.indexOf("/");
+    if (slash >= 0) return target.slice(slash).includes(":");
+    const [alias, port, ...rest] = target.split(":");
+    return (
+      rest.length === 0 &&
+      port !== undefined &&
+      !["group", "tag", "autogroup"].includes(alias) &&
+      /^(\*|\d+(-\d+)?)$/.test(port)
+    );
+  });
+}
+
 export function getIpRules(state: PolicyDesignerState): IpRule[] {
   const rules: IpRule[] = [];
   for (const rule of state.rules) {

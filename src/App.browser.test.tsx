@@ -3,14 +3,17 @@ import type { FetchHandle } from "@defjs/core";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
-import { render } from "vitest-browser-react";
+import { cleanup, render } from "vitest-browser-react";
 import { authenticateTestSession, prepareTestSession } from "@/test/session";
+import { createSessionHarness } from "@/test/session-host";
 import App from "./App";
 import { SessionProviders } from "./AppProviders";
 import ErrorScreen from "./components/ErrorScreen";
-import type { Session } from "./composables/session-context";
-import { setLocale } from "./i18n";
+import { createSession, type Session } from "./composables/session-context";
+import { applyStoredLocale, setLocale } from "./i18n";
 import { getProductCopy } from "./i18n/product-copy";
+import { clearAllSecureData } from "./lib/secure-storage";
+import { hydrateSettings } from "./lib/settings-storage";
 import { createApplicationRouter } from "./router";
 
 afterEach(() => vi.restoreAllMocks());
@@ -108,6 +111,63 @@ test("a locked saved profile cannot restore authorization from the protected rou
   expect(router.state.location.search.redirect).toBe("/devices?node=123#details");
   expect(read).not.toHaveBeenCalled();
   expect(write).not.toHaveBeenCalled();
+});
+
+test("logging out keeps the page for after the next unlock and says why the password is needed", async () => {
+  const session = await prepareTestSession(transport);
+  await setLocale("en-US");
+  await authenticateTestSession(session);
+  const history = createMemoryHistory({ initialEntries: ["/devices?node=123"] });
+  const router = createApplicationRouter(session, history);
+  await render(
+    <SessionProviders session={session}>
+      <RouterProvider router={router} />
+    </SessionProviders>,
+  );
+  await expect.element(page.getByTestId("machines-empty")).toBeVisible();
+  await page.getByTestId("profile-menu-trigger").click();
+  await page.getByTestId("logout").click();
+  await expect.element(page.getByTestId("login-notice")).toMatchTextContent("You logged out");
+  expect(router.state.location.pathname).toBe("/login");
+  expect(router.state.location.search.redirect).toBe("/devices?node=123");
+  await page.getByTestId("profile-option-Test server").click();
+  await page.getByTestId("unlock-passphrase").fill("isolated-test-password");
+  await page.getByTestId("unlock-submit").click();
+  await expect.element(page.getByTestId("machines-empty")).toBeVisible();
+  expect(history.location.pathname).toBe("/devices");
+  expect(router.state.location.search).toEqual({ node: "123" });
+});
+
+test("a tab that a peer's logout sent to login follows the peer's unlock back to its page", async () => {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => transport(input, init));
+  await clearAllSecureData();
+  await hydrateSettings();
+  await applyStoredLocale();
+  await setLocale("en-US");
+  const harness = await createSessionHarness();
+  try {
+    const peer = createSession(await harness.openPage("tab-b"));
+    await authenticateTestSession(peer);
+    const saved = peer.profiles.getSnapshot().profiles[0];
+    expect.assert(saved);
+    const session = createSession(await harness.openPage("tab-a"));
+    const history = createMemoryHistory({ initialEntries: ["/devices"] });
+    await render(
+      <SessionProviders session={session}>
+        <RouterProvider router={createApplicationRouter(session, history)} />
+      </SessionProviders>,
+    );
+    await expect.element(page.getByTestId("machines-empty")).toBeVisible();
+    await peer.profiles.logout();
+    await expect.element(page.getByTestId("login-notice")).toMatchTextContent("You logged out");
+    expect(history.location.search).toBe("?redirect=%2Fdevices");
+    expect(await peer.profiles.enterProfile(saved, "isolated-test-password")).toBe(true);
+    await expect.element(page.getByTestId("machines-empty")).toBeVisible();
+    expect(history.location.pathname).toBe("/devices");
+  } finally {
+    await cleanup();
+    await harness.dispose();
+  }
 });
 
 test("cold shared-session restore keeps the policy editor unmounted until the first full snapshot arrives", async () => {

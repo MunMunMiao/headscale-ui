@@ -27,6 +27,9 @@ interface UseMutationReturn {
   ): Promise<ActionResult<ApiOutput<K>>>;
 }
 
+// Headscale's policy check validates without saving: a lost answer changed nothing on the server.
+const DRY_RUNS: ReadonlySet<EndpointName> = new Set(["checkPolicy"]);
+
 export function createMutation(
   session: Pick<Session, "client" | "snapshot" | "feedback" | "drafts"> & {
     auth: Pick<Session["auth"], "write">;
@@ -47,6 +50,8 @@ export function createMutation(
     if (!ownsSession() || !ownsView()) return { ok: false };
     const isCurrentSession = captureSession();
     const isCurrent = () => isCurrentSession() && ownsView();
+    const dryRun = DRY_RUNS.has(command.endpoint);
+    const skipRefresh = opts.skipRefresh || dryRun;
     return runAction(
       key,
       async () => {
@@ -54,21 +59,22 @@ export function createMutation(
         if (!identity) throw new ApiError({ kind: "locked" });
         const reply = await session.auth.write(identity, command, options);
         if (!reply.ok) {
-          const error = new ApiError(reply.error);
+          const error = new ApiError(dryRun ? { ...reply.error, outcome: undefined } : reply.error);
           // The write may have been applied: show the server state, never replay it. A definite
           // server answer may also follow an applied write, because Chromium resends a POST whose
           // reused connection closed before any response byte.
           if (
             (error.kind === "api" || error.outcome === "unknown") &&
-            !opts.skipRefresh &&
+            !skipRefresh &&
             isCurrent() &&
             session.drafts.isCurrent()
           )
             await refreshSnapshot();
           throw error;
         }
-        if (!session.drafts.isCurrent()) throw new ApiError({ kind: "stale", outcome: "unknown" });
-        if (isCurrent() && !opts.skipRefresh) await refreshSnapshot();
+        if (!session.drafts.isCurrent())
+          throw new ApiError({ kind: "stale", outcome: dryRun ? undefined : "unknown" });
+        if (isCurrent() && !skipRefresh) await refreshSnapshot();
         return reply.value;
       },
       isCurrent,

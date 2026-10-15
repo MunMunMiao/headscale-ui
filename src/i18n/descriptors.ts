@@ -23,14 +23,23 @@ export const commonDescriptors = {
   forgotServerPasswordHint: msg({
     id: "common.forgotServerPasswordHint",
     message:
-      "If you forget this server’s password, delete its saved profile and add it again with its API key. Other saved servers can be kept.",
+      "Forgot this profile’s password? Cancel, then use the delete icon on its card to remove only this profile and add the server again with its API key. The button below clears every saved profile.",
   }),
-  serverPassword: msg({ id: "common.serverPassword", message: "Server password" }),
+  clearAllProfilesHint: msg({
+    id: "common.clearAllProfilesHint",
+    message:
+      "This clears every saved profile in this browser. To remove only one, log out and use the delete icon on its card.",
+  }),
+  serverPassword: msg({ id: "common.serverPassword", message: "Profile password" }),
   currentServerPassword: msg({
     id: "common.currentServerPassword",
-    message: "Current server password",
+    message: "Current profile password",
   }),
-  newServerPassword: msg({ id: "common.newServerPassword", message: "New server password" }),
+  newServerPassword: msg({ id: "common.newServerPassword", message: "New profile password" }),
+  profilePasswordMinLength: msg({
+    id: "common.profilePasswordMinLength",
+    message: "Use at least 8 characters.",
+  }),
   serverPasswordHint: msg({
     id: "common.serverPasswordHint",
     message: "This password encrypts only this server’s API key. It cannot be recovered.",
@@ -38,7 +47,7 @@ export const commonDescriptors = {
   serverCredentialEditHint: msg({
     id: "common.serverCredentialEditHint",
     message:
-      "Leave the API key and password empty to change only the name or where this profile is saved. Changing the URL or API key requires both the API key and current server password.",
+      "Leave the API key and password empty to change only the name or where this profile is saved. Changing the URL or API key requires both the API key and current profile password.",
   }),
   sessionSharedNote: msg({
     id: "common.sessionSharedNote",
@@ -50,7 +59,7 @@ export const commonDescriptors = {
   profileMigrationHint: msg({
     id: "common.profileMigrationHint",
     message:
-      "Set a password for this server to migrate this saved connection. Its existing data stays unchanged if migration fails.",
+      "Set a profile password to migrate this saved connection. Its existing data stays unchanged if migration fails.",
   }),
   legacyPasswordLabel: msg({
     id: "common.legacyPasswordLabel",
@@ -65,11 +74,63 @@ export const commonDescriptors = {
   }),
   profilePasswordChanged: msg({
     id: "common.profilePasswordChanged",
-    message: "The server password was changed. Unlock it again when needed.",
+    message: "The profile password was changed. Unlock it again when needed.",
   }),
   securityProfileHint: msg({
     id: "common.securityProfileHint",
     message: "Change the password for {name}. Other saved servers keep their own passwords.",
+  }),
+  loginNoticeNoSession: msg({
+    id: "common.loginNoticeNoSession",
+    message:
+      "No other open tab kept the session unlocked, so reloading or reopening the page locked it. Enter the profile password to continue.",
+  }),
+  loginNoticeLoggedOut: msg({
+    id: "common.loginNoticeLoggedOut",
+    message: "You logged out in this or another tab. Enter the profile password to continue.",
+  }),
+  loginNoticeExpired: msg({
+    id: "common.loginNoticeExpired",
+    message:
+      "The session locked after 30 minutes without activity. Enter the profile password to continue.",
+  }),
+  loginNoticeClockReversed: msg({
+    id: "common.loginNoticeClockReversed",
+    message:
+      "The system clock moved backwards, so the session was locked. Enter the profile password to continue.",
+  }),
+  loginNoticeProfileChanged: msg({
+    id: "common.loginNoticeProfileChanged",
+    message:
+      "This server’s saved profile was changed, for example its password, so the session was locked. Enter the profile password to continue.",
+  }),
+  loginNoticePasswordChanged: msg({
+    id: "common.loginNoticePasswordChanged",
+    message: "Password changed. Unlock the server with the new profile password.",
+  }),
+  loginNoticeDiscardedPolicy: msg({
+    id: "common.loginNoticeDiscardedPolicy",
+    message: "Unsaved access control changes were discarded when the session locked.",
+  }),
+  loginUnlockedNotice: msg({
+    id: "common.loginUnlockedNotice",
+    message: "{name} is already unlocked in this browser.",
+  }),
+  continueToServer: msg({ id: "common.continueToServer", message: "Continue" }),
+  unreadableRecordsNotice: msg({
+    id: "common.unreadableRecordsNotice",
+    message:
+      "Saved profile records that can’t be read and are not listed: {count}. Clearing all saved profiles removes them.",
+  }),
+  unreadableProfileRepair: msg({
+    id: "common.unreadableProfileRepair",
+    message:
+      "This saved profile can’t be read. Enter its server URL and API key and choose a new profile password to replace it, or delete it from its card.",
+  }),
+  legacyProfileMigrateFirst: msg({
+    id: "common.legacyProfileMigrateFirst",
+    message:
+      "This profile uses an older storage format. Open it from its card to migrate it before changing its URL or API key. You can rename it here.",
   }),
   sessionLocked: msg({ id: "common.sessionLocked", message: "Unlock this server to continue." }),
   sessionExpired: msg({
@@ -122,11 +183,11 @@ export const commonDescriptors = {
   }),
   sessionSecretRequired: msg({
     id: "common.sessionSecretRequired",
-    message: "Enter the API key and this server’s password again before submitting.",
+    message: "Enter the API key and this profile’s password again before submitting.",
   }),
   serverPasswordRequired: msg({
     id: "common.serverPasswordRequired",
-    message: "Enter the server password.",
+    message: "Enter the profile password.",
   }),
   preferencesReloadFailed: msg({
     id: "common.preferencesReloadFailed",
@@ -198,6 +259,15 @@ export const commonDescriptors = {
     id: "common.connectionInvalidUrl",
     message: "Enter an absolute HTTP(S) server URL.",
   }),
+  connectionUrlParts: msg({
+    id: "common.connectionUrlParts",
+    message: "Remove the user name, password, query (?…) or fragment (#…) from the server URL.",
+  }),
+  insecureServerUrlWarning: msg({
+    id: "common.insecureServerUrlWarning",
+    message:
+      "This address uses plain HTTP, so the API key is sent unencrypted over the network. Use HTTPS unless the network is trusted.",
+  }),
   connectionApiKeyRequired: msg({
     id: "common.connectionApiKeyRequired",
     message: "Enter an API key.",
@@ -222,6 +292,7 @@ export const commonDescriptors = {
   updatedProfile: msg({ id: "common.updatedProfile", message: "Updated" }),
   saveProfile: msg({ id: "common.saveProfile", message: "Save profile" }),
   addingProfile: msg({ id: "common.addingProfile", message: "Adding" }),
+  savingProfile: msg({ id: "common.savingProfile", message: "Saving" }),
   checkingCredentials: msg({ id: "common.checkingCredentials", message: "Checking credentials" }),
   close: msg({ id: "common.close", message: "Close" }),
   discardProfileChangesTitle: msg({
@@ -245,6 +316,7 @@ export const commonDescriptors = {
   }),
   backToEditConnection: msg({ id: "common.backToEditConnection", message: "Review details" }),
   saveAnywayButton: msg({ id: "common.saveAnywayButton", message: "Continue adding" }),
+  saveAnywayEditButton: msg({ id: "common.saveAnywayEditButton", message: "Save anyway" }),
   editProfile: msg({ id: "common.editProfile", message: "Edit profile" }),
   deleteProfile: msg({ id: "common.deleteProfile", message: "Delete profile" }),
   confirmDeleteProfileTitle: msg({
@@ -289,6 +361,11 @@ export const commonDescriptors = {
     id: "common.rememberConnection",
     message: "Remember this connection in this browser",
   }),
+  rememberConnectionHint: msg({
+    id: "common.rememberConnectionHint",
+    message:
+      "When unchecked, this profile is listed only in this tab and tabs opened from it. Either way, its encrypted API key stays in this browser until you delete the profile or clear local data.",
+  }),
   cancel: msg({ id: "common.cancel", message: "Cancel" }),
   connect: msg({ id: "common.connect", message: "Connect" }),
   logout: msg({ id: "common.logout", message: "Log out" }),
@@ -311,16 +388,16 @@ export const commonDescriptors = {
   encryptionSectionTitle: msg({ id: "common.encryptionSectionTitle", message: "Encryption" }),
   encryptionConfirmPassphrase: msg({
     id: "common.encryptionConfirmPassphrase",
-    message: "Confirm passphrase",
+    message: "Confirm profile password",
   }),
   encryptionChangePassphrase: msg({
     id: "common.encryptionChangePassphrase",
-    message: "Change passphrase",
+    message: "Change profile password",
   }),
   encryptionUnlockSubmit: msg({ id: "common.encryptionUnlockSubmit", message: "Unlock" }),
   encryptionUnlockFailed: msg({
     id: "common.encryptionUnlockFailed",
-    message: "Incorrect passphrase.",
+    message: "Incorrect profile password.",
   }),
   encryptionForgottenButton: msg({
     id: "common.encryptionForgottenButton",
@@ -356,12 +433,24 @@ export const commonDescriptors = {
     message:
       "This server reports Headscale {version}, but this app targets 0.29.x. Some pages may fail to load or show incomplete data.",
   }),
+  tagUserNodeWarning: msg({
+    id: "common.tagUserNodeWarning",
+    message:
+      "Tagging this machine removes its owner {owner}; it will belong to its tags instead. After that its tags can only be replaced, never cleared.",
+  }),
+  machineCount: msg({ id: "common.machineCount", message: "Machines shown: {shown} of {total}" }),
+  undefinedTags: msg({
+    id: "common.undefinedTags",
+    message:
+      "Not defined in the access policy: {tags}. Keys with these tags fail until the tags are added under Access controls.",
+  }),
   serverVersionUnreadable: msg({
     id: "common.serverVersionUnreadable",
     message:
       "This server reports Headscale {version}, which this app does not support, and its response could not be read. Use a Headscale 0.29.x server.",
   }),
   primaryNavigation: msg({ id: "common.primaryNavigation", message: "Main navigation" }),
+  usersShown: msg({ id: "common.usersShown", message: "Users shown: {shown} of {total}" }),
 };
 export type MessageKey = keyof typeof commonDescriptors;
 export const productDescriptors = {
@@ -438,13 +527,17 @@ export const productDescriptors = {
     id: "product.pendingRegistrationDescription",
     message: "Use the registration key shown by a device waiting for approval.",
   }),
+  pendingRegistrationLead: msg({
+    id: "product.pendingRegistrationLead",
+    message: "Approve a device sign-in or SSH check that is waiting for this server.",
+  }),
   registerPendingNode: msg({ id: "product.registerPendingNode", message: "Register pending node" }),
   registeredNode: msg({ id: "product.registeredNode", message: "Registered machine" }),
   setupDevice: msg({ id: "product.setupDevice", message: "Set up device" }),
   setupAuthKey: msg({ id: "product.setupAuthKey", message: "Set up authentication key" }),
-  generateInstallScript: msg({
-    id: "product.generateInstallScript",
-    message: "Generate install script",
+  generateInstallCommand: msg({
+    id: "product.generateInstallCommand",
+    message: "Generate install command",
   }),
   generate: msg({ id: "product.generate", message: "Generate" }),
   manageTags: msg({ id: "product.manageTags", message: "Manage tags in Access controls" }),
@@ -483,6 +576,23 @@ export const productDescriptors = {
     id: "product.mustBeBetweenDays",
     message: "Must be between 1 and 90 days.",
   }),
+  decreaseDays: msg({ id: "product.decreaseDays", message: "Decrease days" }),
+  increaseDays: msg({ id: "product.increaseDays", message: "Increase days" }),
+  loginServerUrl: msg({ id: "product.loginServerUrl", message: "Login server URL" }),
+  loginServerUrlHint: msg({
+    id: "product.loginServerUrlHint",
+    message:
+      "The address devices use to reach Headscale. Change it when this console reaches the API through a proxy.",
+  }),
+  discardKeyTitle: msg({
+    id: "product.discardKeyTitle",
+    message: "Close without copying the auth key?",
+  }),
+  discardKeyDescription: msg({
+    id: "product.discardKeyDescription",
+    message: "The auth key will not be shown again. Copy it first, or create a new key later.",
+  }),
+  discardKeyConfirm: msg({ id: "product.discardKeyConfirm", message: "Close and discard key" }),
   devicesTableMachine: msg({ id: "product.devicesTableMachine", message: "Machine" }),
   devicesTableUser: msg({ id: "product.devicesTableUser", message: "User" }),
   devicesTableRoutes: msg({ id: "product.devicesTableRoutes", message: "Routes" }),
@@ -500,6 +610,7 @@ export const productDescriptors = {
   filters: msg({ id: "product.filters", message: "Filters" }),
   exportData: msg({ id: "product.exportData", message: "Export data" }),
   clearFilters: msg({ id: "product.clearFilters", message: "Clear filters" }),
+  removeOwnerFilter: msg({ id: "product.removeOwnerFilter", message: "Remove owner filter" }),
   allMachines: msg({ id: "product.allMachines", message: "All machines" }),
   onlineOnly: msg({ id: "product.onlineOnly", message: "Online" }),
   offlineOnly: msg({ id: "product.offlineOnly", message: "Offline" }),
@@ -522,6 +633,19 @@ export const productDescriptors = {
     message: "Saving replaces the current tags instead of appending to them.",
   }),
   saveTags: msg({ id: "product.saveTags", message: "Save tags" }),
+  tagUserNodeAcknowledge: msg({
+    id: "product.tagUserNodeAcknowledge",
+    message: "I understand that the owner is removed and the tags cannot be cleared later.",
+  }),
+  tagsRequiredForTaggedNode: msg({
+    id: "product.tagsRequiredForTaggedNode",
+    message:
+      "A tagged machine must keep at least one tag. Enter the tags that replace the current ones.",
+  }),
+  invalidTags: msg({
+    id: "product.invalidTags",
+    message: "Each tag must start with tag: followed by a name, for example tag:server.",
+  }),
   routes: msg({ id: "product.routes", message: "Routes" }),
   lastSeen: msg({ id: "product.lastSeen", message: "Last seen" }),
   expires: msg({ id: "product.expires", message: "Expires" }),
@@ -537,6 +661,9 @@ export const productDescriptors = {
   nodeId: msg({ id: "product.nodeId", message: "Node ID" }),
   userId: msg({ id: "product.userId", message: "User ID" }),
   registerMethod: msg({ id: "product.registerMethod", message: "Register method" }),
+  registerMethodAuthKey: msg({ id: "product.registerMethodAuthKey", message: "Auth key" }),
+  registerMethodCli: msg({ id: "product.registerMethodCli", message: "CLI" }),
+  registerMethodOidc: msg({ id: "product.registerMethodOidc", message: "OIDC" }),
   personalDevices: msg({ id: "product.personalDevices", message: "Personal machines" }),
   activeAuthKeys: msg({ id: "product.activeAuthKeys", message: "Active auth keys" }),
   policyReferences: msg({ id: "product.policyReferences", message: "Policy references" }),
@@ -545,6 +672,10 @@ export const productDescriptors = {
   unknown: msg({ id: "product.unknown", message: "Unknown" }),
   pendingRoutes: msg({ id: "product.pendingRoutes", message: "Pending routes" }),
   exitRoute: msg({ id: "product.exitRoute", message: "Exit route" }),
+  exitNode: msg({ id: "product.exitNode", message: "Exit node" }),
+  routeStatusPending: msg({ id: "product.routeStatusPending", message: "Pending" }),
+  routeStatusApproved: msg({ id: "product.routeStatusApproved", message: "Approved" }),
+  routeStatusExit: msg({ id: "product.routeStatusExit", message: "Exit" }),
   rename: msg({ id: "product.rename", message: "Rename" }),
   renameMachineTitle: msg({ id: "product.renameMachineTitle", message: "Rename machine" }),
   renameMachineDescription: msg({
@@ -553,6 +684,10 @@ export const productDescriptors = {
   }),
   machineName: msg({ id: "product.machineName", message: "Machine name" }),
   saveName: msg({ id: "product.saveName", message: "Save name" }),
+  invalidMachineName: msg({
+    id: "product.invalidMachineName",
+    message: "Use 1 to 63 letters, digits or hyphens, starting and ending with a letter or digit.",
+  }),
   expire: msg({ id: "product.expire", message: "Expire" }),
   expireMachineTitle: msg({ id: "product.expireMachineTitle", message: "Expire machine" }),
   expireMachineDescription: msg({
@@ -575,16 +710,30 @@ export const productDescriptors = {
   }),
   addMember: msg({ id: "product.addMember", message: "Add user" }),
   searchUsers: msg({ id: "product.searchUsers", message: "Search users..." }),
-  allUsers: msg({ id: "product.allUsers", message: "All users" }),
-  owners: msg({ id: "product.owners", message: "Owners" }),
-  members: msg({ id: "product.members", message: "Members" }),
-  serviceAccounts: msg({ id: "product.serviceAccounts", message: "Service accounts" }),
-  role: msg({ id: "product.role", message: "Role" }),
   joined: msg({ id: "product.joined", message: "Joined" }),
   authSource: msg({ id: "product.authSource", message: "Auth source" }),
   memberName: msg({ id: "product.memberName", message: "User name" }),
   displayName: msg({ id: "product.displayName", message: "Display name" }),
   email: msg({ id: "product.email", message: "Email" }),
+  optionalField: msg({ id: "product.optionalField", message: "(optional)" }),
+  createMemberDescription: msg({
+    id: "product.createMemberDescription",
+    message:
+      "Policies and the Headscale CLI refer to this user by the user name. Display name and email are optional.",
+  }),
+  userNameRequired: msg({ id: "product.userNameRequired", message: "Enter a user name." }),
+  userNameInvalid: msg({
+    id: "product.userNameInvalid",
+    message: "User names cannot contain spaces or control characters.",
+  }),
+  userNameTaken: msg({
+    id: "product.userNameTaken",
+    message: "A user with this name already exists.",
+  }),
+  emailInvalid: msg({
+    id: "product.emailInvalid",
+    message: "Enter a valid email address, or leave this field empty.",
+  }),
   createMember: msg({ id: "product.createMember", message: "Create user" }),
   deviceCount: msg({ id: "product.deviceCount", message: "devices" }),
   memberDevices: msg({ id: "product.memberDevices", message: "Devices" }),
@@ -604,6 +753,21 @@ export const productDescriptors = {
   }),
   confirmDeleteMember: msg({ id: "product.confirmDeleteMember", message: "Delete user" }),
   noUsersMatch: msg({ id: "product.noUsersMatch", message: "No users match these filters." }),
+  noUsersYet: msg({
+    id: "product.noUsersYet",
+    message: "No users yet. Add a user to get started.",
+  }),
+  membersLoading: msg({ id: "product.membersLoading", message: "Loading users…" }),
+  membersLoadFailed: msg({
+    id: "product.membersLoadFailed",
+    message: "Users could not be loaded.",
+  }),
+  noActiveAuthKeys: msg({ id: "product.noActiveAuthKeys", message: "No active auth keys." }),
+  deleteMemberOwnsDevices: msg({
+    id: "product.deleteMemberOwnsDevices",
+    message:
+      "Headscale refuses to delete a user who still owns machines. Remove these machines first:",
+  }),
   invitesTitle: msg({ id: "product.invitesTitle", message: "Auth keys" }),
   invitesSubtitle: msg({
     id: "product.invitesSubtitle",
@@ -626,9 +790,14 @@ export const productDescriptors = {
     id: "product.policySaveContextChanged",
     message: "The policy was saved. This editor has changed; review it before trying again.",
   }),
-  policyReferenceInvalidName: msg({
-    id: "product.policyReferenceInvalidName",
-    message: "Enter a valid group or tag name.",
+  teamNameInvalid: msg({
+    id: "product.teamNameInvalid",
+    message: "Team names cannot contain spaces, commas, colons (:) or @.",
+  }),
+  labelNameInvalid: msg({
+    id: "product.labelNameInvalid",
+    message:
+      "Label names must start with a letter (A–Z) and cannot contain spaces, commas, colons (:) or @.",
   }),
   policyReferenceNameConflict: msg({
     id: "product.policyReferenceNameConflict",
@@ -662,6 +831,7 @@ export const productDescriptors = {
   copyCommand: msg({ id: "product.copyCommand", message: "Copy command" }),
   installCommand: msg({ id: "product.installCommand", message: "Install command" }),
   oneTimeKey: msg({ id: "product.oneTimeKey", message: "One-time key" }),
+  allAuthKeys: msg({ id: "product.allAuthKeys", message: "All keys" }),
   readyKeys: msg({ id: "product.readyKeys", message: "Ready keys" }),
   taggedKeys: msg({ id: "product.taggedKeys", message: "Tagged keys" }),
   used: msg({ id: "product.used", message: "Used" }),
@@ -681,13 +851,16 @@ export const productDescriptors = {
   confirmExpireInvite: msg({ id: "product.confirmExpireInvite", message: "Expire key" }),
   confirmDeleteInvite: msg({ id: "product.confirmDeleteInvite", message: "Delete key" }),
   noAuthKeys: msg({ id: "product.noAuthKeys", message: "No auth keys match these filters." }),
+  noAuthKeysYet: msg({
+    id: "product.noAuthKeysYet",
+    message: "No auth keys yet. Create one to add a device.",
+  }),
   routesTitle: msg({ id: "product.routesTitle", message: "Routes" }),
   routesSubtitle: msg({
     id: "product.routesSubtitle",
     message: "Review subnet and exit routes before making them available to users.",
   }),
   approvedRoutes: msg({ id: "product.approvedRoutes", message: "Approved routes" }),
-  availableRoutes: msg({ id: "product.availableRoutes", message: "Available routes" }),
   viewMachine: msg({ id: "product.viewMachine", message: "View machine" }),
   viewUser: msg({ id: "product.viewUser", message: "View user" }),
   approveRoute: msg({ id: "product.approveRoute", message: "Approve route" }),
@@ -696,17 +869,15 @@ export const productDescriptors = {
     id: "product.approveRouteDescription",
     message: "Only this route will be approved. Existing approved routes stay enabled.",
   }),
-  approveExitRouteTitle: msg({
-    id: "product.approveExitRouteTitle",
-    message: "Approve exit route",
-  }),
+  approveExitNode: msg({ id: "product.approveExitNode", message: "Approve exit node" }),
   approveExitRouteDescription: msg({
     id: "product.approveExitRouteDescription",
     message:
-      "Exit routes can carry internet-bound traffic through this machine. Confirm that this server should be trusted for that path.",
+      "Headscale approves the IPv4 and IPv6 exit routes together. Devices can then send internet-bound traffic through this machine. Confirm that this machine should be trusted for that path.",
   }),
   revokeRoute: msg({ id: "product.revokeRoute", message: "Revoke route" }),
   revokeRouteTitle: msg({ id: "product.revokeRouteTitle", message: "Revoke route approval" }),
+  revokeExitNode: msg({ id: "product.revokeExitNode", message: "Revoke exit node" }),
   revokeRouteDescription: msg({
     id: "product.revokeRouteDescription",
     message:
@@ -758,7 +929,6 @@ export const productDescriptors = {
     id: "product.confirmRemovePolicyItemDescription",
     message: "This removes it from your access setup.",
   }),
-  readyToSave: msg({ id: "product.readyToSave", message: "Ready to save" }),
   policy: msg({ id: "product.policy", message: "Policy" }),
   savePolicy: msg({ id: "product.savePolicy", message: "Save" }),
   noPolicyGroupMembers: msg({ id: "product.noPolicyGroupMembers", message: "No members yet." }),
@@ -797,6 +967,10 @@ export const productDescriptors = {
   applyAssignment: msg({ id: "product.applyAssignment", message: "Apply" }),
   cancelAssignment: msg({ id: "product.cancelAssignment", message: "Cancel" }),
   removeFromReference: msg({ id: "product.removeFromReference", message: "Remove from reference" }),
+  removeReferenceDescription: msg({
+    id: "product.removeReferenceDescription",
+    message: "This removes the user from this policy entry and saves the policy on the server now.",
+  }),
   userImpactOnDeleteHeading: msg({
     id: "product.userImpactOnDeleteHeading",
     message: "This user appears in the following Policy entries:",
@@ -849,6 +1023,20 @@ export const productDescriptors = {
   deleteApiKeyTitle: msg({ id: "product.deleteApiKeyTitle", message: "Delete API key" }),
   confirmExpireApiKey: msg({ id: "product.confirmExpireApiKey", message: "Expire API key" }),
   confirmDeleteApiKey: msg({ id: "product.confirmDeleteApiKey", message: "Delete API key" }),
+  expireApiKeyDescription: msg({
+    id: "product.expireApiKeyDescription",
+    message:
+      "Scripts and integrations using this key lose access to the server immediately. The key stays listed as expired and cannot be renewed.",
+  }),
+  deleteApiKeyDescription: msg({
+    id: "product.deleteApiKeyDescription",
+    message:
+      "Scripts and integrations using this key lose access to the server immediately, and the key is permanently removed. This cannot be undone.",
+  }),
+  apiKeyCreatedAt: msg({ id: "product.apiKeyCreatedAt", message: "Created" }),
+  apiKeyLastUsed: msg({ id: "product.apiKeyLastUsed", message: "Last used" }),
+  notReported: msg({ id: "product.notReported", message: "Not reported" }),
+  noApiKeys: msg({ id: "product.noApiKeys", message: "No API keys to show." }),
   maintenance: msg({ id: "product.maintenance", message: "Maintenance" }),
   maintenanceDescription: msg({
     id: "product.maintenanceDescription",
@@ -862,11 +1050,15 @@ export const productDescriptors = {
   }),
   confirmBackfillNodeIps: msg({ id: "product.confirmBackfillNodeIps", message: "Run backfill" }),
   backfillResult: msg({ id: "product.backfillResult", message: "Backfill result" }),
+  backfillNoChanges: msg({ id: "product.backfillNoChanges", message: "No changes were needed" }),
+  backfillAcknowledge: msg({
+    id: "product.backfillAcknowledge",
+    message:
+      "I understand this adds or removes IP addresses on every node to match the server’s configured prefixes.",
+  }),
   refreshData: msg({ id: "product.refreshData", message: "Refresh data" }),
+  dataRefreshed: msg({ id: "product.dataRefreshed", message: "Data updated" }),
   never: msg({ id: "product.never", message: "Never" }),
-  roleOwner: msg({ id: "product.roleOwner", message: "Owner" }),
-  roleMember: msg({ id: "product.roleMember", message: "Member" }),
-  roleServiceAccount: msg({ id: "product.roleServiceAccount", message: "Service account" }),
   errorUserNotFound: msg({ id: "product.errorUserNotFound", message: "User not found" }),
   errorUserStillOwns: msg({
     id: "product.errorUserStillOwns",
@@ -876,6 +1068,29 @@ export const productDescriptors = {
   errorRequestFailed: msg({
     id: "product.errorRequestFailed",
     message: "Headscale request failed. Check server URL and API key.",
+  }),
+  errorInvalidDnsLabel: msg({
+    id: "product.errorInvalidDnsLabel",
+    message:
+      "This name is not valid. Use up to 63 letters, digits or hyphens, starting and ending with a letter or digit.",
+  }),
+  errorNodeNameTaken: msg({
+    id: "product.errorNodeNameTaken",
+    message: "Another machine already uses this name.",
+  }),
+  errorTagsNotPermitted: msg({
+    id: "product.errorTagsNotPermitted",
+    message:
+      "Headscale did not accept these tags. Each tag needs an owner in Access controls (tagOwners) before it can be assigned.",
+  }),
+  errorCannotRemoveAllTags: msg({
+    id: "product.errorCannotRemoveAllTags",
+    message:
+      "A tagged machine must keep at least one tag. Headscale cannot remove all of its tags.",
+  }),
+  errorUserNameTaken: msg({
+    id: "product.errorUserNameTaken",
+    message: "A user with this name already exists.",
   }),
   resourceAccessTitle: msg({ id: "product.resourceAccessTitle", message: "Resource access" }),
   resourceAccessSubtitle: msg({
@@ -1029,8 +1244,62 @@ export const productDescriptors = {
   ipRulesSectionHint: msg({
     id: "product.ipRulesSectionHint",
     message:
-      "These rules grant access to IP addresses, network ranges, or all destinations. You can edit or delete them here.",
+      "These rules grant access to IP addresses, network ranges, or all destinations (*). You can add, edit or delete them here.",
   }),
+  addIpRule: msg({ id: "product.addIpRule", message: "Add rule" }),
+  noIpRules: msg({ id: "product.noIpRules", message: "No IP or all-destination rules yet." }),
+  ipRuleDestinationHasPort: msg({
+    id: "product.ipRuleDestinationHasPort",
+    message: "Enter the destination without a port. Put ports in the ports field.",
+  }),
+  removeIpRuleConsequence: msg({
+    id: "product.removeIpRuleConsequence",
+    message: "After you save, connections that only this rule allows are blocked.",
+  }),
+  denyAllBannerTitle: msg({
+    id: "product.denyAllBannerTitle",
+    message: "No rule allows any access",
+  }),
+  denyAllBannerBody: msg({
+    id: "product.denyAllBannerBody",
+    message:
+      "With this policy, devices cannot reach each other. Add a rule or start from a template to allow access.",
+  }),
+  discardPolicyChanges: msg({ id: "product.discardPolicyChanges", message: "Discard changes" }),
+  discardPolicyChangesTitle: msg({
+    id: "product.discardPolicyChangesTitle",
+    message: "Discard all unsaved changes?",
+  }),
+  discardPolicyChangesBody: msg({
+    id: "product.discardPolicyChangesBody",
+    message:
+      "Every unsaved change on this page is reverted to the policy last loaded from Headscale. This cannot be undone.",
+  }),
+  templateReplaceTitle: msg({
+    id: "product.templateReplaceTitle",
+    message: "Replace open access with this template?",
+  }),
+  templateReplaceBody: msg({
+    id: "product.templateReplaceBody",
+    message:
+      "This template removes the rules below, which let every device reach every other device. After you save, only the template’s rules allow access: untagged devices, and devices whose tags the template does not cover, lose access unless another rule covers them.",
+  }),
+  templateReplaceConfirm: msg({ id: "product.templateReplaceConfirm", message: "Replace rules" }),
+  emptyTeamWarning: msg({
+    id: "product.emptyTeamWarning",
+    message: "No members yet. This team gives access to no one until you add people.",
+  }),
+  deviceOnlyLabelBadge: msg({ id: "product.deviceOnlyLabelBadge", message: "From devices" }),
+  deviceOnlyLabelHint: msg({
+    id: "product.deviceOnlyLabelHint",
+    message:
+      "This label comes from devices and is not defined in the policy, so it cannot be renamed or deleted here. Give access or add a label manager to define it.",
+  }),
+  noDeviceLabelsMatch: msg({
+    id: "product.noDeviceLabelsMatch",
+    message: "No device labels match your search.",
+  }),
+  clearSearch: msg({ id: "product.clearSearch", message: "Clear search" }),
   editIpRule: msg({ id: "product.editIpRule", message: "Edit rule" }),
   saveIpRule: msg({ id: "product.saveIpRule", message: "Save rule" }),
   cancelIpRuleEdit: msg({ id: "product.cancelIpRuleEdit", message: "Cancel edit" }),
@@ -1067,23 +1336,25 @@ export const productDescriptors = {
     message:
       "This removes every reference flagged as stale. You''ll still need to click Save at the top to push the cleanup.",
   }),
-  changesAutoSaveHint: msg({
-    id: "product.changesAutoSaveHint",
-    message: 'Click "Save" at the top to send these changes to your devices.',
+  dialogChangesKeptHint: msg({
+    id: "product.dialogChangesKeptHint",
+    message:
+      "Done keeps these changes as unsaved edits. After closing, click Save at the top of the page to apply them.",
   }),
   unsavedChangesBadge: msg({ id: "product.unsavedChangesBadge", message: "Unsaved" }),
   unsavedChangesTitle: msg({ id: "product.unsavedChangesTitle", message: "Unsaved changes" }),
-  unsavedChangesBody: msg({
-    id: "product.unsavedChangesBody",
-    message: "Your changes are only kept in this browser until you click Save. Close anyway?",
+  dialogUnsavedChangesBody: msg({
+    id: "product.dialogUnsavedChangesBody",
+    message:
+      "Discard reverts only the changes made in this dialog. Save and close saves the whole policy to Headscale. To keep the changes unsaved, cancel and choose Done.",
   }),
   unsavedChangesSaveAndClose: msg({
     id: "product.unsavedChangesSaveAndClose",
     message: "Save and close",
   }),
-  unsavedChangesCloseAnyway: msg({
-    id: "product.unsavedChangesCloseAnyway",
-    message: "Close without saving",
+  discardDialogChanges: msg({
+    id: "product.discardDialogChanges",
+    message: "Discard these changes",
   }),
   confirm: msg({ id: "product.confirm", message: "Confirm" }),
   assignedBadgeLabel: msg({ id: "product.assignedBadgeLabel", message: "Assigned" }),
@@ -1169,6 +1440,14 @@ export const productDescriptors = {
     id: "product.inviteTagsRequired",
     message: "A key without an owner needs at least one ACL tag.",
   }),
+  inviteTagsHint: msg({
+    id: "product.inviteTagsHint",
+    message: "Separate tags with commas. Each tag starts with tag:, for example tag:server.",
+  }),
+  inviteTagsPrefix: msg({
+    id: "product.inviteTagsPrefix",
+    message: "Each tag must start with tag:, for example tag:server.",
+  }),
   authKeyCreated: msg({ id: "product.authKeyCreated", message: "Auth key created" }),
 };
 export const pluralDescriptors = {
@@ -1189,6 +1468,15 @@ export const pluralDescriptors = {
     id: "plural.orphanReferences",
     message:
       "{count, plural, one {{formattedCount} reference no longer matches an existing account, team, or device label.} other {{formattedCount} references no longer match existing accounts, teams, or device labels.}}",
+  }),
+  moreItems: msg({
+    id: "plural.moreItems",
+    message: "{count, plural, one {+{formattedCount} more} other {+{formattedCount} more}}",
+  }),
+  labelRemovalDevices: msg({
+    id: "plural.labelRemovalDevices",
+    message:
+      "{count, plural, one {{formattedCount} device carries this label. It keeps the tag: deleting the label here does not remove tags from devices.} other {{formattedCount} devices carry this label. They keep the tag: deleting the label here does not remove tags from devices.}}",
   }),
   cleanupOrphans: msg({
     id: "plural.cleanupOrphans",

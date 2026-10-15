@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import type { ActionFeedbackKey } from "@/composables/useActionFeedback";
 import { setLocale } from "@/i18n";
 import { authenticateTestSession, prepareTestSession, renderSessionPage } from "@/test/session";
@@ -102,13 +102,6 @@ async function setup(element: ReactNode, path: string, intercept?: Intercept) {
       expect(calls.filter((call) => call.method !== "GET")).toEqual([]);
       expect(session.drafts.getSnapshot().stale).not.toBeNull();
     },
-    async returnToOriginalServer() {
-      expect(await session.profiles.enterProfile(originalProfile, "isolated-test-password")).toBe(
-        true,
-      );
-      await expect.poll(() => session.snapshot.getSnapshot().snapshot.users[0]?.name).toBe("alice");
-      await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
-    },
   };
 }
 
@@ -206,71 +199,69 @@ test("keeps the SSH check type but clears the request id and decision on a serve
   await expect.element(page.getByTestId("ssh-check-result")).not.toBeInTheDocument();
 });
 
-test.each([false, true])(
-  "retains an ordinary member draft across a server switch (closed=%s)",
-  async (closed) => {
-    const { switchServer, expectNoStaleWrite, returnToOriginalServer } = await setup(
-      <MembersPage />,
-      "/members",
-    );
-    await page.getByTestId("open-create-member").click();
-    await page.getByTestId("member-name").fill("a-only-member");
-    await page.getByTestId("member-display").fill("Unsubmitted A display name");
-    await page.getByTestId("member-email").fill("a-only@example.test");
-    if (closed) await page.getByTestId("cancel-create-member").click();
-    await switchServer();
-    if (closed) await page.getByTestId("open-create-member").click();
-    await expect.element(page.getByTestId("member-name")).toHaveValue("a-only-member");
-    await expect
-      .element(page.getByTestId("member-display"))
-      .toHaveValue("Unsubmitted A display name");
-    await expect.element(page.getByTestId("member-email")).toHaveValue("a-only@example.test");
-    await page.getByTestId("create-member").click();
-    await expectNoStaleWrite("create-member");
-    if (closed) {
-      await returnToOriginalServer();
-      await page.getByTestId("create-member").click();
-      await expectNoStaleWrite("create-member");
-      await expect.element(page.getByTestId("member-name")).toHaveValue("a-only-member");
-    }
-  },
-);
+// Cancelling the create dialog discards its input, so only an open dialog carries a draft.
+test("retains an open member draft across a server switch", async () => {
+  const { switchServer, expectNoStaleWrite } = await setup(<MembersPage />, "/members");
+  await page.getByTestId("open-create-member").click();
+  await page.getByTestId("member-name").fill("a-only-member");
+  await page.getByTestId("member-display").fill("Unsubmitted A display name");
+  await page.getByTestId("member-email").fill("a-only@example.test");
+  await switchServer();
+  await expect.element(page.getByTestId("member-name")).toHaveValue("a-only-member");
+  await expect
+    .element(page.getByTestId("member-display"))
+    .toHaveValue("Unsubmitted A display name");
+  await expect.element(page.getByTestId("member-email")).toHaveValue("a-only@example.test");
+  await page.getByTestId("create-member").click();
+  await expectNoStaleWrite("create-member");
+});
 
-test.each(["invites", "devices", "members"])(
+test.each(["invites", "members"])(
   "retains invitation inputs and the original owner options on %s while another server refreshes",
   async (route) => {
-    const element =
-      route === "invites" ? (
-        <InvitesPage />
-      ) : route === "devices" ? (
-        <DevicesPage />
-      ) : (
-        <MembersPage />
-      );
+    const element = route === "invites" ? <InvitesPage /> : <MembersPage />;
     const { switchServer, expectNoStaleWrite } = await setup(element, `/${route}`);
     if (route === "invites") await page.getByTestId("open-create-invite").click();
-    else if (route === "members") {
+    else {
       await page.getByTestId("member-actions-trigger-alice").click();
       await page.getByTestId("create-invite-for-member-alice").click();
-    } else {
-      await page.getByTestId("add-device-toggle").click();
-      await page.getByTestId("add-linux-device").click();
-      await page.getByTestId("add-device-next").click();
-      await page.getByTestId("add-device-next").click();
-      await page.getByTestId("generate-install-script").click();
     }
     await page.getByTestId("invite-tags").fill("tag:a-only-draft");
+    const wasReusable =
+      page.getByTestId("invite-reusable").element().getAttribute("aria-checked") === "true";
     await page.getByTestId("invite-reusable").click();
     await switchServer();
     await expect.element(page.getByTestId("invite-user")).toHaveValue("1");
     await expect.element(page.getByTestId("invite-user")).toMatchTextContent("Alice from A");
     await expect.element(page.getByTestId("invite-user")).not.toMatchTextContent("Charlie from B");
     await expect.element(page.getByTestId("invite-tags")).toHaveValue("tag:a-only-draft");
-    await expect.element(page.getByTestId("invite-reusable")).not.toBeChecked();
+    await expect
+      .element(page.getByTestId("invite-reusable"))
+      .toHaveAttribute("aria-checked", String(!wasReusable));
     await page.getByTestId("create-invite").click();
     await expectNoStaleWrite("create-invite");
   },
 );
+
+test("retains the device wizard key options and the original owner options while another server refreshes", async () => {
+  const { switchServer, expectNoStaleWrite } = await setup(<DevicesPage />, "/devices");
+  await page.getByTestId("add-device-toggle").click();
+  await page.getByTestId("add-linux-device").click();
+  await page.getByTestId("setup-tags").fill("tag:a-only-draft");
+  await page.getByTestId("add-device-next").click();
+  await page.getByTestId("setup-reusable").click();
+  await switchServer();
+  await expect.element(page.getByTestId("setup-owner")).toHaveValue("1");
+  await expect.element(page.getByTestId("setup-owner")).toMatchTextContent("Alice from A");
+  await expect.element(page.getByTestId("setup-owner")).not.toMatchTextContent("Charlie from B");
+  await expect.element(page.getByTestId("setup-reusable")).toHaveAttribute("aria-checked", "false");
+  await page.getByTestId("add-device-prev").click();
+  await expect.element(page.getByTestId("setup-tags")).toHaveValue("tag:a-only-draft");
+  await page.getByTestId("add-device-next").click();
+  await page.getByTestId("add-device-next").click();
+  await page.getByTestId("generate-install-script").click();
+  await expectNoStaleWrite("create-invite");
+});
 
 test("retains a route confirmation target and refuses to approve it on another server", async () => {
   const { switchServer, expectNoStaleWrite } = await setup(<RoutesPage />, "/routes");
@@ -312,7 +303,8 @@ test("retains an unsubmitted policy name and blocks saving the old policy to ano
   await page.getByTestId("team-name-input").fill("a-only-team-draft");
   await switchServer();
   await expect.element(page.getByTestId("team-name-input")).toHaveValue("a-only-team-draft");
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Enter}");
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expectNoStaleWrite("save-policy");
   await expect.element(page.getByTestId("team-name-input")).toHaveValue("a-only-team-draft");

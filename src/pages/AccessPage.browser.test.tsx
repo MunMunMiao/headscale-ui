@@ -141,7 +141,7 @@ test("saving adopts the server accepted policy while preserving a newer local na
   accept(accepted);
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-name-input").fill("unsubmitted-name");
@@ -159,7 +159,7 @@ test("save-and-close cannot close an editor with a newer unsubmitted name", asyn
   hold(pending.promise);
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-name-input").fill("new-local-name");
@@ -182,15 +182,13 @@ test("unreadable policies cannot be saved or replaced with templates and recover
   session.snapshot.applyPatch({
     policy: { policy: '{/* repaired */ "acls": [], "groups": {"group:repaired": ["alice@",],},}' },
   });
-  await expect.element(page.getByTestId("save-policy")).toBeEnabled();
   await expect.element(page.getByRole("alert")).not.toBeInTheDocument();
   await expect.element(page.getByTestId("team-card-group:repaired")).toBeVisible();
+  await page.getByTestId("team-remove-group:repaired").click();
+  await page.getByTestId("confirm-remove-policy-item").click();
   await page.getByTestId("save-policy").click();
   await expect.poll(() => writes.length).toBe(1);
-  expect(JSON.parse(writes[0]?.policy ?? "null")).toMatchObject({
-    groups: { "group:repaired": ["alice@"] },
-    acls: [],
-  });
+  expect(JSON.parse(writes[0]?.policy ?? "null")).toMatchObject({ groups: {}, acls: [] });
 });
 
 test("editing an IP rule keeps its protocol and posture restrictions in the actual policy request", async () => {
@@ -243,15 +241,15 @@ test("tag service controls cannot merge rules with protocol restrictions but exp
     .toMatchTextContent(/additional restrictions/i);
   await page.getByTestId("tag-detail-close").click();
   expect(session.policy.isPolicyDirty).toBe(false);
-  await page.getByTestId("save-policy").click();
-  await expect.poll(() => writes.length).toBe(1);
-  expect(JSON.parse(writes[0]?.policy ?? "null").acls).toEqual([
+  await expect.element(page.getByTestId("save-policy")).toBeDisabled();
+  expect(session.policy.policyPayload?.acls).toEqual([
     { action: "accept", src: ["alice@"], dst: ["tag:server:22"], proto: "tcp" },
     { action: "accept", src: ["alice@"], dst: ["tag:server:53"], proto: "udp" },
   ]);
   await page.getByTestId("tag-card-tag:server").click();
   await page.getByTestId("tag-accessor-remove-alice@").click();
   expect(session.policy.policyPayload?.acls).toEqual([]);
+  expect(writes).toEqual([]);
 });
 
 test("wildcard and IP rules remain visible, trim edits, and persist deletion with top-level extensions", async () => {
@@ -275,7 +273,9 @@ test("wildcard and IP rules remain visible, trim edits, and persist deletion wit
     dst: ["192.168.0.0/16:443"],
   });
   await page.getByTestId(`ip-rule-remove-${rule.id}`).click();
-  await expect.element(page.getByTestId("ip-rules-section")).not.toBeInTheDocument();
+  await page.getByTestId("confirm-remove-policy-item").click();
+  await expect.element(page.getByTestId(`ip-rule-${rule.id}`)).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("add-ip-rule")).toBeVisible();
   await page.getByTestId("save-policy").click();
   await expect.poll(() => writes.length).toBe(2);
   expect(JSON.parse(writes[1]?.policy ?? "null").acls).toEqual([
@@ -290,7 +290,7 @@ test("an old save-and-close response cannot dismiss the next server's editor", a
   const saved = vi.spyOn(session.auth, "write");
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   session.snapshot.setAuthorized(false);
@@ -352,7 +352,7 @@ test("create team and label, manage tag access and custom ports, rename and remo
   await page.getByTestId("team-name-confirm").click();
   await page.getByTestId("team-add-member-trigger").click();
   await page.getByTestId("team-add-member-option-bob@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   expect(session.policy.policyPayload?.groups).toEqual({ "group:support": ["bob@"] });
@@ -379,7 +379,7 @@ test("create team and label, manage tag access and custom ports, rename and remo
   await page.getByTestId("tag-add-accessor-option-alice@example.com").click();
   await page.getByTestId("tag-accessor-svc-alice@example.com-ssh").click();
   expect(session.policy.policyPayload?.acls).toEqual([]);
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).not.toBeInTheDocument();
   await page.getByTestId("tag-remove-tag:data-main").click();
@@ -417,7 +417,7 @@ test("a device-only label can gain managers, and inline labels can be deleted wi
   expect(session.policy.policyPayload?.tagOwners).toEqual({ "tag:db": ["bob@"] });
   await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-keep-editing").click();
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).not.toBeInTheDocument();
   await page.getByTestId("tag-remove-tag:router").click();
@@ -522,7 +522,7 @@ test("team rename updates references, dirty refreshes preserve edits, and discar
   await page.getByTestId("team-add-member-option-bob@").click();
   expect(session.policy.policyPayload?.groups).toEqual({ "group:engineering": ["alice@", "bob@"] });
   await page.getByTestId("team-member-remove-bob@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await expect.element(page.getByTestId("unsaved-changes-dialog")).toBeVisible();
   await page.getByTestId("unsaved-changes-discard").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
@@ -654,14 +654,14 @@ test("save-and-close retains a failed draft and closes only after the retry succ
   const { session, fail, writes } = await setup();
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   fail("Policy rejected");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => session.feedback.actionError("save-policy")).toBe("Policy rejected");
   await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
   expect(session.policy.isPolicyDirty).toBe(true);
   fail("");
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   expect(session.policy.isPolicyDirty).toBe(false);
@@ -691,7 +691,7 @@ test("tag service changes require the existing all-ports confirmation and preser
   await page.getByTestId("tag-add-owner-option-bob@").click();
   expect(session.policy.policyPayload?.tagOwners).toEqual({ "tag:server": ["group:ops", "bob@"] });
   await page.getByTestId("tag-owner-remove-bob@").click();
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).not.toBeInTheDocument();
 });
@@ -725,7 +725,11 @@ test("team removal is confirmed, removes references, and grants-only policies st
   const next = await setup(grants);
   await expect.element(page.getByTestId("grants-preserved-notice")).toBeVisible();
   await expect.element(page.getByTestId("resource-access-empty")).not.toBeInTheDocument();
-  await expect.element(page.getByTestId("ip-rules-section")).not.toBeInTheDocument();
+  expect(document.querySelector('[data-testid^="ip-rule-edit-"]')).toBeNull();
+  await page.getByTestId("new-team").click();
+  await page.getByTestId("team-name-input").fill("grants-team");
+  await userEvent.keyboard("{Enter}");
+  await page.getByTestId("team-detail-close").click();
   await page.getByTestId("save-policy").click();
   await expect.poll(() => next.writes.length).toBe(1);
   expect(JSON.parse(next.writes[0]?.policy ?? "null")).toMatchObject(grants);
@@ -738,7 +742,7 @@ test("empty-state label creation and keyboard team creation preserve the policy 
   await page.getByTestId("tag-name-input").fill("fresh");
   await page.getByTestId("tag-name-confirm").click();
   expect(session.policy.policyPayload?.tagOwners).toEqual({ "tag:fresh": [] });
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
   await page.getByTestId("empty-create-team").click();
   await page.getByTestId("team-name-input").fill("fresh-team");
@@ -775,6 +779,7 @@ test("applying a template replaces the open default rule in the saved policy", a
   const { writes } = await setup({});
   await expect.element(page.getByTestId("open-access-banner")).toBeVisible();
   await page.getByTestId("template-apply-small-team").click();
+  await page.getByTestId("template-confirm-apply").click();
   await expect.element(page.getByTestId("open-access-banner")).not.toBeInTheDocument();
   await page.getByTestId("save-policy").click();
   await expect.poll(() => writes.length).toBe(1);
@@ -811,7 +816,7 @@ test("discarded custom-port edits do not come back", async () => {
   await page.getByTestId("tag-card-tag:a").click();
   await customInput().fill("7000");
   await userEvent.keyboard("{Enter}");
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
   await page.getByTestId("tag-card-tag:a").click();
   await expect.element(customInput()).toHaveValue("8080");
@@ -826,7 +831,7 @@ test("saved custom-port edits reopen normalized", async () => {
   await page.getByTestId("tag-card-tag:a").click();
   await customInput().fill(" 7000 , 7001");
   await userEvent.keyboard("{Enter}");
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await expect.element(page.getByTestId("tag-detail-dialog")).not.toBeInTheDocument();
@@ -907,6 +912,7 @@ test.each(["en-US", "zh-Hans"] as const)(
         .policyRules.find((entry) => entry.destination === "*");
       if (!rule) throw new Error("Missing wildcard fixture");
       await page.getByTestId(`ip-rule-remove-${rule.id}`).click();
+      await page.getByTestId("confirm-remove-policy-item").click();
       fail("update is disabled for modes other than 'database'");
       await page.getByTestId("save-policy").click();
       await expect
@@ -920,10 +926,11 @@ test.each(["en-US", "zh-Hans"] as const)(
   },
 );
 
-function removeWildcardRule(session: Awaited<ReturnType<typeof setup>>["session"]) {
+async function removeWildcardRule(session: Awaited<ReturnType<typeof setup>>["session"]) {
   const rule = session.policy.getSnapshot().policyRules.find((entry) => entry.destination === "*");
   if (!rule) throw new Error("Missing wildcard fixture");
-  return page.getByTestId(`ip-rule-remove-${rule.id}`).click();
+  await page.getByTestId(`ip-rule-remove-${rule.id}`).click();
+  await page.getByTestId("confirm-remove-policy-item").click();
 }
 
 test("check sends exactly the text Save would send, writes nothing and leaves the draft dirty", async () => {
@@ -1011,7 +1018,7 @@ test("a team can be renamed and removed while the policy holds a tag with an und
     tagOwners: { "tag:k8s_node": ["group:eng"] },
     acls: [{ action: "accept", src: ["group:eng"], dst: ["tag:k8s_node:22"] }],
   });
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   expect(writes).toHaveLength(1);
@@ -1101,7 +1108,7 @@ test("a server-valid label the editor cannot define opens without an error and r
   await page.getByTestId("tag-add-owner-option-bob@").click();
   await expect
     .element(page.getByTestId("tag-policy-reference-error"))
-    .toHaveTextContent(getProductCopy("en-US").policyReferenceInvalidName);
+    .toHaveTextContent(getProductCopy("en-US").labelNameInvalid);
   expect(session.policy.policyDesignerState).toEqual(before);
   expect(session.policy.isPolicyDirty).toBe(false);
   expect(writes).toEqual([]);
@@ -1121,13 +1128,13 @@ test("member and owner edits keep the order of teams and labels in the saved pol
   await page.getByTestId("team-card-group:a").click();
   await page.getByTestId("team-add-member-trigger").click();
   await page.getByTestId("team-add-member-option-bob@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   await page.getByTestId("tag-card-tag:a").click();
   await page.getByTestId("tag-add-owner-trigger").click();
   await page.getByTestId("tag-add-owner-option-bob@").click();
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).not.toBeInTheDocument();
   expect(writes).toHaveLength(2);
@@ -1154,7 +1161,7 @@ test("removing an accessor from a rule with several sources and destinations rea
   await page.getByTestId("tag-accessor-remove-group:ops").click();
   await expect.element(page.getByTestId("tag-accessor-row-group:ops")).not.toBeInTheDocument();
   await expect.element(page.getByTestId("tag-accessor-row-group:dev")).toBeVisible();
-  await page.getByTestId("tag-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   const pairs = JSON.parse(writes[0]?.policy ?? "null").acls.flatMap(
@@ -1241,7 +1248,7 @@ test("closing a dialog without saving reverts only that dialog's edits", async (
   await removeWildcardRule(session);
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   expect(session.policy.policyPayload?.groups).toEqual({ "group:ops": ["alice@"] });
@@ -1262,7 +1269,7 @@ test.each(["team", "tag"] as const)(
       await page.getByTestId("tag-card-tag:server").click();
       await page.getByTestId("tag-accessor-remove-group:ops").click();
     }
-    await page.getByTestId(`${kind}-detail-close`).click();
+    await userEvent.keyboard("{Escape}");
     fail("Policy rejected");
     await page.getByTestId("unsaved-changes-save").click();
     await expect
@@ -1271,7 +1278,7 @@ test.each(["team", "tag"] as const)(
     await expect.element(page.getByTestId("dialog-save-policy-error")).toBeVisible();
     await expect.element(page.getByTestId("save-policy-error")).not.toBeInTheDocument();
     fail("");
-    await page.getByTestId(`${kind}-detail-close`).click();
+    await userEvent.keyboard("{Escape}");
     await page.getByTestId("unsaved-changes-save").click();
     await expect.element(page.getByTestId(`${kind}-detail-dialog`)).not.toBeInTheDocument();
     expect(session.policy.isPolicyDirty).toBe(false);
@@ -1291,7 +1298,7 @@ test.each(["team", "tag"] as const)(
       await page.getByTestId("tag-card-tag:server").click();
       await page.getByTestId("tag-accessor-remove-group:ops").click();
     }
-    await page.getByTestId(`${kind}-detail-close`).click();
+    await userEvent.keyboard("{Escape}");
     await page.getByTestId("unsaved-changes-save").click();
     await expect.poll(() => writes.length).toBe(1);
     await expect.element(page.getByTestId(`${kind}-detail-close`)).toBeDisabled();
@@ -1310,7 +1317,7 @@ test("the newer-edits notice lives in the dialog and disappears with the next ed
   hold(pending.promise);
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-add-member-trigger").click();
@@ -1483,14 +1490,14 @@ test("discarding after a save made in the open dialog reverts to the saved polic
   hold(pending.promise);
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-add-member-trigger").click();
   await page.getByTestId("team-add-member-option-bob@").click();
   pending.resolve();
   await expect.element(page.getByTestId("dialog-policy-save-notice")).toBeVisible();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-discard").click();
   await expect.element(page.getByTestId("team-detail-dialog")).not.toBeInTheDocument();
   expect(session.policy.policyPayload?.groups).toEqual({ "group:ops": [] });
@@ -1504,7 +1511,7 @@ test("a failed save-and-close whose dialog changed meanwhile shows the error wit
   fail("boom");
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-name-input").fill("other");
@@ -1528,7 +1535,10 @@ test("orphan references are marked on label cards and in the label dialog", asyn
   const copy = getProductCopy("en-US");
   const card = page.getByTestId("tag-card-tag:server").element();
   const marked = card.querySelectorAll(`[title="${copy.orphanReferenceTooltip}"]`);
-  expect(Array.from(marked, (badge) => badge.textContent?.trim())).toEqual(["ghost@", "ghost@"]);
+  expect(Array.from(marked, (badge) => badge.textContent?.trim())).toEqual([
+    `ghost@ (${copy.orphanReferenceBadge})`,
+    `ghost@ (${copy.orphanReferenceBadge})`,
+  ]);
   expect(Array.from(marked, (badge) => badge.querySelector("svg") !== null)).toEqual([true, true]);
   await page.getByTestId("tag-card-tag:server").click();
   await expect
@@ -1549,7 +1559,7 @@ test("a team the saved policy no longer holds ignores name and member edits", as
   accept(JSON.stringify({ ...policy(), groups: {} }));
   await page.getByTestId("team-card-group:ops").click();
   await page.getByTestId("team-member-remove-alice@").click();
-  await page.getByTestId("team-detail-close").click();
+  await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await expect.poll(() => writes.length).toBe(1);
   await page.getByTestId("team-name-input").fill("renamed");

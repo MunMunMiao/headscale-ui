@@ -16,6 +16,7 @@ import {
   policyPrincipalForUser,
   toPrincipal,
   userMatchesPolicyValue,
+  userNamePrincipal,
   userPolicyPrincipals,
 } from "./principal";
 
@@ -166,6 +167,17 @@ describe("policyPrincipalForUser", () => {
   test("returns empty when the user has no usable identifier", () => {
     expect(policyPrincipalForUser(makeUser({ name: "", email: "", providerId: "" }))).toBe("");
     expect(policyPrincipalForUser(makeUser({ name: "  ", email: "  " }))).toBe("");
+  });
+});
+
+describe("userNamePrincipal", () => {
+  test("suffixes a plain name once and keeps names that already contain @", () => {
+    expect(userNamePrincipal(" alice ")).toBe("alice@");
+    expect(userNamePrincipal("alice@corp.com")).toBe("alice@corp.com");
+  });
+
+  test("is empty for a blank name", () => {
+    expect(userNamePrincipal("  ")).toBe("");
   });
 });
 

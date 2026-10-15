@@ -11,7 +11,8 @@ interface DeviceSetupState {
   task: AddDeviceTask | null;
   step: AddDeviceStep;
   authKeyExpiryDays: number;
-  returnAfterInvite: boolean;
+  /** The `--login-server` the admin typed for this session; null uses the profile's address. */
+  loginServer: string | null;
   lastCreatedInvite: string;
   /** One-shot: focus the created key once; the key itself persists in the session store. */
   revealCreatedInvite: boolean;
@@ -26,7 +27,7 @@ export function createDeviceSetupStore() {
     task: null,
     step: "type",
     authKeyExpiryDays: 7,
-    returnAfterInvite: false,
+    loginServer: null,
     lastCreatedInvite: "",
     revealCreatedInvite: false,
     lastRegisteredNode: null,

@@ -309,6 +309,10 @@ test("switches locale and theme before login and restores system choice", async 
   expect(
     document.querySelector('a[data-testid="github-repository-link"]')?.getAttribute("href"),
   ).toBe("https://github.com/MunMunMiao/headscale-ui");
+  // The external repository is a link, not a button, for assistive technology.
+  await expect
+    .element(page.getByRole("link", { name: "GitHub" }))
+    .toHaveAttribute("target", "_blank");
   await page.getByTestId("locale-select").click();
   await page.getByTestId("locale-option-zh-Hans").click();
   await expect.poll(() => readSetting("locale")).toBe("zh-Hans");
@@ -369,17 +373,24 @@ test("keeps connection inputs and footer usable on a short mobile viewport", asy
 });
 
 test("new profiles require independent matching passwords and support save-and-unlock", async () => {
-  const ctx = await setup();
+  const ctx = await setup({ path: "/login?redirect=%2Fdevices%3Fnode%3D7" });
   await page.getByTestId("profile-option-new").click();
   expect(document.querySelector('[data-testid="connect-password"]')).not.toBeNull();
   await fillConnection();
   await page.getByTestId("connect-password-confirm").fill("different password");
   await page.getByTestId("connect-submit").click();
-  await expect.element(page.getByTestId("connect-error")).toMatchTextContent("do not match");
+  const confirmation = page.getByTestId("connect-password-confirm");
+  await expect.element(confirmation).toHaveAttribute("aria-invalid", "true");
+  await expect.element(confirmation).toHaveFocus();
+  await expect.element(confirmation).toHaveAccessibleDescription("The passwords do not match.");
+  await expect.element(page.getByTestId("connect-error")).not.toBeInTheDocument();
   expect(await idbGetAll("profiles")).toEqual([]);
   await page.getByTestId("connect-password-confirm").fill("server password");
-  await page.getByTestId("connect-save-unlock").click();
-  await expect.poll(() => ctx.router.state.location.pathname).toBe("/");
+  await expect.element(page.getByTestId("connect-password-mismatch")).not.toBeInTheDocument();
+  // Save and unlock is the form's primary action, so Enter submits it.
+  await userEvent.keyboard("{Enter}");
+  await expect.poll(() => ctx.router.state.location.pathname).toBe("/devices");
+  expect(ctx.router.state.location.search).toEqual({ node: "7" });
   expect(ctx.session.auth.getSessionSnapshot()?.status).toBe("unlocked");
   expect(ctx.session.profiles.getSnapshot().connectionForm).toMatchObject({
     apiKey: "",
@@ -404,6 +415,60 @@ test("a rejected local save keeps every typed field and sends nothing", async ()
   await expect.element(page.getByTestId("profile-option-Typo")).toBeVisible();
 });
 
+test("a new profile password needs at least 8 characters", async () => {
+  const ctx = await setup();
+  await page.getByTestId("profile-option-new").click();
+  await fillConnection();
+  const password = page.getByTestId("connect-password");
+  await expect.element(password).toHaveAccessibleDescription(expect.stringContaining("at least 8"));
+  await password.fill("short");
+  await page.getByTestId("connect-password-confirm").fill("short");
+  await page.getByTestId("connect-save-unlock").click();
+  await expect.element(password).toHaveAttribute("aria-invalid", "true");
+  await expect.element(password).toHaveFocus();
+  await expect.element(page.getByTestId("connect-password-mismatch")).not.toBeInTheDocument();
+  expect(ctx.requests).toEqual([]);
+  expect(await idbGetAll("profiles")).toEqual([]);
+});
+
+test("explains the remember option in visible text tied to the checkbox", async () => {
+  await setup();
+  await page.getByTestId("profile-option-new").click();
+  const remember = page.getByTestId("connect-remember");
+  await expect
+    .element(remember)
+    .toHaveAccessibleDescription(expect.stringContaining("listed only in this tab"));
+  await expect
+    .element(page.getByText("encrypted API key stays in this browser", { exact: false }))
+    .toBeVisible();
+  expect(document.querySelector('[data-testid="connection-dialog"] svg title')).toBeNull();
+});
+
+test("warns that plain HTTP to another host sends the API key unencrypted without blocking it", async () => {
+  const ctx = await setup();
+  await page.getByTestId("profile-option-new").click();
+  await fillConnection("Plain");
+  const url = page.getByTestId("connect-server-url");
+  await url.fill("http://127.0.0.1:8080");
+  await expect.element(page.getByTestId("connect-url-insecure")).not.toBeInTheDocument();
+  await url.fill("http://fixture.invalid");
+  await expect.element(url).toHaveAccessibleDescription(expect.stringContaining("plain HTTP"));
+  await page.getByTestId("connect-submit").click();
+  await expect.element(page.getByTestId("profile-option-Plain")).toBeVisible();
+  expect(ctx.session.profiles.getSnapshot().profiles[0]?.baseUrl).toBe("http://fixture.invalid");
+});
+
+test("rejects a server URL with credentials or a query before anything is stored", async () => {
+  const ctx = await setup();
+  await page.getByTestId("profile-option-new").click();
+  await fillConnection();
+  await page.getByTestId("connect-server-url").fill("https://admin:secret@fixture.invalid");
+  await page.getByTestId("connect-submit").click();
+  await expect.element(page.getByTestId("connect-error")).toMatchTextContent("user name, password");
+  expect(ctx.requests).toEqual([]);
+  expect(await idbGetAll("profiles")).toEqual([]);
+});
+
 test("an empty new password asks for the server password", async () => {
   const ctx = await setup();
   await page.getByTestId("profile-option-new").click();
@@ -412,7 +477,7 @@ test("an empty new password asks for the server password", async () => {
   await page.getByTestId("connect-submit").click();
   await expect
     .element(page.getByTestId("connect-error"))
-    .toHaveTextContent("Enter the server password.");
+    .toHaveTextContent("Enter the profile password.");
   await expect.element(page.getByTestId("connect-api-key")).toHaveValue("isolated-key");
   expect(ctx.requests).toEqual([]);
   expect(await idbGetAll("profiles")).toEqual([]);
@@ -431,6 +496,7 @@ test("saving an already stored profile anyway needs only the key and its current
   await page.getByTestId("validation-api-key").fill("new-key");
   await page.getByTestId("validation-password").fill("server password");
   await expect.element(page.getByTestId("continue-add-profile")).toBeEnabled();
+  await expect.element(page.getByTestId("continue-add-profile")).toHaveTextContent("Save anyway");
   await page.getByTestId("continue-add-profile").click();
   await expect.element(page.getByTestId("profile-validation-dialog")).not.toBeInTheDocument();
 });
@@ -544,4 +610,163 @@ test("a legacy credential is badged as needing migration and opens migration wit
   await page.getByTestId("profile-option-Alpha").click();
   await expect.element(page.getByTestId("unlock-dialog")).toBeVisible();
   expect(ctx.requests).toEqual([]);
+});
+
+async function unlockAlpha(ctx: Awaited<ReturnType<typeof setup>>) {
+  const saved = ctx.session.profiles.getSnapshot().profiles[0];
+  expect.assert(saved);
+  expect(await ctx.session.profiles.enterProfile(saved, "server password")).toBe(true);
+  return saved;
+}
+
+test("a wrong unlock password is reported once, inside the unlock dialog", async () => {
+  await setup({ profiles: [profile()] });
+  await page.getByTestId("profile-option-Alpha").click();
+  await page.getByTestId("unlock-passphrase").fill("wrong password");
+  await page.getByTestId("unlock-submit").click();
+  await expect
+    .element(page.getByTestId("unlock-error"))
+    .toHaveTextContent("Incorrect profile password.");
+  await expect.element(page.getByTestId("login-error")).not.toBeInTheDocument();
+  await page.getByTestId("unlock-cancel").click();
+  await expect.element(page.getByTestId("unlock-dialog")).not.toBeInTheDocument();
+  await expect.element(page.getByTestId("login-error")).not.toBeInTheDocument();
+});
+
+test.each([
+  ["/login?redirect=%2Fdevices", "No other open tab kept the session unlocked"],
+  ["/login", ""],
+])("explains why %s asks for the password after the session ended", async (path, notice) => {
+  await setup({ profiles: [profile()], path });
+  await expect.element(page.getByTestId("profile-option-Alpha")).toBeVisible();
+  if (notice) await expect.element(page.getByTestId("login-notice")).toMatchTextContent(notice);
+  else expect(document.querySelector('[data-testid="login-notice"]')).toBeNull();
+});
+
+test("a logout, and this tab's own password change, are explained on the login page", async () => {
+  const ctx = await setup({ profiles: [profile()], path: "/login?redirect=%2Fdevices" });
+  await unlockAlpha(ctx);
+  await ctx.session.profiles.logout();
+  await expect.element(page.getByTestId("login-notice")).toMatchTextContent("You logged out");
+  ctx.session.profiles.setState({ passwordChanged: true });
+  await expect
+    .element(page.getByTestId("login-notice"))
+    .toHaveTextContent("Password changed. Unlock the server with the new profile password.");
+  await ctx.router.navigate({ to: "/home" });
+  await expect.poll(() => ctx.session.profiles.getSnapshot().passwordChanged).toBe(false);
+});
+
+test("an unlocked server continues without a password, and discarded edits are explained first", async () => {
+  const ctx = await setup({ profiles: [profile()], path: "/login?redirect=%2Fdevices" });
+  await unlockAlpha(ctx);
+  ctx.session.profiles.setState({ discardedPolicyDraft: true });
+  await expect
+    .element(page.getByTestId("login-discarded-policy"))
+    .toMatchTextContent("Unsaved access control changes were discarded");
+  await expect
+    .element(page.getByTestId("login-unlocked"))
+    .toMatchTextContent("Alpha is already unlocked");
+  await page.getByTestId("login-continue").click();
+  await expect.poll(() => ctx.router.state.location.pathname).toBe("/devices");
+  expect(ctx.session.profiles.getSnapshot().discardedPolicyDraft).toBe(false);
+  await ctx.router.navigate({ to: "/login" });
+  await page.getByTestId("profile-option-Alpha").click();
+  await expect.poll(() => ctx.router.state.location.pathname).toBe("/");
+  expect(document.querySelector('[data-testid="unlock-dialog"]')).toBeNull();
+});
+
+test("counts saved records that cannot be listed", async () => {
+  const ctx = await setup({
+    profiles: [profile(), profile({ id: "bad", name: "Broken", credentialKind: "unreadable" })],
+  });
+  await idbPut("profiles", { id: 42, name: "Hidden" });
+  await ctx.session.profiles.reloadProfiles();
+  await expect
+    .element(page.getByTestId("unreadable-records-notice"))
+    .toMatchTextContent("can’t be read and are not listed: 1");
+});
+
+test("an unreadable profile is replaced with new credentials from its repair dialog", async () => {
+  await setup({
+    profiles: [profile({ id: "bad", name: "Broken", credentialKind: "unreadable" })],
+  });
+  await page.getByTestId("profile-option-Broken").click();
+  await expect
+    .element(page.getByTestId("connect-profile-state"))
+    .toMatchTextContent("This saved profile can’t be read");
+  await expect
+    .element(page.getByTestId("connect-password"))
+    .toHaveAttribute("autocomplete", "new-password");
+  await fillConnection("Repaired");
+  await page.getByTestId("connect-submit").click();
+  await expect.element(page.getByTestId("profile-badge-locked-Repaired")).toBeVisible();
+  expect(await idbGet<PasswordStoredProfile>("profiles", "bad")).toMatchObject({
+    name: "Repaired",
+    apiKey: { v: 2, scheme: "password" },
+  });
+});
+
+test("a legacy profile can be renamed but must be migrated before its credentials change", async () => {
+  const ctx = await setup({ profiles: [profile({ credentialKind: "legacy-plaintext" })] });
+  await page.getByTestId("edit-profile-Alpha").click();
+  await expect
+    .element(page.getByTestId("connect-profile-state"))
+    .toMatchTextContent("older storage format");
+  await page.getByTestId("connect-api-key").fill("replacement-key");
+  await page.getByTestId("connect-password").fill("server password");
+  await page.getByTestId("connect-submit").click();
+  await expect
+    .element(page.getByTestId("connect-error"))
+    .toMatchTextContent("older storage format");
+  expect(ctx.requests).toEqual([]);
+  await page.getByTestId("connect-api-key").fill("");
+  await page.getByTestId("connect-password").fill("");
+  await page.getByTestId("connect-profile-name").fill("Legacy renamed");
+  await page.getByTestId("connect-submit").click();
+  await expect.element(page.getByTestId("profile-option-Legacy renamed")).toBeVisible();
+});
+
+test("a running delete keeps its dialog until the failure is reported there", async () => {
+  const ctx = await setup({ profiles: [profile()] });
+  const gate = Promise.withResolvers<void>();
+  vi.spyOn(ctx.session.auth, "deleteProfile").mockImplementation(async () => {
+    await gate.promise;
+    return { ok: false, error: { kind: "storage-conflict" } };
+  });
+  await page.getByTestId("delete-profile-Alpha").click();
+  await page.getByTestId("confirm-delete-profile").click();
+  await expect.element(page.getByTestId("confirm-delete-profile")).toBeDisabled();
+  await expect.element(page.getByTestId("cancel-delete-profile")).toBeDisabled();
+  await userEvent.keyboard("{Escape}");
+  gate.resolve();
+  await expect
+    .element(page.getByTestId("delete-profile-error"))
+    .toMatchTextContent("Saved connections changed");
+  await expect.element(page.getByTestId("login-error")).not.toBeInTheDocument();
+  await page.getByTestId("cancel-delete-profile").click();
+  await expect.element(page.getByTestId("delete-profile-dialog")).not.toBeInTheDocument();
+});
+
+test("centers a single profile card under the heading and keeps long names readable", async () => {
+  const long = "Production headscale (eu-west) with a very long descriptive name";
+  const ctx = await setup({ profiles: [profile({ name: long })] });
+  const center = (element: Element) => {
+    const box = element.getBoundingClientRect();
+    return box.left + box.width / 2;
+  };
+  const picker = page.getByTestId("profile-picker").element();
+  const cards = [...picker.children].map((child) => child.getBoundingClientRect());
+  const left = Math.min(...cards.map((box) => box.left));
+  const right = Math.max(...cards.map((box) => box.right));
+  expect(
+    Math.abs((left + right) / 2 - center(page.getByRole("heading", { level: 1 }).element())),
+  ).toBeLessThan(2);
+  expect(document.querySelector(`[title="${long}"]`)?.textContent).toBe(long);
+  await page.getByTestId(`edit-profile-${long}`).click();
+  await expect.element(page.getByRole("dialog")).toHaveAttribute("data-open");
+  expect(document.querySelectorAll(`[title="${long}"]`)).toHaveLength(2);
+  ctx.session.profiles.setState({ phase: { kind: "adding" } });
+  await expect.element(page.getByTestId("connect-submit")).toHaveTextContent("Saving");
+  // A save in flight cannot be edited underneath it.
+  await expect.element(page.getByTestId("connect-profile-name")).toHaveAttribute("readonly");
 });

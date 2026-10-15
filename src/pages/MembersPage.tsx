@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
   Trash2,
   Users,
 } from "lucide-react";
@@ -24,6 +23,7 @@ import {
   type AuthKeyDialogDefaults,
   type AuthKeyDialogPayload,
   authKeyDialogLabels,
+  authKeyDialogUser,
   toAuthKeyDefaults,
 } from "@/components/create-auth-key-dialog";
 import {
@@ -58,7 +58,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -90,14 +89,19 @@ import {
   toMemberRef,
 } from "@/domain/policy-designer";
 import { retargetUserReferences } from "@/domain/policy-references";
-import { policyPrincipalForUser, userPolicyPrincipals } from "@/domain/principal";
+import {
+  policyPrincipalForUser,
+  userNamePrincipal,
+  userPolicyPrincipals,
+} from "@/domain/principal";
 import { useHeadscaleI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { downloadCsv } from "@/utils/csv";
 import { nodePendingRoutes } from "@/utils/node";
 import { nodeStatusClass } from "@/utils/status-class";
+import { isEmailLike, type UserNameIssue, userNameIssue } from "@/utils/user";
 
-type UserFilter = "all" | "owner" | "member" | "service";
+const EMPTY_MEMBER_FORM = { name: "", displayName: "", email: "" };
 
 interface UserPolicyReference {
   kind: "group" | "tagOwner";
@@ -175,7 +179,13 @@ export default function MembersPage() {
   const { stale } = useStore(drafts);
   const { copy } = useProductCopy();
   const { t } = useHeadscaleI18n();
-  const { snapshot, refreshSnapshot, userById: currentUser } = useSnapshot();
+  const {
+    snapshot,
+    refreshSnapshot,
+    userById: currentUser,
+    isReady,
+    refreshErrors,
+  } = useSnapshot();
   const { isRefreshing: isRefreshingSnapshot, refresh: refreshMembers } = useSegment("identity");
   const { isActionPending, actionError, clearActionFeedback } = useActionFeedback();
   const {
@@ -207,7 +217,6 @@ export default function MembersPage() {
   const intent = useRouteIntent();
 
   const [userSearch, setUserSearch] = useState("");
-  const [userFilter, setUserFilter] = useState<UserFilter>("all");
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [selectedRenameUser, setSelectedRenameUser] = useState<HeadscaleUser | null>(null);
   const [pendingDeleteUser, setPendingDeleteUser] = useState<HeadscaleUser | null>(null);
@@ -232,23 +241,25 @@ export default function MembersPage() {
     [],
   );
 
-  const [memberForm, setMemberForm] = useState({
-    name: "",
-    displayName: "",
-    email: "",
-  });
+  const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM);
+  // Field errors appear after the first submit attempt, then follow the input.
+  const [createAttempted, setCreateAttempted] = useState(false);
   const [renameMemberForm, setRenameMemberForm] = useState({
     name: "",
   });
+  // The name the server accepted in this dialog; set means only the policy update is left.
+  const [renamedTo, setRenamedTo] = useState<string | null>(null);
+  // Keyed, so a reloaded policy (new ids) drops the confirmation instead of saving a no-op.
+  const [pendingReferenceKey, setPendingReferenceKey] = useState<string | null>(null);
+  const detailDialogRef = useRef<HTMLDivElement>(null);
   const [inviteForm, setInviteForm] = useState<AuthKeyDialogDefaults>({
     user: "1",
-    reusable: true,
+    reusable: false,
     ephemeral: false,
     aclTags: "",
   });
   useSessionDraft(
     memberDialogOpen ||
-      Boolean(memberForm.name || memberForm.displayName || memberForm.email) ||
       selectedRenameUser !== null ||
       pendingDeleteUser !== null ||
       inviteDialogOpen ||
@@ -266,27 +277,6 @@ export default function MembersPage() {
 
   function userAuthSource(user: HeadscaleUser) {
     return user.provider || user.providerId || "-";
-  }
-
-  function userRoleKind(user: HeadscaleUser): Exclude<UserFilter, "all"> {
-    if (userAuthSource(user).toLowerCase() === "system") {
-      return "service";
-    }
-    if (user.id === "1") {
-      return "owner";
-    }
-    return "member";
-  }
-
-  function userRole(user: HeadscaleUser) {
-    const role = userRoleKind(user);
-    if (role === "service") {
-      return copy.roleServiceAccount;
-    }
-    if (role === "owner") {
-      return copy.roleOwner;
-    }
-    return copy.roleMember;
   }
 
   const visibleUsers = snapshot.users.filter((user) => hasVisibleUser(user));
@@ -347,9 +337,8 @@ export default function MembersPage() {
 
   const query = userSearch.trim().toLowerCase();
   const filteredUsers = visibleUsers.filter((user) => {
-    const role = userRoleKind(user);
-    const roleLabel = userRole(user);
-    const searchable = [
+    if (!query) return true;
+    return [
       user.name,
       user.displayName,
       userLabel(user),
@@ -357,16 +346,11 @@ export default function MembersPage() {
       user.provider,
       user.providerId,
       userAuthSource(user),
-      role,
-      roleLabel,
     ]
       .filter(Boolean)
       .join(" ")
-      .toLowerCase();
-    const matchesSearch = !query || searchable.includes(query);
-    const matchesFilter = userFilter === "all" || userFilter === role;
-
-    return matchesSearch && matchesFilter;
+      .toLowerCase()
+      .includes(query);
   });
 
   const selectedUserDevices = selectedDetailUser ? userDevices(selectedDetailUser) : [];
@@ -376,8 +360,14 @@ export default function MembersPage() {
   const selectedUserPolicyReferences = selectedDetailUser
     ? userPolicyReferences(userPolicyPrincipals(selectedDetailUser))
     : [];
+  const pendingReference = selectedUserPolicyReferences.find(
+    (reference) => `${reference.kind}-${reference.id}` === pendingReferenceKey,
+  );
 
   const deletePrincipals = pendingDeleteUser ? userPolicyPrincipals(pendingDeleteUser) : [];
+  // Headscale refuses to delete a user who still owns machines; its auth keys do not block it.
+  const deleteDevices = pendingDeleteUser ? userDevices(pendingDeleteUser) : [];
+  const deleteActiveKeys = pendingDeleteUser ? activeAuthKeysForUser(pendingDeleteUser) : [];
   const deleteReferences = userPolicyReferences(deletePrincipals);
   const deleteImpact = userReferenceImpact(
     policyDesignerState,
@@ -397,7 +387,8 @@ export default function MembersPage() {
     !isActionPending("save-policy");
 
   // A rename only rewrites `name@`; email and provider principals keep resolving.
-  const renamePrincipals = selectedRenameUser ? [`${selectedRenameUser.name}@`] : [];
+  const renameFrom = selectedRenameUser ? userNamePrincipal(selectedRenameUser.name) : "";
+  const renamePrincipals = renameFrom ? [renameFrom] : [];
   const renameReferences = userPolicyReferences(renamePrincipals);
   const renameImpact = userReferenceImpact(
     policyDesignerState,
@@ -407,14 +398,30 @@ export default function MembersPage() {
     renameReferences,
   );
   const renamePending = isActionPending("rename-member") || isActionPending("save-policy");
-  const renameUserChanged = selectedRenameUser
-    ? currentUser(selectedRenameUser.id)?.name !== selectedRenameUser.name
-    : false;
   // The server rename landed but the reference update did not: only the policy write is left.
   const renamePartial =
-    renameUserChanged && renameImpact.hasReferences && updateReferencesOnRename && !renamePending;
+    renamedTo !== null && renameImpact.hasReferences && updateReferencesOnRename && !renamePending;
+  const renameName = renameMemberForm.name.trim();
+  const renameUnchanged = renameName === selectedRenameUser?.name;
+  const renameNameIssue =
+    selectedRenameUser && renamedTo === null && !renameUnchanged
+      ? userNameIssue(renameName, snapshot.users, selectedRenameUser.id)
+      : null;
   const renameConfirmDisabled =
-    renamePending || (renamePartial && Boolean(renameImpact.blockedText));
+    renamePending ||
+    (renamedTo === null
+      ? renameUnchanged || renameNameIssue !== null
+      : renamePartial && Boolean(renameImpact.blockedText));
+
+  const memberName = memberForm.name.trim();
+  const memberEmail = memberForm.email.trim();
+  const memberNameIssue = userNameIssue(memberName, snapshot.users);
+  const memberEmailInvalid = memberEmail !== "" && !isEmailLike(memberEmail);
+  const userNameIssueText: Record<UserNameIssue, string> = {
+    required: copy.userNameRequired,
+    invalid: copy.userNameInvalid,
+    taken: copy.userNameTaken,
+  };
 
   const selectedUserPendingRoutesCount = selectedUserDevices.reduce(
     (total, node) => total + nodePendingRoutes(node).length,
@@ -449,14 +456,11 @@ export default function MembersPage() {
       }))
     : [];
 
-  const authKeyDialogUsers = visibleUsers.map((user) => ({
-    id: user.id,
-    label: userLabel(user),
-  }));
+  const authKeyDialogUsers = visibleUsers.map((user) => authKeyDialogUser(user, copy.unknown));
 
   const authKeyDialogDefaults = inviteForm;
 
-  const { mutate } = useMutation();
+  const { mutate, mutateWith } = useMutation();
   const createPreAuthKey = useCreatePreAuthKey();
   const { savePolicy } = usePolicySave();
   const latest = useRef({ consumeUserQuery, authKeyDialogUsers, inviteForm });
@@ -468,27 +472,27 @@ export default function MembersPage() {
     void refreshSnapshot();
   }
 
-  // The dialog has no trigger, so Base UI only reports dismissal.
+  // The dialog has no trigger, so Base UI only reports dismissal. Closing discards the input.
   function closeMemberDialog() {
     if (isActionPending("create-member")) return;
     setMemberDialogOpen(false);
+    setMemberForm(EMPTY_MEMBER_FORM);
+    setCreateAttempted(false);
     clearActionFeedback("create-member");
   }
 
+  // Headscale accepts names a policy cannot use and reports duplicates as raw database errors.
   async function createMember() {
+    if (memberNameIssue || memberEmailInvalid) {
+      setCreateAttempted(true);
+      document.getElementById(memberNameIssue ? "member-name" : "member-email")?.focus();
+      return;
+    }
     const created = await mutate("create-member", {
       endpoint: "createUser",
-      input: {
-        name: memberForm.name,
-        displayName: memberForm.displayName,
-        email: memberForm.email,
-      },
+      input: { name: memberName, displayName: memberForm.displayName, email: memberEmail },
     });
-    if (!created) return;
-    setMemberForm((current) => ({ ...current, name: "" }));
-    setMemberForm((current) => ({ ...current, displayName: "" }));
-    setMemberForm((current) => ({ ...current, email: "" }));
-    closeMemberDialog();
+    if (created) closeMemberDialog();
   }
 
   function openUserDetails(user?: HeadscaleUser) {
@@ -501,10 +505,16 @@ export default function MembersPage() {
     });
   }
 
-  // The dialog has no trigger, so Base UI only reports dismissal.
-  function closeUserDetails() {
+  // Leaving the details for another action never returns to the source page.
+  function dismissUserDetails() {
     userDetailGuard.cancel();
     setSelectedDetailUser(null);
+    setPendingReferenceKey(null);
+  }
+
+  // The dialog has no trigger, so Base UI only reports dismissal.
+  function closeUserDetails() {
+    dismissUserDetails();
     const fromPage = intent.from;
     if (fromPage && fromPage !== "members") {
       void navigate({ to: `/${fromPage}` });
@@ -516,6 +526,7 @@ export default function MembersPage() {
     clearActionFeedback("rename-member");
     clearActionFeedback("save-policy");
     setUpdateReferencesOnRename(true);
+    setRenamedTo(null);
     setSelectedRenameUser(user);
     setRenameMemberForm((current) => ({ ...current, name: user.name }));
   }
@@ -545,6 +556,7 @@ export default function MembersPage() {
 
   function closeRenameDialog() {
     setSelectedRenameUser(null);
+    setRenamedTo(null);
     setRenameMemberForm((current) => ({ ...current, name: "" }));
     clearActionFeedback("rename-member");
     clearActionFeedback("save-policy");
@@ -561,23 +573,20 @@ export default function MembersPage() {
     const user = selectedRenameUser;
     if (!user || renameConfirmDisabled) return;
     const isCurrentSession = snapshotStore.captureSession();
-    if (!renameUserChanged) {
-      const renamed = await mutate("rename-member", {
+    let newName = renamedTo;
+    if (newName === null) {
+      const renamed = await mutateWith("rename-member", {
         endpoint: "renameUser",
-        input: { id: user.id, newName: renameMemberForm.name },
+        input: { id: user.id, newName: renameName },
       });
-      if (!renamed || !isCurrentSession()) return;
+      if (!renamed.ok || !isCurrentSession()) return;
+      newName = renamed.result.user.name;
+      setRenamedTo(newName);
     }
-    const renamedUser = currentUser(user.id);
-    if (
-      renamedUser &&
-      updateReferencesOnRename &&
-      renameImpact.hasReferences &&
-      !renameImpact.blockedText
-    ) {
-      const to = `${renamedUser.name}@`;
-      if (to !== `${user.name}@`) {
-        const plan = retargetUserReferences(policyStore.policyDesignerState, [`${user.name}@`], to);
+    if (updateReferencesOnRename && renameImpact.hasReferences && !renameImpact.blockedText) {
+      const to = userNamePrincipal(newName);
+      if (to && to !== renameFrom) {
+        const plan = retargetUserReferences(policyStore.policyDesignerState, [renameFrom], to);
         if (!plan.ok) return;
         const saved = await savePolicy("save-policy", plan.state, { targeted: true });
         if (!saved.ok) return;
@@ -634,6 +643,7 @@ export default function MembersPage() {
   }
 
   async function removeUserFromPolicyReference(reference: UserPolicyReference) {
+    setPendingReferenceKey(null);
     let next = policyDesignerState;
     if (reference.kind === "group") {
       for (const value of reference.matchedValues) {
@@ -766,7 +776,7 @@ export default function MembersPage() {
   function openInviteDialogForUser(user: HeadscaleUser) {
     const token = inviteDialogGuard.next();
     setInviteForm((current) => ({ ...current, user: user.id }));
-    closeUserDetails();
+    dismissUserDetails();
     clearActionFeedback("create-invite");
     setInviteDialogOpen(true);
     void inviteDialogGuard.refresh(token, () => {
@@ -798,11 +808,10 @@ export default function MembersPage() {
   function exportUsers() {
     downloadCsv(
       "headscale-users.csv",
-      ["name", "email", "role", "provider", "machines", "joined"],
+      ["name", "email", "provider", "machines", "joined"],
       filteredUsers.map((user) => ({
         name: userLabel(user),
         email: user.email,
-        role: userRole(user),
         provider: user.provider || user.providerId,
         machines: userDevices(user).length,
         joined: user.createdAt,
@@ -810,12 +819,10 @@ export default function MembersPage() {
     );
   }
 
+  // An exact owner filter: a text search would also match other users and hostnames.
   function jumpToMachinesForUser(user: HeadscaleUser) {
-    closeUserDetails();
-    void navigate({
-      to: "/devices",
-      search: { search: user.email || user.name || userLabel(user) },
-    });
+    dismissUserDetails();
+    void navigate({ to: "/devices", search: { user: user.id } });
   }
 
   function openNodeDetailsFromTable(node: HeadscaleNode) {
@@ -828,8 +835,7 @@ export default function MembersPage() {
   function openNodeDetailsFromDialog(node: HeadscaleNode) {
     // From inside the user-detail-dialog: jump to devices, open dialog, and on
     // close keep the user on /devices (so they can keep exploring machines).
-    userDetailGuard.cancel();
-    setSelectedDetailUser(null);
+    dismissUserDetails();
     const query: Record<string, string> = { node: node.id, popup: "node" };
     void navigate({ to: "/devices", search: query });
   }
@@ -863,11 +869,12 @@ export default function MembersPage() {
         <DialogContent data-testid="member-create-dialog" className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{copy.addMember}</DialogTitle>
-            <DialogDescription>{copy.membersSubtitle}</DialogDescription>
+            <DialogDescription>{copy.createMemberDescription}</DialogDescription>
           </DialogHeader>
           <form
             className="grid gap-3"
             data-testid="member-form"
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
               createMember();
@@ -883,11 +890,28 @@ export default function MembersPage() {
                 id="member-name"
                 data-testid="member-name"
                 className="mt-2"
+                autoComplete="off"
                 required
+                aria-invalid={createAttempted && memberNameIssue !== null}
+                aria-describedby={
+                  createAttempted && memberNameIssue ? "member-name-error" : undefined
+                }
               />
+              {createAttempted && memberNameIssue ? (
+                <p
+                  id="member-name-error"
+                  data-testid="member-name-error"
+                  className="mt-1 text-sm text-destructive"
+                >
+                  {userNameIssueText[memberNameIssue]}
+                </p>
+              ) : null}
             </div>
             <div>
-              <Label htmlFor="member-display">{copy.displayName}</Label>
+              <Label htmlFor="member-display">
+                {copy.displayName}{" "}
+                <span className="font-normal text-muted-foreground">{copy.optionalField}</span>
+              </Label>
               <Input
                 value={memberForm.displayName}
                 onChange={(event) =>
@@ -899,7 +923,10 @@ export default function MembersPage() {
               />
             </div>
             <div>
-              <Label htmlFor="member-email">{copy.email}</Label>
+              <Label htmlFor="member-email">
+                {copy.email}{" "}
+                <span className="font-normal text-muted-foreground">{copy.optionalField}</span>
+              </Label>
               <Input
                 value={memberForm.email}
                 onChange={(event) =>
@@ -907,8 +934,23 @@ export default function MembersPage() {
                 }
                 id="member-email"
                 data-testid="member-email"
+                type="email"
                 className="mt-2"
+                autoComplete="off"
+                aria-invalid={createAttempted && memberEmailInvalid}
+                aria-describedby={
+                  createAttempted && memberEmailInvalid ? "member-email-error" : undefined
+                }
               />
+              {createAttempted && memberEmailInvalid ? (
+                <p
+                  id="member-email-error"
+                  data-testid="member-email-error"
+                  className="mt-1 text-sm text-destructive"
+                >
+                  {copy.emailInvalid}
+                </p>
+              ) : null}
             </div>
             <DialogFooter>
               <Button
@@ -967,31 +1009,17 @@ export default function MembersPage() {
               />
             </div>
           </div>
-          <div className="w-full sm:w-44">
-            <Label htmlFor="user-filter" className="sr-only">
-              {copy.filters}
-            </Label>
-            <div className="relative">
-              <SlidersHorizontal
-                className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <NativeSelect
-                value={userFilter}
-                onChange={(event) => setUserFilter(event.target.value as UserFilter)}
-                id="user-filter"
-                data-testid="user-filter"
-                className="ps-8"
-              >
-                <NativeSelectOption value="all">{copy.allUsers}</NativeSelectOption>
-                <NativeSelectOption value="owner">{copy.owners}</NativeSelectOption>
-                <NativeSelectOption value="member">{copy.members}</NativeSelectOption>
-                <NativeSelectOption value="service">{copy.serviceAccounts}</NativeSelectOption>
-              </NativeSelect>
-            </div>
-          </div>
-          <p className="whitespace-nowrap text-xs text-muted-foreground sm:ms-auto">
-            {filteredUsers.length} / {visibleUsers.length}
+          <p
+            role="status"
+            data-testid="user-count"
+            className="whitespace-nowrap text-xs text-muted-foreground sm:ms-auto"
+          >
+            <span aria-hidden="true">
+              {filteredUsers.length} / {visibleUsers.length}
+            </span>
+            <span className="sr-only">
+              {t("usersShown", { shown: filteredUsers.length, total: visibleUsers.length })}
+            </span>
           </p>
           <Button
             type="button"
@@ -1015,6 +1043,8 @@ export default function MembersPage() {
             size="icon"
             data-testid="export-users"
             aria-label={copy.exportData}
+            title={copy.exportData}
+            disabled={filteredUsers.length === 0}
             onClick={exportUsers}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
@@ -1029,11 +1059,10 @@ export default function MembersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{copy.membersTitle}</TableHead>
-                <TableHead>{copy.role}</TableHead>
                 <TableHead data-testid="member-devices-header">{copy.memberDevices}</TableHead>
                 <TableHead>{copy.joined}</TableHead>
                 <TableHead>{copy.authSource}</TableHead>
-                <TableHead className="hidden md:table-cell">{copy.actions}</TableHead>
+                <TableHead className="hidden lg:table-cell">{copy.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1050,6 +1079,15 @@ export default function MembersPage() {
                       >
                         {userLabel(user)}
                       </button>
+                      {user.name && userLabel(user) !== user.name ? (
+                        // Policies and the CLI refer to the user by this name.
+                        <p
+                          className="mt-1 break-all font-mono text-xs text-muted-foreground"
+                          data-testid={`member-username-${user.name}`}
+                        >
+                          {user.name}
+                        </p>
+                      ) : null}
                       <p className="mt-1 break-all text-sm text-muted-foreground">
                         {user.email || userAuthSource(user)}
                       </p>
@@ -1059,7 +1097,7 @@ export default function MembersPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="mt-2 md:hidden"
+                              className="mt-2 lg:hidden"
                               data-testid={`member-actions-trigger-mobile-${user.name}`}
                               aria-label={`${copy.actions}: ${userLabel(user)}`}
                             />
@@ -1132,11 +1170,6 @@ export default function MembersPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                    <TableCell className="align-top md:min-w-32">
-                      <Badge variant="outline" data-testid={`member-role-${user.name}`}>
-                        {userRole(user)}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="align-top md:min-w-28">
                       {devices.length ? (
                         <div
@@ -1155,7 +1188,10 @@ export default function MembersPage() {
                                 variant="outline"
                                 className={cn("cursor-pointer", nodeStatusClass(node))}
                               >
-                                {nodeDisplayName(node)}
+                                {nodeDisplayName(node)}{" "}
+                                <span className="font-normal opacity-80">
+                                  {nodeStatusLabel(node)}
+                                </span>
                               </Badge>
                             </button>
                           ))}
@@ -1175,7 +1211,7 @@ export default function MembersPage() {
                     >
                       {userAuthSource(user)}
                     </TableCell>
-                    <TableCell className="hidden align-top md:table-cell md:min-w-16">
+                    <TableCell className="hidden align-top lg:table-cell lg:min-w-16">
                       <div className="flex justify-start">
                         <DropdownMenu>
                           <DropdownMenuTrigger
@@ -1262,8 +1298,35 @@ export default function MembersPage() {
               })}
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-sm text-muted-foreground">
-                    {copy.noUsersMatch}
+                  <TableCell
+                    colSpan={5}
+                    className="py-6 text-sm whitespace-normal text-muted-foreground"
+                    data-testid="members-state"
+                  >
+                    {visibleUsers.length ? (
+                      copy.noUsersMatch
+                    ) : refreshErrors.identity ? (
+                      <span className="flex flex-wrap items-center gap-3">
+                        {copy.membersLoadFailed}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          data-testid="retry-members"
+                          disabled={isRefreshingSnapshot}
+                          onClick={refreshMembers}
+                        >
+                          {t("tryAgain")}
+                        </Button>
+                      </span>
+                    ) : isReady ? (
+                      copy.noUsersYet
+                    ) : (
+                      <span role="status" className="flex items-center gap-2">
+                        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        {copy.membersLoading}
+                      </span>
+                    )}
                   </TableCell>
                 </TableRow>
               ) : null}
@@ -1286,6 +1349,9 @@ export default function MembersPage() {
 
       <Dialog open={Boolean(selectedDetailUser)} onOpenChange={closeUserDetails}>
         <DialogContent
+          ref={detailDialogRef}
+          // The first control sits below the fold; focusing it would scroll the title away.
+          initialFocus={detailDialogRef}
           className="max-h-[85vh] overflow-y-auto sm:max-w-3xl"
           data-testid="user-detail-dialog"
         >
@@ -1303,14 +1369,10 @@ export default function MembersPage() {
               </DialogHeader>
 
               <div className="grid gap-4">
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-2 sm:grid-cols-3">
                   <div className="rounded-md border bg-background p-3">
                     <p className="text-xs text-muted-foreground">{copy.userId}</p>
                     <p className="mt-1 text-sm font-medium">{selectedDetailUser.id}</p>
-                  </div>
-                  <div className="rounded-md border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">{copy.role}</p>
-                    <p className="mt-1 text-sm font-medium">{userRole(selectedDetailUser)}</p>
                   </div>
                   <div className="rounded-md border bg-background p-3">
                     <p className="text-xs text-muted-foreground">{copy.deviceCount}</p>
@@ -1325,8 +1387,14 @@ export default function MembersPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <section className="grid gap-2 rounded-md border bg-background p-3">
                     <h3 className="text-sm font-semibold">{copy.details}</h3>
+                    <p
+                      className="break-all text-sm text-muted-foreground"
+                      data-testid="user-detail-username"
+                    >
+                      {copy.memberName}: {selectedDetailUser.name || "-"}
+                    </p>
                     <p className="break-all text-sm text-muted-foreground">
-                      {copy.email}: {selectedDetailUser.email || copy.unknown}
+                      {copy.email}: {selectedDetailUser.email || "-"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {copy.authSource}: {userAuthSource(selectedDetailUser)}
@@ -1350,7 +1418,7 @@ export default function MembersPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">{copy.noAuthKeys}</p>
+                      <p className="text-sm text-muted-foreground">{copy.noActiveAuthKeys}</p>
                     )}
                   </section>
                 </div>
@@ -1403,17 +1471,19 @@ export default function MembersPage() {
                         <Badge
                           key={`${reference.kind}-${reference.id}`}
                           variant="outline"
-                          className="gap-1 pe-1"
+                          className="gap-1 py-0 pe-0"
                           data-testid={`user-policy-reference-${reference.kind}-${reference.id}`}
                         >
                           <span className="break-all">{reference.label}</span>
                           <button
                             type="button"
-                            className="rounded-sm p-0.5 text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             aria-label={`${copy.removeFromReference}: ${reference.label}`}
                             disabled={Boolean(policyBlocked) || isActionPending("save-policy")}
                             data-testid={`remove-user-policy-reference-${reference.kind}-${reference.id}`}
-                            onClick={() => removeUserFromPolicyReference(reference)}
+                            onClick={() =>
+                              setPendingReferenceKey(`${reference.kind}-${reference.id}`)
+                            }
                           >
                             <Trash2 className="h-3 w-3" aria-hidden="true" />
                           </button>
@@ -1423,6 +1493,36 @@ export default function MembersPage() {
                   ) : (
                     <p className="text-sm text-muted-foreground">{copy.noPolicyReferences}</p>
                   )}
+                  {pendingReference ? (
+                    <div
+                      className="grid gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm"
+                      data-testid="remove-user-policy-reference-confirm"
+                    >
+                      <p>{copy.removeReferenceDescription}</p>
+                      <p className="break-all font-medium">{pendingReference.label}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          data-testid="confirm-remove-user-policy-reference"
+                          disabled={Boolean(policyBlocked) || isActionPending("save-policy")}
+                          onClick={() => removeUserFromPolicyReference(pendingReference)}
+                        >
+                          {copy.remove}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          data-testid="cancel-remove-user-policy-reference"
+                          onClick={() => setPendingReferenceKey(null)}
+                        >
+                          {copy.cancel}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </section>
               </div>
             </>
@@ -1498,11 +1598,15 @@ export default function MembersPage() {
               <Input
                 id="rename-member-name"
                 value={renameMemberForm.name}
-                disabled={renamePartial}
+                disabled={renamedTo !== null}
                 onChange={(event) =>
                   setRenameMemberForm((current) => ({ ...current, name: event.target.value }))
                 }
                 data-testid="rename-member-name"
+                autoComplete="off"
+                required
+                aria-invalid={renameNameIssue !== null}
+                aria-describedby={renameNameIssue ? "rename-member-name-error" : undefined}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -1510,6 +1614,15 @@ export default function MembersPage() {
                   }
                 }}
               />
+              {renameNameIssue ? (
+                <p
+                  id="rename-member-name-error"
+                  data-testid="rename-member-name-error"
+                  className="text-sm text-destructive"
+                >
+                  {userNameIssueText[renameNameIssue]}
+                </p>
+              ) : null}
             </div>
             {renameImpact.hasReferences ? (
               <div className="grid gap-2" data-testid="rename-member-policy-impact">
@@ -1600,6 +1713,29 @@ export default function MembersPage() {
                 </span>
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="grid gap-1 text-sm" data-testid="delete-member-summary">
+              <p>
+                {copy.memberDevices}: {deleteDevices.length}
+              </p>
+              <p>
+                {copy.activeAuthKeys}: {deleteActiveKeys.length}
+              </p>
+            </div>
+            {deleteDevices.length ? (
+              <div
+                className="grid gap-1 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                data-testid="delete-member-devices"
+              >
+                <p>{copy.deleteMemberOwnsDevices}</p>
+                <ul className="list-disc ps-5">
+                  {deleteDevices.map((node) => (
+                    <li key={node.id} className="break-all">
+                      {nodeDisplayName(node)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             {deleteImpact.hasReferences || policyBlocked ? (
               <div className="grid gap-2" data-testid="delete-member-policy-impact">
                 <ReferenceImpact
@@ -1640,6 +1776,7 @@ export default function MembersPage() {
                 variant={cleanupPending ? "default" : "destructive"}
                 data-testid="confirm-delete-member"
                 disabled={
+                  deleteDevices.length > 0 ||
                   Boolean(deleteImpact.blockedText && cleanupPolicyOnDelete) ||
                   isActionPending("delete-member") ||
                   isActionPending("save-policy")

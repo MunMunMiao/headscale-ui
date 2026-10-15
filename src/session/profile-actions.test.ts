@@ -665,3 +665,126 @@ test("an older credential version cannot replace a server even with its correct 
   expect(await idbGet("profiles", row.id)).toEqual(row);
   expect(f.server.requests).toEqual([]);
 });
+
+test("a stale reset is refused before it can lock the shared session or cancel peers", async () => {
+  const f = fixture();
+  const row = await f.profile();
+  expect((await f.unlock(row)).ok).toBe(true);
+  const identity = f.auth.getSnapshot().identity;
+  const stale = await version();
+  await idbPut("meta", { ...stale, profilesRevision: stale.profilesRevision + 1 }, "vault-state");
+  expect(await f.actions.reset(stale, f.context)).toEqual({
+    ok: false,
+    error: { kind: "storage-conflict" },
+  });
+  expect(f.auth.getSnapshot().identity).toBe(identity);
+  expect(f.deps.cancelPending).not.toHaveBeenCalled();
+  expect(await idbGet("profiles", row.id)).toEqual(row);
+});
+
+test("credential saves store the canonical server URL and validate what the user typed", async () => {
+  const f = fixture();
+  const input = await credentials(f);
+  input.profile.baseUrl = ` ${f.server.baseUrl.replace("http://", "HTTP://")}// `;
+  expect(await f.actions.save(input, f.context)).toMatchObject({
+    ok: true,
+    value: { commit: { profile: { baseUrl: f.server.baseUrl } } },
+  });
+  const query = await credentials(f);
+  query.profile.id = "query-profile";
+  query.profile.baseUrl = `${f.server.baseUrl}/?token=secret`;
+  expect(await f.actions.save(query, f.context)).toEqual({
+    ok: false,
+    error: { kind: "invalid-request" },
+  });
+  expect(await idbGet("profiles", "query-profile")).toBeUndefined();
+});
+
+test("an unreadable row is replaced with new credentials without its lost password", async () => {
+  const f = fixture();
+  const row = await f.profile();
+  await idbPut("profiles", { ...row, apiKey: { v: 99 }, credentialVersion: "" });
+  const input = await credentials(f);
+  const replace = {
+    ...input,
+    expected: { ...input.expected, profile: { id: row.id, credentialVersion: null } },
+    profile: { ...input.profile, id: row.id, scope: "persistent" as const },
+  };
+  expect(
+    await f.actions.save(
+      {
+        ...replace,
+        expected: { ...replace.expected, profile: { id: row.id, credentialVersion: "x" } },
+      },
+      f.context,
+    ),
+  ).toEqual({ ok: false, error: { kind: "storage-conflict" } });
+  expect(await f.actions.save(replace, f.context)).toMatchObject({
+    ok: true,
+    value: { commit: { profile: { id: row.id, credentialKind: "password" } } },
+  });
+  const saved = await idbGet<PasswordStoredProfile>("profiles", row.id);
+  expect.assert(saved);
+  expect(
+    await decryptProfileKey({
+      profileId: saved.id,
+      canonicalBaseUrl: saved.baseUrl,
+      credentialVersion: saved.credentialVersion,
+      secret: saved.apiKey,
+      password: " new password ",
+    }),
+  ).toBe("fixture-connection-key");
+});
+
+test("credentials for one row cannot be written under another row's expectation", async () => {
+  const f = fixture();
+  const row = await f.profile();
+  const input = await credentials(f);
+  expect(await f.actions.save({ ...input, expected: await f.expected(row) }, f.context)).toEqual({
+    ok: false,
+    error: { kind: "storage-conflict" },
+  });
+  expect(await idbGet("profiles", input.profile.id)).toBeUndefined();
+});
+
+test("a failed read of a readable row is not mistaken for an unreadable row", async () => {
+  const f = fixture();
+  const row = await f.profile();
+  const input = await credentials(f);
+  const get = IDBObjectStore.prototype.get;
+  let denied = false;
+  vi.spyOn(IDBObjectStore.prototype, "get").mockImplementation(function (
+    this: IDBObjectStore,
+    ...args
+  ) {
+    if (this.name === "profiles" && !denied) {
+      denied = true;
+      throw new DOMException("read denied", "UnknownError");
+    }
+    return get.apply(this, args);
+  });
+  expect(
+    await f.actions.save(
+      { ...input, expected: await f.expected(row), profile: { ...input.profile, id: row.id } },
+      f.context,
+    ),
+  ).toEqual({ ok: false, error: { kind: "storage-failed" } });
+  expect(await idbGet("profiles", row.id)).toEqual(row);
+});
+
+test("an unreadable vault state is not mistaken for an unreadable row", async () => {
+  const f = fixture();
+  const row = await f.profile();
+  const input = await credentials(f);
+  await idbPut("meta", { broken: true }, "vault-state");
+  expect(
+    await f.actions.save(
+      {
+        ...input,
+        expected: { ...input.expected, profile: { id: row.id, credentialVersion: null } },
+        profile: { ...input.profile, id: row.id },
+      },
+      f.context,
+    ),
+  ).toEqual({ ok: false, error: { kind: "storage-failed" } });
+});
