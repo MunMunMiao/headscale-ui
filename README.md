@@ -79,6 +79,11 @@ pre-upgrade browser profile.
 
 ## Policy compatibility
 
+- Label-to-label network access can be configured visually. New source choices
+  use declarations in the current policy draft, not device or auth-key
+  observations alone. Adding access does not change tag owners or create a
+  reverse rule. New access rows keep the existing default network port 22;
+  confirm custom ports before clearing the last preset.
 - The designer reads JSON and HuJSON. Invalid or unrepresentable policies become
   read-only: policy saves and related member changes are blocked, preserving the
   original text. Correct the policy in Headscale and refresh to resume editing.

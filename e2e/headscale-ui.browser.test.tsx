@@ -1367,7 +1367,7 @@ async function closeProfileMenu() {
   );
   if (submenu) {
     await userEvent.keyboard("{Escape}");
-    await expect.element(page.elementLocator(submenu)).not.toBeInTheDocument();
+    await expect.poll(() => submenu.isConnected).toBe(false);
   }
   const menu = document.querySelector<HTMLElement>(
     '[data-testid="profile-menu"]',
@@ -4722,6 +4722,80 @@ async function openAccessSection() {
     )
     .toBeTruthy();
 }
+
+test("issue12: publishes, edits and removes directed label access with public readback", async () => {
+  await renderLogin();
+  await connectWithDefaults();
+  const baseline = {
+    groups: {},
+    tagOwners: { "tag:app": [], "tag:db": [] },
+    acls: [],
+  };
+  await resetDockerPolicy(JSON.stringify(baseline));
+  await openAccessSection();
+  await commands.clearHeadscaleOperationCalls();
+
+  await page.getByTestId("tag-open-tag:db").click();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await page.getByTestId("tag-add-accessor-option-tag:app").click();
+  await page.getByTestId("tag-accessor-custom-tag:app").fill("5432");
+  await userEvent.keyboard("{Enter}");
+  await page.getByTestId("tag-accessor-svc-tag:app-ssh").click();
+  await page.getByTestId("tag-detail-close").click();
+  expect(await operationCount("policy.set")).toBe(0);
+  await page.getByTestId("save-policy").click();
+  expect(await operationCount("policy.set")).toBe(0);
+  await confirmPolicyPublication();
+  expect(await latestSavedPolicy()).toEqual({
+    groups: {},
+    tagOwners: { "tag:app": [], "tag:db": [] },
+    acls: [{ action: "accept", src: ["tag:app"], dst: ["tag:db:5432"] }],
+  });
+  expect(await operationCount("policy.set")).toBe(1);
+
+  await session().snapshot.refreshSegments(["policy"]);
+  await page.getByTestId("tag-open-tag:db").click();
+  await expect
+    .element(page.getByTestId("tag-accessor-row-tag:app"))
+    .toBeVisible();
+  await expect
+    .element(page.getByTestId("tag-accessor-custom-tag:app"))
+    .toHaveValue("5432");
+  await expect
+    .element(page.getByTestId("tag-accessor-svc-tag:app-ssh"))
+    .not.toBeChecked();
+  await page.getByTestId("tag-accessor-custom-tag:app").fill("8443");
+  await userEvent.keyboard("{Enter}");
+  await page.getByTestId("tag-detail-close").click();
+  await page.getByTestId("save-policy").click();
+  expect(await operationCount("policy.set")).toBe(1);
+  await confirmPolicyPublication();
+  expect(await latestSavedPolicy()).toEqual({
+    groups: {},
+    tagOwners: { "tag:app": [], "tag:db": [] },
+    acls: [{ action: "accept", src: ["tag:app"], dst: ["tag:db:8443"] }],
+  });
+  expect(await operationCount("policy.set")).toBe(2);
+
+  await session().snapshot.refreshSegments(["policy"]);
+  await page.getByTestId("tag-open-tag:db").click();
+  await page.getByTestId("tag-accessor-remove-tag:app").click();
+  await page.getByTestId("tag-detail-close").click();
+  await page.getByTestId("save-policy").click();
+  expect(await operationCount("policy.set")).toBe(2);
+  await confirmPolicyPublication();
+  expect(await latestSavedPolicy()).toEqual({
+    groups: {},
+    tagOwners: { "tag:app": [], "tag:db": [] },
+    acls: [],
+  });
+  expect(await operationCount("policy.set")).toBe(3);
+  await session().snapshot.refreshSegments(["policy"]);
+  await page.getByTestId("tag-open-tag:db").click();
+  await expect
+    .element(page.getByTestId("tag-accessor-row-tag:app"))
+    .not.toBeInTheDocument();
+});
 
 test("renders initial Docker policy with team/tag cards and risk banners", async () => {
   await renderLogin();

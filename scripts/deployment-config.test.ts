@@ -14,11 +14,33 @@ interface Job {
 }
 interface Workflow {
   on: Record<string, unknown>;
+  concurrency?: {
+    group: string;
+    "cancel-in-progress": boolean | string;
+  };
   jobs: Record<string, Job>;
 }
 // Test-only view of our own workflow files; every asserted field is checked below.
 const workflow = async (name: string) =>
   Bun.YAML.parse(await read(`.github/workflows/${name}.yml`)) as Workflow;
+
+test("CI checks pull requests without duplicate feature-branch push runs", async () => {
+  const ci = await workflow("ci");
+  expect(ci.on).toEqual({
+    pull_request: null,
+    push: { branches: ["main"] },
+    workflow_call: null,
+  });
+});
+
+test("CI supersedes only runs from the same pull request", async () => {
+  const ci = await workflow("ci");
+  expect(ci.concurrency).toEqual({
+    group:
+      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}",
+    "cancel-in-progress": "${{ github.event_name == 'pull_request' }}",
+  });
+});
 
 test("CI is reusable and both publishing workflows are gated by it", async () => {
   expect(Object.keys((await workflow("ci")).on)).toContain("workflow_call");
