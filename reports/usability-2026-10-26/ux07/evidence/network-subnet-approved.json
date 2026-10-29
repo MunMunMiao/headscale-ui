@@ -1,0 +1,54 @@
+{
+  "phase": "subnet-approved",
+  "utc": "2026-10-25T16:41:12.125652+00:00",
+  "probes": [
+    {
+      "name": "a-direct-target",
+      "client": "client-a",
+      "command": "wget -T 4 -qO- http://10.42.0.20:8081",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "wget: can't connect to remote host (10.42.0.20): Connection refused\ncommand terminated with exit code 1"
+    },
+    {
+      "name": "b-direct-target",
+      "client": "client-b",
+      "command": "wget -T 4 -qO- http://10.42.0.20:8081",
+      "exit": 0,
+      "stdout": "ux07-subnet-target",
+      "stderr": ""
+    },
+    {
+      "name": "a-proxy-peer",
+      "client": "client-a",
+      "command": "http_proxy=http://127.0.0.1:1056 no_proxy= wget -T 5 -qO- http://100.64.0.1:8081",
+      "exit": 0,
+      "stdout": "ux07-client-b",
+      "stderr": ""
+    },
+    {
+      "name": "a-proxy-subnet",
+      "client": "client-a",
+      "command": "http_proxy=http://127.0.0.1:1056 no_proxy= wget -T 5 -qO- http://10.42.0.20:8081",
+      "exit": 0,
+      "stdout": "ux07-subnet-target",
+      "stderr": ""
+    },
+    {
+      "name": "a-direct-exit-target",
+      "client": "client-a",
+      "command": "wget -T 4 -qO- http://10.43.149.170:8081",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "wget: can't connect to remote host (10.43.149.170): Connection refused\ncommand terminated with exit code 1"
+    },
+    {
+      "name": "a-proxy-exit-target",
+      "client": "client-a",
+      "command": "http_proxy=http://127.0.0.1:1056 no_proxy= wget -T 5 -qO- http://10.43.149.170:8081",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "wget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1"
+    }
+  ]
+}

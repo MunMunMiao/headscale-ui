@@ -1,0 +1,59 @@
+{
+  "verifiedAt": "2026-10-25T23:01:01.461Z",
+  "protectedFunctions": [
+    {
+      "file": "src/pages/MembersPage.tsx",
+      "function": "createMember",
+      "astUnchanged": true,
+      "sha256": "7c4a939da632103f51c53a2b6b0a95738b43f15795325c3c216f667ba1cfd5ad"
+    },
+    {
+      "file": "src/pages/DevicesPage.tsx",
+      "function": "openPersonalRestore",
+      "astUnchanged": true,
+      "sha256": "43cbe9f5df41c1e87ffb5899664e23fa93fb248bbbc55474355c9b35ec887afe"
+    },
+    {
+      "file": "src/pages/DevicesPage.tsx",
+      "function": "resetAuthChecks",
+      "astUnchanged": true,
+      "sha256": "54e6c3f7f1ee534df5493a70a904e887bda42523dbf829cf8010b83ab602c6cf"
+    },
+    {
+      "file": "src/pages/DevicesPage.tsx",
+      "function": "readPersonalIdentity",
+      "astUnchanged": true,
+      "sha256": "30f710e6e564f7153468e5252403b11d46812f850d3071d4c1971539db690190"
+    },
+    {
+      "file": "src/pages/DevicesPage.tsx",
+      "function": "registerPendingNode",
+      "astUnchanged": true,
+      "sha256": "12ab6a87c40036c057bed3486755a88a02216470b124aa92b968d33c023b8921"
+    },
+    {
+      "file": "src/pages/DevicesPage.tsx",
+      "function": "originalDeviceMatch",
+      "astUnchanged": true,
+      "sha256": "1cb676ed43fcb21e90cb184a6942b3ab782831c0903623e847e367e42a608059"
+    },
+    {
+      "file": "src/domain/tag-lifecycle.ts",
+      "function": "nodeTagBaseline",
+      "astUnchanged": true,
+      "sha256": "42b30383b5c6d69f75990bacf5306992eae4f56436368870752676541f9bfc1c"
+    },
+    {
+      "file": "src/domain/tag-lifecycle.ts",
+      "function": "sameNodeTagBaseline",
+      "astUnchanged": true,
+      "sha256": "fbbffdcd12f472b030454bea8c2eee09a3a4be397553578d05ce2521cd32a653"
+    }
+  ],
+  "principalModuleUnchanged": true,
+  "coverageConfigurationUnchanged": true,
+  "upstreamUIUnchanged": true,
+  "originalMemberReportHashesUnchanged": 12,
+  "originalScreenshotHashesUnchanged": 182,
+  "plannedBugImplementationsNotApplied": true
+}

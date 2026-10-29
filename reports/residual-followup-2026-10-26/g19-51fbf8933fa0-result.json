@@ -1,0 +1,1826 @@
+{
+  "run": "51fbf8933fa0",
+  "namespace": "hs-g19-1026-51fbf8933fa0",
+  "context": "home",
+  "probeTimeoutSeconds": 5,
+  "phases": [
+    {
+      "name": "original-unapproved",
+      "before": {
+        "nodes": [
+          {
+            "id": 1,
+            "name": "g19-r",
+            "given_name": "g19-r",
+            "ip_addresses": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "approved_routes": null,
+            "available_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "subnet_routes": null
+          },
+          {
+            "id": 2,
+            "name": "g19-a",
+            "given_name": "g19-a",
+            "ip_addresses": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ],
+            "approved_routes": null,
+            "available_routes": null,
+            "subnet_routes": null
+          }
+        ],
+        "A": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "2",
+            "HostName": "g19-a",
+            "TailscaleIPs": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [],
+          "peers": [
+            {
+              "ID": "1",
+              "HostName": "g19-r",
+              "TailscaleIPs": [
+                "100.64.0.1",
+                "fd7a:115c:a1e0::1"
+              ],
+              "Online": true,
+              "ExitNode": false,
+              "ExitNodeOption": false,
+              "TxBytes": 0,
+              "RxBytes": 0
+            }
+          ]
+        },
+        "R": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": [
+            {
+              "ID": "2",
+              "HostName": "g19-a",
+              "TailscaleIPs": [
+                "100.64.0.2",
+                "fd7a:115c:a1e0::2"
+              ],
+              "Online": true,
+              "ExitNode": false,
+              "ExitNodeOption": false,
+              "TxBytes": 0,
+              "RxBytes": 0
+            }
+          ]
+        },
+        "APrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": null,
+          "WantRunning": true
+        },
+        "RPrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": [
+            "0.0.0.0/0",
+            "::/0"
+          ],
+          "WantRunning": true
+        },
+        "AMap": {
+          "PacketFilter": [
+            {
+              "Caps": [],
+              "Dsts": [
+                {
+                  "Net": "0.0.0.0/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "::/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                }
+              ],
+              "IPProto": [
+                6,
+                17,
+                1,
+                58
+              ],
+              "SrcCaps": null,
+              "Srcs": [
+                "100.64.0.0/11",
+                "100.96.0.0/12",
+                "100.112.0.0/15",
+                "100.114.0.0/16",
+                "100.115.0.0/18",
+                "100.115.64.0/20",
+                "100.115.80.0/21",
+                "100.115.88.0/22",
+                "100.115.94.0/23",
+                "100.115.96.0/19",
+                "100.115.128.0/17",
+                "100.116.0.0/14",
+                "100.120.0.0/13",
+                "fd7a:115c:a1e0::/48"
+              ]
+            }
+          ],
+          "Peers": [
+            {
+              "ID": 1,
+              "Name": "g19-r.g19.test.",
+              "Addresses": [
+                "100.64.0.1/32",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "AllowedIPs": [
+                "100.64.0.1/32",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        },
+        "RMap": {
+          "PacketFilter": [
+            {
+              "Caps": [],
+              "Dsts": [
+                {
+                  "Net": "0.0.0.0/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "::/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                }
+              ],
+              "IPProto": [
+                6,
+                17,
+                1,
+                58
+              ],
+              "SrcCaps": null,
+              "Srcs": [
+                "100.64.0.0/11",
+                "100.96.0.0/12",
+                "100.112.0.0/15",
+                "100.114.0.0/16",
+                "100.115.0.0/18",
+                "100.115.64.0/20",
+                "100.115.80.0/21",
+                "100.115.88.0/22",
+                "100.115.94.0/23",
+                "100.115.96.0/19",
+                "100.115.128.0/17",
+                "100.116.0.0/14",
+                "100.120.0.0/13",
+                "fd7a:115c:a1e0::/48"
+              ]
+            }
+          ],
+          "Peers": [
+            {
+              "ID": 2,
+              "Name": "g19-a.g19.test.",
+              "Addresses": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "AllowedIPs": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        }
+      },
+      "health": [
+        {
+          "pod": "r",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/original-unapproved/health-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/original-unapproved/health-podip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:12 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        },
+        {
+          "pod": "r",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/original-unapproved/health-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/original-unapproved/health-clusterip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:12 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        }
+      ],
+      "probes": [
+        {
+          "pod": "a",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/original-unapproved/proxy-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/original-unapproved/proxy-podip",
+          "exit": 1,
+          "httpStatus": 502,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 502 Bad Gateway\nwget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        },
+        {
+          "pod": "a",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/original-unapproved/proxy-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/original-unapproved/proxy-clusterip",
+          "exit": 1,
+          "httpStatus": 502,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 502 Bad Gateway\nwget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        }
+      ],
+      "afterA": {
+        "BackendState": "Running",
+        "Self": {
+          "ID": "2",
+          "HostName": "g19-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ]
+        },
+        "ExitNodeStatus": null,
+        "Health": [
+          "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+        ],
+        "peers": [
+          {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "Online": true,
+            "ExitNode": false,
+            "ExitNodeOption": false,
+            "TxBytes": 0,
+            "RxBytes": 0
+          }
+        ]
+      },
+      "targetRecords": [
+        {
+          "at": "2026-10-26T10:22:12+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/original-unapproved/health-podip HTTP/1.1",
+          "status": 200
+        },
+        {
+          "at": "2026-10-26T10:22:12+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/original-unapproved/health-clusterip HTTP/1.1",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "policyComparisons": [
+    {
+      "name": "policy-original-open",
+      "before": {
+        "nodes": [
+          {
+            "id": 1,
+            "name": "g19-r",
+            "given_name": "g19-r",
+            "ip_addresses": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "approved_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "available_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "subnet_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ]
+          },
+          {
+            "id": 2,
+            "name": "g19-a",
+            "given_name": "g19-a",
+            "ip_addresses": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ],
+            "approved_routes": null,
+            "available_routes": null,
+            "subnet_routes": null
+          }
+        ],
+        "A": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "2",
+            "HostName": "g19-a",
+            "TailscaleIPs": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ]
+          },
+          "ExitNodeStatus": {
+            "ID": "1",
+            "Online": true,
+            "TailscaleIPs": [
+              "100.64.0.1/32",
+              "fd7a:115c:a1e0::1/128"
+            ]
+          },
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": [
+            {
+              "ID": "1",
+              "HostName": "g19-r",
+              "TailscaleIPs": [
+                "100.64.0.1",
+                "fd7a:115c:a1e0::1"
+              ],
+              "Online": true,
+              "ExitNode": true,
+              "ExitNodeOption": true,
+              "TxBytes": 0,
+              "RxBytes": 0
+            }
+          ]
+        },
+        "R": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": [
+            {
+              "ID": "2",
+              "HostName": "g19-a",
+              "TailscaleIPs": [
+                "100.64.0.2",
+                "fd7a:115c:a1e0::2"
+              ],
+              "Online": true,
+              "ExitNode": false,
+              "ExitNodeOption": false,
+              "TxBytes": 0,
+              "RxBytes": 0
+            }
+          ]
+        },
+        "APrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "1",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": null,
+          "WantRunning": true
+        },
+        "RPrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": [
+            "0.0.0.0/0",
+            "::/0"
+          ],
+          "WantRunning": true
+        },
+        "AMap": {
+          "PacketFilter": [
+            {
+              "Caps": [],
+              "Dsts": [
+                {
+                  "Net": "0.0.0.0/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "::/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                }
+              ],
+              "IPProto": [
+                6,
+                17,
+                1,
+                58
+              ],
+              "SrcCaps": null,
+              "Srcs": [
+                "100.64.0.0/11",
+                "100.96.0.0/12",
+                "100.112.0.0/15",
+                "100.114.0.0/16",
+                "100.115.0.0/18",
+                "100.115.64.0/20",
+                "100.115.80.0/21",
+                "100.115.88.0/22",
+                "100.115.94.0/23",
+                "100.115.96.0/19",
+                "100.115.128.0/17",
+                "100.116.0.0/14",
+                "100.120.0.0/13",
+                "fd7a:115c:a1e0::/48"
+              ]
+            }
+          ],
+          "Peers": [
+            {
+              "ID": 1,
+              "Name": "g19-r.g19.test.",
+              "Addresses": [
+                "100.64.0.1/32",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "AllowedIPs": [
+                "0.0.0.0/0",
+                "100.64.0.1/32",
+                "::/0",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        },
+        "RMap": {
+          "PacketFilter": [
+            {
+              "Caps": [],
+              "Dsts": [
+                {
+                  "Net": "0.0.0.0/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "::/0",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                }
+              ],
+              "IPProto": [
+                6,
+                17,
+                1,
+                58
+              ],
+              "SrcCaps": null,
+              "Srcs": [
+                "100.64.0.0/11",
+                "100.96.0.0/12",
+                "100.112.0.0/15",
+                "100.114.0.0/16",
+                "100.115.0.0/18",
+                "100.115.64.0/20",
+                "100.115.80.0/21",
+                "100.115.88.0/22",
+                "100.115.94.0/23",
+                "100.115.96.0/19",
+                "100.115.128.0/17",
+                "100.116.0.0/14",
+                "100.120.0.0/13",
+                "fd7a:115c:a1e0::/48"
+              ]
+            }
+          ],
+          "Peers": [
+            {
+              "ID": 2,
+              "Name": "g19-a.g19.test.",
+              "Addresses": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "AllowedIPs": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        }
+      },
+      "health": [
+        {
+          "pod": "r",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-original-open/health-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-original-open/health-podip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:21 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        },
+        {
+          "pod": "r",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-original-open/health-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-original-open/health-clusterip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:21 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        }
+      ],
+      "probes": [
+        {
+          "pod": "a",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-original-open/proxy-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-original-open/proxy-podip",
+          "exit": 1,
+          "httpStatus": null,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\nwget: download timed out\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        },
+        {
+          "pod": "a",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-original-open/proxy-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-original-open/proxy-clusterip",
+          "exit": 1,
+          "httpStatus": null,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\nwget: download timed out\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        }
+      ],
+      "afterA": {
+        "BackendState": "Running",
+        "Self": {
+          "ID": "2",
+          "HostName": "g19-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ]
+        },
+        "ExitNodeStatus": {
+          "ID": "1",
+          "Online": true,
+          "TailscaleIPs": [
+            "100.64.0.1/32",
+            "fd7a:115c:a1e0::1/128"
+          ]
+        },
+        "Health": [
+          "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+        ],
+        "peers": [
+          {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "Online": true,
+            "ExitNode": true,
+            "ExitNodeOption": true,
+            "TxBytes": 1196,
+            "RxBytes": 540
+          }
+        ]
+      },
+      "targetRecords": [
+        {
+          "at": "2026-10-26T10:22:21+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-original-open/health-podip HTTP/1.1",
+          "status": 200
+        },
+        {
+          "at": "2026-10-26T10:22:21+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-original-open/health-clusterip HTTP/1.1",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "policy-internet-only",
+      "before": {
+        "nodes": [
+          {
+            "id": 1,
+            "name": "g19-r",
+            "given_name": "g19-r",
+            "ip_addresses": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "approved_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "available_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "subnet_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ]
+          },
+          {
+            "id": 2,
+            "name": "g19-a",
+            "given_name": "g19-a",
+            "ip_addresses": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ],
+            "approved_routes": null,
+            "available_routes": null,
+            "subnet_routes": null
+          }
+        ],
+        "A": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "2",
+            "HostName": "g19-a",
+            "TailscaleIPs": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ]
+          },
+          "ExitNodeStatus": {
+            "ID": "1",
+            "Online": true,
+            "TailscaleIPs": [
+              "100.64.0.1/32",
+              "fd7a:115c:a1e0::1/128"
+            ]
+          },
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": [
+            {
+              "ID": "1",
+              "HostName": "g19-r",
+              "TailscaleIPs": [
+                "100.64.0.1",
+                "fd7a:115c:a1e0::1"
+              ],
+              "Online": true,
+              "ExitNode": true,
+              "ExitNodeOption": true,
+              "TxBytes": 1404,
+              "RxBytes": 668
+            }
+          ]
+        },
+        "R": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": [
+            {
+              "ID": "2",
+              "HostName": "g19-a",
+              "TailscaleIPs": [
+                "100.64.0.2",
+                "fd7a:115c:a1e0::2"
+              ],
+              "Online": true,
+              "ExitNode": false,
+              "ExitNodeOption": false,
+              "TxBytes": 848,
+              "RxBytes": 1160
+            }
+          ]
+        },
+        "APrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "1",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": null,
+          "WantRunning": true
+        },
+        "RPrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": [
+            "0.0.0.0/0",
+            "::/0"
+          ],
+          "WantRunning": true
+        },
+        "AMap": {
+          "PacketFilter": [],
+          "Peers": [
+            {
+              "ID": 1,
+              "Name": "g19-r.g19.test.",
+              "Addresses": [
+                "100.64.0.1/32",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "AllowedIPs": [
+                "0.0.0.0/0",
+                "100.64.0.1/32",
+                "::/0",
+                "fd7a:115c:a1e0::1/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        },
+        "RMap": {
+          "PacketFilter": [
+            {
+              "Caps": [],
+              "Dsts": [
+                {
+                  "Net": "0.0.0.0/5",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "8.0.0.0/7",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "11.0.0.0/8",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "12.0.0.0/6",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "16.0.0.0/4",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "32.0.0.0/3",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "64.0.0.0/3",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "96.0.0.0/6",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "100.0.0.0/10",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "100.128.0.0/9",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "101.0.0.0/8",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "102.0.0.0/7",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "104.0.0.0/5",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "112.0.0.0/4",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "128.0.0.0/3",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "160.0.0.0/5",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "168.0.0.0/8",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.0.0.0/9",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.128.0.0/10",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.192.0.0/11",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.224.0.0/12",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.240.0.0/13",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.248.0.0/14",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.252.0.0/15",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "169.255.0.0/16",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "170.0.0.0/7",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "172.0.0.0/12",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "172.32.0.0/11",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "172.64.0.0/10",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "172.128.0.0/9",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "173.0.0.0/8",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "174.0.0.0/7",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "176.0.0.0/4",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.0.0.0/9",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.128.0.0/11",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.160.0.0/13",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.169.0.0/16",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.170.0.0/15",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.172.0.0/14",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.176.0.0/12",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "192.192.0.0/10",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "193.0.0.0/8",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "194.0.0.0/7",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "196.0.0.0/6",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "200.0.0.0/5",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "208.0.0.0/4",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "224.0.0.0/3",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                },
+                {
+                  "Net": "2000::/3",
+                  "Ports": {
+                    "First": 0,
+                    "Last": 65535
+                  }
+                }
+              ],
+              "IPProto": [
+                6,
+                17,
+                1,
+                58
+              ],
+              "SrcCaps": null,
+              "Srcs": [
+                "100.64.0.0/11",
+                "100.96.0.0/12",
+                "100.112.0.0/15",
+                "100.114.0.0/16",
+                "100.115.0.0/18",
+                "100.115.64.0/20",
+                "100.115.80.0/21",
+                "100.115.88.0/22",
+                "100.115.94.0/23",
+                "100.115.96.0/19",
+                "100.115.128.0/17",
+                "100.116.0.0/14",
+                "100.120.0.0/13",
+                "fd7a:115c:a1e0::/48"
+              ]
+            }
+          ],
+          "Peers": [
+            {
+              "ID": 2,
+              "Name": "g19-a.g19.test.",
+              "Addresses": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "AllowedIPs": [
+                "100.64.0.2/32",
+                "fd7a:115c:a1e0::2/128"
+              ],
+              "PrimaryRoutes": null
+            }
+          ]
+        }
+      },
+      "health": [
+        {
+          "pod": "r",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-internet-only/health-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-internet-only/health-podip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:41 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        },
+        {
+          "pod": "r",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-internet-only/health-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-internet-only/health-clusterip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:22:42 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        }
+      ],
+      "probes": [
+        {
+          "pod": "a",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-internet-only/proxy-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-internet-only/proxy-podip",
+          "exit": 1,
+          "httpStatus": null,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\nwget: download timed out\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        },
+        {
+          "pod": "a",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-internet-only/proxy-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-internet-only/proxy-clusterip",
+          "exit": 1,
+          "httpStatus": null,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\nwget: download timed out\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        }
+      ],
+      "afterA": {
+        "BackendState": "Running",
+        "Self": {
+          "ID": "2",
+          "HostName": "g19-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ]
+        },
+        "ExitNodeStatus": {
+          "ID": "1",
+          "Online": true,
+          "TailscaleIPs": [
+            "100.64.0.1/32",
+            "fd7a:115c:a1e0::1/128"
+          ]
+        },
+        "Health": [
+          "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+        ],
+        "peers": [
+          {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "Online": true,
+            "ExitNode": true,
+            "ExitNodeOption": true,
+            "TxBytes": 2340,
+            "RxBytes": 1244
+          }
+        ]
+      },
+      "targetRecords": [
+        {
+          "at": "2026-10-26T10:22:41+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-internet-only/health-podip HTTP/1.1",
+          "status": 200
+        },
+        {
+          "at": "2026-10-26T10:22:42+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-internet-only/health-clusterip HTTP/1.1",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "policy-literal-private",
+      "before": {
+        "nodes": [
+          {
+            "id": 1,
+            "name": "g19-r",
+            "given_name": "g19-r",
+            "ip_addresses": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ],
+            "approved_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "available_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ],
+            "subnet_routes": [
+              "0.0.0.0/0",
+              "::/0"
+            ]
+          },
+          {
+            "id": 2,
+            "name": "g19-a",
+            "given_name": "g19-a",
+            "ip_addresses": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ],
+            "approved_routes": null,
+            "available_routes": null,
+            "subnet_routes": null
+          }
+        ],
+        "A": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "2",
+            "HostName": "g19-a",
+            "TailscaleIPs": [
+              "100.64.0.2",
+              "fd7a:115c:a1e0::2"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": []
+        },
+        "R": {
+          "BackendState": "Running",
+          "Self": {
+            "ID": "1",
+            "HostName": "g19-r",
+            "TailscaleIPs": [
+              "100.64.0.1",
+              "fd7a:115c:a1e0::1"
+            ]
+          },
+          "ExitNodeStatus": null,
+          "Health": [
+            "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+          ],
+          "peers": []
+        },
+        "APrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "1",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": null,
+          "WantRunning": true
+        },
+        "RPrefs": {
+          "RouteAll": true,
+          "ExitNodeID": "",
+          "ExitNodeIP": "",
+          "ExitNodeAllowLANAccess": false,
+          "AdvertiseRoutes": [
+            "0.0.0.0/0",
+            "::/0"
+          ],
+          "WantRunning": true
+        },
+        "AMap": {
+          "PacketFilter": [],
+          "Peers": []
+        },
+        "RMap": {
+          "PacketFilter": [],
+          "Peers": []
+        }
+      },
+      "health": [
+        {
+          "pod": "r",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-literal-private/health-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-literal-private/health-podip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:23:02 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        },
+        {
+          "pod": "r",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "native socket, proxies unset",
+          "token": "/51fbf8933fa0/policy-literal-private/health-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-literal-private/health-clusterip",
+          "exit": 0,
+          "httpStatus": 200,
+          "marker": true,
+          "stdout": "G19_51fbf8933fa0\n",
+          "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:23:02 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+        }
+      ],
+      "probes": [
+        {
+          "pod": "a",
+          "address": "10.42.0.79",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-literal-private/proxy-podip",
+          "url": "http://10.42.0.79:8081/51fbf8933fa0/policy-literal-private/proxy-podip",
+          "exit": 1,
+          "httpStatus": 502,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 502 Bad Gateway\nwget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        },
+        {
+          "pod": "a",
+          "address": "10.43.237.16",
+          "port": 8081,
+          "protocol": "HTTP/TCP/IPv4",
+          "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+          "token": "/51fbf8933fa0/policy-literal-private/proxy-clusterip",
+          "url": "http://10.43.237.16:8081/51fbf8933fa0/policy-literal-private/proxy-clusterip",
+          "exit": 1,
+          "httpStatus": 502,
+          "marker": false,
+          "stdout": "",
+          "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 502 Bad Gateway\nwget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1\n",
+          "targetRecords": [],
+          "sourceIsRouter": false
+        }
+      ],
+      "afterA": {
+        "BackendState": "Running",
+        "Self": {
+          "ID": "2",
+          "HostName": "g19-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ]
+        },
+        "ExitNodeStatus": null,
+        "Health": [
+          "Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable."
+        ],
+        "peers": []
+      },
+      "targetRecords": [
+        {
+          "at": "2026-10-26T10:23:02+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-literal-private/health-podip HTTP/1.1",
+          "status": 200
+        },
+        {
+          "at": "2026-10-26T10:23:02+00:00",
+          "source": "10.42.0.84",
+          "request": "GET /51fbf8933fa0/policy-literal-private/health-clusterip HTTP/1.1",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "assertions": {},
+  "cleanup": {
+    "deleteExit": 0,
+    "readbackExit": 0,
+    "namespaceAbsent": true,
+    "ownershipChecked": true
+  },
+  "cluster": {
+    "node": "my-home-server",
+    "podCIDRs": [
+      "10.42.0.0/24"
+    ],
+    "kubeletVersion": "v1.36.5+k3s1",
+    "runtime": "containerd://2.3.4-k3s1.36",
+    "flannelBackend": "vxlan"
+  },
+  "namespaceUID": "0cab4f01-a94d-4408-8dba-351bb20e90f0",
+  "routerPodIP": "10.42.0.84",
+  "targets": {
+    "podip": "10.42.0.79",
+    "clusterip": "10.43.237.16"
+  },
+  "podSecurity": [
+    {
+      "name": "a",
+      "uid": "e0810108-9aed-4679-9b9b-ae73e053e68f",
+      "podIP": "10.42.0.83",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "headscale",
+      "uid": "2fbc4f5e-101d-4053-b444-12f0aef97439",
+      "podIP": "10.42.0.76",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "headscale/headscale:0.29.4",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "uid": "4beb8097-9708-4dca-97c5-9aa1d397aae6",
+      "podIP": "10.42.0.84",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "target",
+      "uid": "6eee7374-6093-41f2-96ca-f74a369f842e",
+      "podIP": "10.42.0.79",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 101,
+        "runAsGroup": 101,
+        "runAsNonRoot": true,
+        "runAsUser": 101,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "nginx:1.30.5-alpine",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    }
+  ],
+  "routerSameContainerIdentity": "self_netns=net:[4026536023]\ndaemon_pid=1\ndaemon_netns=net:[4026536023]\nuid=1000 gid=1000 groups=1000\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\ntun_present=false\n",
+  "clientVersion": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+  "serverVersion": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/amd64",
+  "routerNodeID": 1,
+  "routerTailnetIP": "100.64.0.1",
+  "initialADirect": [
+    {
+      "pod": "a",
+      "address": "10.42.0.79",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/51fbf8933fa0/preflight/native-podip",
+      "url": "http://10.42.0.79:8081/51fbf8933fa0/preflight/native-podip",
+      "exit": 0,
+      "httpStatus": 200,
+      "marker": true,
+      "stdout": "G19_51fbf8933fa0\n",
+      "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:21:58 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+    },
+    {
+      "pod": "a",
+      "address": "10.43.237.16",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/51fbf8933fa0/preflight/native-clusterip",
+      "url": "http://10.43.237.16:8081/51fbf8933fa0/preflight/native-clusterip",
+      "exit": 0,
+      "httpStatus": 200,
+      "marker": true,
+      "stdout": "G19_51fbf8933fa0\n",
+      "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:21:58 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+    }
+  ],
+  "aIsolationPolicy": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "name": "a-target-isolation",
+      "namespace": "hs-g19-1026-51fbf8933fa0",
+      "labels": {
+        "headscale-ui.dev/g19-run": "51fbf8933fa0",
+        "app.kubernetes.io/part-of": "headscale-ui-g19"
+      }
+    },
+    "spec": {
+      "podSelector": {
+        "matchLabels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/component": "a"
+        }
+      },
+      "policyTypes": [
+        "Egress"
+      ],
+      "egress": [
+        {
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0",
+                "except": [
+                  "10.42.0.79/32",
+                  "10.43.237.16/32"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "isolatedADirect": [
+    {
+      "pod": "a",
+      "address": "10.42.0.79",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/51fbf8933fa0/isolated-preflight/native-podip",
+      "url": "http://10.42.0.79:8081/51fbf8933fa0/isolated-preflight/native-podip",
+      "exit": 1,
+      "httpStatus": null,
+      "marker": false,
+      "stdout": "",
+      "stderr": "Connecting to 10.42.0.79:8081 (10.42.0.79:8081)\nwget: can't connect to remote host (10.42.0.79): Connection refused\ncommand terminated with exit code 1\n"
+    },
+    {
+      "pod": "a",
+      "address": "10.43.237.16",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/51fbf8933fa0/isolated-preflight/native-clusterip",
+      "url": "http://10.43.237.16:8081/51fbf8933fa0/isolated-preflight/native-clusterip",
+      "exit": 1,
+      "httpStatus": null,
+      "marker": false,
+      "stdout": "",
+      "stderr": "Connecting to 10.43.237.16:8081 (10.43.237.16:8081)\nwget: can't connect to remote host (10.43.237.16): Connection refused\ncommand terminated with exit code 1\n"
+    }
+  ],
+  "outcome": "No policy variant established private exit forwarding; original failure reproduced, cause remains bounded by maps/logs",
+  "finalLogs": {
+    "a": {
+      "exit": 0,
+      "stdout": "2026/10/26 10:21:55 health(warnable=wantrunning-false): ok\n2026/10/26 10:21:55 localapi: [POST] /localapi/v0/login-interactive\n2026/10/26 10:21:55 error calling getent for user \"1000\": exit status 2\n2026/10/26 10:21:55 StartLoginInteractiveAs(\"\"): url=false\n2026/10/26 10:21:55 control: client.Login(2)\n2026/10/26 10:21:55 control: LoginInteractive -> regen=true\n2026/10/26 10:21:55 control: doLogin(regen=true, hasUrl=false)\n2026/10/26 10:21:55 control: control server key from http://10.43.18.78:8080: ts2021=[fBGMw], legacy=\n2026/10/26 10:21:55 control: Generating a new nodekey.\n2026/10/26 10:21:55 control: RegisterReq: onode= node=[blsLw] fup=false nks=false\n2026/10/26 10:21:55 control: setting empty HTTPS port with http scheme and private host 10.43.18.78\n2026/10/26 10:21:55 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false\n2026/10/26 10:21:55 blockEngineUpdates(false)\n2026/10/26 10:21:56 using tailnet default auto-update setting: false\n2026/10/26 10:21:56 EditPrefs: MaskedPrefs{AutoUpdate={Apply=false}}\n2026/10/26 10:21:56 taildrop: Taildrop disabled; no state directory\n2026/10/26 10:21:56 taildrop: no Taildrop directory configured\n2026/10/26 10:21:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:56 magicsock: new contact: control-netmap usec=10816055 cached=false\n2026/10/26 10:21:56 active login: g19-a\n2026/10/26 10:21:56 netmap: suggested exit node: no preferred DERP, try again later\n2026/10/26 10:21:56 Switching ipn state NeedsLogin -> Starting (WantRunning=true, nm=true)\n2026/10/26 10:21:56 magicsock: SetPrivateKey called (init)\n2026/10/26 10:21:56 monitor: gateway and self IP changed: gw=10.42.0.1 self=10.42.0.83\n2026/10/26 10:21:56 wgengine: Reconfig: configuring router\n2026/10/26 10:21:56 wgengine: Reconfig: user dialer\n2026/10/26 10:21:56 tsdial: bart table size: 4\n2026/10/26 10:21:56 wgengine: Reconfig: configuring DNS\n2026/10/26 10:21:56 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:21:56 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:21:56 dns: OScfg: {}\n2026/10/26 10:21:56 peerapi: serving on http://100.64.0.2:46590\n2026/10/26 10:21:56 peerapi: serving on http://[fd7a:115c:a1e0::2]:46590\n2026/10/26 10:21:57 magicsock: home DERP changing from derp-0 [0ms] to derp-999 [0ms] (forced=false)\n2026/10/26 10:21:57 magicsock: home is now derp-999 (g19)\n2026/10/26 10:21:57 magicsock: endpoints changed: 10.42.0.83:41641 (stun)\n2026/10/26 10:21:57 magicsock: adding connection to derp-999 for home-keep-alive\n2026/10/26 10:21:57 update netmap cache: profile local data storage unavailable\n2026/10/26 10:21:57 magicsock: 1 active derp conns: derp-999=cr0s,wr0s\n2026/10/26 10:21:57 derphttp.Client.Connect: connecting to derp-999 (g19)\n2026/10/26 10:21:57 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:21:57 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:57 Switching ipn state Starting -> Running (WantRunning=true, nm=true)\n2026/10/26 10:21:57 health(warnable=warming-up): ok\n2026/10/26 10:21:57 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:57 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:57 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:57 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:57 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:57 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:57 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:21:57 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:57 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:57 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:21:57 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:58 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:59 control: NetInfo: NetInfo{varies=false ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:01 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:04 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:06 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:07 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:07 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (10 dropped)\n2026/10/26 10:22:07 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:07 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (9 dropped)\n2026/10/26 10:22:07 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:09 health: connectivity impacted; triggering captive portal detection\n2026/10/26 10:22:09 health(warnable=no-derp-connection): error: Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\n2026/10/26 10:22:10 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:10 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:10 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:10 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:22:10 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:12 DetectCaptivePortal(found=false)\n2026/10/26 10:22:13 http: proxy error: dial tcp 10.42.0.79:8081: connect: connection refused\n2026/10/26 10:22:14 http: proxy error: dial tcp 10.43.237.16:8081: connect: connection refused\n2026/10/26 10:22:16 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:16 netmap: suggested exit node: g19-r (1)\n2026/10/26 10:22:16 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:17 localapi: [POST] /localapi/v0/check-prefs\n2026/10/26 10:22:17 localapi: [PATCH] /localapi/v0/prefs\n2026/10/26 10:22:17 [RATELIMIT] format(\"localapi: [%s] %s\")\n2026/10/26 10:22:17 EditPrefs: MaskedPrefs{ExitNodeID=\"\" ExitNodeIP=100.64.0.1 AutoExitNode=\"\" InternalExitNodePrior=\"\"}\n2026/10/26 10:22:17 prefs reconciled: Prefs{ra=true dns=false want=true exit=1 lan=false routes=[] statefulFiltering=false nf=on url=\"http://10.43.18.78:8080\" host=\"g19-a\" update=check Persist{o=, n=[blsLw] u=\"g19-a\" ak=-}}\n2026/10/26 10:22:17 taildrop: Taildrop disabled; no state directory\n2026/10/26 10:22:17 taildrop: no Taildrop directory configured\n2026/10/26 10:22:17 allowing exit node access to local IPs: [127.0.0.0/8]\n2026/10/26 10:22:17 wgengine: Reconfig: configuring router\n2026/10/26 10:22:17 wgengine: Reconfig: user dialer\n2026/10/26 10:22:17 tsdial: bart table size: 9\n2026/10/26 10:22:17 wgengine: Reconfig: configuring DNS\n2026/10/26 10:22:17 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:22:17 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:22:17 dns: OScfg: {}\n2026/10/26 10:22:20 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (2 dropped)\n2026/10/26 10:22:20 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:20 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (2 dropped)\n2026/10/26 10:22:20 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:22 derphttp.Client.Send: connecting to derp-999 (g19)\n2026/10/26 10:22:22 magicsock: disco: node [/6ahl] d:51844f788665d72d now using 10.42.0.84:41641 mtu=1360 tx=e2271bd877da\n2026/10/26 10:22:22 magicsock: new contact: peer=[/6ahl] usec=36380937 cached=false via=direct\n2026/10/26 10:22:22 magicsock: derp.Send(127.3.3.40:999): derphttp.Client.Send connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:22 derphttp.Client.Send: connecting to derp-999 (g19)\n2026/10/26 10:22:22 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:22 magicsock: derp.Send(127.3.3.40:999): derphttp.Client.Send connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:24 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 http: proxy error: context canceled\n2026/10/26 10:22:33 http: proxy error: context canceled\n2026/10/26 10:22:33 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (2 dropped)\n2026/10/26 10:22:33 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:33 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:34 [RATELIMIT] format(\"localapi: [%s] %s\") (1 dropped)\n2026/10/26 10:22:34 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:36 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:36 allowing exit node access to local IPs: [127.0.0.0/8]\n2026/10/26 10:22:36 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:37 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:37 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:40 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:40 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:40 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:40 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:22:40 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:48 http: proxy error: context canceled\n2026/10/26 10:22:53 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (1 dropped)\n2026/10/26 10:22:53 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:53 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (1 dropped)\n2026/10/26 10:22:53 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:53 http: proxy error: context canceled\n2026/10/26 10:22:55 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:55 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:55 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:57 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:57 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:57 netmap: suggested exit node:  ()\n2026/10/26 10:22:57 allowing exit node access to local IPs: [127.0.0.0/8]\n2026/10/26 10:22:57 wgengine: Reconfig: configuring router\n2026/10/26 10:22:57 wgengine: Reconfig: user dialer\n2026/10/26 10:22:57 tsdial: bart table size: 7\n2026/10/26 10:22:57 wgengine: Reconfig: configuring DNS\n2026/10/26 10:22:57 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:22:57 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:22:57 dns: OScfg: {}\n2026/10/26 10:22:59 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:59 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:23:01 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:23:02 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:23:02 magicsock: [0x63fd7bb9080] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:23:03 http: proxy error: dial tcp 10.42.0.79:8081: connect: connection refused\n2026/10/26 10:23:03 http: proxy error: dial tcp 10.43.237.16:8081: connect: connection refused\n",
+      "stderr": ""
+    },
+    "r": {
+      "exit": 0,
+      "stdout": "2026/10/26 10:21:52 Start\n2026/10/26 10:21:52 Start: updated prefs: Prefs{ra=true dns=false want=true routes=[0.0.0.0/0 ::/0] snat=true statefulFiltering=false nf=on url=\"http://10.43.18.78:8080\" host=\"g19-r\" update=check Persist=nil}, reason: [opts.UpdatePrefs]\n2026/10/26 10:21:52 generating new machine key\n2026/10/26 10:21:52 machine key written to store\n2026/10/26 10:21:52 profile data directory: profile not found\n2026/10/26 10:21:52 Backend: logs: be:dbf056704b8f81bb7e9ba27146e9c77d9dea151a5bfd29635939b0675ab32b27 fe:\n2026/10/26 10:21:52 Switching ipn state NoState -> NeedsLogin (WantRunning=true, nm=false)\n2026/10/26 10:21:52 blockEngineUpdates(true)\n2026/10/26 10:21:52 Reconfig(down): no changes made to Engine config\n2026/10/26 10:21:52 health(warnable=warming-up): error: Tailscale is starting. Please wait.\n2026/10/26 10:21:52 health(warnable=wantrunning-false): ok\n2026/10/26 10:21:52 localapi: [POST] /localapi/v0/login-interactive\n2026/10/26 10:21:52 error calling getent for user \"1000\": exit status 2\n2026/10/26 10:21:52 StartLoginInteractiveAs(\"\"): url=false\n2026/10/26 10:21:52 control: client.Login(2)\n2026/10/26 10:21:52 control: LoginInteractive -> regen=true\n2026/10/26 10:21:52 control: doLogin(regen=true, hasUrl=false)\n2026/10/26 10:21:52 control: control server key from http://10.43.18.78:8080: ts2021=[fBGMw], legacy=\n2026/10/26 10:21:52 control: Generating a new nodekey.\n2026/10/26 10:21:52 control: RegisterReq: onode= node=[/6ahl] fup=false nks=false\n2026/10/26 10:21:52 control: setting empty HTTPS port with http scheme and private host 10.43.18.78\n2026/10/26 10:21:53 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false\n2026/10/26 10:21:53 blockEngineUpdates(false)\n2026/10/26 10:21:54 using tailnet default auto-update setting: false\n2026/10/26 10:21:54 EditPrefs: MaskedPrefs{AutoUpdate={Apply=false}}\n2026/10/26 10:21:54 taildrop: Taildrop disabled; no state directory\n2026/10/26 10:21:54 taildrop: no Taildrop directory configured\n2026/10/26 10:21:54 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:54 magicsock: new contact: control-netmap usec=8312629 cached=false\n2026/10/26 10:21:54 active login: g19-r\n2026/10/26 10:21:54 netmap: suggested exit node: no preferred DERP, try again later\n2026/10/26 10:21:54 Switching ipn state NeedsLogin -> Starting (WantRunning=true, nm=true)\n2026/10/26 10:21:54 magicsock: SetPrivateKey called (init)\n2026/10/26 10:21:54 wgengine: Reconfig: configuring router\n2026/10/26 10:21:54 wgengine: Reconfig: user dialer\n2026/10/26 10:21:54 tsdial: bart table size: 2\n2026/10/26 10:21:54 monitor: gateway and self IP changed: gw=10.42.0.1 self=10.42.0.84\n2026/10/26 10:21:54 wgengine: Reconfig: configuring DNS\n2026/10/26 10:21:54 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:21:54 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:21:54 dns: OScfg: {}\n2026/10/26 10:21:54 peerapi: serving on http://100.64.0.1:58436\n2026/10/26 10:21:54 peerapi: serving on http://[fd7a:115c:a1e0::1]:58436\n2026/10/26 10:21:54 magicsock: home DERP changing from derp-0 [0ms] to derp-999 [1ms] (forced=false)\n2026/10/26 10:21:54 magicsock: home is now derp-999 (g19)\n2026/10/26 10:21:54 update netmap cache: profile local data storage unavailable\n2026/10/26 10:21:54 magicsock: adding connection to derp-999 for home-keep-alive\n2026/10/26 10:21:54 magicsock: 1 active derp conns: derp-999=cr0s,wr0s\n2026/10/26 10:21:54 derphttp.Client.Connect: connecting to derp-999 (g19)\n2026/10/26 10:21:54 magicsock: endpoints changed: 10.42.0.84:41641 (stun)\n2026/10/26 10:21:54 Switching ipn state Starting -> Running (WantRunning=true, nm=true)\n2026/10/26 10:21:54 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:21:54 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:54 health(warnable=warming-up): ok\n2026/10/26 10:21:54 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:54 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:54 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:54 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:54 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:54 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:21:54 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:21:54 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:54 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:21:54 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:21:55 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:56 [RATELIMIT] format(\"control: [v\\x00JSON]%d%s\")\n2026/10/26 10:21:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:21:56 [RATELIMIT] format(\"cannot fetch existing TKA state; no state directory for tailnet-lock\")\n2026/10/26 10:21:56 wgengine: Reconfig: configuring router\n2026/10/26 10:21:56 wgengine: Reconfig: user dialer\n2026/10/26 10:21:56 tsdial: bart table size: 4\n2026/10/26 10:21:56 wgengine: Reconfig: configuring DNS\n2026/10/26 10:21:56 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:21:56 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:21:56 dns: OScfg: {}\n2026/10/26 10:22:00 control: NetInfo: NetInfo{varies=false ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:02 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:05 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:06 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (10 dropped)\n2026/10/26 10:22:06 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:06 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (9 dropped)\n2026/10/26 10:22:06 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:07 [RATELIMIT] format(\"control: [v\\x00JSON]%d%s\") (4 dropped)\n2026/10/26 10:22:07 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:07 health(warnable=no-derp-connection): error: Tailscale could not connect to the 'G19' relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\n2026/10/26 10:22:07 health: connectivity impacted; triggering captive portal detection\n2026/10/26 10:22:07 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:07 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:07 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:07 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:07 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:22:09 DetectCaptivePortal(found=false)\n2026/10/26 10:22:11 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:16 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:17 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (2 dropped)\n2026/10/26 10:22:17 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:17 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (2 dropped)\n2026/10/26 10:22:17 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:20 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:21 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:21 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:25 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:25 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 derphttp.Client.Send: connecting to derp-999 (g19)\n2026/10/26 10:22:27 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:27 magicsock: disco: node [blsLw] d:473f203dccba8780 now using 10.42.0.83:41641 mtu=1360 tx=7f042556c105\n2026/10/26 10:22:27 magicsock: new contact: peer=[blsLw] usec=41594718 cached=false via=direct\n2026/10/26 10:22:27 magicsock: derp.Send(127.3.3.40:999): derphttp.Client.Send connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 magicsock: derp.Send(127.3.3.40:999): derphttp.Client.Send connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:27 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:22:34 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:35 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (3 dropped)\n2026/10/26 10:22:35 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:35 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (1 dropped)\n2026/10/26 10:22:35 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:36 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:37 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:39 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:39 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\")\n2026/10/26 10:22:39 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:39 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\")\n2026/10/26 10:22:41 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:44 control: NetInfo: NetInfo{varies=false ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:50 [RATELIMIT] format(\"%s: connecting to derp-%d (%v)\") (1 dropped)\n2026/10/26 10:22:50 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:50 [RATELIMIT] format(\"magicsock: [%p] derp.Recv(derp-%d): %v\") (1 dropped)\n2026/10/26 10:22:50 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:50 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:55 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:55 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:55 control: NetInfo: NetInfo{varies=false ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:22:55 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:57 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:22:57 wgengine: Reconfig: configuring router\n2026/10/26 10:22:57 wgengine: Reconfig: user dialer\n2026/10/26 10:22:57 tsdial: bart table size: 2\n2026/10/26 10:22:57 wgengine: Reconfig: configuring DNS\n2026/10/26 10:22:57 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:22:57 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:22:57 dns: OScfg: {}\n2026/10/26 10:22:58 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:22:58 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:22:58 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:22:58 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:23:01 derphttp.Client.Recv: connecting to derp-999 (g19)\n2026/10/26 10:23:01 magicsock: [0x3d8b70dd14a0] derp.Recv(derp-999): derphttp.Client.Recv connect to region 999 (g19): tls: first record does not look like a TLS handshake\n2026/10/26 10:23:01 localapi: [POST] /localapi/v0/debug\n",
+      "stderr": ""
+    },
+    "headscale": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "target": {
+      "exit": 0,
+      "stdout": "{\"at\":\"2026-10-26T10:21:46+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:47+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:48+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:49+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:50+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:51+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:52+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:53+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:54+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:55+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:56+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:57+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:58+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:58+00:00\",\"source\":\"10.42.0.83\",\"request\":\"GET /51fbf8933fa0/preflight/native-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:58+00:00\",\"source\":\"10.42.0.83\",\"request\":\"GET /51fbf8933fa0/preflight/native-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:21:59+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:00+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:01+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:02+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:03+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:04+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:05+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:06+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:07+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:08+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:09+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:10+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:11+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:12+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:12+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/original-unapproved/health-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:12+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/original-unapproved/health-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:13+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:14+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:15+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:16+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:17+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:18+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:19+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:20+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:21+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:21+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-original-open/health-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:21+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-original-open/health-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:22+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:23+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:24+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:25+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:26+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:27+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:28+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:29+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:30+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:31+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:32+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:33+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:34+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:35+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:36+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:37+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:38+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:39+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:40+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:41+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:41+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-internet-only/health-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:42+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:42+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-internet-only/health-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:43+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:44+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:45+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:46+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:47+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:48+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:49+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:50+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:51+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:52+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:53+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:54+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:55+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:56+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:57+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:58+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:22:59+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:00+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:01+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:02+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:02+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-literal-private/health-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:02+00:00\",\"source\":\"10.42.0.84\",\"request\":\"GET /51fbf8933fa0/policy-literal-private/health-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:03+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:23:04+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n",
+      "stderr": ""
+    }
+  },
+  "privateCredentialDirectoryRemoved": true,
+  "processExit": 2,
+  "elapsedSeconds": 91.882
+}

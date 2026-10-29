@@ -1,0 +1,114 @@
+{
+  "evidenceChecksPassed": true,
+  "privateForwardingPassed": false,
+  "experimentExit": 2,
+  "sourceResult": "g19-932f6019ebf7-result.json",
+  "sameRouterNetns": "4026536010",
+  "phases": [
+    "observed-unapproved",
+    "observed-approved-selected",
+    "observed-revoked-still-selected",
+    "observed-restored-still-selected"
+  ],
+  "capturedOwnedSYNHeaders": 5,
+  "captureExit": 143,
+  "runs": [
+    {
+      "run": "2f8ff2591d32",
+      "namespace": "hs-g19-1026-2f8ff2591d32",
+      "processExit": 1
+    },
+    {
+      "run": "43dd8d783352",
+      "namespace": "hs-g19-1026-43dd8d783352",
+      "processExit": 1
+    },
+    {
+      "run": "51fbf8933fa0",
+      "namespace": "hs-g19-1026-51fbf8933fa0",
+      "processExit": 2
+    },
+    {
+      "run": "648861789365",
+      "namespace": "hs-g19-1026-648861789365",
+      "processExit": 1
+    },
+    {
+      "run": "932f6019ebf7",
+      "namespace": "hs-g19-1026-932f6019ebf7",
+      "processExit": 2
+    },
+    {
+      "run": "b9b158c62e5b",
+      "namespace": "hs-g19-1026-b9b158c62e5b",
+      "processExit": 2
+    },
+    {
+      "run": "c28401a5f201",
+      "namespace": "hs-g19-1026-c28401a5f201",
+      "processExit": 1
+    },
+    {
+      "run": "d507e6c8e50a",
+      "namespace": "hs-g19-1026-d507e6c8e50a",
+      "processExit": 1
+    }
+  ],
+  "namespaceReadback": {
+    "command": [
+      "kubectl",
+      "--context",
+      "home",
+      "--request-timeout=20s",
+      "get",
+      "namespace",
+      "hs-g19-1026-2f8ff2591d32",
+      "hs-g19-1026-43dd8d783352",
+      "hs-g19-1026-51fbf8933fa0",
+      "hs-g19-1026-648861789365",
+      "hs-g19-1026-932f6019ebf7",
+      "hs-g19-1026-b9b158c62e5b",
+      "hs-g19-1026-c28401a5f201",
+      "hs-g19-1026-d507e6c8e50a",
+      "--ignore-not-found",
+      "-o",
+      "json"
+    ],
+    "exit": 0,
+    "stdoutBytes": 0,
+    "items": []
+  },
+  "credentialAndParseScanFiles": [
+    "G19核验.md",
+    "g19-2f8ff2591d32-events.jsonl",
+    "g19-2f8ff2591d32-manifest.json",
+    "g19-2f8ff2591d32-result.json",
+    "g19-43dd8d783352-events.jsonl",
+    "g19-43dd8d783352-manifest.json",
+    "g19-43dd8d783352-result.json",
+    "g19-51fbf8933fa0-events.jsonl",
+    "g19-51fbf8933fa0-filter-assertions.json",
+    "g19-51fbf8933fa0-manifest.json",
+    "g19-51fbf8933fa0-result.json",
+    "g19-648861789365-events.jsonl",
+    "g19-648861789365-manifest.json",
+    "g19-648861789365-result.json",
+    "g19-932f6019ebf7-events.jsonl",
+    "g19-932f6019ebf7-manifest.json",
+    "g19-932f6019ebf7-result.json",
+    "g19-b9b158c62e5b-assertions.json",
+    "g19-b9b158c62e5b-events.jsonl",
+    "g19-b9b158c62e5b-manifest.json",
+    "g19-b9b158c62e5b-result.json",
+    "g19-c28401a5f201-events.jsonl",
+    "g19-c28401a5f201-manifest.json",
+    "g19-c28401a5f201-result.json",
+    "g19-d507e6c8e50a-events.jsonl",
+    "g19-d507e6c8e50a-manifest.json",
+    "g19-d507e6c8e50a-result.json",
+    "g19-reproduce.py",
+    "g19-verification.json",
+    "g19-verify-evidence.py"
+  ],
+  "reproduceScriptSha256": "c72b33067c01562a67a27f54af805481a6a88a86209e896f48164fa1341db34f"
+}

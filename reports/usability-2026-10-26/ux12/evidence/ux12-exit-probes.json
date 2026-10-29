@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-26T01:31:45.738717",
+  "serviceIP": "10.43.170.90",
+  "records": [
+    {
+      "phase": "exit-approved-not-selected",
+      "result": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "wget: server returned error: HTTP/1.1 502 Bad Gateway\ncommand terminated with exit code 1"
+      }
+    },
+    {
+      "phase": "select-real-exit",
+      "result": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "phase": "exit-selected",
+      "result": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "wget: download timed out\ncommand terminated with exit code 1"
+      }
+    },
+    {
+      "phase": "restore-client-no-exit",
+      "result": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

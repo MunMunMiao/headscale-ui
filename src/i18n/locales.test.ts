@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { describe, expect, test } from "vitest";
 import {
   DEFAULT_LOCALE,
   LOCALE_META,
@@ -6,6 +7,14 @@ import {
   resolveLocale,
   SUPPORTED_LOCALES,
 } from "./locales";
+
+test("the static document language matches the default locale", () => {
+  const html = readFileSync(
+    new URL("../../index.html", import.meta.url),
+    "utf8",
+  );
+  expect(/<html[^>]*\slang="([^"]+)"/.exec(html)?.[1]).toBe(DEFAULT_LOCALE);
+});
 
 describe("locale registry", () => {
   test("uses the canonical BCP47 locale list and default", () => {
@@ -40,8 +49,16 @@ describe("locale registry", () => {
     expect(metadata).toEqual({
       "en-US": { code: "en-US", nativeLabel: "English", dir: "ltr" },
       "zh-Hans": { code: "zh-Hans", nativeLabel: "简体中文", dir: "ltr" },
-      "zh-Hant-TW": { code: "zh-Hant-TW", nativeLabel: "繁體中文（台灣）", dir: "ltr" },
-      "zh-Hant-HK": { code: "zh-Hant-HK", nativeLabel: "繁體中文（香港）", dir: "ltr" },
+      "zh-Hant-TW": {
+        code: "zh-Hant-TW",
+        nativeLabel: "繁體中文（台灣）",
+        dir: "ltr",
+      },
+      "zh-Hant-HK": {
+        code: "zh-Hant-HK",
+        nativeLabel: "繁體中文（香港）",
+        dir: "ltr",
+      },
       "ja-JP": { code: "ja-JP", nativeLabel: "日本語", dir: "ltr" },
       "ko-KR": { code: "ko-KR", nativeLabel: "한국어", dir: "ltr" },
       "fr-FR": { code: "fr-FR", nativeLabel: "Français", dir: "ltr" },

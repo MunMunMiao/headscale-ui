@@ -1,0 +1,108 @@
+2026-10-26 01:36:03.913013 after-nonauthkey-reauth
+[
+  {
+    "id": 1,
+    "ip_addresses": [
+      "100.64.0.1",
+      "fd7a:115c:a1e0::1"
+    ],
+    "name": "ux11-client-a",
+    "user": {
+      "id": 1,
+      "name": "ux11-alice",
+      "email": "ux11-alice@example.com"
+    },
+    "register_method": 1,
+    "given_name": "ux11-laptop",
+    "online": true
+  },
+  {
+    "id": 2,
+    "ip_addresses": [
+      "100.64.0.2",
+      "fd7a:115c:a1e0::2"
+    ],
+    "name": "ux11-client-b",
+    "user": {
+      "id": 2,
+      "name": "ux11-bob-renamed",
+      "email": "ux11-bob@example.com"
+    },
+    "register_method": 2,
+    "given_name": "ux11-client-b",
+    "online": true
+  }
+]
+100.64.0.2  ux11-client-b  ux11-bob@    linux  -                                                 
+100.64.0.1  ux11-laptop    ux11-alice@  linux  active; direct 10.42.0.41:55622, tx 4760 rx 3464  
+
+
+real client requested tag: exit=0
+
+
+
+[
+  {
+    "id": 1,
+    "ip_addresses": [
+      "100.64.0.1",
+      "fd7a:115c:a1e0::1"
+    ],
+    "name": "ux11-client-a",
+    "user": {
+      "id": 1,
+      "name": "ux11-alice",
+      "email": "ux11-alice@example.com"
+    }
+  },
+  {
+    "id": 3,
+    "ip_addresses": [
+      "100.64.0.3",
+      "fd7a:115c:a1e0::3"
+    ],
+    "name": "ux11-client-b",
+    "user": {
+      "id": 2,
+      "name": "ux11-bob-renamed",
+      "email": "ux11-bob@example.com"
+    }
+  }
+]
+2026-10-26 01:55:11.029773 authorized requested tag registration readback
+[
+  {
+    "id": 1,
+    "ip_addresses": [
+      "100.64.0.1",
+      "fd7a:115c:a1e0::1"
+    ],
+    "name": "ux11-client-a",
+    "user": {
+      "id": 1,
+      "name": "ux11-alice",
+      "email": "ux11-alice@example.com"
+    },
+    "register_method": 1,
+    "given_name": "ux11-laptop",
+    "online": true
+  },
+  {
+    "id": 3,
+    "ip_addresses": [
+      "100.64.0.3",
+      "fd7a:115c:a1e0::3"
+    ],
+    "name": "ux11-client-b",
+    "user": {
+      "id": 2147455555,
+      "name": "tagged-devices"
+    },
+    "register_method": 2,
+    "given_name": "ux11-client-b",
+    "online": true,
+    "tags": [
+      "tag:ux11-server"
+    ]
+  }
+]

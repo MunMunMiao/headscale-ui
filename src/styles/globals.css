@@ -19,7 +19,7 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.505 0.213 27.518);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -39,7 +39,12 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root {
+  color-scheme: light;
+}
+
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -72,6 +77,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/*
+ * Before the theme classes exist (the first frame), follow the OS. An explicit
+ * choice that differs from the OS still shows one blank OS-coloured frame.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light, .dark) {
+    color-scheme: dark;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+  }
 }
 
 @theme inline {
@@ -114,6 +131,11 @@
 }
 
 @layer base {
+  html {
+    /* sticky header is 5.5rem (pt-2 + min-h-11 + h-9) */
+    scroll-padding-top: 6rem;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
@@ -125,7 +147,9 @@
   #app {
     min-height: 100vh;
   }
+}
 
+@layer utilities {
   :is(
     a[href],
     a[role="link"],
@@ -145,18 +169,18 @@
     input[type="week"]:not(:disabled),
     label[for],
     summary,
-    [data-slot="button"]:not(:disabled):not([disabled]):not([aria-disabled="true"]):not(
-      [data-disabled]
-    ),
-    [data-slot$="-button"]:not(:disabled):not([disabled]):not([aria-disabled="true"]):not(
-      [data-disabled]
-    ),
-    [data-slot$="-trigger"]:not(:disabled):not([disabled]):not([aria-disabled="true"]):not(
-      [data-disabled]
-    ),
-    [data-slot$="-item"]:not(:disabled):not([disabled]):not([aria-disabled="true"]):not(
-      [data-disabled]
-    ),
+    [data-slot="button"]:not(:disabled):not([disabled]):not(
+        [aria-disabled="true"]
+      ):not([data-disabled]),
+    [data-slot$="-button"]:not(:disabled):not([disabled]):not(
+        [aria-disabled="true"]
+      ):not([data-disabled]),
+    [data-slot$="-trigger"]:not(:disabled):not([disabled]):not(
+        [aria-disabled="true"]
+      ):not([data-disabled]),
+    [data-slot$="-item"]:not(:disabled):not([disabled]):not(
+        [aria-disabled="true"]
+      ):not([data-disabled]),
     [role="button"]:not([aria-disabled="true"]),
     [role="checkbox"]:not([aria-disabled="true"]),
     [role="menuitem"]:not([data-disabled]),
@@ -175,13 +199,50 @@
     select:disabled,
     input:disabled,
     textarea:disabled,
-    [data-slot="button"]:is(:disabled, [disabled], [aria-disabled="true"], [data-disabled]),
-    [data-slot$="-button"]:is(:disabled, [disabled], [aria-disabled="true"], [data-disabled]),
-    [data-slot$="-trigger"]:is(:disabled, [disabled], [aria-disabled="true"], [data-disabled]),
-    [data-slot$="-item"]:is(:disabled, [disabled], [aria-disabled="true"], [data-disabled]),
+    [data-slot="button"]:is(
+      :disabled,
+      [disabled],
+      [aria-disabled="true"],
+      [data-disabled]
+    ),
+    [data-slot$="-button"]:is(
+      :disabled,
+      [disabled],
+      [aria-disabled="true"],
+      [data-disabled]
+    ),
+    [data-slot$="-trigger"]:is(
+      :disabled,
+      [disabled],
+      [aria-disabled="true"],
+      [data-disabled]
+    ),
+    [data-slot$="-item"]:is(
+      :disabled,
+      [disabled],
+      [aria-disabled="true"],
+      [data-disabled]
+    ),
     [aria-disabled="true"],
     [data-disabled]
   ) {
     cursor: not-allowed;
+  }
+
+  [data-slot="alert-dialog-content"] {
+    max-height: calc(100svh - 2rem);
+    overflow-y: auto;
+  }
+
+  [data-slot="switch"]:dir(rtl) [data-slot="switch-thumb"][data-checked] {
+    margin-inline-start: auto;
+    translate: none;
+  }
+
+  @media (width >= 40rem) {
+    [data-slot="alert-dialog-content"]:dir(rtl)
+      [data-slot="alert-dialog-header"] {
+      text-align: start;
+    }
   }
 }

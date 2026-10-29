@@ -1,0 +1,260 @@
+{
+  "logs": [
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/01-component-red.log",
+      "sha256": "6b1f0816bb80b6d2ed041876242d13b8dbafab1b86af0295c0c5b9804c921774",
+      "evidence": [
+        {
+          "line": 41,
+          "text": " × |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure 15195ms"
+        },
+        {
+          "line": 147,
+          "text": " × |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed 15082ms"
+        },
+        {
+          "line": 158,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: retrying a failed inventory read retains its known warning until a successful read 722ms"
+        },
+        {
+          "line": 196,
+          "text": " FAIL  |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure"
+        },
+        {
+          "line": 225,
+          "text": " FAIL  |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed"
+        },
+        {
+          "line": 257,
+          "text": " Test Files  2 failed (2)"
+        },
+        {
+          "line": 258,
+          "text": "      Tests  2 failed | 1 passed | 168 skipped (171)"
+        },
+        {
+          "line": 260,
+          "text": "   Duration  18.52s (tests 95%, import 4%, setup 1%, worker 1%)"
+        },
+        {
+          "line": 264,
+          "text": "EXIT_CODE=1"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/02-hook-red.log",
+      "sha256": "8f27d5fc71603f1fdd2a71add40175063e56f2834f2d1d14ab0b2f6499b0dd39",
+      "evidence": [
+        {
+          "line": 28,
+          "text": " × |unit| src/composables/useCreatePreAuthKey.test.ts > useCreatePreAuthKey > G27: a newer slow inventory read cannot turn a confirmed creation into a failure notification 64ms"
+        },
+        {
+          "line": 55,
+          "text": " FAIL  |unit| src/composables/useCreatePreAuthKey.test.ts > useCreatePreAuthKey > G27: a newer slow inventory read cannot turn a confirmed creation into a failure notification"
+        },
+        {
+          "line": 88,
+          "text": " Test Files  1 failed (1)"
+        },
+        {
+          "line": 89,
+          "text": "      Tests  1 failed | 26 skipped (27)"
+        },
+        {
+          "line": 91,
+          "text": "   Duration  367ms (import 41%, transform 37%, tests 22%, worker 1%)"
+        },
+        {
+          "line": 95,
+          "text": "EXIT_CODE=1"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/03-calibrated-component-red.log",
+      "sha256": "c4ea860399adfbe75194dbad7f73a3479fe0728efc6666f65aa8db670fa4dc84",
+      "evidence": [
+        {
+          "line": 41,
+          "text": " × |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure 15210ms"
+        },
+        {
+          "line": 147,
+          "text": " × |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed 15138ms"
+        },
+        {
+          "line": 156,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: retrying a failed inventory read retains its known warning until a successful read 768ms"
+        },
+        {
+          "line": 194,
+          "text": " FAIL  |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure"
+        },
+        {
+          "line": 223,
+          "text": " FAIL  |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed"
+        },
+        {
+          "line": 253,
+          "text": " Test Files  2 failed (2)"
+        },
+        {
+          "line": 254,
+          "text": "      Tests  2 failed | 1 passed | 168 skipped (171)"
+        },
+        {
+          "line": 256,
+          "text": "   Duration  18.73s (tests 96%, import 3%, setup 1%, worker 1%)"
+        },
+        {
+          "line": 260,
+          "text": "EXIT_CODE=1"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/04-component-green.log",
+      "sha256": "3a8f9d9aec214b9b04c304d1da2200c67bdde855188ee526bb0a45045f36bb1e",
+      "evidence": [
+        {
+          "line": 39,
+          "text": " ✓ |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure 1677ms"
+        },
+        {
+          "line": 139,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed 855ms"
+        },
+        {
+          "line": 140,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: retrying a failed inventory read retains its known warning until a successful read 723ms"
+        },
+        {
+          "line": 176,
+          "text": " Test Files  2 passed (2)"
+        },
+        {
+          "line": 177,
+          "text": "      Tests  16 passed | 155 skipped (171)"
+        },
+        {
+          "line": 179,
+          "text": "   Duration  13.25s (tests 91%, import 6%, setup 2%, worker 1%)"
+        },
+        {
+          "line": 182,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/05-hook-green.log",
+      "sha256": "67173999d347722381bcc51af448e8b4b010938e7ef7126ec0a743c140e381ef",
+      "evidence": [
+        {
+          "line": 28,
+          "text": " ✓ |unit| src/composables/useCreatePreAuthKey.test.ts > useCreatePreAuthKey > G27: a newer slow inventory read cannot turn a confirmed creation into a failure notification 52ms"
+        },
+        {
+          "line": 32,
+          "text": " Test Files  1 passed (1)"
+        },
+        {
+          "line": 33,
+          "text": "      Tests  27 passed (27)"
+        },
+        {
+          "line": 35,
+          "text": "   Duration  384ms (tests 45%, import 34%, transform 20%, worker 1%)"
+        },
+        {
+          "line": 38,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/06-format.log",
+      "sha256": "cbb37a8154c575165af3c8560b5208483efd0d2f5e978ae1ecadaaa1b463b163",
+      "evidence": [
+        {
+          "line": 7,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/07-scoped-browser-green.log",
+      "sha256": "8216d86e25da17d2903f2133063daed7d0e624cc53c2bbb21bee47db1fd2e8e9",
+      "evidence": [
+        {
+          "line": 8,
+          "text": " ✓ |browser (chromium)| src/pages/DevicesPage.fixes.browser.test.tsx > G27: a slow setup inventory refresh keeps the created key usable without claiming failure 1408ms"
+        },
+        {
+          "line": 120,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: a successful creation followed by a slow inventory read is unverified, not failed 979ms"
+        },
+        {
+          "line": 122,
+          "text": " ✓ |browser (chromium)| src/pages/InvitesPage.lifecycle.browser.test.tsx > G27: retrying a failed inventory read retains its known warning until a successful read 792ms"
+        },
+        {
+          "line": 194,
+          "text": " Test Files  3 passed (3)"
+        },
+        {
+          "line": 195,
+          "text": "      Tests  189 passed (189)"
+        },
+        {
+          "line": 197,
+          "text": "   Duration  108.13s (tests 99%, import 1%)"
+        },
+        {
+          "line": 200,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/10-typecheck.log",
+      "sha256": "e968d086a0ed3a1fc6b7c161572ece4f05c7aabc8adac9fff04425d9132dae15",
+      "evidence": [
+        {
+          "line": 3,
+          "text": "✓ No type errors in 485 files across 2 projects [637.90ms]"
+        },
+        {
+          "line": 5,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/11-scoped-lint.log",
+      "sha256": "ae83a3ae13d7b3bd00ee127bc7bdb3a9fa0a2ca71b3490011b0c284069ed243f",
+      "evidence": [
+        {
+          "line": 2,
+          "text": "EXIT_CODE=0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/12-final-diff-check.log",
+      "sha256": "f0a32c8e84e7e5e5997dfab54b3f5eeeac75bf68741158de06a3c450e7aa9d03",
+      "evidence": [
+        {
+          "line": 1,
+          "text": "DIFF_CHECK_EXIT_CODE=0"
+        },
+        {
+          "line": 3,
+          "text": "FORMAT_CHECK_EXIT_CODE=0"
+        }
+      ]
+    }
+  ]
+}

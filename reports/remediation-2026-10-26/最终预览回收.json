@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-26T06:58:36.611539+08:00",
+  "project": "headscale-tag-lifecycle-73309-f516a51f",
+  "remainingOwned": {
+    "containers": [],
+    "networks": [],
+    "volumes": []
+  },
+  "privateDirectoryExists": false,
+  "port4187Closed": true,
+  "screenshot": "evidence/最终-G08-另一页空资料指引.jpg",
+  "screenshotSha256": "dd1fa5e590ffb36e1ba008c83dd54b01342ca8e4cb2561ae11a74f77a3b7e9fc",
+  "scope": "仅最终手工预览fixture；正在执行的独立E2E资源由其runner另行回收。"
+}

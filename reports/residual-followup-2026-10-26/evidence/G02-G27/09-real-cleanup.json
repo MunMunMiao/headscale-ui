@@ -1,0 +1,9 @@
+{
+  "owner": "headscale-tag-lifecycle-run-41230-b94097cc-2187-4c02-a318-36c8b6a49e22",
+  "directoryRemoved": true,
+  "resources": {
+    "container": [],
+    "volume": [],
+    "network": []
+  }
+}

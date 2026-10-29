@@ -1,0 +1,254 @@
+{
+  "capture_start": "2026-10-25T17:44:07.595Z",
+  "capture_end": "2026-10-25T18:04:47.275Z",
+  "events": 2454,
+  "requests": 1224,
+  "credential_counts": {
+    "B": 545,
+    "A": 615,
+    "NONE": 50,
+    "OTHER": 14
+  },
+  "request_methods": {
+    "GET": 1210,
+    "POST": 6,
+    "DELETE": 5,
+    "PUT": 3
+  },
+  "failure_counts": {
+    "net::ERR_ABORTED": 294,
+    "net::ERR_CONNECTION_REFUSED": 7
+  },
+  "response_status_counts": {
+    "200": 866,
+    "500": 57,
+    "401": 6
+  },
+  "credential_origin_mismatches": [],
+  "non_get_requests": [
+    {
+      "at": "2026-10-25T17:45:33.872Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:30325/api/v1/node/1/rename/ux12-b-server-only",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:45:35.576Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:48:18.814Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:30325/api/v1/user/2/rename/ux12-b-dave-renamed",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:48:20.481Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:48:22.476Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:30325/api/v1/apikey",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:48:22.901Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:51:40.588Z",
+      "target": "shared_worker",
+      "method": "DELETE",
+      "url": "https://10.0.0.17:30325/api/v1/user/2",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:51:41.097Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:54:57.796Z",
+      "target": "shared_worker",
+      "method": "DELETE",
+      "url": "https://10.0.0.17:30325/api/v1/preauthkey",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:54:57.964Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:55:02.262Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:30325/api/v1/apikey/expire",
+      "credential": "B",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:55:04.982Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:56:33.322Z",
+      "target": "shared_worker",
+      "method": "DELETE",
+      "url": "https://10.0.0.17:32113/api/v1/node/2",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:56:37.287Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:56:48.578Z",
+      "target": "shared_worker",
+      "method": "DELETE",
+      "url": "https://10.0.0.17:32113/api/v1/user/1",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:56:48.890Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:57:01.565Z",
+      "target": "shared_worker",
+      "method": "PUT",
+      "url": "https://10.0.0.17:32113/api/v1/policy",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:57:02.412Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:58:42.331Z",
+      "target": "shared_worker",
+      "method": "PUT",
+      "url": "https://10.0.0.17:32113/api/v1/policy",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:58:43.309Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T17:59:09.800Z",
+      "target": "shared_worker",
+      "method": "PUT",
+      "url": "https://10.0.0.17:32113/api/v1/policy",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T17:59:10.976Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T18:01:17.010Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:32113/api/v1/auth/register",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T18:01:18.077Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T18:02:22.059Z",
+      "target": "shared_worker",
+      "method": "POST",
+      "url": "https://10.0.0.17:32113/api/v1/user",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T18:02:22.229Z",
+          "event": "failed",
+          "status": null,
+          "error": "net::ERR_ABORTED",
+          "canceled": true
+        }
+      ]
+    },
+    {
+      "at": "2026-10-25T18:03:37.278Z",
+      "target": "shared_worker",
+      "method": "DELETE",
+      "url": "https://10.0.0.17:32113/api/v1/user/3",
+      "credential": "A",
+      "outcomes": [
+        {
+          "at": "2026-10-25T18:03:38.163Z",
+          "event": "response",
+          "status": 200,
+          "error": null,
+          "canceled": null
+        }
+      ]
+    }
+  ]
+}

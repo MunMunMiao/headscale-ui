@@ -1,0 +1,180 @@
+{
+  "sourceLogSha256": "06f399ed75777a4c18264e84d9ad01ad7fac6b30e679c453eaad97b8fbe71dfa",
+  "command": "bun run e2e",
+  "exitCode": 0,
+  "stageSummaries": [
+    {
+      "line": 65,
+      "text": "Test Files  2 passed (2)"
+    },
+    {
+      "line": 66,
+      "text": "Tests  89 passed (89)"
+    },
+    {
+      "line": 68,
+      "text": "Duration  571.54s (worker 50%, tests 50%)"
+    },
+    {
+      "line": 129,
+      "text": "Test Files  1 passed (1)"
+    },
+    {
+      "line": 130,
+      "text": "Tests  25 passed (25)"
+    },
+    {
+      "line": 132,
+      "text": "Duration  459.51s (tests 100%)"
+    },
+    {
+      "line": 162,
+      "text": "Test Files  7 passed (7)"
+    },
+    {
+      "line": 163,
+      "text": "Tests  67 passed (67)"
+    },
+    {
+      "line": 165,
+      "text": "Duration  360.86s (tests 100%)"
+    },
+    {
+      "line": 659,
+      "text": "[exitCode=0]"
+    }
+  ],
+  "scriptPassMarkerCount": 75,
+  "scriptPassMarkers": [
+    "PASS complete policy review: no PUT before confirmation, exactly one after",
+    "PASS restricted ACL after save",
+    "PASS restricted ACL after full reload",
+    "PASS restricted ACL after logout/login",
+    "PASS HuJSON ACL visible/editable; source, port and TCP-only restriction survive full reload and logout/login",
+    "PASS complete policy review: no PUT before confirmation, exactly one after",
+    "PASS empty ACL after save",
+    "PASS empty ACL after full reload",
+    "PASS empty ACL after logout/login",
+    "PASS Headscale restart preserves its network namespace and host interface",
+    "PASS empty ACL after Headscale restart and full reload",
+    "PASS last ACL deletion persists across full reload, logout/login, and Headscale restart",
+    "PASS complete policy review: no PUT before confirmation, exactly one after",
+    "PASS browser can restore configured access from explicit empty ACL and reload it",
+    "PASS final policy PUT total after normal proxy exit and both log stream EOFs",
+    "PASS original two-Headscale shared-session assertion [{\"tab\":\"A-after-B-login\",\"sourceOrigin\":\"http://127.0.0.1:56375\",\"users\":[\"deployment-b-probe\"],\"httpStatus\":200,\"authorizedControlVisible\":true,\"authorizedControlEnabled\":true},{\"tab\":\"B-after-B-login\",\"sourceOrigin\":\"http://127.0.0.1:56375\",\"users\":[\"deployment-b-probe\"],\"httpStatus\":200,\"authorizedControlVisible\":true,\"authorizedControlEnabled\":true}]",
+    "PASS candidate exclusion, per-port cancellation, peer reload, compatible/incompatible protocol, and global logout",
+    "PASS late A response and A draft cannot overwrite or write to B",
+    "PASS actual freeze/resume refuses a committed write reply after peer logout, with no key flash or write replay",
+    "PASS hidden page receives a one-time key, survives the communication deadline, and displays it once after revalidation",
+    "PASS write fault (drop after commit) surfaced api-key-create-notice without key or replay",
+    "PASS write fault (502 after commit) surfaced api-key-create-notice without key or replay",
+    "PASS write held past the HTTP timeout surfaced api-key-create-notice without key or replay",
+    "PASS closing a page with a held write aborts it while peers stay unlocked",
+    "PASS quiet BFCache round trip restores the unlocked page in the same session",
+    "PASS BFCache entry evicted after peer logout (sharedworker-message); reload recovery locked",
+    "PASS temporary owner list, opener inheritance, independent-page isolation, and shared authorization",
+    "PASS silent Worker termination, bounded failure, and locked recovery",
+    "PASS Worker death with a held write surfaced error-screen without key or replay",
+    "PASS independent profile passwords, owner visibility, shared authorization and global logout",
+    "PASS two native Worker password changes admit one CAS winner",
+    "PASS new profile commit rejects an older password change and permits explicit retry",
+    "PASS credential change rejects a delayed encrypted save without resurrecting its row",
+    "PASS reset cancels a delayed Worker save and prevents pre-reset ciphertext returning",
+    "PASS two distinct native saves retain the loser draft and require fresh secrets for retry",
+    "PASS Worker request success then abort preserves save/delete/change/reset records and locks reset",
+    "PASS native Chromium process restart preserves owner and encrypted row but requires fresh unlock",
+    "PASS native v2 blocker closes, v3 preserves raw rows, and old open(2) is fenced",
+    "PASS aborted v2 to v3 version bump keeps records",
+    "PASS v1 to v3 migration aborts atomically",
+    "PASS Worker migration abort retains original legacy row, keys, canary and explicit retry",
+    "PASS a concurrent new save fences a delayed legacy migration and permits fresh-password retry",
+    "PASS reset cancels a delayed native legacy migration without restoring old ciphertext",
+    "PASS / a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS / a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS /admin/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /admin/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /admin/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS runtime BASE_PATH=\"/admin\" and restart",
+    "PASS / catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS runtime BASE_PATH=undefined and restart",
+    "PASS / catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS runtime BASE_PATH=\"\" and restart",
+    "PASS / catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS runtime BASE_PATH=\"/\" and restart",
+    "PASS /admin/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /admin/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /admin/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS runtime BASE_PATH=\"/admin/\" and restart",
+    "PASS /nested/admin/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /nested/admin/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /nested/admin/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS runtime BASE_PATH=\"/nested/admin/\" and restart",
+    "PASS /A-z_0.~/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /A-z_0.~/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /A-z_0.~/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS runtime BASE_PATH=\"/A-z_0.~/\" and restart",
+    "PASS /index.html/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /index.html/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /index.html/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS runtime BASE_PATH=\"/index.html/\" and restart",
+    "PASS /admin/ catalog cold loads for 11 locales, cache reuse, MIME/cache headers, missing-chunk recovery and draft retention",
+    "PASS /admin/ a missing vault-state is repaired only through the confirmed Worker reset",
+    "PASS /admin/ a blocked then aborted upgrade shows the blocker first, then the error",
+    "PASS invalid BASE_PATH rejection and prefix-preserving reverse proxy"
+  ],
+  "warnings": [
+    {
+      "line": 57,
+      "text": "warn: Bun.serve() timed out a request after 10 seconds. Pass `idleTimeout` to configure."
+    },
+    {
+      "line": 59,
+      "text": "Error: socket hang up"
+    },
+    {
+      "line": 87,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 90,
+      "text": "Error: read ECONNRESET"
+    },
+    {
+      "line": 99,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 102,
+      "text": "Error: read ECONNRESET"
+    },
+    {
+      "line": 111,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 114,
+      "text": "Error: read ECONNRESET"
+    },
+    {
+      "line": 123,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 126,
+      "text": "Error: read ECONNRESET"
+    },
+    {
+      "line": 150,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 159,
+      "text": "error: fixture dropped the response"
+    },
+    {
+      "line": 476,
+      "text": "error: fixture dropped the response"
+    }
+  ],
+  "note": "脚本PASS标记不作为独立Vitest测试相加；警告保留，不宣称日志全无错误文本。"
+}

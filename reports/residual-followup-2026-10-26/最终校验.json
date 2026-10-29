@@ -1,0 +1,67 @@
+{
+  "verifiedAt": "2026-10-26T20:01:51.143401+08:00",
+  "branch": "codex/audit-remediation",
+  "HEAD": "4d21dd98c97055ba8e77aa9e2e42659d82478de5",
+  "incrementalFiles": {
+    "e2e/ai/README.md": "b0abae8b94581fcfd14221033bf16a5e2fe423931de91b1e4dd0c84042696a59",
+    "e2e/ai/cases.md": "de6eaa8a62e21a424cc04260e2b561fb0dcfbf74afa55b986d7abc477512dd40",
+    "e2e/tag-lifecycle.browser.test.tsx": "54562940d76185de6e550bc373db1dfcfe9b3707596ded314f8f89d3960de98f",
+    "src/composables/useCreatePreAuthKey.test.ts": "0f2c8d4fc1bdbb6ef8c11b5e9ef1886b16f835dfc11cd9555314aaab0624e747",
+    "src/composables/useCreatePreAuthKey.ts": "dc47275267c348dd1d817b2afc124de0c3e8dcf574e1800b281b2572ce8f6685",
+    "src/composables/useDisplayHelpers.browser.test.tsx": "a50e0f04fe9236d2b389df013adcd6043eecadefe678913888f5576996a435b5",
+    "src/pages/DevicesPage.fixes.browser.test.tsx": "f1827d1060c854e7d7f87986cfc2e47c299abd460a6d9e2c393c5d636f7bac7d",
+    "src/pages/DevicesPage.tsx": "ec6c438c3bd03528f5219cfa89b9f746876d3e3e7cfe130e0b334ac71852b988",
+    "src/pages/InvitesPage.lifecycle.browser.test.tsx": "f5cc8c9de1d155c7fbb87db6b34eac492f0e2ee6b56be4968c2ecfa8ebd46da1",
+    "src/pages/InvitesPage.tsx": "b1543a56e32ae0aaac08b25fa4df9aee5fd8deadb320691359d525c9ed04b506"
+  },
+  "unchangedBaselineSourceFiles": 384,
+  "previousReportFilesPreserved": 345,
+  "upstreamUiUnchanged": true,
+  "incrementalPatchMatches": true,
+  "tests": {
+    "filesPassed": 152,
+    "passed": 3443,
+    "preExistingLinuxSkippedOnMacOS": 3,
+    "coveredFiles": 114,
+    "fourMetricsEveryFile": 100,
+    "exitCode": 0
+  },
+  "e2e": {
+    "lanePassed": [
+      89,
+      25,
+      67
+    ],
+    "laneTotal": 181,
+    "allDownstreamScriptsPassed": true,
+    "exitCode": 0
+  },
+  "staticChecks": {
+    "lint": "zero warnings; deny-warnings exited 0",
+    "format": "370 files passed",
+    "typecheck": "485 files / 2 projects passed",
+    "i18n": "11 locales / 820 each stable",
+    "build": "3452 modules; exit 0"
+  },
+  "issues": {
+    "G01": "confirmed race; upstream atomic enforcement not implemented",
+    "G02": "current real recovery controls passed; historical unique cause not claimed",
+    "G12": "current dynamic display verified; raw upstream data preserved",
+    "G17": "upstream trusted metadata contract absent; not implemented",
+    "G18": "zero-capability root negative and same-UID nonroot approve/reject passed",
+    "G19": "default RFC1918 rejection explained; explicit /32 four-stage controls passed",
+    "G27": "loading false failure fixed with RED/GREEN, independent review, real UI and full verification"
+  },
+  "reports": {
+    "localLinksChecked": 56,
+    "brokenLinks": [],
+    "textFilesScannedForCredentialPatterns": 80,
+    "credentialPatternCandidates": [],
+    "limit": "格式扫描与已遮罩图证不等于任意秘密不存在的形式化证明。"
+  },
+  "cleanupAudit": "资源最终核验.json",
+  "defaultBridgeIdentityChangeDisclosed": true,
+  "committed": false,
+  "pushed": false,
+  "staged": false
+}

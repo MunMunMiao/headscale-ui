@@ -1,0 +1,22 @@
+{
+  "verifiedAt": "2026-10-26T15:32:55.099685+08:00",
+  "previewProject": "headscale-tag-lifecycle-16334-0c213a88",
+  "remainingOwned": {
+    "containers": [],
+    "networks": [],
+    "volumes": []
+  },
+  "privateDirectoryRemoved": true,
+  "port4179Closed": true,
+  "evidence": [
+    {
+      "path": "evidence/G01-真实页面身份冲突.jpg",
+      "sha256": "2254b6ca2d598fe5197fbc6499e5e4b74301f5b58138f0574f53f2d442cf5921"
+    },
+    {
+      "path": "evidence/G02-重审提示与确认撤销.jpg",
+      "sha256": "60d95a3824e14dd6b2e7fa2e678cf43f158f014fb99b94614fc137e47ec41ada"
+    }
+  ],
+  "scope": "仅本次手工预览资源；正在运行的完整E2E资源由各runner另行管理。"
+}

@@ -1,0 +1,16 @@
+{
+  "member": "ux07",
+  "url": "https://10.0.0.17:32198/login",
+  "tabs": [
+    {
+      "tab": 0,
+      "url": "https://10.0.0.17:32198/login"
+    },
+    {
+      "tab": 1,
+      "url": "https://10.0.0.17:32198/login?redirect=%2Fhome"
+    }
+  ],
+  "errors": [],
+  "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - 'button \"Language: English\"'\n  - 'button \"Theme: System\"'\n- main:\n  - heading \"Choose a server profile\" [level=1]\n  - paragraph: Pick a saved profile like an operating system login, or add another Headscale server.\n  - button \"Add server New profile\"\n  - button \"Clear all saved profiles\"\n- region \"Notifications\""
+}

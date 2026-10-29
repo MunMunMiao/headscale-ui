@@ -1,0 +1,181 @@
+{
+  "run": "648861789365",
+  "namespace": "hs-g19-1026-648861789365",
+  "context": "home",
+  "probeTimeoutSeconds": 5,
+  "phases": [],
+  "policyComparisons": [],
+  "assertions": {},
+  "cleanup": {
+    "deleteExit": 0,
+    "readbackExit": 0,
+    "namespaceAbsent": true,
+    "ownershipChecked": true
+  },
+  "cluster": {
+    "node": "my-home-server",
+    "podCIDRs": [
+      "10.42.0.0/24"
+    ],
+    "kubeletVersion": "v1.36.5+k3s1",
+    "runtime": "containerd://2.3.4-k3s1.36",
+    "flannelBackend": "vxlan"
+  },
+  "namespaceUID": "a08b8b0a-0d0b-496d-8a0d-9e33a05acc8e",
+  "routerPodIP": "10.42.0.74",
+  "targets": {
+    "podip": "10.42.0.73",
+    "clusterip": "10.43.54.203"
+  },
+  "podSecurity": [
+    {
+      "name": "a",
+      "uid": "ca5c16e8-3b8d-4d18-b60c-37034d3ac3a6",
+      "podIP": "10.42.0.72",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "headscale",
+      "uid": "cd134dce-d15a-4063-a2a2-ec41e2147cc6",
+      "podIP": "10.42.0.69",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "headscale/headscale:0.29.4",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "uid": "6ea01069-026d-4542-a2a2-f9733b161802",
+      "podIP": "10.42.0.74",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "target",
+      "uid": "b8083cb0-2b7e-4afe-b013-5428da92e490",
+      "podIP": "10.42.0.73",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 101,
+        "runAsGroup": 101,
+        "runAsNonRoot": true,
+        "runAsUser": 101,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "nginx:1.30.5-alpine",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    }
+  ],
+  "routerSameContainerIdentity": "self_netns=net:[4026536022]\ndaemon_pid=1\ndaemon_netns=net:[4026536022]\nuid=1000 gid=1000 groups=1000\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\ntun_present=false\n",
+  "clientVersion": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+  "serverVersion": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/amd64",
+  "error": "RuntimeError: Command failed (1): 500 Internal Server Error: cannot start backend when state store is unhealthy\ncommand terminated with exit code 1\n",
+  "finalLogs": {
+    "a": {
+      "exit": 0,
+      "stdout": "TPM: error opening: stat /dev/tpmrm0: no such file or directory\n2026/10/26 10:18:36 You have disabled logging. Tailscale will not be able to provide support.\n2026/10/26 10:18:36 Program starting: v1.102.5-1-t5fb2a81b0, Go 1.26.6: []string{\"tailscaled\", \"--tun=userspace-networking\", \"--state=/var/lib/tailscale/state\", \"--socket=/var/run/tailscale/tailscaled.sock\", \"--outbound-http-proxy-listen=127.0.0.1:1056\", \"--port=41641\"}\n2026/10/26 10:18:36 LogID: 89e46562a998f26cc99ad443c605ee4add004c4a45defa2ee824c3b03eb849a5\n2026/10/26 10:18:36 logpolicy: using system state directory \"/var/lib/tailscale\"\nlogpolicy.ConfigFromFile /var/lib/tailscale/tailscaled.log.conf: open /var/lib/tailscale/tailscaled.log.conf: no such file or directory\nlogpolicy.Config.Validate for /var/lib/tailscale/tailscaled.log.conf: config is nil\n2026/10/26 10:18:36 dns: [rc=unknown ret=direct]\n2026/10/26 10:18:36 dns: using \"direct\" mode\n2026/10/26 10:18:36 dns: using *dns.directManager\n2026/10/26 10:18:36 dns: inotify: NewDirWatcher: context canceled\n2026/10/26 10:18:36 wgengine.NewUserspaceEngine(tun \"userspace-networking\") ...\n2026/10/26 10:18:36 tstun: error initializing tun dev stats polling: error getting ifIndex: no such device\n2026/10/26 10:18:36 dns: using dns.noopManager\n2026/10/26 10:18:36 link state: interfaces.State{defaultRoute=eth0 ifs={eth0:[10.42.0.72/24 llu6]} v4=true v6=false}\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: disco key = d:ef24b6fad4d7fbb1\n2026/10/26 10:18:36 Creating WireGuard device...\n2026/10/26 10:18:36 Bringing WireGuard device up...\n2026/10/26 10:18:36 Bringing router up...\n2026/10/26 10:18:36 Clearing router settings...\n2026/10/26 10:18:36 Starting network monitor...\n2026/10/26 10:18:36 Engine created.\n2026/10/26 10:18:36 store.New failed: creating state directory: chmod /var/lib/tailscale: operation not permitted; starting with in-memory store with a health warning\n2026/10/26 10:18:36 pm: migrating \"_daemon\" profile to new format\n2026/10/26 10:18:36 envknob: TS_NO_LOGS_NO_SUPPORT=\"true\"\n2026/10/26 10:18:36 logpolicy: using system state directory \"/var/lib/tailscale\"\n2026/10/26 10:18:36 linkChange: in state NoState; PAC or proxyConfig changed; updating routes\n2026/10/26 10:18:36 got LocalBackend in 18ms\n2026/10/26 10:18:36 Start\n2026/10/26 10:18:36 ipnext: \"conn25\": skipping extension\n2026/10/26 10:18:36 ipnext: active extensions: captiveportal, acme, portlist, posture, clientupdate, relayserver, routecheck, serviceclientprefs, taildrop\n2026/10/26 10:18:36 profile data directory: profile not found\n2026/10/26 10:18:36 Backend: logs: be:89e46562a998f26cc99ad443c605ee4add004c4a45defa2ee824c3b03eb849a5 fe:\n2026/10/26 10:18:36 health(warnable=state-store-health): error: State store failed to initialize, Tailscale will not work until this is resolved. See https://tailscale.com/s/state-store-init-error. Error: creating state directory: chmod /var/lib/tailscale: operation not permitted\n2026/10/26 10:18:36 health(warnable=wantrunning-false): error: Tailscale is stopped.\n",
+      "stderr": ""
+    },
+    "r": {
+      "exit": 0,
+      "stdout": "TPM: error opening: stat /dev/tpmrm0: no such file or directory\n2026/10/26 10:18:36 You have disabled logging. Tailscale will not be able to provide support.\n2026/10/26 10:18:36 Program starting: v1.102.5-1-t5fb2a81b0, Go 1.26.6: []string{\"tailscaled\", \"--tun=userspace-networking\", \"--state=/var/lib/tailscale/state\", \"--socket=/var/run/tailscale/tailscaled.sock\", \"--outbound-http-proxy-listen=127.0.0.1:1056\", \"--port=41641\"}\n2026/10/26 10:18:36 LogID: bac672d2aa89ab7e8c8baa7419d270c6fca410064d4a500f736bbdc0077ba8ad\n2026/10/26 10:18:36 logpolicy: using system state directory \"/var/lib/tailscale\"\nlogpolicy.ConfigFromFile /var/lib/tailscale/tailscaled.log.conf: open /var/lib/tailscale/tailscaled.log.conf: no such file or directory\nlogpolicy.Config.Validate for /var/lib/tailscale/tailscaled.log.conf: config is nil\n2026/10/26 10:18:36 dns: [rc=unknown ret=direct]\n2026/10/26 10:18:36 dns: using \"direct\" mode\n2026/10/26 10:18:36 dns: using *dns.directManager\n2026/10/26 10:18:36 dns: inotify: NewDirWatcher: context canceled\n2026/10/26 10:18:36 wgengine.NewUserspaceEngine(tun \"userspace-networking\") ...\n2026/10/26 10:18:36 tstun: error initializing tun dev stats polling: error getting ifIndex: no such device\n2026/10/26 10:18:36 dns: using dns.noopManager\n2026/10/26 10:18:36 link state: interfaces.State{defaultRoute=eth0 ifs={eth0:[10.42.0.74/24 llu6]} v4=true v6=false}\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:18:36 magicsock: disco key = d:b49ab6009a826441\n2026/10/26 10:18:36 Creating WireGuard device...\n2026/10/26 10:18:36 Bringing WireGuard device up...\n2026/10/26 10:18:36 Bringing router up...\n2026/10/26 10:18:36 Clearing router settings...\n2026/10/26 10:18:36 Starting network monitor...\n2026/10/26 10:18:36 Engine created.\n2026/10/26 10:18:36 store.New failed: creating state directory: chmod /var/lib/tailscale: operation not permitted; starting with in-memory store with a health warning\n2026/10/26 10:18:36 pm: migrating \"_daemon\" profile to new format\n2026/10/26 10:18:36 envknob: TS_NO_LOGS_NO_SUPPORT=\"true\"\n2026/10/26 10:18:36 logpolicy: using system state directory \"/var/lib/tailscale\"\n2026/10/26 10:18:36 linkChange: in state NoState; PAC or proxyConfig changed; updating routes\n2026/10/26 10:18:36 health(warnable=state-store-health): error: State store failed to initialize, Tailscale will not work until this is resolved. See https://tailscale.com/s/state-store-init-error. Error: creating state directory: chmod /var/lib/tailscale: operation not permitted\n2026/10/26 10:18:36 got LocalBackend in 26ms\n2026/10/26 10:18:36 Start\n2026/10/26 10:18:36 ipnext: \"conn25\": skipping extension\n2026/10/26 10:18:36 ipnext: active extensions: captiveportal, acme, portlist, posture, clientupdate, relayserver, routecheck, serviceclientprefs, taildrop\n2026/10/26 10:18:36 profile data directory: profile not found\n2026/10/26 10:18:36 Backend: logs: be:bac672d2aa89ab7e8c8baa7419d270c6fca410064d4a500f736bbdc0077ba8ad fe:\n2026/10/26 10:18:36 health(warnable=wantrunning-false): error: Tailscale is stopped.\n2026/10/26 10:18:42 localapi: [POST] /localapi/v0/check-prefs\n2026/10/26 10:18:42 localapi: [POST] /localapi/v0/start\n",
+      "stderr": ""
+    },
+    "headscale": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "target": {
+      "exit": 0,
+      "stdout": "{\"at\":\"2026-10-26T10:18:36+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:37+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:38+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:39+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:40+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:41+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:18:42+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n",
+      "stderr": ""
+    }
+  },
+  "privateCredentialDirectoryRemoved": true,
+  "processExit": 1,
+  "elapsedSeconds": 21.778
+}

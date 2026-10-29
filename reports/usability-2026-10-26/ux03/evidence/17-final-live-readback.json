@@ -1,0 +1,135 @@
+{
+  "observedAt": "2026-10-25T17:07:31.904027+00:00",
+  "member": "ux03",
+  "clients": {
+    "client-a": {
+      "exitCode": 0,
+      "backendState": "Running",
+      "self": {
+        "ID": "1",
+        "HostName": "client-a",
+        "TailscaleIPs": [
+          "100.64.0.1",
+          "fd7a:115c:a1e0::1"
+        ],
+        "UserID": 1,
+        "Online": true,
+        "Expired": null,
+        "KeyExpiry": null,
+        "Tags": null
+      },
+      "peers": [
+        {
+          "ID": "2",
+          "HostName": "client-b",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ],
+          "Online": true,
+          "ExitNodeOption": false,
+          "AllowedIPs": [
+            "10.42.0.252/32",
+            "100.64.0.2/32",
+            "fd7a:115c:a1e0::2/128"
+          ],
+          "PrimaryRoutes": [
+            "10.42.0.252/32"
+          ]
+        }
+      ]
+    },
+    "client-b": {
+      "exitCode": 0,
+      "backendState": "Running",
+      "self": {
+        "ID": "2",
+        "HostName": "client-b",
+        "TailscaleIPs": [
+          "100.64.0.2",
+          "fd7a:115c:a1e0::2"
+        ],
+        "UserID": 2,
+        "Online": true,
+        "Expired": null,
+        "KeyExpiry": null,
+        "Tags": null
+      },
+      "peers": [
+        {
+          "ID": "1",
+          "HostName": "client-a",
+          "TailscaleIPs": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "Online": true,
+          "ExitNodeOption": false,
+          "AllowedIPs": [
+            "100.64.0.1/32",
+            "fd7a:115c:a1e0::1/128"
+          ],
+          "PrimaryRoutes": null
+        }
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "name": "client-a",
+      "given_name": "ux03-alice-laptop",
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "tags": null,
+      "register_method": 2,
+      "approved_routes": null,
+      "user": {
+        "id": 1,
+        "name": "ux03-alice-renamed"
+      }
+    },
+    {
+      "id": 2,
+      "name": "client-b",
+      "given_name": "ux03-client-b",
+      "ip_addresses": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "tags": null,
+      "register_method": 2,
+      "approved_routes": [
+        "10.42.0.252/32"
+      ],
+      "user": {
+        "id": 2,
+        "name": "ux03-ops"
+      }
+    }
+  ],
+  "probes": {
+    "peerHTTP": {
+      "exitCode": 0,
+      "stdout": "ux03-client-b",
+      "stderr": ""
+    },
+    "subnetViaTailscale": {
+      "exitCode": 0,
+      "stdout": "ux03-subnet-target",
+      "stderr": ""
+    },
+    "directSubnetNegativeControl": {
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "wget: can't connect to remote host (10.42.0.252): Connection refused\ncommand terminated with exit code 1"
+    },
+    "targetPositiveControl": {
+      "exitCode": 0,
+      "stdout": "ux03-subnet-target",
+      "stderr": ""
+    }
+  }
+}

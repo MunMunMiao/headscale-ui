@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "ux12-client-b",
+    "given_name": "ux12-client-b",
+    "tags": [
+      "tag:ux12-a-server"
+    ],
+    "requested_tags": null,
+    "valid_tags": null,
+    "invalid_tags": null,
+    "username": "tagged-devices"
+  }
+]

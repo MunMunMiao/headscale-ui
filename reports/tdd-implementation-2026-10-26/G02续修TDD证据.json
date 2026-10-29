@@ -1,0 +1,248 @@
+{
+  "logs": [
+    {
+      "log": "round1-01-component-red.log",
+      "sha256": "2f7a60fa2befa8eba8fc73453fdb490169a5611dc809628a4005ac1d9372e4b1",
+      "summary": [
+        {
+          "line": 249,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: final pre-read revokes a renewed baseline when its machine becomes duplicate-machine"
+        },
+        {
+          "line": 250,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to have a length of +0 but got 1"
+        },
+        {
+          "line": 274,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: final pre-read revokes a renewed baseline when its machine becomes missing-machine"
+        },
+        {
+          "line": 306,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: an explicit new request after late-error clears the old attempt and requires a fresh baseline"
+        },
+        {
+          "line": 307,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: an explicit new request after lost-response clears the old attempt and requires a fresh baseline"
+        },
+        {
+          "line": 367,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 368,
+          "text": "Tests  4 failed | 4 passed | 148 skipped (156)"
+        },
+        {
+          "line": 369,
+          "text": "Start at  14:28:19"
+        },
+        {
+          "line": 370,
+          "text": "Duration  54.10s (tests 99%, import 1%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-02-attempt-boundary-red.log",
+      "sha256": "fd03538e681ea355f30215d70dae280d9a3c9216224f874293e25ae3d927896a",
+      "summary": [
+        {
+          "line": 214,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: a changed baseline for request B can be rereviewed in the same window without replaying A"
+        },
+        {
+          "line": 241,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: a new request cannot reauthorize a already-target baseline from the old attempt"
+        },
+        {
+          "line": 242,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: a new request cannot reauthorize a different-person baseline from the old attempt"
+        },
+        {
+          "line": 243,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: a new request cannot reauthorize a duplicate-machine baseline from the old attempt"
+        },
+        {
+          "line": 277,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: editing a rereviewed new request revokes that attempt's review and confirmations"
+        },
+        {
+          "line": 306,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 307,
+          "text": "Tests  5 failed | 156 skipped (161)"
+        },
+        {
+          "line": 308,
+          "text": "Start at  14:30:50"
+        },
+        {
+          "line": 309,
+          "text": "Duration  77.55s (tests 99%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-03-secret-assertion-red.log",
+      "sha256": "5d1a81fb119cedce7e47540abb2e6c32703c72da0a2ca53b74ac88f989f6a86f",
+      "summary": [
+        {
+          "line": 38,
+          "text": "FAIL  |tag-lifecycle-real (chromium)| e2e/tag-lifecycle.browser.test.tsx > G02 empty-request assertion reports only a boolean when input is retained"
+        },
+        {
+          "line": 39,
+          "text": "AssertionError: expected true to be false // Object.is equality"
+        },
+        {
+          "line": 59,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 60,
+          "text": "Tests  1 failed | 22 skipped (23)"
+        },
+        {
+          "line": 61,
+          "text": "Start at  14:32:38"
+        },
+        {
+          "line": 62,
+          "text": "Duration  62.93s (tests 100%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-05-corrected-boundary-red.log",
+      "sha256": "9b099071ab094b63a97ce6315bb39a9e74725fb7ad0b72223eef7f359dfc72ca",
+      "summary": [
+        {
+          "line": 174,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > G02 round1: a changed baseline for request B can be rereviewed in the same window without replaying A"
+        },
+        {
+          "line": 202,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 203,
+          "text": "Tests  1 failed | 4 passed | 156 skipped (161)"
+        },
+        {
+          "line": 204,
+          "text": "Start at  14:39:56"
+        },
+        {
+          "line": 205,
+          "text": "Duration  22.24s (tests 97%, import 1%, setup 1%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-07-component-green.log",
+      "sha256": "8ef8a2be16d34889676faa86a07fef6e21974cd559677714d1799db0a89a8810",
+      "summary": [
+        {
+          "line": 166,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 167,
+          "text": "Tests  15 passed | 146 skipped (161)"
+        },
+        {
+          "line": 168,
+          "text": "Start at  14:41:04"
+        },
+        {
+          "line": 169,
+          "text": "Duration  24.47s (tests 97%, import 1%, setup 1%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-11-real-green.log",
+      "sha256": "e890eed0d5a015c85e19c17e5552062be04ff514da47aa6dcb712a6d67759d1f",
+      "summary": [
+        {
+          "line": 47,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 48,
+          "text": "Tests  6 passed | 17 skipped (23)"
+        },
+        {
+          "line": 49,
+          "text": "Start at  14:45:51"
+        },
+        {
+          "line": 50,
+          "text": "Duration  173.28s (tests 100%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-12-domain-state.log",
+      "sha256": "7ffec2de19672d954f5516daafd3e0af4852e9d76480b4cb1f3888b36e7b2ad4",
+      "summary": [
+        {
+          "line": 5,
+          "text": "Test Files  2 passed (2)"
+        },
+        {
+          "line": 6,
+          "text": "Tests  47 passed (47)"
+        },
+        {
+          "line": 7,
+          "text": "Start at  14:48:46"
+        },
+        {
+          "line": 8,
+          "text": "Duration  105ms (import 37%, transform 30%, tests 24%, worker 8%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-13-typecheck.log",
+      "sha256": "4c0ad89a69439dede139cd16177d4b71b5f5ebe29790a8ef7a0c3f74dd41512b",
+      "summary": [
+        {
+          "line": 3,
+          "text": "✓ No type errors in 485 files across 2 projects [352.56ms]"
+        }
+      ]
+    },
+    {
+      "log": "round1-14-final-component.log",
+      "sha256": "7ba2a992304852b3416f9065aadf81652ed9f55f0e57b8a3ea46bd85ab0c9028",
+      "summary": [
+        {
+          "line": 166,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 167,
+          "text": "Tests  161 passed (161)"
+        },
+        {
+          "line": 168,
+          "text": "Start at  14:50:30"
+        },
+        {
+          "line": 169,
+          "text": "Duration  173.49s (tests 100%)"
+        }
+      ]
+    },
+    {
+      "log": "round1-15-final-static.log",
+      "sha256": "d1a05ede59e9f06108d1dd4da6330c2778527545bf06f4227384971df80a5283",
+      "summary": []
+    }
+  ],
+  "scope": "仅摘录实际业务RED/GREEN及类型结果，不复制真实凭据；最终全仓测试单独记录。"
+}

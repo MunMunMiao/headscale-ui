@@ -1,0 +1,216 @@
+UX07 独立管理员实际使用研究报告
+角色：网络管理员
+日期：2026-10-26（UTC+08:00）
+实际操作窗口：约 00:36—01:07；随后完成证据校验与报告。
+
+一、结论与范围
+
+本成员从空浏览器资料、空 Headscale 用户与设备开始，完成了六个管理页面的共同功能基线，接入两台真实 Tailscale 客户端，并实际验证了子网、出口和访问策略的数据面。
+
+核心专题结论：
+1. client-a 不能直接访问本人隔离目标；client-b 可以直接访问同一目标。
+2. 本人的 10.42.0.20/32 子网审批前，client-a 经 Tailscale 代理访问失败；UI 审批后成功；UI 撤销后再次失败。前后目标服务与对等端阳性对照保持正常。
+3. UI 将 IPv4/IPv6 默认出口作为一对审批与撤销。client-a 选择 client-b 为出口后，实际公共 HTTP 请求获得 200，且对等端收发计数增加；撤销后同请求超时；重新审批后恢复 200。
+4. 通过 UI 发布限制策略后，同一 client-a 到 client-b:8081 从成功变为失败；加入精确源、目标和端口规则后恢复成功。没有将“目标服务未启动”当作策略拒绝。
+5. 完成设备标签分配、保留原标签、迁移到已有标签，以及真正的无 auth key 重新认证恢复个人身份。之后又以真实 pending 请求完成客户端标签申请，控制面与客户端都读回 tag:ux07-router。
+
+本次没有确认阻止上述核心链路的产品功能缺陷。确认两条体验观察，以及一条测试 helper 的捕获问题；测试工具的定位、等待和参数错误未算作产品问题。
+
+本报告使用 UTF-8 文本保存。配套 PNG 与脱敏 JSON 均属于报告证据。未读取业务源码、其他成员报告，未修改业务代码、共享 helper 或其他成员环境，未派生子代理。
+
+二、实际环境与隔离边界
+
+- 成员与 namespace：ux07 / hsux-1026-0020-ux07。
+- 入口与登录服务器：https://10.0.0.17:32198。
+- 实际服务：Headscale v0.29.4，commit 8106636c7f8d0cf8c9d4fb0beae94415069b768b。
+- 客户端：client-a、client-b，真实 Tailscale v1.102.5，userspace daemon；没有 privileged、hostNetwork、宿主 TUN 或宿主网络更改。
+- 浏览器：分配的独立 Google Chrome 155 headless=new，CDP 9417。实测 secureContext=true；真实 SharedWorker/WebCrypto 会话，不预置浏览器状态。
+- 本次初始/多数 helper 调用的实测 viewport 为 756×413；另在同一真实浏览器内实际设置并截图 1440×1000、375×812。后续 helper 调用可能恢复默认尺寸，因此没有将所有截图都宣称为 1440 宽。
+- 本人路由目标：10.42.0.20/32。exit-target Service ClusterIP：10.43.149.170:8081。
+- 接入后的地址：client-b=100.64.0.1 / fd7a:115c:a1e0::1；client-a=100.64.0.2 / fd7a:115c:a1e0::2。
+- client-b 后被管理端改名为 ux07-edge-router；其客户端 HostName 保持 ux07-client-b。
+- 所有后台 CLI 仅用于正常 Tailscale 操作、本人实验设施只读查询和独立读回；所有管理写入均经真实页面控件，包括用户、凭据、策略、路由、标签、设备、Backfill 和本地资料操作。
+- 未额外创建 Pod、调整集群权限或修改网络策略。Kubernetes 只读查询严格带本人 namespace。
+
+三、从 0 到 1 的实际操作顺序
+
+1. 首次打开登录页，确认没有连接资料。通过 Add server 输入资料名、本人入口与管理 API key，设置加密资料密码，Save and unlock。首页用户、设备、密钥、待审路由均为 0。
+2. 在 Users 新建 ux07-alice（显示名 UX07 Alice）和 ux07-bob；将后者改名 ux07-router。实际搜索 router 并查看用户详情。资料密码是浏览器资料密码，不是 Headscale 用户密码。
+3. 从 Auth keys 查看默认设置：约七天到期；Reusable 与 Ephemeral device 默认关闭；Owner 默认首位用户；可选择无 owner 的标签身份。创建 Alice 单次凭据与 router 可复用凭据。
+4. 共享 capture-key helper 起初误存了表格中的短前缀，真实接入报 key too short。正常恢复为本成员私有脚本：只读取页面已经显示的 Auth key created 区域完整 code，保存 0600 私密文件，不打印密钥。没有改共享 helper，也没有改用后台 API 创建凭据。重新创建 Alice 单次凭据并成功接入 client-a；router 凭据成功接入 client-b。
+5. client-b 仅广告本人 10.42.0.20/32 与 0.0.0.0/0、::/0 默认出口对。Devices 和 Routes 显示两台在线机器与三条待审路由。
+6. 先记录直连、对等端和代理流量的审批前对照。经 UI 单独批准 /32，再验证成功；批准出口对，再由 client-a 的真实客户端命令选择 client-b 为出口。
+7. 受控 ClusterIP 出口目标未成功，改用任务允许的只读公共 HTTP 请求。公共请求、收发计数、撤销失效和重新批准恢复均实际验证。单独撤销 /32 时清除了 client-a 的出口选择，避免出口默认路由掩盖子网撤销结果。
+8. Access controls 新建 group:ux07-netops，加入 router 用户；定义 tag:ux07-router，授权该团队通过客户端申请；给 Alice 添加到标签的 8081 访问规则。Check policy、完整原始 before/after 发布审阅、取消发布、重新发布均执行。
+9. 独立 CLI 读回保存后的策略。单页刷新按设计锁定，用密码重新解锁后读回团队、标签与规则。移除默认开放规则并发布，真实请求失败；加入 Alice 到本人设备与 /32 目标 8081 的精确规则并发布，真实请求恢复。
+10. 创建临时标签草稿后实际 Discard changes；再正式发布 tag:ux07-service。设备搜索、详情、改名为 ux07-edge-router、标签分配均执行。首次分配确认了个人身份转标签身份的风险；第二次加入 service 标签时，完整审阅集同时保留 router 标签。独立 CLI 读回两标签均在。
+11. 从 Live tag maintenance 选择将 service 迁移到已有 router 标签。入口只打开只读详情，按普通恢复路径转到 Machines → Actions → Edit tags，移除 service、保留 router，确认完整替换后成功。没有把计划预览误认为自动迁移已经完成。
+12. 实际进入 Retirement check，刷新所需来源，确认本人隔离实验无外部脚本、离线客户端与旧密钥依赖。保留策略定义时仍显示阻塞，因此没有宣称身份已完整退役；没有越过检查直接删除环境。
+13. 从设备 Restore personal identity 进入向导。通过本人容器可信通道执行清空 advertised tags 的真实无 auth key force-reauth，私密取得实际注册请求；在页面选择明确用户、确认登录服务器与请求归属后批准。控制面读回 user=ux07-router、tags=null；客户端 Running；本次节点 ID 和 IP 恰好保留，不能推广为保证。真实 peer 与 /32 HTTP 请求恢复正常。
+14. 在 Users 尝试删除仍拥有 client-a 的 Alice：页面列出设备、策略引用与活动凭据，Delete user 禁用。取消继续其他功能。
+15. Profile → Server settings 创建一把非当前会话 API key，随后 Expire API key。列表读回临时 key 已 Expired，当前会话 key 仍 Active。没有撤销当前登录凭据。
+16. Maintenance → Backfill node IPs：查看每个节点 IP 可能增删的范围，勾选理解后实际执行，结果 No changes were needed。
+17. Encryption 修改资料密码，实际退出；旧密码解锁失败，新密码解锁成功。新密码由本成员私密文件传入真实输入框，没有写入报告或日志。
+18. 第二标签页打开总览并继承共享解锁。另一页存在时刷新第一页面仍保持解锁。第一页面 Log out 后，两页均转登录页。另实际切换简体中文、深色主题，再返回英文继续。
+19. 使 client-a 到期，UI 显示 Expired、真实客户端 NeedsLogin；经 Disable expiry 恢复，UI 到期筛选归零，真实客户端 Running、KeyExpiry=null。没有用单独 UI 状态替代客户端结果。
+20. Auth keys 的 Used 筛选实际显示 Alice 单次 key 已使用；删除该 key 后 client-a 仍 Running。另搜索 router 并使可复用注册 key 到期，状态读回 Expired。
+21. 实际查看桌面与窄屏设备页；仅把截图和已查看布局记为局部覆盖，没有声称完成全站移动端/无障碍审查。
+22. 为完成真实客户端标签申请，先执行不带 force-reauth 的 advertise-tags，控制面未转标签；随后执行带 tag:ux07-router 的真实重新认证，页面 Add device → Register pending device 审批实际请求。最终控制面和 client-b Self.Tags 都为 tag:ux07-router，证明团队 owner 授权路径实际生效。
+23. router 已无个人设备时，从 UI 删除该用户，并完整审阅、发布 group 引用清理。client-b 的标签身份不等于仍属于该个人用户。
+24. 删除 client-a，真实客户端变为 NeedsLogin；之后删除无设备 Alice，并审阅、发布 ACL 引用清理。Users 读回 0；不是绕过设备删除保护。
+25. 最后查看并执行 Clear all saved profiles。两页锁定，刷新无资料。独立 CLI 仍能看到服务器上的一台标签设备和策略，确认该动作只清本地资料而非删除 Headscale 数据。
+
+四、覆盖矩阵
+
+状态定义：通过=已执行所述动作并观察结果；部分通过=只完成所列子流程；已浏览未执行=只看入口/说明；未测=没有实际场景；受阻=正常恢复后仍不能完成该子项。
+
+功能/场景 | 状态 | 实际边界
+首次空资料、添加服务器、加密、保存解锁 | 通过 | 从真实空资料开始，无内部状态预置
+六个主页面 | 通过 | Overview、Machines、Users、Auth keys、Routes、Access controls 均实际进入并使用
+用户创建、搜索、详情、改名 | 通过 | 两用户创建；router 搜索/详情；bob 改名 router
+有设备用户删除保护、无设备用户清理 | 通过 | Alice 删除按钮禁用；设备移除后可删；两次包含完整策略清理审阅
+真实设备接入 | 通过 | 两台真实 daemon，Running/Online 与独立状态读回
+设备详情、搜索、筛选、改名 | 通过 | 搜索 client-b；到期筛选；edge-router 管理名称读回
+设备标签替换并保留其他标签 | 通过 | router → router+service → router，完整审阅与 CLI 对照
+设备到期、禁用到期、删除 | 通过 | NeedsLogin → Running；最后删除再次 NeedsLogin
+单次、可复用注册 key 与使用状态 | 通过 | 默认关闭复用；明确创建复用；Used 过滤与独立真实接入
+注册 key 到期/删除，不等于现存设备退役 | 通过 | 删除已用 key 后设备仍 Running；复用 key 到期读回
+带标签注册 key、ephemeral 设备行为 | 未测 | 未实际创建使用；不能从看见选项推定通过
+团队、标签、owners、精确访问规则 | 通过 | 团队成员与 owner 通过真实标签请求补充验证
+策略检查、完整发布审阅、保存和读回 | 通过 | UI 检查、取消/发布；独立 CLI 和重新解锁读回
+草稿丢弃 | 通过 | 临时标签草稿实际丢弃
+策略同源同端口拒绝/恢复 | 通过 | client-a → client-b:8081 和本人目标:8081 的成功/拒绝/恢复
+/32 路由审批、撤销及数据面 | 通过 | 直连隔离对照 + 审批前后 + 撤销失效
+出口成对审批/撤销及实际流量 | 通过 | 公共 HTTP 200 → 撤销超时 → 重批 200，有 peer 计数增量
+exit-target ClusterIP 出口实际请求 | 受阻 | B 可直连；A 通过出口超时；使用公共 HTTP 替代后完成出口主题
+标签维护/迁移入口 | 通过（手动恢复） | 计划审阅后自行进入设备编辑完成，不是自动批量迁移
+标签退役检查 | 部分通过 | 刷新来源与外部依赖确认执行；仍有策略定义，没有完整删除定义/宣告退役
+标签恢复个人身份 | 通过 | 真实非 auth key 重新认证、UI 审批、个人归属与无标签读回、流量恢复
+真实 pending device registration | 通过 | 两次真实请求：恢复个人身份与客户端标签申请
+真实 SSH check、SSH 连通性 | 未测 | 没有真实 SSH 服务/请求，不以普通 TCP 或 UI 下拉项代替
+非当前会话管理 API key 创建/撤销 | 通过 | 当前 key 未动；新 key Expired；未测试外部集成持该 key 的请求
+Backfill | 通过 | 本人实例执行，返回无需改动；未制造异常 IP 修复样例
+资料密码轮换、旧/新密码、刷新解锁 | 通过 | 旧密码失败、新密码成功；单页与多页刷新行为实际比较
+多标签页共享/退出 | 通过 | 新页继承；一页退出两页锁定
+语言与主题 | 通过（所测局部） | 简体中文、深色实际切换；没有逐语言逐页面校对
+清除本地资料范围 | 通过 | 真实执行并核对服务器侧数据仍在
+空/无效输入、取消、恢复 | 通过 | 发布取消、草稿丢弃、旧密码失败后恢复，存在工具误定位均已纠正
+桌面/窄屏布局 | 已浏览未全面执行 | 真实 1440×1000 与 375×812 截图；非全站响应式/键盘审计
+模板、CSV 导出、完整离线与超时生命周期 | 未测 | 已走精确规则路径，不把替代分支算作执行；未等待 30 分钟闲置锁定
+
+五、实际数据面证据
+
+所有证据根目录：
+/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux07/evidence
+
+A. 子网验证（同一 HTTP 服务端口 8081）
+
+请求路径 | 审批前 | /32 审批后 | /32 撤销后
+client-a 直接 wget 10.42.0.20 | Connection refused | Connection refused | Connection refused
+client-b 直接 wget 10.42.0.20 | 0 / ux07-subnet-target | 0 / ux07-subnet-target | 0 / ux07-subnet-target
+client-a 经 tailscaled HTTP proxy 到 100.64.0.1 | 0 / ux07-client-b | 0 / ux07-client-b | 0 / ux07-client-b
+client-a 经同代理到 10.42.0.20 | 502 / exit 1 | 0 / ux07-subnet-target | 502 / exit 1
+
+代理使用 client-a 容器内 http_proxy=http://127.0.0.1:1056，未设置系统代理。撤销 /32 验证时未选择默认出口，避免默认出口带来的另一条可达路径。
+
+原始脱敏证据：
+- network-pending.json
+- network-subnet-approved.json
+- network-subnet-revoked.json
+- routes-pending.png、routes-approved.png
+
+B. 默认出口真实流量
+
+使用正常客户端命令 tailscale set --exit-node=100.64.0.1 后，通过同一客户端本地代理请求 http://example.com。
+- 获批：HTTP/1.1 200 OK；peer client-b 的 TxBytes 7468→7788，RxBytes 7996→8940。
+- UI 撤销出口对后：同一请求 wget download timed out，exit 1；没有把客户端仍显示 ExitNode Online 当作流量成功。
+- UI 重新批准后：同一请求恢复 HTTP/1.1 200 OK；TxBytes 9488→13976，RxBytes 10584→15576。
+
+证据：public-exit-approved.json、public-exit-revoked.json、public-exit-restored.json。
+公共 HTTP 为任务允许的只读替代，未进行写入或额外外部业务操作。这里证明 IPv4 实际出口流量；没有真实 IPv6 公网目标，因此不声称 IPv6 数据面已经验证。
+
+C. 访问策略拒绝/恢复
+
+初始默认放行时 client-a 到 100.64.0.1:8081 成功。移除所有地址开放规则并发布，仅留下尚未匹配个人 B 的标签规则后，该请求失败；新增 Alice 到 100.64.0.1、10.42.0.20 的 8081 精确规则并发布后，同路径恢复 0 / 正确目标内容。期间 client-b 到目标的阳性持续成功。
+
+证据：network-acl-restricted.json、network-acl-restored.json；策略字段可在 state-before-deletion.json 独立读回。
+
+D. 身份与客户端真实性
+
+- restore-identity-readback.png：无 auth key 重新认证后，页面实际读回个人身份、空 tags 与原设备一致。
+- network-identity-restored.json：恢复个人身份后 peer 与 /32 请求真实成功。
+- state-before-deletion.json：两台真实客户端 Running，个人归属；临时管理 API key 的实际过期时间；已保存策略。
+- state-tag-request.json：第二次真实 pending 审批后，client-b 的 UserID=2147455555、Tags=[tag:ux07-router]，与 Headscale 标签设备记录一致。
+- state-after-local-clear.json：本地资料清空后仍有一台标签设备、原 Headscale 策略与服务器 API key 记录；client-a 为 NeedsLogin。
+
+六、已确认产品功能缺陷
+
+本轮没有确认核心功能缺陷。此结论仅限覆盖矩阵实际执行的场景，不等同于全产品无缺陷，也不包含未测试的 SSH、IPv6 出口、离线旧部署或并发场景。
+
+七、体验观察（与功能缺陷分开）
+
+UX07-O01：标签迁移维护入口与真正编辑动作之间缺少直接衔接
+严重程度：中，体验阻力；不是迁移 API 写入失败。
+前置条件：设备有 router/service 标签，两标签定义存在，管理员在 Access 的 Live tag maintenance 选定迁移目标。
+复现：
+1. Access controls → 目标标签 Live tag maintenance。
+2. Use an existing identity，填入另一个已定义标签。
+3. Device observations 下点击 Review device tags。
+4. 打开 /devices?node=1&popup=node&from=access 的 Machine details，只有 Close，没有编辑标签动作；关闭后又返回 /access。
+预期：在详情中给出明确的 Edit tags 后续动作，或直接进入带完整目标集合的审阅；至少不用重新发现目标设备。
+实际：必须自行去 Machines，重新定位目标，打开 Actions → Edit tags，手动把维护计划重做一遍。
+恢复：上述普通导航路径成功完成 service→router 迁移，原 router 标签保留。没有后台写入或注入浏览器状态。
+证据：
+/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux07/evidence/maintenance-detail.json
+/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux07/evidence/maintenance-return.json
+/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux07/evidence/maintenance-router-to-service.png
+
+UX07-O02：设备改名后，维护观察与设备详情使用不同主名称
+严重程度：低，名称一致性观察。
+前置条件：通过设备 Rename 将 ux07-client-b 改为 ux07-edge-router；客户端 HostName 未改。
+复现：设备列表与详情显示 ux07-edge-router；打开该标签的 Live tag maintenance，Device observations 的实际可访问性快照却显示“ux07-client-b · 1”。点击后详情又显示 ux07-edge-router。
+预期：维护观察沿用当前管理名称，必要时把原始客户端 HostName 作为次要字段，保留 Node ID 辨识。
+实际：同一设备在一个工作流里切换两个主名称，增加核对成本。Node ID 都为 1，未发现操作了错误设备或数据丢失。
+恢复：依据 Node ID 与 Tailscale IP 核对，然后继续操作。
+证据：本轮真实浏览器可访问性快照中的上述原文；machines-desktop.png 与 maintenance-detail.json 证明管理名称为 ux07-edge-router。维护侧旧名称来自当次工具返回的实际快照记录，不是对源码实现的推断。
+
+八、工具与实验设施问题（不归因于产品）
+
+UX07-T01：共享 capture-key 误选表格短前缀
+严重程度：中，测试工具阻塞，非产品凭据生成失败。
+前置条件：Auth keys 表格已有掩码前缀，页面同时显示新生成密钥区域。
+复现：browser.mjs capture-key 保存 24 字符；真实 lab.py join 报“failed to parse auth-key: key too short, expected at least 77 chars after prefix, got 13”。
+实际只读 DOM 检查显示表格 code 长度 27（带 ***），新生成区域完整 code 长度 88；捕获 helper 不是在产品生成端丢失了秘密。
+恢复：本成员私有脚本将定位限定为页面已显示的 group“Auth key created”中的首个 code，私密保存 88 字符，真实 join 成功。没有查看 API 响应取巧、没有修改共享 helper、没有保存含完整密钥的截图。
+证据：
+/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux07/evidence/tool-capture-diagnostic.json
+
+其他工具/操作恢复：
+- 在 lab.py join 后额外附加 --accept-routes，因 helper 本来已有该 flag 而报重复；移除重复参数后继续。这是本成员调用参数错误，不是产品问题。
+- 尝试 tailscale set --advertise-tags 时 CLI 不支持该 flag；改用正常 tailscale up，并最终通过 force-reauth 完成真正申请。
+- 少数批量步骤在对话框还未稳定、已自动进入下一页或修改后名称改变时 locator 超时；读取实际快照并修正定位后恢复。
+- 本成员独立状态采集脚本最初未处理已删除设备的 Peer=null；只修复本人临时脚本后补采，未修改产品或共享工具。
+
+设施/上游路径限制：
+- exit-target ClusterIP 10.43.149.170:8081：B 直接成功，A 直接拒绝；UI 出口获批并选择 B 后，A 经 Tailscale 代理仍超时。/32 路由与公共 HTTP 出口均能成功。
+- 这些结果不足以把 ClusterIP 路径失败定性为 UI 缺陷，也没有独立证明具体是 userspace 出口、集群 Service 转发或其他上游限制。本报告保留为未定位设施路径；已使用任务明确允许的公共 HTTP 完成出口验证。
+
+九、未完成项与结论边界
+
+1. 真实 SSH check、SSH 服务连接与相应二次认证没有实际请求，未测。
+2. 默认出口的 IPv6 公网数据面没有目标，未测；只证明 UI 对称审批/撤销与 IPv4 真实流量。
+3. 受控 ClusterIP 出口路径未打通，原因未定位；公共 HTTP 是有阳性/阴性/恢复证据的替代，不把受控路径记通过。
+4. 完整标签退役未完成：检查入口、来源刷新和外部依赖确认已执行，但策略定义仍保留；没有宣称其彻底退役或外部部署已自动更新。
+5. 新建目标标签的迁移分支、标签注册凭据、ephemeral 设备、旧密钥离线部署重注册、CSV 导出、所有模板、跨服务器资料切换未测。
+6. 未等待 30 分钟闲置超时、未模拟所有网络故障、未做逐语言/全站移动端/键盘或完整无障碍审查。
+7. 管理 API key 创建与撤销有 UI 和服务器列表读回，但未配置外部集成使用该 key 验证鉴权失败；Backfill 没有制造损坏 IP 数据。
+8. 没有读取源码来判断成因，没有将页面静态说明或 API 字段当成数据面成功证据。
+
+十、证据安全与环境交接
+
+- 凭据文件仅留在本轮 0700 私有目录；管理 API key、密码与完整 preauthkey 未回显，未写入报告或证据，未在生成密钥画面截图。一次 helper 快照曾未遮盖短期 Auth ID；该请求随后已由真实审批消费，未写入报告或证据，之后输出增加了二次脱敏。协调者若导出原始工具转录，应额外脱敏 Auth ID。
+- 对本成员 JSON 证据执行了可解析性及完整 hskey 形态扫描；未发现完整 API/auth/authreq 密钥值。PNG 均为非密钥画面。保留的浏览器快照 helper 错误与上游 CLI 文本已区分产品/工具。
+- 最终 git status 为仅有 untracked reports/，没有业务源码改动；未提交、推送或发布。
+- 结束时已通过 UI 删除 client-a 与两个普通用户，清除了本浏览器所有保存资料；独立读回仍有标签设备 client-b（ux07-edge-router）、空 ACL、标签定义/空团队、当前管理 API key 与已过期的临时 API key。
+- 本成员没有删除 namespace，没有终止 Chrome，也没有执行系统级清理。hsux-1026-0020-ux07、Chrome CDP 9417/profile 与本成员私有临时文件须由协调者在成员交付后统一立即清理。当前报告不宣称这些基础设施已经删除。
+- 按用户要求最终只保留本报告及必要的脱敏证据；临时凭据、客户端、namespace 和 Chrome profile 不应长期保留等待验收。

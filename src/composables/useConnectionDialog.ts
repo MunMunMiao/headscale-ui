@@ -1,99 +1,83 @@
-import { ref } from "vue";
-import type { ConnectionProfile } from "@/lib/profile-storage";
-import { useProfiles } from "./useProfiles";
+import type { DialogRootChangeEventReason } from "@base-ui/react/dialog";
+import { useEffect, useMemo } from "react";
+import type { ProfileSummary } from "@/lib/profile-storage";
+import { useSession, useStore } from "./session-context";
+import type { createProfilesStore } from "./useProfiles";
 
-/**
- * Owns the lifecycle of the "Add server" / "Edit profile" dialog: dirty-check
- * against a serialized baseline, escape/outside-click confirmation, and the
- * nested AlertDialog escape hatch. Pulls its state from the `useProfiles`
- * singleton so the dialog refs stay shared with anything else that reads them.
- */
-export function useConnectionDialog() {
-  const {
-    connectionForm,
-    connectionDialogOpen,
-    connectionCloseConfirmOpen,
-    openConnectionDialog,
-    closeConnectionDialog,
-    editProfile,
-  } = useProfiles();
-
-  const connectionFormBaseline = ref("");
-
+interface ConnectionDialogChange {
+  reason: DialogRootChangeEventReason;
+  cancel(): void;
+}
+export function createConnectionDialog(
+  profiles: ReturnType<typeof createProfilesStore>,
+) {
+  let connectionFormBaseline = "";
   function serializeConnectionForm() {
+    const { connectionForm } = profiles.getSnapshot();
     return JSON.stringify({
-      apiKey: connectionForm.apiKey,
       baseUrl: connectionForm.baseUrl,
       profileId: connectionForm.profileId,
       profileName: connectionForm.profileName,
       remember: connectionForm.remember,
     });
   }
-
   function syncConnectionFormBaseline() {
-    connectionFormBaseline.value = serializeConnectionForm();
+    connectionFormBaseline = serializeConnectionForm();
   }
-
-  function isConnectionFormDirty() {
-    return serializeConnectionForm() !== connectionFormBaseline.value;
-  }
-
   async function openConnectionDialogWithBaseline(profileId: string) {
-    await openConnectionDialog(profileId);
-    syncConnectionFormBaseline();
+    const opening = profiles.openConnectionDialog(profileId);
+    const ticket = profiles.connectionFormGeneration;
+    await opening;
+    if (ticket === profiles.connectionFormGeneration)
+      syncConnectionFormBaseline();
   }
-
-  async function editProfileWithBaseline(profile: ConnectionProfile) {
-    await editProfile(profile);
-    syncConnectionFormBaseline();
+  async function editProfileWithBaseline(profile: ProfileSummary) {
+    await openConnectionDialogWithBaseline(profile.id);
   }
-
+  function isConnectionFormDirty() {
+    const { apiKey, password, passwordConfirmation } =
+      profiles.getSnapshot().connectionForm;
+    return Boolean(
+      apiKey ||
+      password ||
+      passwordConfirmation ||
+      serializeConnectionForm() !== connectionFormBaseline,
+    );
+  }
   function requestConnectionDialogClose() {
     if (isConnectionFormDirty()) {
-      connectionCloseConfirmOpen.value = true;
+      profiles.setState({ connectionCloseConfirmOpen: true });
       return;
     }
-    closeConnectionDialog();
+    profiles.closeConnectionDialog();
   }
-
   function confirmConnectionDialogClose() {
     syncConnectionFormBaseline();
-    closeConnectionDialog();
+    profiles.closeConnectionDialog();
   }
-
-  function handleConnectionDialogOpen(open: boolean) {
+  function handleConnectionDialogOpen(
+    open: boolean,
+    details?: ConnectionDialogChange,
+  ) {
+    if (
+      !open &&
+      (details?.reason === "outside-press" || details?.reason === "focus-out")
+    ) {
+      details.cancel();
+      return;
+    }
     if (open) {
-      connectionDialogOpen.value = true;
+      profiles.setState({ connectionDialogOpen: true });
       return;
     }
     requestConnectionDialogClose();
+    if (profiles.getSnapshot().connectionDialogOpen) details?.cancel();
   }
-
   function handleConnectionCloseConfirmOpen(open: boolean) {
-    connectionCloseConfirmOpen.value = open;
+    profiles.setState({ connectionCloseConfirmOpen: open });
   }
-
-  function originalOutsideEventTarget(event: Event) {
-    const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail?.originalEvent;
-    const target = originalEvent?.target ?? event.target;
-    return target instanceof HTMLElement ? target : null;
-  }
-
-  // Bail when the click originated inside any nested dialog/alertdialog so that
-  // closing an inner AlertDialog doesn't bubble up and close this one. Uses
-  // ARIA roles (stable W3C contract) instead of reka-ui's internal data-slot.
-  function preventConnectionDialogOutsideClose(event: Event) {
-    const target = originalOutsideEventTarget(event);
-    if (target?.closest('[role="alertdialog"],[role="dialog"]')) return;
-    event.preventDefault();
-  }
-
-  function handleConnectionDialogEscape(event: Event) {
-    event.preventDefault();
-    requestConnectionDialogClose();
-  }
-
   return {
+    isConnectionFormDirty,
     syncConnectionFormBaseline,
     openConnectionDialogWithBaseline,
     editProfileWithBaseline,
@@ -101,7 +85,21 @@ export function useConnectionDialog() {
     confirmConnectionDialogClose,
     handleConnectionDialogOpen,
     handleConnectionCloseConfirmOpen,
-    preventConnectionDialogOutsideClose,
-    handleConnectionDialogEscape,
   };
+}
+export function useConnectionDialog() {
+  const { profiles } = useSession();
+  const { connectionDialogOpen } = useStore(profiles);
+  const dialog = useMemo(() => createConnectionDialog(profiles), [profiles]);
+  useEffect(() => {
+    if (!connectionDialogOpen) return;
+    const protectDraft = (event: BeforeUnloadEvent) => {
+      if (!dialog.isConnectionFormDirty()) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protectDraft);
+    return () => window.removeEventListener("beforeunload", protectDraft);
+  }, [connectionDialogOpen, dialog]);
+  return dialog;
 }

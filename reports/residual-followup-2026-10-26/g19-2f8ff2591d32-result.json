@@ -1,0 +1,759 @@
+{
+  "run": "2f8ff2591d32",
+  "namespace": "hs-g19-1026-2f8ff2591d32",
+  "context": "home",
+  "probeTimeoutSeconds": 5,
+  "phases": [],
+  "policyComparisons": [],
+  "assertions": {},
+  "cleanup": {
+    "deleteExit": 0,
+    "readbackExit": 0,
+    "namespaceAbsent": true,
+    "ownershipChecked": true
+  },
+  "cluster": {
+    "node": "my-home-server",
+    "podCIDRs": [
+      "10.42.0.0/24"
+    ],
+    "kubeletVersion": "v1.36.5+k3s1",
+    "runtime": "containerd://2.3.4-k3s1.36",
+    "flannelBackend": "vxlan"
+  },
+  "namespaceUID": "49ae1d9d-7f48-468e-941a-67e1dcab7e8b",
+  "routerPodIP": "10.42.0.119",
+  "targets": {
+    "podip": "10.42.0.113",
+    "clusterip": "10.43.141.230"
+  },
+  "podSecurity": [
+    {
+      "name": "a",
+      "uid": "ebc1885d-0e9b-4163-abbd-c28232bcf808",
+      "podIP": "10.42.0.117",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "headscale",
+      "uid": "e520e6c9-df0e-4220-85a5-bcb55d921ae3",
+      "podIP": "10.42.0.112",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "headscale/headscale:0.29.4",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        },
+        {
+          "image": "nginx:1.30.5-alpine",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "uid": "5006075a-e1b2-4b7c-81a6-1c6555e1f150",
+      "podIP": "10.42.0.119",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 1000,
+        "runAsGroup": 1000,
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "tailscale/tailscale:v1.102.5",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "target",
+      "uid": "1d50400e-7239-4767-9b3e-b2a4ef01bd8e",
+      "podIP": "10.42.0.113",
+      "hostNetwork": false,
+      "hostPID": false,
+      "securityContext": {
+        "fsGroup": 101,
+        "runAsGroup": 101,
+        "runAsNonRoot": true,
+        "runAsUser": 101,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "containers": [
+        {
+          "image": "nginx:1.30.5-alpine",
+          "securityContext": {
+            "allowPrivilegeEscalation": false,
+            "capabilities": {
+              "drop": [
+                "ALL"
+              ]
+            },
+            "readOnlyRootFilesystem": true
+          }
+        }
+      ]
+    }
+  ],
+  "routerSameContainerIdentity": "self_netns=net:[4026536023]\ndaemon_pid=1\ndaemon_netns=net:[4026536023]\nuid=1000 gid=1000 groups=1000\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\ntun_present=false\n",
+  "clientVersion": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+  "serverVersion": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/amd64",
+  "routerNodeID": 1,
+  "routerTailnetIP": "100.64.0.1",
+  "clientTailnetIP": "100.64.0.2",
+  "initialADirect": [
+    {
+      "pod": "a",
+      "address": "10.42.0.113",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/2f8ff2591d32/preflight/native-podip",
+      "url": "http://10.42.0.113:8081/2f8ff2591d32/preflight/native-podip",
+      "hostHeader": "10.42.0.113:8081",
+      "exit": 0,
+      "httpStatus": 200,
+      "marker": true,
+      "stdout": "G19_2f8ff2591d32\n",
+      "stderr": "Connecting to 10.42.0.113:8081 (10.42.0.113:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:48:57 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+    },
+    {
+      "pod": "a",
+      "address": "10.43.141.230",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/2f8ff2591d32/preflight/native-clusterip",
+      "url": "http://10.43.141.230:8081/2f8ff2591d32/preflight/native-clusterip",
+      "hostHeader": "10.43.141.230:8081",
+      "exit": 0,
+      "httpStatus": 200,
+      "marker": true,
+      "stdout": "G19_2f8ff2591d32\n",
+      "stderr": "Connecting to 10.43.141.230:8081 (10.43.141.230:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:48:58 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+    }
+  ],
+  "aIsolationPolicy": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "name": "a-target-isolation",
+      "namespace": "hs-g19-1026-2f8ff2591d32",
+      "labels": {
+        "headscale-ui.dev/g19-run": "2f8ff2591d32",
+        "app.kubernetes.io/part-of": "headscale-ui-g19"
+      }
+    },
+    "spec": {
+      "podSelector": {
+        "matchLabels": {
+          "headscale-ui.dev/g19-run": "2f8ff2591d32",
+          "app.kubernetes.io/component": "a"
+        }
+      },
+      "policyTypes": [
+        "Egress"
+      ],
+      "egress": [
+        {
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0",
+                "except": [
+                  "10.42.0.113/32",
+                  "10.43.141.230/32"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "isolationReadinessChecks": [
+    [
+      {
+        "pod": "a",
+        "address": "10.42.0.113",
+        "port": 8081,
+        "protocol": "HTTP/TCP/IPv4",
+        "transport": "native socket, proxies unset",
+        "token": "/2f8ff2591d32/isolated-preflight/native-podip",
+        "url": "http://10.42.0.113:8081/2f8ff2591d32/isolated-preflight/native-podip",
+        "hostHeader": "10.42.0.113:8081",
+        "exit": 0,
+        "httpStatus": 200,
+        "marker": true,
+        "stdout": "G19_2f8ff2591d32\n",
+        "stderr": "Connecting to 10.42.0.113:8081 (10.42.0.113:8081)\n  HTTP/1.1 200 OK\n  Server: nginx/1.30.5\n  Date: Mon, 26 Oct 2026 10:48:58 GMT\n  Content-Type: text/plain\n  Content-Length: 17\n  Connection: close\n  \nwriting to stdout\n-                    100% |********************************|    17  0:00:00 ETA\nwritten to stdout\n"
+      },
+      {
+        "pod": "a",
+        "address": "10.43.141.230",
+        "port": 8081,
+        "protocol": "HTTP/TCP/IPv4",
+        "transport": "native socket, proxies unset",
+        "token": "/2f8ff2591d32/isolated-preflight/native-clusterip",
+        "url": "http://10.43.141.230:8081/2f8ff2591d32/isolated-preflight/native-clusterip",
+        "hostHeader": "10.43.141.230:8081",
+        "exit": 1,
+        "httpStatus": null,
+        "marker": false,
+        "stdout": "",
+        "stderr": "Connecting to 10.43.141.230:8081 (10.43.141.230:8081)\nwget: can't connect to remote host (10.43.141.230): Connection refused\ncommand terminated with exit code 1\n"
+      }
+    ],
+    [
+      {
+        "pod": "a",
+        "address": "10.42.0.113",
+        "port": 8081,
+        "protocol": "HTTP/TCP/IPv4",
+        "transport": "native socket, proxies unset",
+        "token": "/2f8ff2591d32/isolated-preflight/native-podip",
+        "url": "http://10.42.0.113:8081/2f8ff2591d32/isolated-preflight/native-podip",
+        "hostHeader": "10.42.0.113:8081",
+        "exit": 1,
+        "httpStatus": null,
+        "marker": false,
+        "stdout": "",
+        "stderr": "Connecting to 10.42.0.113:8081 (10.42.0.113:8081)\nwget: can't connect to remote host (10.42.0.113): Connection refused\ncommand terminated with exit code 1\n"
+      },
+      {
+        "pod": "a",
+        "address": "10.43.141.230",
+        "port": 8081,
+        "protocol": "HTTP/TCP/IPv4",
+        "transport": "native socket, proxies unset",
+        "token": "/2f8ff2591d32/isolated-preflight/native-clusterip",
+        "url": "http://10.43.141.230:8081/2f8ff2591d32/isolated-preflight/native-clusterip",
+        "hostHeader": "10.43.141.230:8081",
+        "exit": 1,
+        "httpStatus": null,
+        "marker": false,
+        "stdout": "",
+        "stderr": "Connecting to 10.43.141.230:8081 (10.43.141.230:8081)\nwget: can't connect to remote host (10.43.141.230): Connection refused\ncommand terminated with exit code 1\n"
+      }
+    ]
+  ],
+  "isolatedADirect": [
+    {
+      "pod": "a",
+      "address": "10.42.0.113",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/2f8ff2591d32/isolated-preflight/native-podip",
+      "url": "http://10.42.0.113:8081/2f8ff2591d32/isolated-preflight/native-podip",
+      "hostHeader": "10.42.0.113:8081",
+      "exit": 1,
+      "httpStatus": null,
+      "marker": false,
+      "stdout": "",
+      "stderr": "Connecting to 10.42.0.113:8081 (10.42.0.113:8081)\nwget: can't connect to remote host (10.42.0.113): Connection refused\ncommand terminated with exit code 1\n"
+    },
+    {
+      "pod": "a",
+      "address": "10.43.141.230",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "native socket, proxies unset",
+      "token": "/2f8ff2591d32/isolated-preflight/native-clusterip",
+      "url": "http://10.43.141.230:8081/2f8ff2591d32/isolated-preflight/native-clusterip",
+      "hostHeader": "10.43.141.230:8081",
+      "exit": 1,
+      "httpStatus": null,
+      "marker": false,
+      "stdout": "",
+      "stderr": "Connecting to 10.43.141.230:8081 (10.43.141.230:8081)\nwget: can't connect to remote host (10.43.141.230): Connection refused\ncommand terminated with exit code 1\n"
+    }
+  ],
+  "routerServeConfig": {
+    "TCP": {
+      "8081": {
+        "HTTP": true
+      }
+    },
+    "Web": {
+      "g19-r.g19.test:8081": {
+        "Handlers": {
+          "/": {
+            "Text": "G19_2f8ff2591d32_PEER"
+          }
+        }
+      }
+    }
+  },
+  "routerServeHost": "g19-r.g19.test:8081",
+  "peerReadinessPing": {
+    "exit": 0,
+    "stdout": "pong from g19-r (100.64.0.1) via 10.42.0.119:41641 in 62ms\n",
+    "stderr": ""
+  },
+  "peerHTTPPreflight": {
+    "pod": "a",
+    "address": "100.64.0.1",
+    "port": 8081,
+    "protocol": "HTTP/TCP/IPv4",
+    "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+    "token": "/",
+    "url": "http://100.64.0.1:8081/",
+    "hostHeader": "g19-r.g19.test:8081",
+    "exit": 1,
+    "httpStatus": 404,
+    "marker": false,
+    "stdout": "",
+    "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 404 Not Found\nwget: server returned error: HTTP/1.1 404 Not Found\ncommand terminated with exit code 1\n"
+  },
+  "peerStatusAfterPreflight": {
+    "BackendState": "Running",
+    "Self": {
+      "ID": "2",
+      "HostName": "g19-a",
+      "TailscaleIPs": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ]
+    },
+    "ExitNodeStatus": null,
+    "Health": [],
+    "peers": [
+      {
+        "ID": "1",
+        "HostName": "g19-r",
+        "TailscaleIPs": [
+          "100.64.0.1",
+          "fd7a:115c:a1e0::1"
+        ],
+        "Online": true,
+        "ExitNode": false,
+        "ExitNodeOption": false,
+        "CurAddr": "10.42.0.119:41641",
+        "Relay": "g19",
+        "Active": true,
+        "LastHandshake": "2026-10-26T10:49:09.624925721Z",
+        "TxBytes": 684,
+        "RxBytes": 556
+      }
+    ]
+  },
+  "peerHopDiagnostic": {
+    "probe": {
+      "pod": "a",
+      "address": "100.64.0.1",
+      "port": 8081,
+      "protocol": "HTTP/TCP/IPv4",
+      "transport": "tailscaled HTTP proxy 127.0.0.1:1056",
+      "token": "/",
+      "url": "http://100.64.0.1:8081/",
+      "hostHeader": "g19-r.g19.test:8081",
+      "exit": 1,
+      "httpStatus": 404,
+      "marker": false,
+      "stdout": "",
+      "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 404 Not Found\nwget: server returned error: HTTP/1.1 404 Not Found\ncommand terminated with exit code 1\n"
+    },
+    "routerSocketsOneSecondIntoProbe": [],
+    "captureExit": 2,
+    "captureBytes": 0,
+    "captureLinktype": null,
+    "captureDiagnostic": "flag provided but not defined: -wireshark\nStream pcaps for debugging\n\nUSAGE\n  tailscale debug capture\n\nFLAGS\n  --o value\n    \tpath to stream the pcap (or - for stdout), leave empty to start wireshark\ncommand terminated with exit code 2\n",
+    "ownedFlowPacketHeaders": [],
+    "metricsBefore": {
+      "exit": 0,
+      "lines": [
+        "# TYPE netstack_tcp_forward_dropped_attempts counter",
+        "netstack_tcp_forward_dropped_attempts 0",
+        "# TYPE netstack_tcp_forward_dropped_attempts_per_client counter",
+        "netstack_tcp_forward_dropped_attempts_per_client 0",
+        "# TYPE netstack_via_host_scoped_dropped counter",
+        "netstack_via_host_scoped_dropped 0"
+      ]
+    },
+    "metricsAfter": {
+      "exit": 0,
+      "lines": [
+        "# TYPE netstack_tcp_forward_dropped_attempts counter",
+        "netstack_tcp_forward_dropped_attempts 0",
+        "# TYPE netstack_tcp_forward_dropped_attempts_per_client counter",
+        "netstack_tcp_forward_dropped_attempts_per_client 0",
+        "# TYPE netstack_via_host_scoped_dropped counter",
+        "netstack_via_host_scoped_dropped 0"
+      ]
+    },
+    "afterA": {
+      "BackendState": "Running",
+      "Self": {
+        "ID": "2",
+        "HostName": "g19-a",
+        "TailscaleIPs": [
+          "100.64.0.2",
+          "fd7a:115c:a1e0::2"
+        ]
+      },
+      "ExitNodeStatus": null,
+      "Health": [],
+      "peers": [
+        {
+          "ID": "1",
+          "HostName": "g19-r",
+          "TailscaleIPs": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "Online": true,
+          "ExitNode": false,
+          "ExitNodeOption": false,
+          "CurAddr": "10.42.0.119:41641",
+          "Relay": "g19",
+          "Active": true,
+          "LastHandshake": "2026-10-26T10:49:09.624925721Z",
+          "TxBytes": 1004,
+          "RxBytes": 924
+        }
+      ]
+    },
+    "afterR": {
+      "BackendState": "Running",
+      "Self": {
+        "ID": "1",
+        "HostName": "g19-r",
+        "TailscaleIPs": [
+          "100.64.0.1",
+          "fd7a:115c:a1e0::1"
+        ]
+      },
+      "ExitNodeStatus": null,
+      "Health": [],
+      "peers": [
+        {
+          "ID": "2",
+          "HostName": "g19-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ],
+          "Online": true,
+          "ExitNode": false,
+          "ExitNodeOption": false,
+          "CurAddr": "10.42.0.117:41641",
+          "Relay": "g19",
+          "Active": true,
+          "LastHandshake": "2026-10-26T10:49:09.625427913Z",
+          "TxBytes": 972,
+          "RxBytes": 948
+        }
+      ]
+    },
+    "targetRecords": [
+      {
+        "at": "2026-10-26T10:48:42+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:43+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:44+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:45+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:46+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:47+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:48+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:49+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:50+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:51+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:52+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:53+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:54+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:55+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:56+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:57+00:00",
+        "source": "10.42.0.117",
+        "request": "GET /2f8ff2591d32/preflight/native-podip HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:57+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:58+00:00",
+        "source": "10.42.0.117",
+        "request": "GET /2f8ff2591d32/preflight/native-clusterip HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:58+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:58+00:00",
+        "source": "10.42.0.117",
+        "request": "GET /2f8ff2591d32/isolated-preflight/native-podip HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:48:59+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:00+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:01+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:02+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:03+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:04+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:05+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:06+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:07+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:08+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:09+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:10+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:11+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:12+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      },
+      {
+        "at": "2026-10-26T10:49:13+00:00",
+        "source": "10.42.0.1",
+        "request": "GET / HTTP/1.1",
+        "status": 200
+      }
+    ]
+  },
+  "error": "AssertionError: Tailnet HTTP peer positive failed; private sequence not run",
+  "finalLogs": {
+    "a": {
+      "exit": 0,
+      "stdout": "TPM: error opening: stat /dev/tpmrm0: no such file or directory\n2026/10/26 10:48:42 You have disabled logging. Tailscale will not be able to provide support.\n2026/10/26 10:48:42 Program starting: v1.102.5-1-t5fb2a81b0, Go 1.26.6: []string{\"tailscaled\", \"--tun=userspace-networking\", \"--state=/var/lib/tailscale/g19/state\", \"--socket=/var/run/tailscale/tailscaled.sock\", \"--outbound-http-proxy-listen=127.0.0.1:1056\", \"--port=41641\"}\n2026/10/26 10:48:42 LogID: 3f07e2f59b436c11768f32880234f35489422ac527fabdf6c63e143f8b60ee67\n2026/10/26 10:48:42 logpolicy: using system state directory \"/var/lib/tailscale\"\nlogpolicy.ConfigFromFile /var/lib/tailscale/tailscaled.log.conf: open /var/lib/tailscale/tailscaled.log.conf: no such file or directory\nlogpolicy.Config.Validate for /var/lib/tailscale/tailscaled.log.conf: config is nil\n2026/10/26 10:48:42 dns: [rc=unknown ret=direct]\n2026/10/26 10:48:42 dns: using \"direct\" mode\n2026/10/26 10:48:42 dns: using *dns.directManager\n2026/10/26 10:48:42 dns: inotify: NewDirWatcher: context canceled\n2026/10/26 10:48:42 wgengine.NewUserspaceEngine(tun \"userspace-networking\") ...\n2026/10/26 10:48:42 tstun: error initializing tun dev stats polling: error getting ifIndex: no such device\n2026/10/26 10:48:42 dns: using dns.noopManager\n2026/10/26 10:48:42 link state: interfaces.State{defaultRoute=eth0 ifs={eth0:[10.42.0.117/24 llu6]} v4=true v6=false}\n2026/10/26 10:48:42 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:48:42 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:48:42 magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:48:42 magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (impacts throughput only)\n2026/10/26 10:48:42 magicsock: disco key = d:ff63d8aa396fd5e4\n2026/10/26 10:48:42 Creating WireGuard device...\n2026/10/26 10:48:42 Bringing WireGuard device up...\n2026/10/26 10:48:42 Bringing router up...\n2026/10/26 10:48:42 Clearing router settings...\n2026/10/26 10:48:42 Starting network monitor...\n2026/10/26 10:48:42 Engine created.\n2026/10/26 10:48:42 pm: migrating \"_daemon\" profile to new format\n2026/10/26 10:48:42 envknob: TS_NO_LOGS_NO_SUPPORT=\"true\"\n2026/10/26 10:48:42 logpolicy: using system state directory \"/var/lib/tailscale\"\n2026/10/26 10:48:42 linkChange: in state NoState; PAC or proxyConfig changed; updating routes\n2026/10/26 10:48:42 got LocalBackend in 19ms\n2026/10/26 10:48:42 Start\n2026/10/26 10:48:42 ipnext: \"conn25\": skipping extension\n2026/10/26 10:48:42 ipnext: active extensions: captiveportal, acme, portlist, posture, clientupdate, relayserver, routecheck, serviceclientprefs, taildrop\n2026/10/26 10:48:42 profile data directory: profile not found\n2026/10/26 10:48:42 Backend: logs: be:3f07e2f59b436c11768f32880234f35489422ac527fabdf6c63e143f8b60ee67 fe:\n2026/10/26 10:48:42 Switching ipn state NoState -> NeedsLogin (WantRunning=false, nm=false)\n2026/10/26 10:48:42 blockEngineUpdates(true)\n2026/10/26 10:48:42 wgengine: Reconfig: configuring router\n2026/10/26 10:48:42 wgengine: Reconfig: user dialer\n2026/10/26 10:48:42 wgengine: Reconfig: configuring DNS\n2026/10/26 10:48:42 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:48:42 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:48:42 dns: OScfg: {}\n2026/10/26 10:48:42 health(warnable=wantrunning-false): error: Tailscale is stopped.\n2026/10/26 10:48:53 localapi: [POST] /localapi/v0/check-prefs\n2026/10/26 10:48:53 localapi: [POST] /localapi/v0/start\n2026/10/26 10:48:53 control: client.Shutdown ...\n2026/10/26 10:48:53 control: updateRoutine: exiting\n2026/10/26 10:48:53 control: authRoutine: exiting\n2026/10/26 10:48:53 control: mapRoutine: exiting\n2026/10/26 10:48:53 control: Client.Shutdown done.\n2026/10/26 10:48:53 Start\n2026/10/26 10:48:53 Start: updated prefs: Prefs{ra=true dns=false want=true routes=[] statefulFiltering=false nf=on url=\"https://10.43.10.126\" host=\"g19-a\" update=check Persist=nil}, reason: [opts.UpdatePrefs]\n2026/10/26 10:48:53 generating new machine key\n2026/10/26 10:48:53 machine key written to store\n2026/10/26 10:48:53 profile data directory: profile not found\n2026/10/26 10:48:53 Backend: logs: be:3f07e2f59b436c11768f32880234f35489422ac527fabdf6c63e143f8b60ee67 fe:\n2026/10/26 10:48:53 Switching ipn state NoState -> NeedsLogin (WantRunning=true, nm=false)\n2026/10/26 10:48:53 blockEngineUpdates(true)\n2026/10/26 10:48:53 Reconfig(down): no changes made to Engine config\n2026/10/26 10:48:53 health(warnable=warming-up): error: Tailscale is starting. Please wait.\n2026/10/26 10:48:53 health(warnable=wantrunning-false): ok\n2026/10/26 10:48:53 localapi: [POST] /localapi/v0/login-interactive\n2026/10/26 10:48:53 error calling getent for user \"1000\": exit status 2\n2026/10/26 10:48:53 StartLoginInteractiveAs(\"\"): url=false\n2026/10/26 10:48:53 control: client.Login(2)\n2026/10/26 10:48:53 control: LoginInteractive -> regen=true\n2026/10/26 10:48:53 control: doLogin(regen=true, hasUrl=false)\n2026/10/26 10:48:53 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:53 control: control server key from https://10.43.10.126: ts2021=[9K0yw], legacy=\n2026/10/26 10:48:53 control: Generating a new nodekey.\n2026/10/26 10:48:53 control: RegisterReq: onode= node=[ZKDno] fup=false nks=false\n2026/10/26 10:48:53 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:54 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false\n2026/10/26 10:48:54 blockEngineUpdates(false)\n2026/10/26 10:48:55 using tailnet default auto-update setting: false\n2026/10/26 10:48:55 EditPrefs: MaskedPrefs{AutoUpdate={Apply=false}}\n2026/10/26 10:48:55 taildrop: Taildrop disabled; no state directory\n2026/10/26 10:48:55 taildrop: no Taildrop directory configured\n2026/10/26 10:48:55 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:55 magicsock: new contact: control-netmap usec=13198314 cached=false\n2026/10/26 10:48:55 active login: g19-a\n2026/10/26 10:48:55 netmap: suggested exit node: no preferred DERP, try again later\n2026/10/26 10:48:55 Switching ipn state NeedsLogin -> Starting (WantRunning=true, nm=true)\n2026/10/26 10:48:55 magicsock: SetPrivateKey called (init)\n2026/10/26 10:48:55 wgengine: Reconfig: configuring router\n2026/10/26 10:48:55 wgengine: Reconfig: user dialer\n2026/10/26 10:48:55 tsdial: bart table size: 4\n2026/10/26 10:48:55 wgengine: Reconfig: configuring DNS\n2026/10/26 10:48:55 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:48:55 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:48:55 dns: OScfg: {}\n2026/10/26 10:48:55 peerapi: serving on http://100.64.0.2:46590\n2026/10/26 10:48:55 peerapi: serving on http://[fd7a:115c:a1e0::2]:46590\n2026/10/26 10:48:55 monitor: gateway and self IP changed: gw=10.42.0.1 self=10.42.0.117\n2026/10/26 10:48:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:56 netmap: suggested exit node: no preferred DERP, try again later\n2026/10/26 10:48:56 magicsock: home DERP changing from derp-0 [0ms] to derp-999 [1ms] (forced=false)\n2026/10/26 10:48:56 magicsock: home is now derp-999 (g19)\n2026/10/26 10:48:56 update netmap cache: profile local data storage unavailable\n2026/10/26 10:48:56 magicsock: adding connection to derp-999 for home-keep-alive\n2026/10/26 10:48:56 magicsock: 1 active derp conns: derp-999=cr0s,wr0s\n2026/10/26 10:48:56 magicsock: endpoints changed: 10.42.0.117:41641 (stun)\n2026/10/26 10:48:56 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:48:56 derphttp.Client.Connect: connecting to derp-999 (g19)\n2026/10/26 10:48:56 Switching ipn state Starting -> Running (WantRunning=true, nm=true)\n2026/10/26 10:48:56 health(warnable=warming-up): ok\n2026/10/26 10:48:56 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:56 magicsock: derp-999 connected; connGen=1\n2026/10/26 10:48:56 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:57 [RATELIMIT] format(\"control: [v\\x00JSON]%d%s\")\n2026/10/26 10:48:57 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:49:04 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:49:06 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:49:06 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:49:09 localapi: [POST] /localapi/v0/ping\n2026/10/26 10:49:09 ping(100.64.0.1): sending disco ping to [3qAon] g19-r ...\n2026/10/26 10:49:09 magicsock: disco: node [3qAon] d:4f3dbb24bacb8904 now using 10.42.0.119:41641 mtu=1360 tx=f85582887337\n2026/10/26 10:49:09 magicsock: new contact: peer=[3qAon] usec=26393917 cached=false via=direct\n",
+      "stderr": ""
+    },
+    "r": {
+      "exit": 0,
+      "stdout": "2026/10/26 10:48:49 health(warnable=warming-up): error: Tailscale is starting. Please wait.\n2026/10/26 10:48:49 health(warnable=wantrunning-false): ok\n2026/10/26 10:48:49 localapi: [POST] /localapi/v0/login-interactive\n2026/10/26 10:48:49 error calling getent for user \"1000\": exit status 2\n2026/10/26 10:48:49 StartLoginInteractiveAs(\"\"): url=false\n2026/10/26 10:48:49 control: client.Login(2)\n2026/10/26 10:48:49 control: mapRoutine: context done.\n2026/10/26 10:48:49 control: mapRoutine: loggedIn=false\n2026/10/26 10:48:49 control: authRoutine: context done.\n2026/10/26 10:48:49 control: authRoutine: loggedIn=false; wantLoggedIn=true\n2026/10/26 10:48:49 control: direct.TryLogin(flags=2)\n2026/10/26 10:48:49 control: LoginInteractive -> regen=true\n2026/10/26 10:48:49 control: doLogin(regen=true, hasUrl=false)\n2026/10/26 10:48:49 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:49 control: control server key from https://10.43.10.126: ts2021=[9K0yw], legacy=\n2026/10/26 10:48:49 control: Generating a new nodekey.\n2026/10/26 10:48:49 control: RegisterReq: onode= node=[3qAon] fup=false nks=false\n2026/10/26 10:48:49 control: creating new noise client\n2026/10/26 10:48:50 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:51 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false\n2026/10/26 10:48:51 control: No AuthURL\n2026/10/26 10:48:51 control: sendStatus: authRoutine-success: loggedIn=true inMapPoll=false\n2026/10/26 10:48:51 control: restartMap: synced=false\n2026/10/26 10:48:51 control: authRoutine: loggedIn=true; goal=nil paused=false\n2026/10/26 10:48:51 control: PollNetMap: stream=false ep=[]\n2026/10/26 10:48:51 blockEngineUpdates(false)\n2026/10/26 10:48:51 authReconfig: netmap not yet valid. Skipping.\n2026/10/26 10:48:51 authReconfig: netmap not yet valid. Skipping.\n2026/10/26 10:48:51 control: mapRoutine: context done.\n2026/10/26 10:48:51 control: mapRoutine: loggedIn=true\n2026/10/26 10:48:51 control: PollNetMap: stream=true ep=[]\n2026/10/26 10:48:51 control: successful lite map update in 500ms\n2026/10/26 10:48:52 {\"controltime\":\"2026-10-26T10:48:52.431281876Z\"}\n2026/10/26 10:48:52 control: new network map (periodic):\nnetmap: self: [3qAon] auth=machine-authorized u=g19-r [100.64.0.1/32 fd7a:115c:a1e0::1/128]\n2026/10/26 10:48:52 using tailnet default auto-update setting: false\n2026/10/26 10:48:52 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:48:52 control: sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true\n2026/10/26 10:48:52 EditPrefs: MaskedPrefs{AutoUpdate={Apply=false}}\n2026/10/26 10:48:52 netmap packet filter: (not ready yet)\n2026/10/26 10:48:52 authReconfig: netmap not yet valid. Skipping.\n2026/10/26 10:48:52 taildrop: Taildrop disabled; no state directory\n2026/10/26 10:48:52 taildrop: no Taildrop directory configured\n2026/10/26 10:48:52 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:52 magicsock: new contact: control-netmap usec=9695105 cached=false\n2026/10/26 10:48:52 active login: g19-r\n2026/10/26 10:48:52 netmap packet filter: 1 filters\n2026/10/26 10:48:52 netmap: suggested exit node: no preferred DERP, try again later\n2026/10/26 10:48:52 Switching ipn state NeedsLogin -> Starting (WantRunning=true, nm=true)\n2026/10/26 10:48:52 magicsock: SetPrivateKey called (init)\n2026/10/26 10:48:52 magicsock: peermtu: peer MTU status is false\n2026/10/26 10:48:52 wgengine: Reconfig: configuring router\n2026/10/26 10:48:52 warning: fakeRouter.Set: not implemented.\n2026/10/26 10:48:52 wgengine: Reconfig: user dialer\n2026/10/26 10:48:52 tsdial: bart table size: 2\n2026/10/26 10:48:52 wgengine: Reconfig: configuring DNS\n2026/10/26 10:48:52 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:48:52 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:48:52 dns: OScfg: {}\n2026/10/26 10:48:52 wgengine: Reconfig done\n2026/10/26 10:48:52 authReconfig: ra=true dns=false 0x02: <nil>\n2026/10/26 10:48:52 initPeerAPIListener: entered\n2026/10/26 10:48:52 peerapi: serving on http://100.64.0.1:58436\n2026/10/26 10:48:52 peerapi: serving on http://[fd7a:115c:a1e0::1]:58436\n2026/10/26 10:48:52 monitor: gateway and self IP changed: gw=10.42.0.1 self=10.42.0.119\n2026/10/26 10:48:52 control: HostInfo: {\"IPNVersion\":\"1.102.5-1-t5fb2a81b0\",\"BackendLogID\":\"c983794059b45ed5e5ace4d845791b6b1e73a8207a06573d30362a9770e22714\",\"OS\":\"linux\",\"OSVersion\":\"5.15.0-161-generic\",\"Container\":true,\"Env\":\"k8s\",\"Distro\":\"alpine\",\"DistroVersion\":\"3.22.6\",\"Desktop\":false,\"Package\":\"container\",\"Hostname\":\"g19-r\",\"NoLogsNoSupport\":true,\"Machine\":\"x86_64\",\"GoArch\":\"amd64\",\"GoArchVar\":\"v1\",\"GoVersion\":\"go1.26.6\",\"RoutableIPs\":[\"0.0.0.0/0\",\"::/0\"],\"Services\":[{\"Proto\":\"peerapi4\",\"Port\":58436},{\"Proto\":\"peerapi6\",\"Port\":58436},{\"Proto\":\"peerapi-dns-proxy\",\"Port\":1}],\"Userspace\":true,\"UserspaceRouter\":true,\"AppConnector\":false,\"StateEncrypted\":false}\n2026/10/26 10:48:52 control: PollNetMap: stream=false ep=[]\n2026/10/26 10:48:52 netcheck: report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=10.42.0.119:41641 derp=999 derpdist=999v4:1ms\n2026/10/26 10:48:52 magicsock: home DERP changing from derp-0 [0ms] to derp-999 [0ms] (forced=false)\n2026/10/26 10:48:52 magicsock: home is now derp-999 (g19)\n2026/10/26 10:48:52 update netmap cache: profile local data storage unavailable\n2026/10/26 10:48:52 magicsock: adding connection to derp-999 for home-keep-alive\n2026/10/26 10:48:52 magicsock: 1 active derp conns: derp-999=cr0s,wr0s\n2026/10/26 10:48:52 magicsock: endpoints changed: 10.42.0.119:41641 (stun)\n2026/10/26 10:48:52 derphttp.Client.Connect: connecting to derp-999 (g19)\n2026/10/26 10:48:52 control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#999 portmap= link=\"\" firewallmode=\"\"}\n2026/10/26 10:48:52 Switching ipn state Starting -> Running (WantRunning=true, nm=true)\n2026/10/26 10:48:52 health(warnable=warming-up): ok\n2026/10/26 10:48:52 tlsdial: warning: server cert for \"\" passed x509 validation but is self-signed by \"CN=headscale\"\n2026/10/26 10:48:52 magicsock: derp-999 connected; connGen=1\n2026/10/26 10:48:52 {\"controltime\":\"2026-10-26T10:48:52.824603832Z\"}\n2026/10/26 10:48:52 {\"controltime\":\"2026-10-26T10:48:52.824802306Z\"}\n2026/10/26 10:48:52 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:48:52 control: sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true\n2026/10/26 10:48:52 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:52 netmap diff: (none)\n2026/10/26 10:48:52 control: successful lite map update in 483ms\n2026/10/26 10:48:52 control: PollNetMap: stream=false ep=[10.42.0.119:41641]\n2026/10/26 10:48:52 netcheck: report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=10.42.0.119:41641 derp=999 derpdist=999v4:1ms\n2026/10/26 10:48:53 control: successful lite map update in 500ms\n2026/10/26 10:48:53 {\"controltime\":\"2026-10-26T10:48:53.625112161Z\"}\n2026/10/26 10:48:53 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:48:53 control: sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true\n2026/10/26 10:48:53 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:53 {\"controltime\":\"2026-10-26T10:48:53.625262281Z\"}\n2026/10/26 10:48:53 [RATELIMIT] format(\"control: [v\\x00JSON]%d%s\")\n2026/10/26 10:48:53 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:48:53 control: sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true\n2026/10/26 10:48:53 [RATELIMIT] format(\"control: sendStatus: %s: loggedIn=%v inMapPoll=%v\")\n2026/10/26 10:48:53 netmap diff: (none)\n2026/10/26 10:48:53 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:53 netmap diff: (none)\n2026/10/26 10:48:55 netmap packet filter: 1 filters\n2026/10/26 10:48:55 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:48:55 [RATELIMIT] format(\"control: mapRoutine: netmap received: loggedIn=%v inMapPoll=true\")\n2026/10/26 10:48:55 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:48:55 [RATELIMIT] format(\"cannot fetch existing TKA state; no state directory for tailnet-lock\")\n2026/10/26 10:48:55 magicsock: got updated network map; 1 peers\n2026/10/26 10:48:55 netmap diff:\n+ [ZKDno] D0 100.64.0.2 fd7a:115c:a1e0::2/128 : \n2026/10/26 10:48:55 netcheck: report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=10.42.0.119:41641 derp=999 derpdist=999v4:1ms\n2026/10/26 10:48:56 magicsock: got updated network map; 1 peers\n2026/10/26 10:48:56 netmap diff:\n- [ZKDno] D0 100.64.0.2 fd7a:115c:a1e0::2/128 : \n+ [ZKDno] d:ff63d8aa396fd5e4 D0 100.64.0.2 fd7a:115c:a1e0::2/128 : \n2026/10/26 10:48:56 magicsock: peermtu: peer MTU status is false\n2026/10/26 10:48:56 wgengine: Reconfig: configuring router\n2026/10/26 10:48:56 warning: fakeRouter.Set: not implemented.\n2026/10/26 10:48:56 wgengine: Reconfig: user dialer\n2026/10/26 10:48:56 tsdial: bart table size: 4\n2026/10/26 10:48:56 wgengine: Reconfig: configuring DNS\n2026/10/26 10:48:56 dns: Set: {DefaultResolvers:[] Routes:{} SearchDomains:[] Hosts:0}\n2026/10/26 10:48:56 dns: Resolvercfg: {Routes:{} Hosts:0 LocalDomains:[]}\n2026/10/26 10:48:56 dns: OScfg: {}\n2026/10/26 10:48:56 wgengine: Reconfig done\n2026/10/26 10:48:56 authReconfig: ra=true dns=false 0x02: <nil>\n2026/10/26 10:48:56 initPeerAPIListener: entered\n2026/10/26 10:48:56 initPeerAPIListener: 2 netmap addresses match existing listeners\n2026/10/26 10:49:04 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:49:06 [RATELIMIT] format(\"control: [v\\x00JSON]%d%s\") (5 dropped)\n2026/10/26 10:49:06 {\"controltime\":\"2026-10-26T10:49:06.425317643Z\"}\n2026/10/26 10:49:06 netmap packet filter: 1 filters\n2026/10/26 10:49:06 [RATELIMIT] format(\"control: mapRoutine: netmap received: loggedIn=%v inMapPoll=true\") (1 dropped)\n2026/10/26 10:49:06 control: mapRoutine: netmap received: loggedIn=true inMapPoll=true\n2026/10/26 10:49:06 [RATELIMIT] format(\"control: sendStatus: %s: loggedIn=%v inMapPoll=%v\") (2 dropped)\n2026/10/26 10:49:06 control: sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true\n2026/10/26 10:49:06 [RATELIMIT] format(\"cannot fetch existing TKA state; no state directory for tailnet-lock\") (1 dropped)\n2026/10/26 10:49:06 cannot fetch existing TKA state; no state directory for tailnet-lock\n2026/10/26 10:49:06 magicsock: got updated network map; 1 peers\n2026/10/26 10:49:06 netmap diff:\n- [ZKDno] d:ff63d8aa396fd5e4 D0 100.64.0.2 fd7a:115c:a1e0::2/128 : \n+ [ZKDno] d:ff63d8aa396fd5e4 D999 100.64.0.2 fd7a:115c:a1e0::2/128 :     10.42.0.117:41641\n2026/10/26 10:49:06 localapi: [POST] /localapi/v0/debug\n2026/10/26 10:49:07 localapi: [POST] /localapi/v0/serve-config\n2026/10/26 10:49:09 magicsock: derp route for [ZKDno] set to derp-999 (shared home)\n2026/10/26 10:49:09 magicsock: disco: node [ZKDno] d:ff63d8aa396fd5e4 now using 10.42.0.117:41641 mtu=1360 tx=0d6fc1f899a0\n2026/10/26 10:49:09 magicsock: new contact: peer=[ZKDno] usec=26870060 cached=false via=direct\n2026/10/26 10:49:09 Accept: TCP{100.64.0.2:36239 > 100.64.0.1:8081} 60 tcp ok\n2026/10/26 10:49:09 Accept: TCP{100.64.0.2:36239 > 100.64.0.1:8081} 52 tcp non-syn\n2026/10/26 10:49:09 Accept: TCP{100.64.0.2:36239 > 100.64.0.1:8081} 175 tcp non-syn\n",
+      "stderr": ""
+    },
+    "headscale": {
+      "exit": 0,
+      "stdout": "{\"level\":\"warn\",\"time\":1793011722,\"message\":\"listening without TLS but ServerURL does not start with http://\"}\n",
+      "stderr": ""
+    },
+    "headscale-tls": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "target": {
+      "exit": 0,
+      "stdout": "{\"at\":\"2026-10-26T10:48:42+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:43+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:44+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:45+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:46+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:47+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:48+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:49+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:50+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:51+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:52+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:53+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:54+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:55+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:56+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:57+00:00\",\"source\":\"10.42.0.117\",\"request\":\"GET /2f8ff2591d32/preflight/native-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:57+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:58+00:00\",\"source\":\"10.42.0.117\",\"request\":\"GET /2f8ff2591d32/preflight/native-clusterip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:58+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:58+00:00\",\"source\":\"10.42.0.117\",\"request\":\"GET /2f8ff2591d32/isolated-preflight/native-podip HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:48:59+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:00+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:01+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:02+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:03+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:04+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:05+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:06+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:07+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:08+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:09+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:10+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:11+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:12+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:13+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:14+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n{\"at\":\"2026-10-26T10:49:15+00:00\",\"source\":\"10.42.0.1\",\"request\":\"GET / HTTP/1.1\",\"status\":200}\n",
+      "stderr": ""
+    }
+  },
+  "privateCredentialDirectoryRemoved": true,
+  "processExit": 1,
+  "elapsedSeconds": 48.042
+}

@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-26T01:34:10.093604",
+  "policy": "only group:ux12-a-ops to tag:ux12-a-server:8081",
+  "records": [
+    {
+      "from": "client-a",
+      "target": "100.64.0.1",
+      "result": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "from": "client-b",
+      "target": "100.64.0.2",
+      "result": {
+        "timeout": 10,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

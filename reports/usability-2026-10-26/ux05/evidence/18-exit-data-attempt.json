@@ -1,0 +1,29 @@
+{
+  "exit_node_status": {
+    "ID": "2",
+    "Online": true,
+    "TailscaleIPs": [
+      "100.64.0.2/32",
+      "fd7a:115c:a1e0::2/128"
+    ]
+  },
+  "health": [],
+  "checks": [
+    {
+      "at": "2026-10-26T01:11:26.740759+08:00",
+      "client": "client-a",
+      "method": "fresh Tailscale TCP via selected exit",
+      "exit": 143,
+      "stdout": "\n",
+      "stderr": "Terminated\ncommand terminated with exit code 143\n\n"
+    },
+    {
+      "at": "2026-10-26T01:11:27.146113+08:00",
+      "client": "client-b",
+      "method": "target positive direct",
+      "exit": 0,
+      "stdout": "ux05-subnet-target\n\n",
+      "stderr": "\n"
+    }
+  ]
+}

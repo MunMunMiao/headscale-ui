@@ -1,0 +1,107 @@
+{
+  "utc": "2026-10-25T17:06:43.725094+00:00",
+  "phase": "after-local-clear",
+  "nodes": [
+    {
+      "id": 1,
+      "given_name": "ux07-edge-router",
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "user": {
+        "id": 2147455555,
+        "name": "tagged-devices",
+        "created_at": {
+          "seconds": -62135596800
+        },
+        "display_name": "Tagged Devices"
+      },
+      "tags": [
+        "tag:ux07-router"
+      ],
+      "online": true,
+      "expiry": null,
+      "register_method": 2,
+      "approved_routes": [
+        "0.0.0.0/0",
+        "10.42.0.20/32",
+        "::/0"
+      ],
+      "available_routes": [
+        "0.0.0.0/0",
+        "::/0",
+        "10.42.0.20/32"
+      ]
+    }
+  ],
+  "policy": {
+    "groups": {
+      "group:ux07-netops": []
+    },
+    "tagOwners": {
+      "tag:ux07-router": [
+        "group:ux07-netops"
+      ],
+      "tag:ux07-service": []
+    },
+    "acls": []
+  },
+  "apiKeys": [
+    {
+      "id": 1,
+      "expiration": {
+        "seconds": 1792989154,
+        "nanos": 231848084
+      },
+      "created_at": {
+        "seconds": 1792945954,
+        "nanos": 455967083
+      }
+    },
+    {
+      "id": 2,
+      "expiration": {
+        "seconds": 1792947257,
+        "nanos": 340545517
+      },
+      "created_at": {
+        "seconds": 1792947229,
+        "nanos": 737009990
+      }
+    }
+  ],
+  "clients": {
+    "client-a": {
+      "state": "NeedsLogin",
+      "IPs": null,
+      "self": {
+        "HostName": "",
+        "UserID": 0,
+        "Tags": null,
+        "Online": false,
+        "KeyExpiry": "1970-01-01T00:00:01Z"
+      },
+      "exitNode": null,
+      "peers": []
+    },
+    "client-b": {
+      "state": "Running",
+      "IPs": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "self": {
+        "HostName": "ux07-client-b",
+        "UserID": 2147455555,
+        "Tags": [
+          "tag:ux07-router"
+        ],
+        "Online": true,
+        "KeyExpiry": null
+      },
+      "exitNode": null,
+      "peers": []
+    }
+  }
+}

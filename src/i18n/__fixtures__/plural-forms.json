@@ -1,0 +1,1126 @@
+{
+  "en-US": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 members"],
+        [1, "1 member"],
+        [2, "2 members"],
+        [3, "3 members"],
+        [5, "5 members"],
+        [11, "11 members"],
+        [21, "21 members"],
+        [1000, "1000 members"],
+        [1.5, "1.5 members"],
+        [-1, "-1 member"]
+      ],
+      "devicesTagged": [
+        [0, "0 devices"],
+        [1, "1 device"],
+        [2, "2 devices"],
+        [3, "3 devices"],
+        [5, "5 devices"],
+        [11, "11 devices"],
+        [21, "21 devices"],
+        [1000, "1000 devices"],
+        [1.5, "1.5 devices"],
+        [-1, "-1 device"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "0 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          1,
+          "1 rule has a broad source or destination. Review its exact scope:"
+        ],
+        [
+          2,
+          "2 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          3,
+          "3 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          5,
+          "5 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          11,
+          "11 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          21,
+          "21 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          1000,
+          "1000 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          1.5,
+          "1.5 rules have a broad source or destination. Review their exact scope:"
+        ],
+        [
+          -1,
+          "-1 rule has a broad source or destination. Review its exact scope:"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "0 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          1,
+          "1 reference no longer matches an existing account, team, or device label."
+        ],
+        [
+          2,
+          "2 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          3,
+          "3 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          5,
+          "5 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          11,
+          "11 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          21,
+          "21 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          1000,
+          "1000 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          1.5,
+          "1.5 references no longer match existing accounts, teams, or device labels."
+        ],
+        [
+          -1,
+          "-1 reference no longer matches an existing account, team, or device label."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "Clean up 0 stale references"],
+        [1, "Clean up 1 stale reference"],
+        [2, "Clean up 2 stale references"],
+        [3, "Clean up 3 stale references"],
+        [5, "Clean up 5 stale references"],
+        [11, "Clean up 11 stale references"],
+        [21, "Clean up 21 stale references"],
+        [1000, "Clean up 1000 stale references"],
+        [1.5, "Clean up 1.5 stale references"],
+        [-1, "Clean up -1 stale reference"]
+      ]
+    }
+  },
+  "zh-Hans": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 名成员"],
+        [1, "1 名成员"],
+        [2, "2 名成员"],
+        [3, "3 名成员"],
+        [5, "5 名成员"],
+        [11, "11 名成员"],
+        [21, "21 名成员"],
+        [1000, "1000 名成员"],
+        [1.5, "1.5 名成员"],
+        [-1, "-1 名成员"]
+      ],
+      "devicesTagged": [
+        [0, "0 台设备"],
+        [1, "1 台设备"],
+        [2, "2 台设备"],
+        [3, "3 台设备"],
+        [5, "5 台设备"],
+        [11, "11 台设备"],
+        [21, "21 台设备"],
+        [1000, "1000 台设备"],
+        [1.5, "1.5 台设备"],
+        [-1, "-1 台设备"]
+      ],
+      "openAccessWarnings": [
+        [0, "有 0 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [1, "有 1 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [2, "有 2 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [3, "有 3 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [5, "有 5 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [11, "有 11 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [21, "有 21 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [1000, "有 1000 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [1.5, "有 1.5 条规则包含宽泛的来源或目标。请审阅其确切范围："],
+        [-1, "有 -1 条规则包含宽泛的来源或目标。请审阅其确切范围："]
+      ],
+      "orphanReferences": [
+        [0, "有 0 处引用无法匹配现有账号、团队或设备标签。"],
+        [1, "有 1 处引用无法匹配现有账号、团队或设备标签。"],
+        [2, "有 2 处引用无法匹配现有账号、团队或设备标签。"],
+        [3, "有 3 处引用无法匹配现有账号、团队或设备标签。"],
+        [5, "有 5 处引用无法匹配现有账号、团队或设备标签。"],
+        [11, "有 11 处引用无法匹配现有账号、团队或设备标签。"],
+        [21, "有 21 处引用无法匹配现有账号、团队或设备标签。"],
+        [1000, "有 1000 处引用无法匹配现有账号、团队或设备标签。"],
+        [1.5, "有 1.5 处引用无法匹配现有账号、团队或设备标签。"],
+        [-1, "有 -1 处引用无法匹配现有账号、团队或设备标签。"]
+      ],
+      "cleanupOrphans": [
+        [0, "清理 0 处失效引用"],
+        [1, "清理 1 处失效引用"],
+        [2, "清理 2 处失效引用"],
+        [3, "清理 3 处失效引用"],
+        [5, "清理 5 处失效引用"],
+        [11, "清理 11 处失效引用"],
+        [21, "清理 21 处失效引用"],
+        [1000, "清理 1000 处失效引用"],
+        [1.5, "清理 1.5 处失效引用"],
+        [-1, "清理 -1 处失效引用"]
+      ]
+    }
+  },
+  "zh-Hant-TW": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 位成員"],
+        [1, "1 位成員"],
+        [2, "2 位成員"],
+        [3, "3 位成員"],
+        [5, "5 位成員"],
+        [11, "11 位成員"],
+        [21, "21 位成員"],
+        [1000, "1000 位成員"],
+        [1.5, "1.5 位成員"],
+        [-1, "-1 位成員"]
+      ],
+      "devicesTagged": [
+        [0, "0 台裝置"],
+        [1, "1 台裝置"],
+        [2, "2 台裝置"],
+        [3, "3 台裝置"],
+        [5, "5 台裝置"],
+        [11, "11 台裝置"],
+        [21, "21 台裝置"],
+        [1000, "1000 台裝置"],
+        [1.5, "1.5 台裝置"],
+        [-1, "-1 台裝置"]
+      ],
+      "openAccessWarnings": [
+        [0, "有 0 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1, "有 1 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [2, "有 2 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [3, "有 3 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [5, "有 5 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [11, "有 11 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [21, "有 21 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1000, "有 1000 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1.5, "有 1.5 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [-1, "有 -1 條規則包含廣泛的來源或目標。請審閱其確切範圍："]
+      ],
+      "orphanReferences": [
+        [0, "有 0 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [1, "有 1 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [2, "有 2 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [3, "有 3 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [5, "有 5 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [11, "有 11 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [21, "有 21 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [1000, "有 1000 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [1.5, "有 1.5 個參照無法對應現有帳號、團隊或裝置標籤。"],
+        [-1, "有 -1 個參照無法對應現有帳號、團隊或裝置標籤。"]
+      ],
+      "cleanupOrphans": [
+        [0, "清除 0 個失效參照"],
+        [1, "清除 1 個失效參照"],
+        [2, "清除 2 個失效參照"],
+        [3, "清除 3 個失效參照"],
+        [5, "清除 5 個失效參照"],
+        [11, "清除 11 個失效參照"],
+        [21, "清除 21 個失效參照"],
+        [1000, "清除 1000 個失效參照"],
+        [1.5, "清除 1.5 個失效參照"],
+        [-1, "清除 -1 個失效參照"]
+      ]
+    }
+  },
+  "zh-Hant-HK": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 位成員"],
+        [1, "1 位成員"],
+        [2, "2 位成員"],
+        [3, "3 位成員"],
+        [5, "5 位成員"],
+        [11, "11 位成員"],
+        [21, "21 位成員"],
+        [1000, "1000 位成員"],
+        [1.5, "1.5 位成員"],
+        [-1, "-1 位成員"]
+      ],
+      "devicesTagged": [
+        [0, "0 部裝置"],
+        [1, "1 部裝置"],
+        [2, "2 部裝置"],
+        [3, "3 部裝置"],
+        [5, "5 部裝置"],
+        [11, "11 部裝置"],
+        [21, "21 部裝置"],
+        [1000, "1000 部裝置"],
+        [1.5, "1.5 部裝置"],
+        [-1, "-1 部裝置"]
+      ],
+      "openAccessWarnings": [
+        [0, "有 0 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1, "有 1 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [2, "有 2 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [3, "有 3 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [5, "有 5 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [11, "有 11 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [21, "有 21 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1000, "有 1000 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [1.5, "有 1.5 條規則包含廣泛的來源或目標。請審閱其確切範圍："],
+        [-1, "有 -1 條規則包含廣泛的來源或目標。請審閱其確切範圍："]
+      ],
+      "orphanReferences": [
+        [0, "有 0 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [1, "有 1 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [2, "有 2 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [3, "有 3 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [5, "有 5 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [11, "有 11 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [21, "有 21 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [1000, "有 1000 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [1.5, "有 1.5 個參照無法配對現有帳戶、團隊或裝置標籤。"],
+        [-1, "有 -1 個參照無法配對現有帳戶、團隊或裝置標籤。"]
+      ],
+      "cleanupOrphans": [
+        [0, "清除 0 個失效參照"],
+        [1, "清除 1 個失效參照"],
+        [2, "清除 2 個失效參照"],
+        [3, "清除 3 個失效參照"],
+        [5, "清除 5 個失效參照"],
+        [11, "清除 11 個失效參照"],
+        [21, "清除 21 個失效參照"],
+        [1000, "清除 1000 個失效參照"],
+        [1.5, "清除 1.5 個失效參照"],
+        [-1, "清除 -1 個失效參照"]
+      ]
+    }
+  },
+  "ja-JP": {
+    "plurals": {
+      "teamMembers": [
+        [0, "メンバー 0 人"],
+        [1, "メンバー 1 人"],
+        [2, "メンバー 2 人"],
+        [3, "メンバー 3 人"],
+        [5, "メンバー 5 人"],
+        [11, "メンバー 11 人"],
+        [21, "メンバー 21 人"],
+        [1000, "メンバー 1000 人"],
+        [1.5, "メンバー 1.5 人"],
+        [-1, "メンバー -1 人"]
+      ],
+      "devicesTagged": [
+        [0, "デバイス 0 台"],
+        [1, "デバイス 1 台"],
+        [2, "デバイス 2 台"],
+        [3, "デバイス 3 台"],
+        [5, "デバイス 5 台"],
+        [11, "デバイス 11 台"],
+        [21, "デバイス 21 台"],
+        [1000, "デバイス 1000 台"],
+        [1.5, "デバイス 1.5 台"],
+        [-1, "デバイス -1 台"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "接続元または接続先の範囲が広いルールが 0 件あります。正確な範囲を確認してください："
+        ],
+        [
+          1,
+          "接続元または接続先の範囲が広いルールが 1 件あります。正確な範囲を確認してください："
+        ],
+        [
+          2,
+          "接続元または接続先の範囲が広いルールが 2 件あります。正確な範囲を確認してください："
+        ],
+        [
+          3,
+          "接続元または接続先の範囲が広いルールが 3 件あります。正確な範囲を確認してください："
+        ],
+        [
+          5,
+          "接続元または接続先の範囲が広いルールが 5 件あります。正確な範囲を確認してください："
+        ],
+        [
+          11,
+          "接続元または接続先の範囲が広いルールが 11 件あります。正確な範囲を確認してください："
+        ],
+        [
+          21,
+          "接続元または接続先の範囲が広いルールが 21 件あります。正確な範囲を確認してください："
+        ],
+        [
+          1000,
+          "接続元または接続先の範囲が広いルールが 1000 件あります。正確な範囲を確認してください："
+        ],
+        [
+          1.5,
+          "接続元または接続先の範囲が広いルールが 1.5 件あります。正確な範囲を確認してください："
+        ],
+        [
+          -1,
+          "接続元または接続先の範囲が広いルールが -1 件あります。正確な範囲を確認してください："
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 0 件あります。"
+        ],
+        [
+          1,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 1 件あります。"
+        ],
+        [
+          2,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 2 件あります。"
+        ],
+        [
+          3,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 3 件あります。"
+        ],
+        [
+          5,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 5 件あります。"
+        ],
+        [
+          11,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 11 件あります。"
+        ],
+        [
+          21,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 21 件あります。"
+        ],
+        [
+          1000,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 1000 件あります。"
+        ],
+        [
+          1.5,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が 1.5 件あります。"
+        ],
+        [
+          -1,
+          "既存のアカウント、チーム、デバイスタグに一致しない参照が -1 件あります。"
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "無効な参照を 0 件削除"],
+        [1, "無効な参照を 1 件削除"],
+        [2, "無効な参照を 2 件削除"],
+        [3, "無効な参照を 3 件削除"],
+        [5, "無効な参照を 5 件削除"],
+        [11, "無効な参照を 11 件削除"],
+        [21, "無効な参照を 21 件削除"],
+        [1000, "無効な参照を 1000 件削除"],
+        [1.5, "無効な参照を 1.5 件削除"],
+        [-1, "無効な参照を -1 件削除"]
+      ]
+    }
+  },
+  "ko-KR": {
+    "plurals": {
+      "teamMembers": [
+        [0, "멤버 0명"],
+        [1, "멤버 1명"],
+        [2, "멤버 2명"],
+        [3, "멤버 3명"],
+        [5, "멤버 5명"],
+        [11, "멤버 11명"],
+        [21, "멤버 21명"],
+        [1000, "멤버 1000명"],
+        [1.5, "멤버 1.5명"],
+        [-1, "멤버 -1명"]
+      ],
+      "devicesTagged": [
+        [0, "기기 0대"],
+        [1, "기기 1대"],
+        [2, "기기 2대"],
+        [3, "기기 3대"],
+        [5, "기기 5대"],
+        [11, "기기 11대"],
+        [21, "기기 21대"],
+        [1000, "기기 1000대"],
+        [1.5, "기기 1.5대"],
+        [-1, "기기 -1대"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "출발지 또는 대상 범위가 넓은 규칙이 0개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          1,
+          "출발지 또는 대상 범위가 넓은 규칙이 1개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          2,
+          "출발지 또는 대상 범위가 넓은 규칙이 2개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          3,
+          "출발지 또는 대상 범위가 넓은 규칙이 3개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          5,
+          "출발지 또는 대상 범위가 넓은 규칙이 5개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          11,
+          "출발지 또는 대상 범위가 넓은 규칙이 11개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          21,
+          "출발지 또는 대상 범위가 넓은 규칙이 21개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          1000,
+          "출발지 또는 대상 범위가 넓은 규칙이 1000개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          1.5,
+          "출발지 또는 대상 범위가 넓은 규칙이 1.5개 있습니다. 정확한 범위를 검토하세요:"
+        ],
+        [
+          -1,
+          "출발지 또는 대상 범위가 넓은 규칙이 -1개 있습니다. 정확한 범위를 검토하세요:"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 0개 있습니다."
+        ],
+        [
+          1,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 1개 있습니다."
+        ],
+        [
+          2,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 2개 있습니다."
+        ],
+        [
+          3,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 3개 있습니다."
+        ],
+        [
+          5,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 5개 있습니다."
+        ],
+        [
+          11,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 11개 있습니다."
+        ],
+        [
+          21,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 21개 있습니다."
+        ],
+        [
+          1000,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 1000개 있습니다."
+        ],
+        [
+          1.5,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 1.5개 있습니다."
+        ],
+        [
+          -1,
+          "기존 계정, 팀 또는 기기 태그와 일치하지 않는 참조가 -1개 있습니다."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "유효하지 않은 참조 0개 정리"],
+        [1, "유효하지 않은 참조 1개 정리"],
+        [2, "유효하지 않은 참조 2개 정리"],
+        [3, "유효하지 않은 참조 3개 정리"],
+        [5, "유효하지 않은 참조 5개 정리"],
+        [11, "유효하지 않은 참조 11개 정리"],
+        [21, "유효하지 않은 참조 21개 정리"],
+        [1000, "유효하지 않은 참조 1000개 정리"],
+        [1.5, "유효하지 않은 참조 1.5개 정리"],
+        [-1, "유효하지 않은 참조 -1개 정리"]
+      ]
+    }
+  },
+  "fr-FR": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 membre"],
+        [1, "1 membre"],
+        [2, "2 membres"],
+        [3, "3 membres"],
+        [5, "5 membres"],
+        [11, "11 membres"],
+        [21, "21 membres"],
+        [1000, "1000 membres"],
+        [1.5, "1.5 membre"],
+        [-1, "-1 membre"]
+      ],
+      "devicesTagged": [
+        [0, "0 appareil"],
+        [1, "1 appareil"],
+        [2, "2 appareils"],
+        [3, "3 appareils"],
+        [5, "5 appareils"],
+        [11, "11 appareils"],
+        [21, "21 appareils"],
+        [1000, "1000 appareils"],
+        [1.5, "1.5 appareil"],
+        [-1, "-1 appareil"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "0 règle a une source ou une destination étendue. Vérifiez sa portée exacte :"
+        ],
+        [
+          1,
+          "1 règle a une source ou une destination étendue. Vérifiez sa portée exacte :"
+        ],
+        [
+          2,
+          "2 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          3,
+          "3 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          5,
+          "5 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          11,
+          "11 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          21,
+          "21 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          1000,
+          "1000 règles ont une source ou une destination étendue. Vérifiez leur portée exacte :"
+        ],
+        [
+          1.5,
+          "1.5 règle a une source ou une destination étendue. Vérifiez sa portée exacte :"
+        ],
+        [
+          -1,
+          "-1 règle a une source ou une destination étendue. Vérifiez sa portée exacte :"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "0 référence ne correspond plus à un compte, une équipe ou une étiquette existante."
+        ],
+        [
+          1,
+          "1 référence ne correspond plus à un compte, une équipe ou une étiquette existante."
+        ],
+        [
+          2,
+          "2 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          3,
+          "3 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          5,
+          "5 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          11,
+          "11 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          21,
+          "21 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          1000,
+          "1000 références ne correspondent plus à des comptes, équipes ou étiquettes existants."
+        ],
+        [
+          1.5,
+          "1.5 référence ne correspond plus à un compte, une équipe ou une étiquette existante."
+        ],
+        [
+          -1,
+          "-1 référence ne correspond plus à un compte, une équipe ou une étiquette existante."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "Nettoyer 0 référence obsolète"],
+        [1, "Nettoyer 1 référence obsolète"],
+        [2, "Nettoyer 2 références obsolètes"],
+        [3, "Nettoyer 3 références obsolètes"],
+        [5, "Nettoyer 5 références obsolètes"],
+        [11, "Nettoyer 11 références obsolètes"],
+        [21, "Nettoyer 21 références obsolètes"],
+        [1000, "Nettoyer 1000 références obsolètes"],
+        [1.5, "Nettoyer 1.5 référence obsolète"],
+        [-1, "Nettoyer -1 référence obsolète"]
+      ]
+    }
+  },
+  "ru-RU": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 участников"],
+        [1, "1 участник"],
+        [2, "2 участника"],
+        [3, "3 участника"],
+        [5, "5 участников"],
+        [11, "11 участников"],
+        [21, "21 участник"],
+        [1000, "1000 участников"],
+        [1.5, "1.5 участника"],
+        [-1, "-1 участник"]
+      ],
+      "devicesTagged": [
+        [0, "0 устройств"],
+        [1, "1 устройство"],
+        [2, "2 устройства"],
+        [3, "3 устройства"],
+        [5, "5 устройств"],
+        [11, "11 устройств"],
+        [21, "21 устройство"],
+        [1000, "1000 устройств"],
+        [1.5, "1.5 устройства"],
+        [-1, "-1 устройство"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "0 правил имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          1,
+          "1 правило имеет широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          2,
+          "2 правила имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          3,
+          "3 правила имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          5,
+          "5 правил имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          11,
+          "11 правил имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          21,
+          "21 правило имеет широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          1000,
+          "1000 правил имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          1.5,
+          "1.5 правила имеют широкий источник или назначение. Проверьте точную область действия:"
+        ],
+        [
+          -1,
+          "-1 правило имеет широкий источник или назначение. Проверьте точную область действия:"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "0 ссылок не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          1,
+          "1 ссылка не соответствует существующей учётной записи, команде или метке устройства."
+        ],
+        [
+          2,
+          "2 ссылки не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          3,
+          "3 ссылки не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          5,
+          "5 ссылок не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          11,
+          "11 ссылок не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          21,
+          "21 ссылка не соответствует существующей учётной записи, команде или метке устройства."
+        ],
+        [
+          1000,
+          "1000 ссылок не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          1.5,
+          "1.5 ссылки не соответствуют существующим учётным записям, командам или меткам устройств."
+        ],
+        [
+          -1,
+          "-1 ссылка не соответствует существующей учётной записи, команде или метке устройства."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "Удалить 0 недействительных ссылок"],
+        [1, "Удалить 1 недействительную ссылку"],
+        [2, "Удалить 2 недействительные ссылки"],
+        [3, "Удалить 3 недействительные ссылки"],
+        [5, "Удалить 5 недействительных ссылок"],
+        [11, "Удалить 11 недействительных ссылок"],
+        [21, "Удалить 21 недействительную ссылку"],
+        [1000, "Удалить 1000 недействительных ссылок"],
+        [1.5, "Удалить 1.5 недействительные ссылки"],
+        [-1, "Удалить -1 недействительную ссылку"]
+      ]
+    }
+  },
+  "es-ES": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 miembros"],
+        [1, "1 miembro"],
+        [2, "2 miembros"],
+        [3, "3 miembros"],
+        [5, "5 miembros"],
+        [11, "11 miembros"],
+        [21, "21 miembros"],
+        [1000, "1000 miembros"],
+        [1.5, "1.5 miembros"],
+        [-1, "-1 miembro"]
+      ],
+      "devicesTagged": [
+        [0, "0 dispositivos"],
+        [1, "1 dispositivo"],
+        [2, "2 dispositivos"],
+        [3, "3 dispositivos"],
+        [5, "5 dispositivos"],
+        [11, "11 dispositivos"],
+        [21, "21 dispositivos"],
+        [1000, "1000 dispositivos"],
+        [1.5, "1.5 dispositivos"],
+        [-1, "-1 dispositivo"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "0 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          1,
+          "1 regla tiene un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          2,
+          "2 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          3,
+          "3 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          5,
+          "5 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          11,
+          "11 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          21,
+          "21 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          1000,
+          "1000 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          1.5,
+          "1.5 reglas tienen un origen o destino amplio. Revisa su alcance exacto:"
+        ],
+        [
+          -1,
+          "-1 regla tiene un origen o destino amplio. Revisa su alcance exacto:"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "0 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          1,
+          "1 referencia ya no coincide con una cuenta, un equipo o una etiqueta existente."
+        ],
+        [
+          2,
+          "2 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          3,
+          "3 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          5,
+          "5 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          11,
+          "11 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          21,
+          "21 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          1000,
+          "1000 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          1.5,
+          "1.5 referencias ya no coinciden con cuentas, equipos o etiquetas existentes."
+        ],
+        [
+          -1,
+          "-1 referencia ya no coincide con una cuenta, un equipo o una etiqueta existente."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "Limpiar 0 referencias obsoletas"],
+        [1, "Limpiar 1 referencia obsoleta"],
+        [2, "Limpiar 2 referencias obsoletas"],
+        [3, "Limpiar 3 referencias obsoletas"],
+        [5, "Limpiar 5 referencias obsoletas"],
+        [11, "Limpiar 11 referencias obsoletas"],
+        [21, "Limpiar 21 referencias obsoletas"],
+        [1000, "Limpiar 1000 referencias obsoletas"],
+        [1.5, "Limpiar 1.5 referencias obsoletas"],
+        [-1, "Limpiar -1 referencia obsoleta"]
+      ]
+    }
+  },
+  "it-IT": {
+    "plurals": {
+      "teamMembers": [
+        [0, "0 membri"],
+        [1, "1 membro"],
+        [2, "2 membri"],
+        [3, "3 membri"],
+        [5, "5 membri"],
+        [11, "11 membri"],
+        [21, "21 membri"],
+        [1000, "1000 membri"],
+        [1.5, "1.5 membri"],
+        [-1, "-1 membro"]
+      ],
+      "devicesTagged": [
+        [0, "0 dispositivi"],
+        [1, "1 dispositivo"],
+        [2, "2 dispositivi"],
+        [3, "3 dispositivi"],
+        [5, "5 dispositivi"],
+        [11, "11 dispositivi"],
+        [21, "21 dispositivi"],
+        [1000, "1000 dispositivi"],
+        [1.5, "1.5 dispositivi"],
+        [-1, "-1 dispositivo"]
+      ],
+      "openAccessWarnings": [
+        [
+          0,
+          "0 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          1,
+          "1 regola ha un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          2,
+          "2 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          3,
+          "3 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          5,
+          "5 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          11,
+          "11 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          21,
+          "21 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          1000,
+          "1000 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          1.5,
+          "1.5 regole hanno un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ],
+        [
+          -1,
+          "-1 regola ha un’origine o una destinazione ampia. Verifica l’ambito esatto:"
+        ]
+      ],
+      "orphanReferences": [
+        [
+          0,
+          "0 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          1,
+          "1 riferimento non corrisponde più a un account, un team o un’etichetta esistente."
+        ],
+        [
+          2,
+          "2 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          3,
+          "3 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          5,
+          "5 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          11,
+          "11 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          21,
+          "21 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          1000,
+          "1000 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          1.5,
+          "1.5 riferimenti non corrispondono più ad account, team o etichette esistenti."
+        ],
+        [
+          -1,
+          "-1 riferimento non corrisponde più a un account, un team o un’etichetta esistente."
+        ]
+      ],
+      "cleanupOrphans": [
+        [0, "Rimuovi 0 riferimenti obsoleti"],
+        [1, "Rimuovi 1 riferimento obsoleto"],
+        [2, "Rimuovi 2 riferimenti obsoleti"],
+        [3, "Rimuovi 3 riferimenti obsoleti"],
+        [5, "Rimuovi 5 riferimenti obsoleti"],
+        [11, "Rimuovi 11 riferimenti obsoleti"],
+        [21, "Rimuovi 21 riferimenti obsoleti"],
+        [1000, "Rimuovi 1000 riferimenti obsoleti"],
+        [1.5, "Rimuovi 1.5 riferimenti obsoleti"],
+        [-1, "Rimuovi -1 riferimento obsoleto"]
+      ]
+    }
+  },
+  "ar": {
+    "plurals": {
+      "teamMembers": [
+        [0, "لا يوجد أعضاء"],
+        [1, "عضو واحد"],
+        [2, "عضوان"],
+        [3, "3 أعضاء"],
+        [5, "5 أعضاء"],
+        [11, "11 عضوًا"],
+        [21, "21 عضوًا"],
+        [1000, "1000 عضو"],
+        [1.5, "1.5 عضو"],
+        [-1, "عضو واحد"]
+      ],
+      "devicesTagged": [
+        [0, "لا توجد أجهزة"],
+        [1, "جهاز واحد"],
+        [2, "جهازان"],
+        [3, "3 أجهزة"],
+        [5, "5 أجهزة"],
+        [11, "11 جهازًا"],
+        [21, "21 جهازًا"],
+        [1000, "1000 جهاز"],
+        [1.5, "1.5 جهاز"],
+        [-1, "جهاز واحد"]
+      ],
+      "openAccessWarnings": [
+        [0, "لا توجد قواعد ذات مصدر أو وجهة واسعة."],
+        [1, "هناك قاعدة واحدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [2, "هناك قاعدتان ذواتا مصدر أو وجهة واسعة. راجع نطاقهما الدقيق:"],
+        [3, "هناك 3 قواعد ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [5, "هناك 5 قواعد ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [11, "هناك 11 قاعدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [21, "هناك 21 قاعدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [1000, "هناك 1000 قاعدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [1.5, "هناك 1.5 قاعدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"],
+        [-1, "هناك قاعدة واحدة ذات مصدر أو وجهة واسعة. راجع نطاقها الدقيق:"]
+      ],
+      "orphanReferences": [
+        [0, "لا توجد مراجع غير صالحة"],
+        [1, "مرجع واحد غير صالح"],
+        [2, "مرجعان غير صالحين"],
+        [3, "3 مراجع غير صالحة"],
+        [5, "5 مراجع غير صالحة"],
+        [11, "11 مرجعًا غير صالح"],
+        [21, "21 مرجعًا غير صالح"],
+        [1000, "1000 مرجع غير صالح"],
+        [1.5, "1.5 مرجع غير صالح"],
+        [-1, "مرجع واحد غير صالح"]
+      ],
+      "cleanupOrphans": [
+        [0, "لا توجد مراجع لتنظيفها"],
+        [1, "نظّف مرجعًا واحدًا غير صالح"],
+        [2, "نظّف مرجعين غير صالحين"],
+        [3, "نظّف 3 مراجع غير صالحة"],
+        [5, "نظّف 5 مراجع غير صالحة"],
+        [11, "نظّف 11 مرجعًا غير صالح"],
+        [21, "نظّف 21 مرجعًا غير صالح"],
+        [1000, "نظّف 1000 مرجع غير صالح"],
+        [1.5, "نظّف 1.5 مرجع غير صالح"],
+        [-1, "نظّف مرجعًا واحدًا غير صالح"]
+      ]
+    }
+  }
+}

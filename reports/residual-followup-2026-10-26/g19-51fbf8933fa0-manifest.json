@@ -1,0 +1,518 @@
+{
+  "namespace": {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "name": "hs-g19-1026-51fbf8933fa0",
+      "labels": {
+        "headscale-ui.dev/g19-run": "51fbf8933fa0",
+        "app.kubernetes.io/part-of": "headscale-ui-g19"
+      }
+    }
+  },
+  "services": [
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "headscale",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "headscale"
+        }
+      },
+      "spec": {
+        "type": "ClusterIP",
+        "selector": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/component": "headscale"
+        },
+        "ports": [
+          {
+            "name": "control",
+            "port": 8080,
+            "targetPort": 8080
+          },
+          {
+            "name": "stun",
+            "port": 3478,
+            "targetPort": 3478,
+            "protocol": "UDP"
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "target",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "target"
+        }
+      },
+      "spec": {
+        "type": "ClusterIP",
+        "selector": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/component": "target"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8081,
+            "targetPort": 8081
+          }
+        ]
+      }
+    }
+  ],
+  "objects": [
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "headscale-config",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19"
+        }
+      },
+      "data": {
+        "config.yaml": "server_url: http://10.43.18.78:8080\nlisten_addr: 0.0.0.0:8080\nmetrics_listen_addr: \"\"\ngrpc_listen_addr: 127.0.0.1:50443\ngrpc_allow_insecure: false\nnoise:\n  private_key_path: /var/lib/headscale/noise_private.key\nprefixes:\n  v4: 100.64.0.0/10\n  v6: fd7a:115c:a1e0::/48\n  allocation: sequential\nderp:\n  server:\n    enabled: true\n    region_id: 999\n    region_code: g19\n    region_name: G19\n    verify_clients: true\n    stun_listen_addr: 0.0.0.0:3478\n    private_key_path: /var/lib/headscale/derp_server_private.key\n    automatically_add_embedded_derp_region: true\n  urls: []\n  paths: []\n  auto_update_enabled: false\ndisable_check_updates: true\ndatabase:\n  type: sqlite\n  sqlite:\n    path: /var/lib/headscale/db.sqlite\n    write_ahead_log: true\nlog:\n  level: warn\n  format: json\npolicy:\n  mode: database\ndns:\n  magic_dns: false\n  base_domain: g19.test\n  override_local_dns: false\n  nameservers:\n    global: []\nunix_socket: /var/run/headscale/headscale.sock\nunix_socket_permission: \"0770\"\nlogtail:\n  enabled: false\ntaildrop:\n  enabled: false\n"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "target-config",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19"
+        }
+      },
+      "data": {
+        "nginx.conf": "worker_processes 1; pid /tmp/nginx.pid; error_log /dev/stderr warn; events { worker_connections 128; }\nhttp { default_type text/plain; client_body_temp_path /tmp/client; proxy_temp_path /tmp/proxy; fastcgi_temp_path /tmp/fastcgi; uwsgi_temp_path /tmp/uwsgi; scgi_temp_path /tmp/scgi;\nlog_format g19 escape=json '{\"at\":\"$time_iso8601\",\"source\":\"$remote_addr\",\"request\":\"$request\",\"status\":$status}'; access_log /dev/stdout g19; server { listen 8081; location / { return 200 'G19_51fbf8933fa0\\n'; } } }\n"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "headscale",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "headscale"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "enableServiceLinks": false,
+        "hostNetwork": false,
+        "hostPID": false,
+        "hostIPC": false,
+        "restartPolicy": "Never",
+        "terminationGracePeriodSeconds": 3,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 1000,
+          "runAsGroup": 1000,
+          "fsGroup": 1000,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "main",
+            "image": "headscale/headscale:0.29.4",
+            "command": [
+              "headscale",
+              "serve"
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {
+              "requests": {
+                "cpu": "25m",
+                "memory": "64Mi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "384Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "config",
+                "mountPath": "/etc/headscale",
+                "readOnly": true
+              },
+              {
+                "name": "data",
+                "mountPath": "/var/lib/headscale"
+              },
+              {
+                "name": "run",
+                "mountPath": "/var/run/headscale"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 8080
+              },
+              "periodSeconds": 1,
+              "failureThreshold": 40
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "config",
+            "configMap": {
+              "name": "headscale-config"
+            }
+          },
+          {
+            "name": "data",
+            "emptyDir": {}
+          },
+          {
+            "name": "run",
+            "emptyDir": {}
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "target",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "target"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "enableServiceLinks": false,
+        "hostNetwork": false,
+        "hostPID": false,
+        "hostIPC": false,
+        "restartPolicy": "Never",
+        "terminationGracePeriodSeconds": 3,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 101,
+          "runAsGroup": 101,
+          "fsGroup": 101,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "main",
+            "image": "nginx:1.30.5-alpine",
+            "command": [
+              "nginx",
+              "-c",
+              "/fixture/nginx.conf",
+              "-g",
+              "daemon off;"
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {
+              "requests": {
+                "cpu": "25m",
+                "memory": "64Mi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "384Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "config",
+                "mountPath": "/fixture",
+                "readOnly": true
+              },
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/",
+                "port": 8081
+              },
+              "periodSeconds": 1,
+              "failureThreshold": 40
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "config",
+            "configMap": {
+              "name": "target-config"
+            }
+          },
+          {
+            "name": "tmp",
+            "emptyDir": {}
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "a",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "a"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "enableServiceLinks": false,
+        "hostNetwork": false,
+        "hostPID": false,
+        "hostIPC": false,
+        "restartPolicy": "Never",
+        "terminationGracePeriodSeconds": 3,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 1000,
+          "runAsGroup": 1000,
+          "fsGroup": 1000,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "main",
+            "image": "tailscale/tailscale:v1.102.5",
+            "command": [
+              "tailscaled",
+              "--tun=userspace-networking",
+              "--state=/var/lib/tailscale/g19/state",
+              "--socket=/var/run/tailscale/tailscaled.sock",
+              "--outbound-http-proxy-listen=127.0.0.1:1056",
+              "--port=41641"
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {
+              "requests": {
+                "cpu": "25m",
+                "memory": "64Mi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "384Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/var/lib/tailscale"
+              },
+              {
+                "name": "run",
+                "mountPath": "/var/run/tailscale"
+              },
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ],
+            "env": [
+              {
+                "name": "TS_NO_LOGS_NO_SUPPORT",
+                "value": "true"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "tailscale",
+                  "status",
+                  "--json"
+                ]
+              },
+              "periodSeconds": 1,
+              "failureThreshold": 40
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "data",
+            "emptyDir": {}
+          },
+          {
+            "name": "run",
+            "emptyDir": {}
+          },
+          {
+            "name": "tmp",
+            "emptyDir": {}
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "r",
+        "namespace": "hs-g19-1026-51fbf8933fa0",
+        "labels": {
+          "headscale-ui.dev/g19-run": "51fbf8933fa0",
+          "app.kubernetes.io/part-of": "headscale-ui-g19",
+          "app.kubernetes.io/component": "r"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "enableServiceLinks": false,
+        "hostNetwork": false,
+        "hostPID": false,
+        "hostIPC": false,
+        "restartPolicy": "Never",
+        "terminationGracePeriodSeconds": 3,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 1000,
+          "runAsGroup": 1000,
+          "fsGroup": 1000,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "main",
+            "image": "tailscale/tailscale:v1.102.5",
+            "command": [
+              "tailscaled",
+              "--tun=userspace-networking",
+              "--state=/var/lib/tailscale/g19/state",
+              "--socket=/var/run/tailscale/tailscaled.sock",
+              "--outbound-http-proxy-listen=127.0.0.1:1056",
+              "--port=41641"
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {
+              "requests": {
+                "cpu": "25m",
+                "memory": "64Mi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "384Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/var/lib/tailscale"
+              },
+              {
+                "name": "run",
+                "mountPath": "/var/run/tailscale"
+              },
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ],
+            "env": [
+              {
+                "name": "TS_NO_LOGS_NO_SUPPORT",
+                "value": "true"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "tailscale",
+                  "status",
+                  "--json"
+                ]
+              },
+              "periodSeconds": 1,
+              "failureThreshold": 40
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "data",
+            "emptyDir": {}
+          },
+          {
+            "name": "run",
+            "emptyDir": {}
+          },
+          {
+            "name": "tmp",
+            "emptyDir": {}
+          }
+        ]
+      }
+    }
+  ]
+}

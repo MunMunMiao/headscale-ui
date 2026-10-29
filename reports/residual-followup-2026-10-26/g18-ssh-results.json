@@ -1,0 +1,256 @@
+{
+  "startedAt": "2026-10-26T10:34:30.971Z",
+  "status": "passed",
+  "scope": "Disposable SSH fixture; normal approval API; not a UI rerun or a historical syscall trace",
+  "marker": "G18_SSH_SHELL_MARKER",
+  "deadlinesMs": {
+    "wholeRun": 240000,
+    "ssh": 45000,
+    "pendingCheck": 18000
+  },
+  "events": [
+    {
+      "at": "2026-10-26T10:34:30.988Z",
+      "phase": "native-tools",
+      "evidence": {
+        "ssh": "OpenSSH_10.3p1, LibreSSL 3.3.6",
+        "bun": "1.4.4"
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:33.929Z",
+      "phase": "control-plane",
+      "evidence": {
+        "headscaleVersion": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/arm64",
+        "reuse": "Existing owned fixture unchanged; zero-capability assertions apply to every SSH peer, not its control-plane helpers"
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:37.832Z",
+      "phase": "daemon",
+      "evidence": {
+        "kind": "source",
+        "name": "headscale-tag-lifecycle-46957-9e9c935f-g18-source",
+        "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+        "kernel": {
+          "Uid": "0\t0\t0\t0",
+          "Gid": "0\t0\t0\t0",
+          "Groups": "0",
+          "CapInh": "0000000000000000",
+          "CapPrm": "0000000000000000",
+          "CapEff": "0000000000000000",
+          "CapBnd": "0000000000000000",
+          "CapAmb": "0000000000000000",
+          "NoNewPrivs": "1",
+          "Seccomp": "2",
+          "Seccomp_filters": "1",
+          "LSM": ""
+        },
+        "container": {
+          "user": "0:0",
+          "capDrop": [
+            "ALL"
+          ],
+          "capAdd": null,
+          "securityOpt": [
+            "no-new-privileges"
+          ],
+          "privileged": false,
+          "networkMode": "headscale-tag-lifecycle-46957-9e9c935f",
+          "devices": [],
+          "groupAdd": null,
+          "imageId": "sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065"
+        }
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:40.947Z",
+      "phase": "daemon",
+      "evidence": {
+        "kind": "root",
+        "name": "headscale-tag-lifecycle-46957-9e9c935f-g18-root",
+        "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+        "kernel": {
+          "Uid": "0\t0\t0\t0",
+          "Gid": "0\t0\t0\t0",
+          "Groups": "0",
+          "CapInh": "0000000000000000",
+          "CapPrm": "0000000000000000",
+          "CapEff": "0000000000000000",
+          "CapBnd": "0000000000000000",
+          "CapAmb": "0000000000000000",
+          "NoNewPrivs": "1",
+          "Seccomp": "2",
+          "Seccomp_filters": "1",
+          "LSM": ""
+        },
+        "container": {
+          "user": "0:0",
+          "capDrop": [
+            "ALL"
+          ],
+          "capAdd": null,
+          "securityOpt": [
+            "no-new-privileges"
+          ],
+          "privileged": false,
+          "networkMode": "headscale-tag-lifecycle-46957-9e9c935f",
+          "devices": [],
+          "groupAdd": null,
+          "imageId": "sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065"
+        }
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:41.656Z",
+      "phase": "real-ssh",
+      "evidence": {
+        "targetUser": "root",
+        "decision": "approve",
+        "normalApiStatus": 200,
+        "realPendingCheck": true,
+        "strictHostKeyChecking": true,
+        "hostKeyFingerprints": [
+          "ssh-rsa SHA256:OXlzEgbxv0WpR01Qdir6UA96rD8V1BE790FBe0s7u5E",
+          "ecdsa-sha2-nistp256 SHA256:iPxAEnpZXHegMXXqJWu1DaH8jezKKhNk4M8spStkxts",
+          "ssh-ed25519 SHA256:MHuQE6+Wj0isuuWmCIpT35+aYYGe/KMIgpf47Z/21uI"
+        ],
+        "exitCode": 1,
+        "markerObserved": false,
+        "stdout": "",
+        "stderr": "# Headscale SSH requires an additional check.\n# To authenticate, visit: <redacted>\n# Authentication checked with Headscale SSH.\noperation not permitted",
+        "granted": true,
+        "childStarted": true,
+        "targetSshLogs": [
+          "2026/10/26 10:34:41 ssh-conn-20261026T103441-b4b4e45de6: handling conn: 100.64.0.1:19835->root@100.64.0.2:22",
+          "2026/10/26 10:34:41 ssh-conn-20261026T103441-b4b4e45de6: starting session: sess-20261026T103441-c5c072763c",
+          "2026/10/26 10:34:41 ssh-session(sess-20261026T103441-c5c072763c): handling new SSH connection from alice (100.64.0.1) to ssh-user \"root\"",
+          "2026/10/26 10:34:41 ssh-session(sess-20261026T103441-c5c072763c): access granted to alice as ssh-user \"root\"",
+          "2026/10/26 10:34:41 audit: SSH login: user=root uid=0 from=100.64.0.1 ts_user=alice node=g18-source.example.test.",
+          "2026/10/26 10:34:41 ssh-session(sess-20261026T103441-c5c072763c): starting non-pty command: [/usr/local/bin/tailscaled be-child ssh --login-shell=/bin/sh --uid=0 --gid=0 --groups=0,1,2,3,4,6,10,11,20,26,27 --local-user=root --home-dir=/root --remote-user=alice --remote-ip=100.64.0.1 --has-tty=false --tty-name= --cmd=printf '%s\\n' 'G18_SSH_SHELL_MARKER']",
+          "2026/10/26 10:34:41 ssh-session(sess-20261026T103441-c5c072763c): Wait: code=1"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:41.865Z",
+      "phase": "root-child-diagnostic",
+      "evidence": {
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "operation not permitted",
+        "debugLog": "won't use login because we're not in a shell or on macOS\nsu check failed: exit status 1\nnot attempting su\nstarting session for user 0\nssh: failed to CreateSession for user \"root\" (0) dial unix /var/run/dbus/system_bus_socket: connect: no such file or directory\ndropping privileges",
+        "boundary": "Child-only diagnostic; no ptrace and not a historical syscall trace"
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:44.932Z",
+      "phase": "daemon",
+      "evidence": {
+        "kind": "nonroot",
+        "name": "headscale-tag-lifecycle-46957-9e9c935f-g18-nonroot",
+        "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+        "kernel": {
+          "Uid": "10000\t10000\t10000\t10000",
+          "Gid": "10000\t10000\t10000\t10000",
+          "Groups": "10000",
+          "CapInh": "0000000000000000",
+          "CapPrm": "0000000000000000",
+          "CapEff": "0000000000000000",
+          "CapBnd": "0000000000000000",
+          "CapAmb": "0000000000000000",
+          "NoNewPrivs": "1",
+          "Seccomp": "2",
+          "Seccomp_filters": "1",
+          "LSM": ""
+        },
+        "container": {
+          "user": "10000:10000",
+          "capDrop": [
+            "ALL"
+          ],
+          "capAdd": null,
+          "securityOpt": [
+            "no-new-privileges"
+          ],
+          "privileged": false,
+          "networkMode": "headscale-tag-lifecycle-46957-9e9c935f",
+          "devices": [],
+          "groupAdd": null,
+          "imageId": "sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065"
+        }
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:45.806Z",
+      "phase": "real-ssh",
+      "evidence": {
+        "targetUser": "g18ssh",
+        "decision": "approve",
+        "normalApiStatus": 200,
+        "realPendingCheck": true,
+        "strictHostKeyChecking": true,
+        "hostKeyFingerprints": [
+          "ssh-rsa SHA256:WUGSE9nLoBkxOZajjGTM7+RLxpbhqXYiQoh6if533OU",
+          "ecdsa-sha2-nistp256 SHA256:vhDiKPYcxUHQOgPVW/bJ/0maIQXA/+6whJRpEjyMLoE",
+          "ssh-ed25519 SHA256:Ve9mSKJepYH0cf8D6jEzH7zcDMILlQAxCYmTavPhCWE"
+        ],
+        "exitCode": 0,
+        "markerObserved": true,
+        "stdout": "G18_SSH_SHELL_MARKER",
+        "stderr": "# Headscale SSH requires an additional check.\n# To authenticate, visit: <redacted>\n# Authentication checked with Headscale SSH.",
+        "granted": true,
+        "childStarted": true,
+        "targetSshLogs": [
+          "2026/10/26 10:34:45 ssh-conn-20261026T103445-132a549018: handling conn: 100.64.0.1:48139->g18ssh@100.64.0.3:22",
+          "2026/10/26 10:34:45 ssh-conn-20261026T103445-132a549018: starting session: sess-20261026T103445-089f5d9cf7",
+          "2026/10/26 10:34:45 ssh-session(sess-20261026T103445-089f5d9cf7): handling new SSH connection from alice (100.64.0.1) to ssh-user \"g18ssh\"",
+          "2026/10/26 10:34:45 ssh-session(sess-20261026T103445-089f5d9cf7): access granted to alice as ssh-user \"g18ssh\"",
+          "2026/10/26 10:34:45 audit: SSH login: user=g18ssh uid=10000 from=100.64.0.1 ts_user=alice node=g18-source.example.test.",
+          "2026/10/26 10:34:45 ssh-session(sess-20261026T103445-089f5d9cf7): starting non-pty command: [/usr/local/bin/tailscaled be-child ssh --login-shell=/bin/sh --uid=10000 --gid=10000 --groups=10000 --local-user=g18ssh --home-dir=/tmp --remote-user=alice --remote-ip=100.64.0.1 --has-tty=false --tty-name= --cmd=printf '%s\\n' 'G18_SSH_SHELL_MARKER']",
+          "2026/10/26 10:34:45 ssh-session(sess-20261026T103445-089f5d9cf7): Session complete"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:46.163Z",
+      "phase": "real-ssh",
+      "evidence": {
+        "targetUser": "g18ssh",
+        "decision": "reject",
+        "normalApiStatus": 200,
+        "realPendingCheck": true,
+        "strictHostKeyChecking": true,
+        "hostKeyFingerprints": [
+          "ssh-rsa SHA256:WUGSE9nLoBkxOZajjGTM7+RLxpbhqXYiQoh6if533OU",
+          "ecdsa-sha2-nistp256 SHA256:vhDiKPYcxUHQOgPVW/bJ/0maIQXA/+6whJRpEjyMLoE",
+          "ssh-ed25519 SHA256:Ve9mSKJepYH0cf8D6jEzH7zcDMILlQAxCYmTavPhCWE"
+        ],
+        "exitCode": 255,
+        "markerObserved": false,
+        "stdout": "",
+        "stderr": "# Headscale SSH requires an additional check.\n# To authenticate, visit: <redacted>\n# Authentication checked with Headscale SSH.\ntailscale: access deniedConnection closed by UNKNOWN port 65535",
+        "granted": false,
+        "childStarted": false,
+        "targetSshLogs": [
+          "2026/10/26 10:34:46 ssh-conn-20261026T103446-5d3681aea3: handling conn: 100.64.0.1:44408->g18ssh@100.64.0.3:22"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-26T10:34:47.452Z",
+      "phase": "cleanup",
+      "evidence": {
+        "remaining": {
+          "sshContainers": "",
+          "fixtureContainers": "",
+          "fixtureNetworks": "",
+          "fixtureVolumes": ""
+        },
+        "failures": []
+      }
+    }
+  ],
+  "project": "headscale-tag-lifecycle-46957-9e9c935f",
+  "finishedAt": "2026-10-26T10:34:47.453Z"
+}

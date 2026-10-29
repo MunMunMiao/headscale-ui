@@ -1,0 +1,61 @@
+# AI E2E playground: Headscale + a CORS proxy + four Tailscale devices (seeded by seed.sh).
+name: headscale-ui-ai-e2e
+
+x-device: &device
+  image: tailscale/tailscale:v1.104.2
+  entrypoint: tailscaled
+  command: ["--tun=userspace-networking", "--state=/var/lib/tailscale/state"]
+  environment:
+    TS_NO_LOGS_NO_SUPPORT: "true"
+  restart: unless-stopped
+  depends_on: [headscale]
+
+services:
+  headscale:
+    image: headscale/headscale:0.29.6
+    command: serve
+    environment:
+      HEADSCALE_SERVER_URL: http://127.0.0.1:18080
+      HEADSCALE_LOG_LEVEL: info
+    volumes:
+      - ../../headscale-config.yaml:/etc/headscale/config.yaml:ro
+      - ../../headscale-derp.yaml:/etc/headscale/derp.yaml:ro
+      - headscale-data:/var/lib/headscale
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "headscale", "health"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  # Exposes Headscale on 127.0.0.1:18080 for curl checks and for browsers whose SharedWorker may fetch cross-origin.
+  cors:
+    image: nginx:1.30.6-alpine
+    ports: ["127.0.0.1:18080:80"]
+    volumes: [./cors.conf:/etc/nginx/conf.d/default.conf:ro]
+    restart: unless-stopped
+    depends_on: [headscale]
+
+  laptop:
+    <<: *device
+    hostname: dev-laptop
+    volumes: [laptop:/var/lib/tailscale]
+  desktop:
+    <<: *device
+    hostname: dev-desktop
+    volumes: [desktop:/var/lib/tailscale]
+  server:
+    <<: *device
+    hostname: dev-server
+    volumes: [server:/var/lib/tailscale]
+  router:
+    <<: *device
+    hostname: dev-router
+    volumes: [router:/var/lib/tailscale]
+
+volumes:
+  headscale-data:
+  laptop:
+  desktop:
+  server:
+  router:

@@ -1,0 +1,47 @@
+{
+  "phase": "exit-revoked",
+  "utc": "2026-10-25T16:43:31.406045+00:00",
+  "url": "http://example.com",
+  "transport": "client-a tailscaled HTTP proxy 127.0.0.1:1056",
+  "before": {
+    "state": "Running",
+    "exitNode": {
+      "ID": "1",
+      "Online": true,
+      "TailscaleIPs": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ]
+    },
+    "peers": [
+      {
+        "host": "ux07-client-b",
+        "exit": true,
+        "tx": 9072,
+        "rx": 10168
+      }
+    ]
+  },
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\nwget: download timed out\ncommand terminated with exit code 1",
+  "after": {
+    "state": "Running",
+    "exitNode": {
+      "ID": "1",
+      "Online": true,
+      "TailscaleIPs": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ]
+    },
+    "peers": [
+      {
+        "host": "ux07-client-b",
+        "exit": true,
+        "tx": 9072,
+        "rx": 10168
+      }
+    ]
+  }
+}

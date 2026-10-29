@@ -1,0 +1,535 @@
+{
+  "note": "保留实际日志摘要和哈希；原私有日志含测试上下文，不复制完整潜在认证输入。过滤掉的用例不是全量skip。",
+  "logs": [
+    {
+      "task": "G01",
+      "sourceLog": "G01-red-browser.log",
+      "sha256": "0f817b0a74c8824fcc62308295f6ab42a296abcfd73aec0078e1f2ee89877a6b",
+      "summary": [
+        {
+          "line": 9,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > rejects a new member that makes an existing policy principal ambiguous"
+        },
+        {
+          "line": 10,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 43,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 44,
+          "text": "Tests  1 failed | 115 skipped (116)"
+        },
+        {
+          "line": 45,
+          "text": "Start at  12:21:43"
+        },
+        {
+          "line": 46,
+          "text": "Duration  3.88s (tests 48%, worker 24%, import 19%, setup 9%)"
+        }
+      ]
+    },
+    {
+      "task": "G01",
+      "sourceLog": "G01-red-unit.log",
+      "sha256": "e8985af4d37ed9debb63f2f8658bb6c73b2bb2b2f750d43ae9b9b5ed4e33d321",
+      "summary": [
+        {
+          "line": 16,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > checks candidate alice-copy / alice@example.test without changing existing owners"
+        },
+        {
+          "line": 17,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > checks candidate   carol   /   alice@example.test   without changing existing owners"
+        },
+        {
+          "line": 18,
+          "text": "AssertionError: expected null to deeply equal { field: 'email', …(1) }"
+        },
+        {
+          "line": 39,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > checks candidate alice@example.test / bob@example.test without changing existing owners"
+        },
+        {
+          "line": 40,
+          "text": "AssertionError: expected null to deeply equal { field: 'name', …(1) }"
+        },
+        {
+          "line": 61,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > checks candidate carol / alice without changing existing owners"
+        },
+        {
+          "line": 62,
+          "text": "AssertionError: expected null to deeply equal { field: 'email', principal: 'alice' }"
+        },
+        {
+          "line": 83,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > checks candidate alice /  without changing existing owners"
+        },
+        {
+          "line": 84,
+          "text": "AssertionError: expected null to deeply equal { field: 'name', principal: 'alice' }"
+        },
+        {
+          "line": 105,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > strips exactly one policy suffix when identifying the conflicting field"
+        },
+        {
+          "line": 106,
+          "text": "AssertionError: expected null to deeply equal { field: 'email', …(1) }"
+        },
+        {
+          "line": 127,
+          "text": "FAIL  |unit| src/domain/principal.test.ts > userCreationPrincipalConflict > does not modify either the candidate or the existing users"
+        },
+        {
+          "line": 128,
+          "text": "AssertionError: expected null to deeply equal { field: 'email', …(1) }"
+        },
+        {
+          "line": 150,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 151,
+          "text": "Tests  7 failed | 50 passed (57)"
+        },
+        {
+          "line": 152,
+          "text": "Start at  12:23:17"
+        },
+        {
+          "line": 153,
+          "text": "Duration  146ms (transform 53%, import 22%, tests 21%, worker 4%, environment 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G01",
+      "sourceLog": "G01-red-preflight-behavior.log",
+      "sha256": "6f755b9a158f98eabfd845cd17ebab7aca69a6a92c09ace0d0d0138a3ac45572",
+      "summary": [
+        {
+          "line": 21,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a conflicting name can be corrected without losing format validation or the normalized draft"
+        },
+        {
+          "line": 22,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 55,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a conflicting email can be corrected without losing format validation or the normalized draft"
+        },
+        {
+          "line": 56,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 89,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 submission rereads identity instead of trusting the directory from dialog open"
+        },
+        {
+          "line": 90,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 123,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a failed identity read at /api/v1/user sends no create and permits an explicit read retry"
+        },
+        {
+          "line": 124,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a failed identity read at /api/v1/preauthkey sends no create and permits an explicit read retry"
+        },
+        {
+          "line": 125,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a failed identity read at /api/v1/apikey sends no create and permits an explicit read retry"
+        },
+        {
+          "line": 126,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 161,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 repeated submits remain locked across the fresh identity read and dispatch only once"
+        },
+        {
+          "line": 162,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 194,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a pending identity read cannot create after switch"
+        },
+        {
+          "line": 195,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a pending identity read cannot create after logout"
+        },
+        {
+          "line": 196,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a pending identity read cannot create after discarded-view"
+        },
+        {
+          "line": 197,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a pending identity read cannot create after unmount"
+        },
+        {
+          "line": 198,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 a pending identity read cannot create after reopen"
+        },
+        {
+          "line": 199,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 235,
+          "text": "FAIL  |browser (chromium)| src/pages/MembersPage.fixes.browser.test.tsx > G01 closing a failed preflight forgets its error and draft before reopening"
+        },
+        {
+          "line": 236,
+          "text": "AssertionError: expected [ { method: 'POST', …(2) } ] to deeply equal []"
+        },
+        {
+          "line": 270,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 271,
+          "text": "Tests  13 failed | 2 passed | 116 skipped (131)"
+        },
+        {
+          "line": 272,
+          "text": "Start at  12:28:35"
+        },
+        {
+          "line": 273,
+          "text": "Duration  11.41s (tests 94%, import 3%, setup 2%, worker 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G01",
+      "sourceLog": "G01-green-members-browser.log",
+      "sha256": "53cb743ba91c173bc487004dc4a5c447d912e1206307f65d0249e16b39e922a9",
+      "summary": [
+        {
+          "line": 5,
+          "text": "Test Files  2 passed (2)"
+        },
+        {
+          "line": 6,
+          "text": "Tests  262 passed (262)"
+        },
+        {
+          "line": 7,
+          "text": "Start at  12:35:02"
+        },
+        {
+          "line": 8,
+          "text": "Duration  118.18s (tests 99%)"
+        }
+      ]
+    },
+    {
+      "task": "G01",
+      "sourceLog": "G01-green-affected-unit.log",
+      "sha256": "931db0830f917caf37938c286c28e3b82b47400691990ff420b76fe84f4db803",
+      "summary": [
+        {
+          "line": 5,
+          "text": "Test Files  2 passed (2)"
+        },
+        {
+          "line": 6,
+          "text": "Tests  69 passed (69)"
+        },
+        {
+          "line": 7,
+          "text": "Start at  12:37:01"
+        },
+        {
+          "line": 8,
+          "text": "Duration  231ms (transform 52%, import 38%, tests 8%, worker 2%)"
+        }
+      ]
+    },
+    {
+      "task": "G01",
+      "sourceLog": "G01-real-e2e.log",
+      "sha256": "47850a62aad2483049481231a9e3dc4ab800fbada3c6f715b3a4c5263344636b",
+      "summary": [
+        {
+          "line": 12,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 13,
+          "text": "Tests  1 passed | 18 skipped (19)"
+        },
+        {
+          "line": 14,
+          "text": "Start at  12:38:37"
+        },
+        {
+          "line": 15,
+          "text": "Duration  22.23s (tests 99%, import 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "01-real-control.log",
+      "sha256": "ab33216605164650003f26147361148e22c13c07959ab08b326b9d9ed033fe11",
+      "summary": [
+        {
+          "line": 12,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 13,
+          "text": "Tests  1 passed | 19 skipped (20)"
+        },
+        {
+          "line": 14,
+          "text": "Start at  13:05:53"
+        },
+        {
+          "line": 15,
+          "text": "Duration  16.79s (tests 99%, import 1%, worker 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "05-real-control-and-red.log",
+      "sha256": "4494bf186d082c5406bcffec405a9666e9bc08e11e1a730f83a0523088fe0cad",
+      "summary": [
+        {
+          "line": 40,
+          "text": "FAIL  |tag-lifecycle-real (chromium)| e2e/tag-lifecycle.browser.test.tsx > G02 real recovery changed-tags: replace tags, reauthenticate from the same editor and approve only the reviewed baseline"
+        },
+        {
+          "line": 41,
+          "text": "AssertionError: expected false to be true // Object.is equality"
+        },
+        {
+          "line": 61,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 62,
+          "text": "Tests  1 failed | 1 passed | 19 skipped (21)"
+        },
+        {
+          "line": 63,
+          "text": "Start at  13:10:45"
+        },
+        {
+          "line": 64,
+          "text": "Duration  32.30s (tests 99%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "04-component-red.log",
+      "sha256": "fa1b5d7372e4690fc36b8fb729d76cf3f907091d1132742fec7b2dc82564c338",
+      "summary": [
+        {
+          "line": 154,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread renews a changed tag baseline only after new confirmations (same-id)"
+        },
+        {
+          "line": 155,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread renews a changed tag baseline only after new confirmations (new-id)"
+        },
+        {
+          "line": 156,
+          "text": "AssertionError: expected false to be true // Object.is equality"
+        },
+        {
+          "line": 179,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > an explicit recovery reread failing at /api/v1/node keeps the request but cannot recreate approval"
+        },
+        {
+          "line": 180,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > an explicit recovery reread failing at /api/v1/user keeps the request but cannot recreate approval"
+        },
+        {
+          "line": 181,
+          "text": "AssertionError: expected false to be true // Object.is equality"
+        },
+        {
+          "line": 204,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: missing-machine"
+        },
+        {
+          "line": 205,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: different-machine"
+        },
+        {
+          "line": 206,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: duplicate-machine"
+        },
+        {
+          "line": 207,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: different-tagged-owner"
+        },
+        {
+          "line": 208,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: already-target"
+        },
+        {
+          "line": 209,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > explicit recovery reread cannot authorize an unsafe or already personal baseline: different-personal-owner"
+        },
+        {
+          "line": 210,
+          "text": "AssertionError: expected false to be true // Object.is equality"
+        },
+        {
+          "line": 238,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 239,
+          "text": "Tests  10 failed | 127 skipped (137)"
+        },
+        {
+          "line": 240,
+          "text": "Start at  13:10:30"
+        },
+        {
+          "line": 241,
+          "text": "Duration  11.90s (tests 94%, import 3%, setup 2%, worker 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "10-freshness-red.log",
+      "sha256": "3cdc368fef505fdf540779bfc9656a646b199c4c3a3fdbb0d0be800870bf0503",
+      "summary": [
+        {
+          "line": 345,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > an explicit recovery reread failing at /api/v1/node keeps the request but cannot recreate approval"
+        },
+        {
+          "line": 379,
+          "text": "FAIL  |browser (chromium)| src/pages/DevicesPage.lifecycle.browser.test.tsx > an explicit recovery reread interrupted by reunlock cannot install a new review baseline"
+        },
+        {
+          "line": 578,
+          "text": "Test Files  1 failed (1)"
+        },
+        {
+          "line": 579,
+          "text": "Tests  2 failed | 3 passed | 143 skipped (148)"
+        },
+        {
+          "line": 580,
+          "text": "Start at  13:20:33"
+        },
+        {
+          "line": 581,
+          "text": "Duration  36.67s (tests 98%, import 1%, setup 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "11-component-green.log",
+      "sha256": "895bf45efffaa0484db4769cfdfa8d56b0e67a160afc1abcbe78ffbc586bc09c",
+      "summary": [
+        {
+          "line": 153,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 154,
+          "text": "Tests  22 passed | 126 skipped (148)"
+        },
+        {
+          "line": 155,
+          "text": "Start at  13:22:51"
+        },
+        {
+          "line": 156,
+          "text": "Duration  29.37s (tests 98%, import 1%, setup 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "13-full-component-lifecycle.log",
+      "sha256": "27b29c7d3339e130eece1c44fa5c4b63b14908a7773001cf5b67083b84f66c5c",
+      "summary": [
+        {
+          "line": 153,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 154,
+          "text": "Tests  148 passed (148)"
+        },
+        {
+          "line": 155,
+          "text": "Start at  13:24:58"
+        },
+        {
+          "line": 156,
+          "text": "Duration  149.63s (tests 99%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "14-unit-lifecycle.log",
+      "sha256": "9ed739229c7d27f6e8e9340d1a76995b001d40a6303343efe2479f0d71f7c580",
+      "summary": [
+        {
+          "line": 5,
+          "text": "Test Files  2 passed (2)"
+        },
+        {
+          "line": 6,
+          "text": "Tests  47 passed (47)"
+        },
+        {
+          "line": 7,
+          "text": "Start at  13:24:58"
+        },
+        {
+          "line": 8,
+          "text": "Duration  121ms (import 38%, transform 31%, tests 23%, worker 8%, environment 1%)"
+        }
+      ]
+    },
+    {
+      "task": "G02",
+      "sourceLog": "15-real-lifecycle-green.log",
+      "sha256": "860ddc4683f52f2a7a907cbbb25d962397e3de7f00fe7547a559bfa0b6c8fa43",
+      "summary": [
+        {
+          "line": 46,
+          "text": "Test Files  1 passed (1)"
+        },
+        {
+          "line": 47,
+          "text": "Tests  5 passed | 17 skipped (22)"
+        },
+        {
+          "line": 48,
+          "text": "Start at  13:25:09"
+        },
+        {
+          "line": 49,
+          "text": "Duration  167.65s (tests 100%)"
+        }
+      ]
+    }
+  ]
+}

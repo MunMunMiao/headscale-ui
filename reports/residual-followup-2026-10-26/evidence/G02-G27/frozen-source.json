@@ -1,0 +1,44 @@
+[
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.tsx",
+    "sha256": "b1543a56e32ae0aaac08b25fa4df9aee5fd8deadb320691359d525c9ed04b506",
+    "inserted": 1,
+    "deleted": 1
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.ts",
+    "sha256": "dc47275267c348dd1d817b2afc124de0c3e8dcf574e1800b281b2572ce8f6685",
+    "inserted": 1,
+    "deleted": 1
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.tsx",
+    "sha256": "ec6c438c3bd03528f5219cfa89b9f746876d3e3e7cfe130e0b334ac71852b988",
+    "inserted": 1,
+    "deleted": 1
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.lifecycle.browser.test.tsx",
+    "sha256": "f5cc8c9de1d155c7fbb87db6b34eac492f0e2ee6b56be4968c2ecfa8ebd46da1",
+    "inserted": 96,
+    "deleted": 0
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.fixes.browser.test.tsx",
+    "sha256": "f1827d1060c854e7d7f87986cfc2e47c299abd460a6d9e2c393c5d636f7bac7d",
+    "inserted": 38,
+    "deleted": 0
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.test.ts",
+    "sha256": "0f2c8d4fc1bdbb6ef8c11b5e9ef1886b16f835dfc11cd9555314aaab0624e747",
+    "inserted": 62,
+    "deleted": 1
+  },
+  {
+    "path": "/Users/munmunmiao/Documents/web/headscale-ui/e2e/tag-lifecycle.browser.test.tsx",
+    "sha256": "54562940d76185de6e550bc373db1dfcfe9b3707596ded314f8f89d3960de98f",
+    "inserted": 199,
+    "deleted": 0
+  }
+]

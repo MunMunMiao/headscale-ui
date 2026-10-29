@@ -1,0 +1,87 @@
+{
+  "at": "2026-10-26T01:27:20.177899",
+  "client-a": {
+    "exit": 0,
+    "BackendState": "Running",
+    "Self": {
+      "HostName": "ux12-client-a",
+      "TailscaleIPs": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "Online": true,
+      "ExitNodeOption": false
+    },
+    "peers": [
+      {
+        "HostName": "ux12-client-b",
+        "TailscaleIPs": [
+          "100.64.0.1",
+          "fd7a:115c:a1e0::1"
+        ],
+        "Online": true,
+        "ExitNodeOption": false
+      }
+    ]
+  },
+  "client-b": {
+    "exit": 0,
+    "BackendState": "Running",
+    "Self": {
+      "HostName": "ux12-client-b",
+      "TailscaleIPs": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "Online": true,
+      "ExitNodeOption": false
+    },
+    "peers": [
+      {
+        "HostName": "ux12-client-a",
+        "TailscaleIPs": [
+          "100.64.0.2",
+          "fd7a:115c:a1e0::2"
+        ],
+        "Online": true,
+        "ExitNodeOption": false
+      }
+    ]
+  },
+  "control": [
+    {
+      "id": 1,
+      "name": "ux12-client-b",
+      "given_name": "ux12-client-b",
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "available_routes": [
+        "0.0.0.0/0",
+        "::/0",
+        "10.42.0.46/32"
+      ],
+      "approved_routes": null,
+      "expiry": null,
+      "online": true,
+      "tags": null,
+      "username": "ux12-a-bob-renamed"
+    },
+    {
+      "id": 2,
+      "name": "ux12-client-a",
+      "given_name": "ux12-client-a",
+      "ip_addresses": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "available_routes": null,
+      "approved_routes": null,
+      "expiry": null,
+      "online": true,
+      "tags": null,
+      "username": "ux12-a-alice"
+    }
+  ]
+}

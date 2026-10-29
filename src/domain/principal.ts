@@ -1,31 +1,41 @@
-import type { HeadscaleUser } from "@/api/types";
+import type { HeadscaleUser } from "@/api/contracts";
 
 export type Principal = string & { readonly __brand: "Principal" };
 
 export function toPrincipal(raw: string): Principal {
-  return raw.trim().toLowerCase() as Principal;
+  return raw.trim() as Principal;
 }
 
+// Headscale 0.29.4 removes exactly one trailing @, even when it is part of the identity.
 function withUserSuffix(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  return trimmed.includes("@") ? trimmed : `${trimmed}@`;
+  return value.includes("@") && !value.endsWith("@") ? value : `${value}@`;
 }
+
+/** The principal that refers to a user by name (`name@`), or "" for a blank name. */
+export function userNamePrincipal(name: string): string {
+  const value = name.trim();
+  return value ? withUserSuffix(value) : "";
+}
+
+type PolicyUser = Pick<HeadscaleUser, "name" | "email" | "providerId"> &
+  Partial<Pick<HeadscaleUser, "id">>;
 
 export function policyPrincipalForUser(
-  user: Pick<HeadscaleUser, "name" | "email" | "providerId">,
+  user: PolicyUser,
+  users?: readonly PolicyUser[],
 ): string {
-  const email = user.email?.trim();
-  if (email) return withUserSuffix(email);
-  const name = user.name.trim();
-  if (name) return withUserSuffix(name);
-  const providerId = user.providerId?.trim();
-  if (providerId) return withUserSuffix(providerId);
+  for (const raw of [user.email, user.name, user.providerId]) {
+    const value = raw?.trim();
+    if (!value) continue;
+    const principal = withUserSuffix(value);
+    if (userMatchesPolicyValue(user, principal, users)) return principal;
+  }
   return "";
 }
 
 export function userPolicyPrincipals(
-  user: Pick<HeadscaleUser, "name" | "email" | "providerId">,
+  user: PolicyUser,
+  users?: readonly PolicyUser[],
 ): string[] {
   const values: string[] = [];
   const seen = new Set<string>();
@@ -36,31 +46,69 @@ export function userPolicyPrincipals(
     values.push(value);
   };
 
-  const email = user.email?.trim();
-  if (email) {
-    add(email);
-    add(withUserSuffix(email));
+  for (const raw of [user.email, user.name, user.providerId]) {
+    const value = raw?.trim();
+    if (!value) continue;
+    // A raw trailing @ belongs to another identity after Headscale strips it.
+    if (!value.endsWith("@")) add(value);
+    add(`${value}@`);
   }
-  const name = user.name.trim();
-  if (name) {
-    add(name);
-    add(withUserSuffix(name));
-  }
-  const providerId = user.providerId?.trim();
-  if (providerId) {
-    add(providerId);
-    add(withUserSuffix(providerId));
-  }
-  return values;
+  return values.filter((value) => userMatchesPolicyValue(user, value, users));
 }
 
 export function userMatchesPolicyValue(
-  user: Pick<HeadscaleUser, "name" | "email" | "providerId">,
+  user: PolicyUser,
   value: string,
+  users: readonly PolicyUser[] = [user],
 ): boolean {
-  const needle = value.trim();
+  const needle = value.trim().replace(/@$/, "");
   if (!needle) return false;
-  return userPolicyPrincipals(user).includes(needle);
+  // A retained rename/delete target replaces its newer snapshot record, not a second user.
+  const candidates = [
+    user,
+    ...users.filter(
+      (candidate) =>
+        candidate !== user && (!user.id || candidate.id !== user.id),
+    ),
+  ];
+  const provider = candidates.find(
+    (candidate) => candidate.providerId?.trim() === needle,
+  );
+  if (provider) return provider === user;
+  const matches = candidates.filter(
+    (candidate) =>
+      candidate.email?.trim() === needle || candidate.name.trim() === needle,
+  );
+  return matches.length === 1 && matches[0] === user;
+}
+
+export interface UserCreationPrincipalConflict {
+  field: "name" | "email";
+  principal: string;
+}
+
+export function userCreationPrincipalConflict(
+  candidate: Pick<HeadscaleUser, "name" | "email">,
+  users: readonly HeadscaleUser[],
+): UserCreationPrincipalConflict | null {
+  const pending: PolicyUser = {
+    name: candidate.name.trim(),
+    email: candidate.email?.trim() ?? "",
+    providerId: "",
+  };
+  const next = [...users, pending];
+  for (const user of users) {
+    for (const principal of userPolicyPrincipals(user, users)) {
+      if (!userMatchesPolicyValue(user, principal, next)) {
+        const identifier = principal.trim().replace(/@$/, "");
+        return {
+          field: pending.email === identifier ? "email" : "name",
+          principal,
+        };
+      }
+    }
+  }
+  return null;
 }
 
 export class PrincipalIndex {

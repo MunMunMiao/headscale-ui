@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-25T16:53:04.166Z",
+  "tabs": 2,
+  "sharedUnlock": true,
+  "reloadWithSecondTabStayedUnlocked": true,
+  "logoutLockedBoth": true,
+  "urls": [
+    "https://10.0.0.17:30957/login?redirect=%2Fhome",
+    "https://10.0.0.17:30957/login?redirect=%2Finvites%3Ffilter%3Dexpired"
+  ]
+}

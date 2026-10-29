@@ -1,28 +1,50 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { RestHeadscaleClient } from "@/api/headscale-client";
-import { headscaleClientTestingHandle, useHeadscaleClient } from "./useHeadscaleClient";
+import { expect, test } from "vitest";
+import type { PublicSessionSnapshot } from "@/session/types";
+import { createHeadscaleClientStore } from "./useHeadscaleClient";
 
-beforeEach(() => headscaleClientTestingHandle.reset());
-
-describe("useHeadscaleClient", () => {
-  test("starts unconfigured and cannot accidentally connect to the UI origin", () => {
-    const api = useHeadscaleClient();
-    expect(api.settings).toEqual({ baseUrl: "", apiKey: "" });
-    expect(() => api.createClient()).toThrow();
-    expect(useHeadscaleClient()).toBe(api);
-    headscaleClientTestingHandle.reset();
-    expect(useHeadscaleClient()).not.toBe(api);
+function unlocked(
+  id: string,
+  revision = 1,
+): Extract<PublicSessionSnapshot, { status: "unlocked" }> {
+  return {
+    status: "unlocked",
+    identity: { workerId: "worker", sessionId: id },
+    profile: { id, name: id, baseUrl: `https://${id}.example` },
+    expiresAt: Date.now() + 1000,
+    pendingProfileId: null,
+    reason: null,
+    revision,
+    apiKeyPrefix: null,
+  };
+}
+test("a page publishes under the identity it adopted and shows only the server address", () => {
+  const client = createHeadscaleClientStore();
+  client.adopt(unlocked("a"));
+  const previous = client.getSnapshot().identity;
+  client.adopt(unlocked("b", 2));
+  expect(previous).toEqual(unlocked("a").identity);
+  expect(client.getSnapshot().identity).toEqual(unlocked("b").identity);
+  expect(client.getSnapshot().settings).toEqual({
+    baseUrl: "https://b.example",
   });
-
-  test("uses REST for local and remote live or override settings", () => {
-    const api = useHeadscaleClient();
-    const live = { baseUrl: "http://127.0.0.1:8080", apiKey: "local-key" };
-    api.setSettings(live);
-    expect(api.settings).toEqual(live);
-    expect(api.createClient()).toBeInstanceOf(RestHeadscaleClient);
-    expect(
-      api.createClient({ baseUrl: "https://headscale.example.test/path", apiKey: "key" }),
-    ).toBeInstanceOf(RestHeadscaleClient);
-    expect(api.settings).toEqual(live);
+  expect(JSON.stringify(client.getSnapshot())).not.toContain("apiKey");
+});
+test("activity snapshots keep the adopted identity while a lock removes it", () => {
+  const client = createHeadscaleClientStore();
+  client.adopt(unlocked("a"));
+  const identity = client.getSnapshot().identity;
+  client.adopt({ ...unlocked("a", 2), expiresAt: Date.now() + 30_000 });
+  expect(client.getSnapshot().identity).toBe(identity);
+  client.adopt({
+    ...unlocked("a", 3),
+    status: "locked",
+    identity: null,
+    profile: null,
+    expiresAt: null,
+    apiKeyPrefix: null,
+  });
+  expect(client.getSnapshot()).toEqual({
+    settings: { baseUrl: "" },
+    identity: null,
   });
 });

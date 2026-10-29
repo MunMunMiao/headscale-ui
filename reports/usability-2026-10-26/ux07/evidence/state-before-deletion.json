@@ -1,0 +1,195 @@
+{
+  "utc": "2026-10-25T17:00:12.944674+00:00",
+  "phase": "before-deletion",
+  "nodes": [
+    {
+      "id": 1,
+      "given_name": "ux07-edge-router",
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "user": {
+        "id": 2,
+        "name": "ux07-router",
+        "created_at": {
+          "seconds": 1792946244,
+          "nanos": 783402189
+        }
+      },
+      "tags": null,
+      "online": true,
+      "expiry": null,
+      "register_method": 2,
+      "approved_routes": [
+        "0.0.0.0/0",
+        "10.42.0.20/32",
+        "::/0"
+      ],
+      "available_routes": [
+        "0.0.0.0/0",
+        "::/0",
+        "10.42.0.20/32"
+      ]
+    },
+    {
+      "id": 2,
+      "given_name": "ux07-client-a",
+      "ip_addresses": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "user": {
+        "id": 1,
+        "name": "ux07-alice",
+        "created_at": {
+          "seconds": 1792946234,
+          "nanos": 894307363
+        },
+        "display_name": "UX07 Alice"
+      },
+      "tags": null,
+      "online": true,
+      "expiry": null,
+      "register_method": 1,
+      "approved_routes": null,
+      "available_routes": null
+    }
+  ],
+  "policy": {
+    "groups": {
+      "group:ux07-netops": [
+        "ux07-router@"
+      ]
+    },
+    "tagOwners": {
+      "tag:ux07-router": [
+        "group:ux07-netops"
+      ],
+      "tag:ux07-service": []
+    },
+    "acls": [
+      {
+        "action": "accept",
+        "src": [
+          "ux07-alice@"
+        ],
+        "dst": [
+          "tag:ux07-router:8081"
+        ]
+      },
+      {
+        "action": "accept",
+        "src": [
+          "ux07-alice@"
+        ],
+        "dst": [
+          "100.64.0.1:8081"
+        ]
+      },
+      {
+        "action": "accept",
+        "src": [
+          "ux07-alice@"
+        ],
+        "dst": [
+          "10.42.0.20:8081"
+        ]
+      }
+    ]
+  },
+  "apiKeys": [
+    {
+      "id": 1,
+      "expiration": {
+        "seconds": 1792989154,
+        "nanos": 231848084
+      },
+      "created_at": {
+        "seconds": 1792945954,
+        "nanos": 455967083
+      }
+    },
+    {
+      "id": 2,
+      "expiration": {
+        "seconds": 1792947257,
+        "nanos": 340545517
+      },
+      "created_at": {
+        "seconds": 1792947229,
+        "nanos": 737009990
+      }
+    }
+  ],
+  "clients": {
+    "client-a": {
+      "state": "Running",
+      "IPs": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "self": {
+        "HostName": "ux07-client-a",
+        "UserID": 1,
+        "Tags": null,
+        "Online": true,
+        "KeyExpiry": null
+      },
+      "exitNode": null,
+      "peers": [
+        {
+          "HostName": "ux07-client-b",
+          "TailscaleIPs": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "Online": true,
+          "ExitNode": false,
+          "ExitNodeOption": false,
+          "AllowedIPs": [
+            "0.0.0.0/0",
+            "10.42.0.20/32",
+            "100.64.0.1/32",
+            "fd7a:115c:a1e0::1/128"
+          ],
+          "TxBytes": 2848,
+          "RxBytes": 2484
+        }
+      ]
+    },
+    "client-b": {
+      "state": "Running",
+      "IPs": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "self": {
+        "HostName": "ux07-client-b",
+        "UserID": 2,
+        "Tags": null,
+        "Online": true,
+        "KeyExpiry": null
+      },
+      "exitNode": null,
+      "peers": [
+        {
+          "HostName": "ux07-client-a",
+          "TailscaleIPs": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ],
+          "Online": true,
+          "ExitNode": false,
+          "ExitNodeOption": false,
+          "AllowedIPs": [
+            "100.64.0.2/32",
+            "fd7a:115c:a1e0::2/128"
+          ],
+          "TxBytes": 204,
+          "RxBytes": 212
+        }
+      ]
+    }
+  }
+}

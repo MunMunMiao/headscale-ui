@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-26T01:13:43.837443+08:00",
+  "experiment": "deleted old auth key reused after device record removal",
+  "exit": 1,
+  "stdout": "\n",
+  "stderr": "backend error: invalid pre auth key\ncommand terminated with exit code 1\n\n"
+}

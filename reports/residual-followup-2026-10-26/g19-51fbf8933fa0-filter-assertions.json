@@ -1,0 +1,63 @@
+{
+  "source": "100.64.0.2",
+  "port": 8081,
+  "protocol": 6,
+  "comparisons": [
+    {
+      "phase": "policy-original-open",
+      "routerHasClientPeer": true,
+      "routerFilterAllows": {
+        "podip": true,
+        "clusterip": true
+      },
+      "clientSelectedExit": {
+        "ID": "1",
+        "Online": true,
+        "TailscaleIPs": [
+          "100.64.0.1/32",
+          "fd7a:115c:a1e0::1/128"
+        ]
+      },
+      "probeExit": [
+        1,
+        1
+      ],
+      "routerNativeHealthAll200": true
+    },
+    {
+      "phase": "policy-internet-only",
+      "routerHasClientPeer": true,
+      "routerFilterAllows": {
+        "podip": false,
+        "clusterip": false
+      },
+      "clientSelectedExit": {
+        "ID": "1",
+        "Online": true,
+        "TailscaleIPs": [
+          "100.64.0.1/32",
+          "fd7a:115c:a1e0::1/128"
+        ]
+      },
+      "probeExit": [
+        1,
+        1
+      ],
+      "routerNativeHealthAll200": true
+    },
+    {
+      "phase": "policy-literal-private",
+      "routerHasClientPeer": false,
+      "routerFilterAllows": {
+        "podip": false,
+        "clusterip": false
+      },
+      "clientSelectedExit": null,
+      "probeExit": [
+        1,
+        1
+      ],
+      "routerNativeHealthAll200": true
+    }
+  ]
+}

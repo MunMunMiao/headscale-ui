@@ -1,15 +1,43 @@
-import type { HeadscaleUser } from "@/api/types";
+import type { HeadscaleUser } from "@/api/contracts";
 
 const TAG_MANAGED_USER_NAME = "tagged-devices";
 
-export function isTagManagedDeviceUser(user?: HeadscaleUser): boolean {
+export function isTagManagedDeviceUser(user?: HeadscaleUser | null): boolean {
   return user?.name === TAG_MANAGED_USER_NAME;
 }
 
-export function hasVisibleUser(user?: HeadscaleUser): user is HeadscaleUser {
+export function hasVisibleUser(
+  user?: HeadscaleUser | null,
+): user is HeadscaleUser {
   return Boolean(user && !isTagManagedDeviceUser(user));
 }
 
-export function userLabel(user: HeadscaleUser | undefined, fallback: string): string {
+export type UserNameIssue = "required" | "invalid" | "taken";
+
+// Headscale REST 接受这些名称；UI 仅排除无法用于策略引用的空白和控制字符。
+const UNUSABLE_NAME_CHARACTER = /[\s\p{Cc}]/u;
+
+/** Why a (trimmed) user name cannot be used; names match case-sensitively, as in Headscale. */
+export function userNameIssue(
+  name: string,
+  users: readonly HeadscaleUser[],
+  exceptId?: string,
+): UserNameIssue | null {
+  if (!name) return "required";
+  if (UNUSABLE_NAME_CHARACTER.test(name)) return "invalid";
+  if (users.some((user) => user.name === name && user.id !== exceptId))
+    return "taken";
+  return null;
+}
+
+// ponytail: shape check only (x@y.z); the mail server is the real validator.
+export function isEmailLike(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+export function userLabel(
+  user: HeadscaleUser | null | undefined,
+  fallback: string,
+): string {
   return user?.displayName || user?.name || user?.email || fallback;
 }

@@ -1,0 +1,39 @@
+{
+  "sourceResult": "g19-b9b158c62e5b-result.json",
+  "researchChecks": {
+    "peerHTTPBeforeAndAfter200": true,
+    "routerProxyBothTargets200": true,
+    "nativeRouterHealthAll200": true,
+    "clientNativeBypassBlocked": true,
+    "openFilterAllowsBothPrivateTargets": true,
+    "openExitSelected": true,
+    "onlyDefaultRoutesAdvertised": true,
+    "clientMapHasIPv4DefaultToRouter": true,
+    "internetFilterExcludesBothPrivateTargets": true,
+    "literalRuleStillHasPeerButNoEffectivePrivateGrant": true,
+    "routerCaptureContainsOwnedPrivateSYN": true,
+    "capturedProbeHasNoTargetHTTPRecord": true,
+    "namespaceAndCredentialDirectoryRemoved": true
+  },
+  "privateForwardingPassed": false,
+  "experimentExit": 2,
+  "observedCaptureExit": 143,
+  "observedOwnedTCPHeaders": 6,
+  "observedKernelStatesDuringProbe": [
+    "06"
+  ],
+  "policyFilterMembership": {
+    "policy-original-open": {
+      "podip": true,
+      "clusterip": true
+    },
+    "policy-internet-only": {
+      "podip": false,
+      "clusterip": false
+    },
+    "policy-literal-private": {
+      "podip": false,
+      "clusterip": false
+    }
+  }
+}

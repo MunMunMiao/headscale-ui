@@ -1,0 +1,418 @@
+{
+  "at": "2026-10-25T17:46:59.429Z",
+  "url": "https://10.0.0.17:32516/access",
+  "steps": [
+    {
+      "key": "initial",
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "取消",
+        "rect": {
+          "x": 581,
+          "y": 446,
+          "width": 50,
+          "height": 32,
+          "top": 446,
+          "right": 631,
+          "bottom": 478,
+          "left": 581
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 1,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "发布所有策略更改",
+        "rect": {
+          "x": 639,
+          "y": 446,
+          "width": 134,
+          "height": 32,
+          "top": 446,
+          "right": 773,
+          "bottom": 478,
+          "left": 639
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 2,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "取消",
+        "rect": {
+          "x": 581,
+          "y": 446,
+          "width": 50,
+          "height": 32,
+          "top": 446,
+          "right": 631,
+          "bottom": 478,
+          "left": 581
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 3,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "发布所有策略更改",
+        "rect": {
+          "x": 639,
+          "y": 446,
+          "width": 134,
+          "height": 32,
+          "top": 446,
+          "right": 773,
+          "bottom": 478,
+          "left": 639
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 4,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "取消",
+        "rect": {
+          "x": 581,
+          "y": 446,
+          "width": 50,
+          "height": 32,
+          "top": 446,
+          "right": 631,
+          "bottom": 478,
+          "left": 581
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 5,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "发布所有策略更改",
+        "rect": {
+          "x": 639,
+          "y": 446,
+          "width": 134,
+          "height": 32,
+          "top": 446,
+          "right": 773,
+          "bottom": 478,
+          "left": 639
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 6,
+      "viewport": [
+        789,
+        510
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "取消",
+        "rect": {
+          "x": 581,
+          "y": 446,
+          "width": 50,
+          "height": 32,
+          "top": 446,
+          "right": 631,
+          "bottom": 478,
+          "left": 581
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 16,
+            "width": 789,
+            "height": 478,
+            "top": 16,
+            "right": 789,
+            "bottom": 494,
+            "left": 0
+          },
+          "overflowY": "auto",
+          "scrollTop": 103,
+          "scrollHeight": 581,
+          "clientHeight": 478
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 552
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 568
+        }
+      ]
+    }
+  ]
+}

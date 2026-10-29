@@ -1,0 +1,28 @@
+{
+  "instances": [
+    {
+      "member": "ux11",
+      "namespace": "hsux-1026-0020-ux11",
+      "origin": "https://10.0.0.17:31625",
+      "nodePort": 31625,
+      "targetIP": "10.42.0.43"
+    },
+    {
+      "member": "ux12",
+      "namespace": "hsux-1026-0020-ux12",
+      "origin": "https://10.0.0.17:32113",
+      "nodePort": 32113,
+      "targetIP": "10.42.0.46"
+    },
+    {
+      "member": "ux12",
+      "namespace": "hsux-1026-0020-ux12",
+      "origin": "https://10.0.0.17:30325",
+      "nodePort": 30325,
+      "policyMode": "file-without-path",
+      "corsAllowedOrigin": "https://10.0.0.17:32113"
+    }
+  ],
+  "preflightVerified": true,
+  "reason": "真实SSH check和真正跨服务器/只读策略模式覆盖缺口；替换已释放UX03/UX04资源"
+}

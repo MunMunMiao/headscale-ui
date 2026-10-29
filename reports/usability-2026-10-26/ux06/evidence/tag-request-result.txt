@@ -1,0 +1,34 @@
+- region "Notifications"
+- dialog "Register pending device":
+  - heading "Register pending device" [level=2]
+  - paragraph: Approve a device sign-in or SSH check that is waiting for this server.
+  - navigation "Add device":
+    - button "1 Register pending device Register or review a device that is waiting." [disabled]
+    - button "2 Result Review the result and continue." [disabled]
+  - heading "Register pending device" [level=3]
+  - paragraph: Paste the link or ID shown by tailscale up or by an SSH check prompt. Request IDs are short-lived.
+  - text: Request type
+  - combobox "Request type" [disabled]:
+    - option "Device sign-in" [selected]
+    - option "SSH check"
+  - text: Explicit target user
+  - combobox "Explicit target user" [disabled]:
+    - option "Choose a target user"
+    - option "ACL Alice (ux06-alice · 1)"
+    - option "ux06-service (ux06-service · 2)" [selected]
+  - text: Request link or ID
+  - textbox "Request link or ID":
+    - /placeholder: hskey-authreq-…
+  - text: Confirmed public login-server
+  - textbox "Confirmed public login-server": https://10.0.0.17:30957
+  - checkbox "I verified this public login-server in the deployment configuration; it may differ from the API proxy." [checked] [disabled]
+  - text: I verified this public login-server in the deployment configuration; it may differ from the API proxy.
+  - checkbox "Through the target device’s trusted management channel, I verified that this exact Auth ID or link belongs to this device and this reauthentication attempt." [disabled]
+  - text: Through the target device’s trusted management channel, I verified that this exact Auth ID or link belongs to this device and this reauthentication attempt.
+  - paragraph: A same-server link is not proof of the target device. Verify the request through its trusted device channel before approving.
+  - paragraph: The server registers by user name. This ID/name check is not a server-side compare-and-swap and cannot prevent concurrent name reuse.
+  - paragraph: ux06-service · 2
+  - button "Register pending node" [disabled]
+  - button "Back" [disabled]
+  - button "Next" [disabled]
+  - button "Close"

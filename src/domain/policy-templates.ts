@@ -3,8 +3,10 @@ import {
   createRule,
   createTagOwner,
   type PolicyDesignerState,
+  type PolicyRule,
   toMemberRef,
 } from "./policy-designer";
+import { hasOnlyDefaultAccess } from "./policy-views";
 
 export type PolicyTemplateId = "self-only" | "small-team" | "split-env";
 
@@ -54,8 +56,12 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
     build() {
       const dev = createGroup("group:dev", []);
       const ops = createGroup("group:ops", []);
-      const devServer = createTagOwner("tag:dev-server", [toMemberRef("group:ops")]);
-      const prodServer = createTagOwner("tag:prod-server", [toMemberRef("group:ops")]);
+      const devServer = createTagOwner("tag:dev-server", [
+        toMemberRef("group:ops"),
+      ]);
+      const prodServer = createTagOwner("tag:prod-server", [
+        toMemberRef("group:ops"),
+      ]);
       const rules = [
         createRule("group:dev", "tag:dev-server", "22,80,443"),
         createRule("group:ops", "tag:dev-server,tag:prod-server", "*"),
@@ -69,15 +75,34 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
   },
 ];
 
+// Headscale ACLs are an allow-list: scoped rules after the open default would enforce nothing.
+function replacesRules(
+  state: PolicyDesignerState,
+  added: readonly PolicyRule[],
+) {
+  return added.length > 0 && hasOnlyDefaultAccess(state);
+}
+
+export function rulesReplacedByTemplate(
+  state: PolicyDesignerState,
+  template: PolicyTemplate,
+): PolicyRule[] {
+  return replacesRules(state, template.build().rules ?? []) ? state.rules : [];
+}
+
 export function applyTemplate(
   state: PolicyDesignerState,
   template: PolicyTemplate,
 ): PolicyDesignerState {
   const built = template.build();
+  const added = built.rules ?? [];
+  const rules = replacesRules(state, added)
+    ? added
+    : [...state.rules, ...added];
   return {
-    rules: [...state.rules, ...(built.rules ?? [])],
+    ...state,
+    rules,
     groups: [...state.groups, ...(built.groups ?? [])],
     tagOwners: [...state.tagOwners, ...(built.tagOwners ?? [])],
-    extras: state.extras,
   };
 }

@@ -1,0 +1,18 @@
+{
+  "member": "ux06",
+  "browser": "155.0.8059.85",
+  "mode": "headless=new per participant guide",
+  "origin": "https://10.0.0.17:30957",
+  "secure": true,
+  "width": 756,
+  "height": 413,
+  "scrollWidth": 756,
+  "language": "en-US",
+  "initialViewport": {
+    "width": 756,
+    "height": 413
+  },
+  "namespace": "hsux-1026-0020-ux06",
+  "context": "home",
+  "collectedAt": "2026-10-25T17:12:36.576Z"
+}

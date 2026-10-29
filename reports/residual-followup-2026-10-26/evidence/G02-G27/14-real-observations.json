@@ -1,0 +1,944 @@
+{
+  "log": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/08-real-green.log",
+  "sha256": "a1e3ce4e535f78168edbdc4b02629afc30ff02a1aa6ce51e8fddd150e42a690e",
+  "summary": [
+    {
+      "line": 7,
+      "text": "Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning."
+    },
+    {
+      "line": 37,
+      "text": " ↓ |tag-lifecycle-real (chromium)| e2e/tag-lifecycle.browser.test.tsx > A11: confirmed 200 followed by a failed GET remains confirmed with a separate refresh warning"
+    },
+    {
+      "line": 39,
+      "text": "G27 real inventory evidence slow-success {\"creation\":{\"status\":200,\"upstreamRequests\":1},\"duringRead\":{\"injected\":false,\"identityStatus\":\"loading\",\"warningVisible\":false},\"identityStatus\":\"ready\",\"secretRetained\":true,\"creationRequests\":1,\"registeredSameMachine\":true,\"registeredUser\":\"1\",\"registeredTags\":[]}"
+    },
+    {
+      "line": 42,
+      "text": "G27 real inventory evidence failed-read {\"creation\":{\"status\":200,\"upstreamRequests\":1},\"duringRead\":{\"injected\":true,\"readStatus\":503,\"upstreamRequests\":0,\"identityStatus\":\"error\",\"warningVisible\":true},\"identityStatus\":\"ready\",\"secretRetained\":true,\"creationRequests\":1,\"registeredSameMachine\":true,\"registeredUser\":\"1\",\"registeredTags\":[]}"
+    },
+    {
+      "line": 56,
+      "text": " Test Files  1 passed (1)"
+    },
+    {
+      "line": 57,
+      "text": "      Tests  5 passed | 20 skipped (25)"
+    },
+    {
+      "line": 59,
+      "text": "   Duration  72.19s (tests 100%)"
+    },
+    {
+      "line": 63,
+      "text": "EXIT_CODE=0"
+    }
+  ],
+  "observations": [
+    {
+      "line": 17,
+      "scenario": "G02 completed recovery control",
+      "data": {
+        "phase": "verified-identity-and-new-TCP-connection",
+        "backend": {
+          "nodeId": "1",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "snapshot": {
+          "nodeId": "1",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "approvedResponse": {
+          "nodeId": "1",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "reads": [
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          }
+        ],
+        "scope": {
+          "generation": 2,
+          "version": "v0.29.4",
+          "versionFresh": true,
+          "viewEpoch": 0
+        },
+        "approvals": 1
+      }
+    },
+    {
+      "line": 22,
+      "scenario": "G02 controlled confirmation loop",
+      "data": {
+        "phase": "three-stale-confirmations-without-dispatch",
+        "backend": {
+          "nodeId": "3",
+          "sameMachine": true,
+          "sameNodeKey": true,
+          "user": {
+            "id": "2147455555",
+            "name": "tagged-devices"
+          },
+          "tags": [
+            "tag:audit",
+            "tag:server"
+          ]
+        },
+        "snapshot": {
+          "nodeId": "3",
+          "sameMachine": true,
+          "sameNodeKey": true,
+          "user": {
+            "id": "2147455555",
+            "name": "tagged-devices"
+          },
+          "tags": [
+            "tag:audit",
+            "tag:server"
+          ]
+        },
+        "approvedResponse": {
+          "sameMachine": false,
+          "sameNodeKey": false,
+          "user": null
+        },
+        "reads": [
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          }
+        ],
+        "scope": {
+          "generation": 2,
+          "version": "v0.29.4",
+          "versionFresh": true,
+          "viewEpoch": 0
+        },
+        "approvals": 0
+      }
+    },
+    {
+      "line": 24,
+      "scenario": "G02 completed recovery changed-tags",
+      "data": {
+        "phase": "verified-identity-and-new-TCP-connection",
+        "backend": {
+          "nodeId": "3",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "snapshot": {
+          "nodeId": "3",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "approvedResponse": {
+          "nodeId": "3",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "2",
+            "name": "bob"
+          },
+          "tags": []
+        },
+        "reads": [
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          }
+        ],
+        "scope": {
+          "generation": 2,
+          "version": "v0.29.4",
+          "versionFresh": true,
+          "viewEpoch": 0
+        },
+        "approvals": 1
+      }
+    },
+    {
+      "line": 29,
+      "scenario": "G02 external identity refusal",
+      "data": {
+        "phase": "external-person-observation-without-UI-dispatch",
+        "backend": {
+          "nodeId": "5",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "1",
+            "name": "alice"
+          },
+          "tags": []
+        },
+        "snapshot": {
+          "nodeId": "5",
+          "sameMachine": true,
+          "sameNodeKey": false,
+          "user": {
+            "id": "1",
+            "name": "alice"
+          },
+          "tags": []
+        },
+        "approvedResponse": {
+          "sameMachine": false,
+          "sameNodeKey": false,
+          "user": null
+        },
+        "reads": [
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/policy",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/node",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/health",
+            "status": 200
+          },
+          {
+            "path": "/version",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/user",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/preauthkey",
+            "status": 200
+          },
+          {
+            "path": "/api/v1/apikey",
+            "status": 200
+          }
+        ],
+        "scope": {
+          "generation": 2,
+          "version": "v0.29.4",
+          "versionFresh": true,
+          "viewEpoch": 0
+        },
+        "approvals": 1
+      }
+    },
+    {
+      "line": 39,
+      "scenario": "G27 real inventory evidence slow-success",
+      "data": {
+        "creation": {
+          "status": 200,
+          "upstreamRequests": 1
+        },
+        "duringRead": {
+          "injected": false,
+          "identityStatus": "loading",
+          "warningVisible": false
+        },
+        "identityStatus": "ready",
+        "secretRetained": true,
+        "creationRequests": 1,
+        "registeredSameMachine": true,
+        "registeredUser": "1",
+        "registeredTags": []
+      }
+    },
+    {
+      "line": 42,
+      "scenario": "G27 real inventory evidence failed-read",
+      "data": {
+        "creation": {
+          "status": 200,
+          "upstreamRequests": 1
+        },
+        "duringRead": {
+          "injected": true,
+          "readStatus": 503,
+          "upstreamRequests": 0,
+          "identityStatus": "error",
+          "warningVisible": true
+        },
+        "identityStatus": "ready",
+        "secretRetained": true,
+        "creationRequests": 1,
+        "registeredSameMachine": true,
+        "registeredUser": "1",
+        "registeredTags": []
+      }
+    }
+  ]
+}
