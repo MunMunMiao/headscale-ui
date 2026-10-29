@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-10-25T17:11:02.857113+00:00",
+  "nodes": [
+    {
+      "id": 1,
+      "given_name": "ux03-alice-laptop",
+      "tags": [
+        "tag:ux03-managed",
+        "tag:ux03-server"
+      ],
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "approved_routes": null,
+      "userID": 2147455555
+    }
+  ]
+}

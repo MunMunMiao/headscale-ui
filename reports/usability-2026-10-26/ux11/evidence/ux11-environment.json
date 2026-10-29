@@ -1,0 +1,17 @@
+{
+  "participant": "ux11",
+  "namespace": "hsux-1026-0020-ux11",
+  "origin": "https://10.0.0.17:31625",
+  "browser": "native Google Chrome 155 headless=new dedicated profile CDP 9421",
+  "actualViewportReadback": {
+    "width": 756,
+    "height": 469
+  },
+  "finalSameBatchScreenshotViewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "secureContext": true,
+  "capabilitiesChanged": false,
+  "runtimeEndedAt": "2026-10-26T01:57:31.399650+08:00"
+}

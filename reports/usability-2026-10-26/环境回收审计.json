@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-10-26T02:27:59.568397+08:00",
+  "context": "home",
+  "runLabel": "hsux-1026-0020",
+  "participants": 12,
+  "independentChromeProfilesAtLaunch": 12,
+  "memberCleanupRecords": 12,
+  "remainingOwnedNamespaces": 0,
+  "remainingOwnedObjects": 0,
+  "remainingOwnedChromeProcesses": 0,
+  "remainingCDPListeners": [],
+  "temporaryRunDirectoryDeleted": true,
+  "temporaryCertificatesCredentialsScriptsProfilesAndCachesDeleted": true,
+  "scope": "仅删除本次明确创建的namespace、进程、profile和私有目录；未删除共享镜像缓存、宿主个人Chrome或既有工作区构建目录。Claude自身对话/工具记录不属于实验运行资源。",
+  "resourceSampling": {
+    "samples": 102,
+    "from": "2026-10-26T00:38:48+0800",
+    "to": "2026-10-26T02:20:36+0800",
+    "sampledMaxCPUPercent": 44,
+    "sampledMaxMemoryPercent": 35,
+    "sampledMaxActivePods": 99,
+    "sampledMaxLabPods": 41,
+    "sampledMinLocalMemoryFreePercent": 32
+  },
+  "participantReports": {
+    "ux01": "ux01/报告.md",
+    "ux02": "ux02/报告.md",
+    "ux03": "ux03/报告.md",
+    "ux04": "ux04/报告.md",
+    "ux05": "ux05/报告.md",
+    "ux06": "ux06/报告.md",
+    "ux07": "ux07/报告.txt",
+    "ux08": "ux08/报告.md",
+    "ux09": "ux09/报告.md",
+    "ux10": "ux10/报告.md",
+    "ux11": "ux11/报告.md",
+    "ux12": "ux12/报告.md"
+  },
+  "sourceCodeChangesMadeByStudy": false
+}

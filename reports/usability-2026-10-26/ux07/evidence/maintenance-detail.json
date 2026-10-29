@@ -1,0 +1,16 @@
+{
+  "member": "ux07",
+  "url": "https://10.0.0.17:32198/devices?node=1&popup=node&from=access",
+  "tabs": [
+    {
+      "tab": 0,
+      "url": "https://10.0.0.17:32198/devices?node=1&popup=node&from=access"
+    },
+    {
+      "tab": 1,
+      "url": "https://10.0.0.17:32198/home"
+    }
+  ],
+  "errors": [],
+  "snapshot": "- region \"Notifications\"\n- dialog \"ux07-edge-router\":\n  - heading \"ux07-edge-router\" [level=2]\n  - paragraph: Machine details\n  - text: \"Online Node ID: 1 Register method: CLI\"\n  - heading \"Owner\" [level=3]\n  - text: \"-\"\n  - heading \"Details\" [level=3]\n  - paragraph: \"Expires: Never\"\n  - heading \"Addresses\" [level=3]\n  - text: 100.64.0.1 fd7a:115c:a1e0::1\n  - heading \"Tags\" [level=3]\n  - text: tag:ux07-router\n  - heading \"Routes\" [level=3]\n  - heading \"Approved routes\" [level=4]\n  - text: 0.0.0.0/0 Exit · Approved 10.42.0.20/32 Approved ::/0 Exit · Approved\n  - button \"Close\""
+}

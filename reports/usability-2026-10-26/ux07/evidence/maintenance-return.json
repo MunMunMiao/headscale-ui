@@ -1,0 +1,16 @@
+{
+  "member": "ux07",
+  "url": "https://10.0.0.17:32198/access",
+  "tabs": [
+    {
+      "tab": 0,
+      "url": "https://10.0.0.17:32198/access"
+    },
+    {
+      "tab": 1,
+      "url": "https://10.0.0.17:32198/home"
+    }
+  ],
+  "errors": [],
+  "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"Profile\"\n  - navigation \"Main navigation\":\n    - link \"Overview\":\n      - /url: /home\n    - link \"Machines\":\n      - /url: /devices\n    - link \"Users\":\n      - /url: /members\n    - link \"Auth keys\":\n      - /url: /invites\n    - link \"Routes\":\n      - /url: /routes\n    - link \"Access controls\":\n      - /url: /access\n- main:\n  - paragraph\n  - heading \"Resource access\" [level=1]\n  - paragraph: Decide which people and teams can reach which devices. Group devices with labels and people into teams.\n  - button \"Check policy\"\n  - button \"Publish all policy changes\" [disabled]\n  - paragraph: Explicit ACL/grants restrictions, including empty lists, are preserved. Definition changes do not imply connectivity has been verified.\n  - text: No rule allows any access\n  - paragraph: With this policy, devices cannot reach each other. Add a rule or start from a template to allow access.\n  - heading \"Teams 1\" [level=2]\n  - button \"New team\"\n  - button \"ux07-netops\"\n  - paragraph: 0 members\n  - button \"Delete team ux07-netops\"\n  - paragraph: No members yet. This team gives access to no one until you add people.\n  - heading \"Device labels 2\" [level=2]\n  - searchbox \"Search device labels…\"\n  - button \"New device label\"\n  - button \"ux07-router\"\n  - paragraph: 1 device\n  - button \"Delete device label ux07-router\"\n  - text: Declaration unknown — policy read unavailable Policy definition Device observations\n  - button \"Live tag maintenance\"\n  - paragraph: Who can access these devices\n  - paragraph: No ACL access rules are listed here.\n  - paragraph: Client authorization\n  - text: ux07-netops\n  - button \"ux07-service\"\n  - paragraph: 0 devices\n  - button \"Delete device label ux07-service\"\n  - text: Declaration unknown — policy read unavailable Policy definition\n  - button \"Live tag maintenance\"\n  - paragraph: Who can access these devices\n  - paragraph: No ACL access rules are listed here.\n  - paragraph: Client authorization\n  - paragraph: No members are authorized here to request this tag through the client. Administrator assignment and tagged invitations use different contracts.\n  - heading \"IP and all-destination rules (advanced) 0\" [level=2]\n  - paragraph: These rules grant access to IP addresses, network ranges, or all destinations (*). You can add, edit or delete them here.\n  - button \"Add rule\"\n  - paragraph: No IP or all-destination rules yet.\n  - paragraph: Saving rewrites the whole policy as normalized JSON. HuJSON comments and formatting are not retained. Row confirmation only updates the draft; Save publishes it to Headscale.\n  - button \"Publish all policy changes\" [disabled]\n- region \"Notifications\""
+}

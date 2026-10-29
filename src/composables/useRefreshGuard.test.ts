@@ -1,12 +1,26 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { resetAllSingletons } from "./__testing";
-import { useRefreshGuard } from "./useRefreshGuard";
+import { describe, expect, test } from "vitest";
+import { createFixtureHttp, fixtureSession } from "@/test/dispatch-fixture";
+import { createActionFeedbackStore } from "./useActionFeedback";
+import { createRefreshGuard } from "./useRefreshGuard";
+import { createSnapshotStore } from "./useSnapshot";
 
-beforeEach(resetAllSingletons);
+const always = () => () => true;
 
 describe("useRefreshGuard", () => {
+  test.each([true, false, undefined])(
+    "passes the current refresh result %s to the dialog",
+    async (result) => {
+      const guard = createRefreshGuard(async () => result, always);
+      const results: boolean[] = [];
+      await guard.refresh(guard.next(), (fresh) => {
+        results.push(fresh);
+      });
+      expect(results).toEqual([result !== false]);
+    },
+  );
+
   test("only applies the latest refresh epoch and cancel invalidates it", async () => {
-    const guard = useRefreshGuard();
+    const guard = createRefreshGuard(async () => {}, always);
     const applied: string[] = [];
     const stale = guard.next();
     const current = guard.next();
@@ -17,5 +31,66 @@ describe("useRefreshGuard", () => {
     await guard.refresh(current, () => applied.push("cancelled"));
 
     expect(applied).toEqual(["current"]);
+  });
+
+  function newStore() {
+    // The guard never reads through this client: its refresh is a deferred supplied by the test.
+    const http = createFixtureHttp({
+      baseUrl: "http://127.0.0.1:9",
+      apiKey: "unused",
+    });
+    const { auth, client } = fixtureSession(http);
+    const store = createSnapshotStore(
+      auth,
+      client,
+      createActionFeedbackStore(),
+    );
+    store.setAuthorized(true);
+    return store;
+  }
+
+  test.each([
+    [
+      "a server switch",
+      (store: ReturnType<typeof newStore>) => store.resetSnapshot(),
+    ],
+    [
+      "a lock",
+      (store: ReturnType<typeof newStore>) => store.setAuthorized(false),
+    ],
+    [
+      "a same-server rebind",
+      (store: ReturnType<typeof newStore>) => store.rebindSession(),
+    ],
+  ])(
+    "does not apply a refresh that settles across %s",
+    async (_name, change) => {
+      const store = newStore();
+      const reply = Promise.withResolvers<void>();
+      const guard = createRefreshGuard(
+        () => reply.promise,
+        store.captureSession,
+      );
+      const applied: string[] = [];
+      const token = guard.next();
+      const refreshing = guard.refresh(token, () => applied.push("applied"));
+      change(store);
+      reply.resolve();
+      await refreshing;
+      expect(applied).toEqual([]);
+    },
+  );
+
+  test("applies a refresh when the session did not change", async () => {
+    const store = newStore();
+    const reply = Promise.withResolvers<void>();
+    const guard = createRefreshGuard(() => reply.promise, store.captureSession);
+    const applied: string[] = [];
+    const refreshing = guard.refresh(guard.next(), () =>
+      applied.push("applied"),
+    );
+    reply.resolve();
+    await refreshing;
+    expect(applied).toEqual(["applied"]);
   });
 });

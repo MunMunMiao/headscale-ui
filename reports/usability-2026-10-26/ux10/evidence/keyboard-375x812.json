@@ -1,0 +1,418 @@
+{
+  "at": "2026-10-25T17:32:39.999Z",
+  "url": "https://10.0.0.17:32516/access",
+  "steps": [
+    {
+      "key": "initial",
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Cancel",
+        "rect": {
+          "x": 32,
+          "y": 1037,
+          "width": 311,
+          "height": 32,
+          "top": 1037,
+          "right": 343,
+          "bottom": 1069,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 1,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Publish all policy changes",
+        "rect": {
+          "x": 32,
+          "y": 708,
+          "width": 311,
+          "height": 32,
+          "top": 708,
+          "right": 343,
+          "bottom": 740,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 2,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Cancel",
+        "rect": {
+          "x": 32,
+          "y": 748,
+          "width": 311,
+          "height": 32,
+          "top": 748,
+          "right": 343,
+          "bottom": 780,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 3,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Publish all policy changes",
+        "rect": {
+          "x": 32,
+          "y": 708,
+          "width": 311,
+          "height": 32,
+          "top": 708,
+          "right": 343,
+          "bottom": 740,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 4,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Cancel",
+        "rect": {
+          "x": 32,
+          "y": 748,
+          "width": 311,
+          "height": 32,
+          "top": 748,
+          "right": 343,
+          "bottom": 780,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 5,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Publish all policy changes",
+        "rect": {
+          "x": 32,
+          "y": 708,
+          "width": 311,
+          "height": 32,
+          "top": 708,
+          "right": 343,
+          "bottom": 740,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    },
+    {
+      "key": "Tab",
+      "step": 6,
+      "viewport": [
+        375,
+        812
+      ],
+      "active": {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "Cancel",
+        "rect": {
+          "x": 32,
+          "y": 748,
+          "width": 311,
+          "height": 32,
+          "top": 748,
+          "right": 343,
+          "bottom": 780,
+          "left": 32
+        }
+      },
+      "dialog": [
+        {
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 343,
+            "height": 780,
+            "top": 16,
+            "right": 359,
+            "bottom": 796,
+            "left": 16
+          },
+          "overflowY": "auto",
+          "scrollTop": 289,
+          "scrollHeight": 1069,
+          "clientHeight": 780
+        }
+      ],
+      "pre": [
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 728
+        },
+        {
+          "tabIndex": -1,
+          "explicitTabIndex": null,
+          "overflowY": "auto",
+          "scrollTop": 0,
+          "clientHeight": 254,
+          "scrollHeight": 408
+        }
+      ]
+    }
+  ]
+}

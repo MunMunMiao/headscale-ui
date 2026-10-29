@@ -1,0 +1,739 @@
+{
+  "candidates": [],
+  "decodeErrors": [],
+  "files": [
+    {
+      "file": "ux01/evidence/01-user-delete-protection.png",
+      "sha256": "633d9f8d7e9faeb02f68a0c8ee766dbc64bf0c811a2f2b2c800578c67a433cc5"
+    },
+    {
+      "file": "ux01/evidence/02-full-policy-review.png",
+      "sha256": "9c7085cab2dfbbdbbcd485b20fb74af2cf936be2e56261d6284a68703534ffc1"
+    },
+    {
+      "file": "ux01/evidence/03-published-stale-validation.png",
+      "sha256": "96f382c8ca5b7904e60b00ee3081e419a604d2d886f52a83fa93f3b5ce5755e4"
+    },
+    {
+      "file": "ux01/evidence/04-exit-approved.png",
+      "sha256": "2643e881e232956b6bbae8ef3034a2bb2d52458e8c796e4aec156f1e0cad28a4"
+    },
+    {
+      "file": "ux01/evidence/05-tag-conversion-guidance.png",
+      "sha256": "54631521e08f14a620ba02234d65775e64469660db4390ee6d42da2015e90472"
+    },
+    {
+      "file": "ux01/evidence/06-personal-recovery-readback.png",
+      "sha256": "506cf83e9716c2cf06bf88a0c614b08188388a9159ed759f5ca5feeb736380c5"
+    },
+    {
+      "file": "ux01/evidence/07-tag-retirement-check.png",
+      "sha256": "db1888b2b6a39759be55b361c42eb0446142ff6adc3ab120ebf1127a6a3b60d2"
+    },
+    {
+      "file": "ux01/evidence/08-mobile-users-dark.png",
+      "sha256": "a0857aae16561022f25c84f2b6201e46fba4513625adb8499b8d2b9362d21904"
+    },
+    {
+      "file": "ux01/evidence/09-mobile-375-users-dark.png",
+      "sha256": "33d334a721d840aebe95c58d017be87da8a9cb4d36c2d6014c272b7779674b5b"
+    },
+    {
+      "file": "ux01/evidence/10-mobile-users-complete.png",
+      "sha256": "ca4c157ecad8c9cd71e648ad581bdd41e2b1d98fd2134acab2a19e3befe2445a"
+    },
+    {
+      "file": "ux01/evidence/11-selected-tags-false-empty-state.png",
+      "sha256": "daa373dce0ab84c40d981e834826367d4084f268b8ec8b9b04bbf23d61afdc8f"
+    },
+    {
+      "file": "ux01/evidence/12-migration-target-set.png",
+      "sha256": "ad880c2734c6fda55f7468916bbeb4d10f48956a5e338379812acbcfb2431438"
+    },
+    {
+      "file": "ux01/evidence/13-migration-readonly-detail.png",
+      "sha256": "54288341c92ae806a569e297266f53ade0ad683cea718d9e1334074ae796dbf0"
+    },
+    {
+      "file": "ux01/evidence/14-migration-target-reset.png",
+      "sha256": "9cfa1d12c5ff06e952e8fe8e76e13ca20b0166bd3fcb54ad780388c2f65fdf45"
+    },
+    {
+      "file": "ux01/evidence/15-retirement-generic-blocker.png",
+      "sha256": "5e1598c6440a0f1c65dcc3773f52349b5e6bbb697872b9f978a07858c50ef2b6"
+    },
+    {
+      "file": "ux01/evidence/16-local-clear-scope.png",
+      "sha256": "58ca4e532968ef411e1324c5b6a9f0473ef14d30d3f3dfc92564efac23f6ad92"
+    },
+    {
+      "file": "ux01/evidence/17-cleared-other-tab-impossible-password-prompt.png",
+      "sha256": "01d29f405b7a734275661cc97a26841f2e188e5b1cbc86489c1bbb3eabef8e7d"
+    },
+    {
+      "file": "ux02/evidence/01-empty-overview.png",
+      "sha256": "c317f9ce338e4c99b3f781fa7cdf35ae69205c86e939274054ee1d84e1713f15"
+    },
+    {
+      "file": "ux02/evidence/02-team-overview.png",
+      "sha256": "670bd8387f9c0f5f3693e1b325132e72f5cb73c92a3c33f9c254fb86fce5f302"
+    },
+    {
+      "file": "ux02/evidence/03-user-delete-protection.png",
+      "sha256": "1da323b2550d25d938ab73e6bb7b043849349a34ed603a67e9a5d555f7e01ca6"
+    },
+    {
+      "file": "ux02/evidence/04-tag-retirement-blocked.png",
+      "sha256": "2bc1eaf48599d9350ea042d19c6400ec32660c03ce3fb55bf759a87ff6dac851"
+    },
+    {
+      "file": "ux02/evidence/05-scoped-rule-warning.png",
+      "sha256": "48fde1fd5c8ff517e8f0ef5f9fb29cab3f8c072866106e4b8124d4b9294136bc"
+    },
+    {
+      "file": "ux02/evidence/06-chinese-dark-overview.png",
+      "sha256": "c0bda247d1734b0274a6bdb4e363decea35a11c27e3a8410de4e8b92cd47de44"
+    },
+    {
+      "file": "ux02/evidence/07-filter-before-owner-drilldown.png",
+      "sha256": "77dc1af89054e320a1e1939b99a392b5e0a988c7d91111b5e97fe27ebf6896ef"
+    },
+    {
+      "file": "ux02/evidence/08-filter-lost-after-owner-drilldown.png",
+      "sha256": "9a59efde6653128738db1676fc5e0ed25d9c4dcb2ee82fe4b9a575b25efb0c5b"
+    },
+    {
+      "file": "ux02/evidence/09-team-retired-overview.png",
+      "sha256": "cf8c444519a8d2d50d78ed5387ac793e67935414d73fc95eb597b61d45e1526d"
+    },
+    {
+      "file": "ux02/evidence/10-local-profiles-cleared.png",
+      "sha256": "f28a175c30c4ed72c29d9ac601deba115aa57df4e533947d1ae089fc468f4bc4"
+    },
+    {
+      "file": "ux03/evidence/01-two-real-devices.png",
+      "sha256": "2f801fa2744e6541ceb204564ddfebc933e59c8e4c54b8fe3a0d914420f627c0"
+    },
+    {
+      "file": "ux03/evidence/02-user-delete-protection.png",
+      "sha256": "c62b222aa24bd3e969a9cbf9ea3cdea2574a83e961fe1933b12f1f2ebce1f990"
+    },
+    {
+      "file": "ux03/evidence/03-full-policy-review.png",
+      "sha256": "c65395c66424708c8fd1c198cd748a06ed44c0adaa95e1780f6bbbf731ddd0c9"
+    },
+    {
+      "file": "ux03/evidence/04-expired-machine-actions.png",
+      "sha256": "77212ac2ed7545e919dae336561578fe1d5c2aae8d933348b8214dbba99f362f"
+    },
+    {
+      "file": "ux03/evidence/05-tag-identity-transition-review.png",
+      "sha256": "7c40fdeb2c53fe7c550aa59ced0f777324193d578411e2e6fca865ab5bb27ca7"
+    },
+    {
+      "file": "ux03/evidence/06-approved-routes.png",
+      "sha256": "f665bdf003dd5af74b97e0dd1ffd6d609475e5827dc04aaf27f3bd741ea7ccf2"
+    },
+    {
+      "file": "ux03/evidence/07-explicit-deny-policy.png",
+      "sha256": "6975d5d37dd0eef6e7d2bf8fcd91eca45feeddaf91df9ab2f10d5158c28ab7ae"
+    },
+    {
+      "file": "ux03/evidence/08-tag-retirement-blocked.png",
+      "sha256": "57683bbd0fb1f82eda683d2b775adcf80e204d053ad9df085433ac537c5f546e"
+    },
+    {
+      "file": "ux03/evidence/09-migration-opens-details-not-editor.png",
+      "sha256": "d8b1558620eac77324ed5fd78a3b4a1586e2c22cf0c3cdbc525a1099c9344cfd"
+    },
+    {
+      "file": "ux03/evidence/10-manual-migration-target-set.png",
+      "sha256": "5f8025b3e4a0c129d7bf3e2acad21141fae84a5cd4dc39eafa0ba54f20e071d4"
+    },
+    {
+      "file": "ux03/evidence/11-personal-identity-restored.png",
+      "sha256": "18d3979447b74f2f3f776378015710906c77ea35bafc91f4810bef2d9a11888f"
+    },
+    {
+      "file": "ux03/evidence/12-chinese-dark-devices.png",
+      "sha256": "c03478aa080f4caf9261cbd5331169528ccba5945b92ef4a4126d05ab844c4f0"
+    },
+    {
+      "file": "ux03/evidence/13-shared-session-logged-out.png",
+      "sha256": "0d709c9a0e36b4aa5751a284b6f6c0e8449ecce3bf5deca8a12ff9a26929c6f1"
+    },
+    {
+      "file": "ux03/evidence/14-personal-client-identity-restored.png",
+      "sha256": "e31984975fe6a54106dd5fee3ebecced466b76902ff166133fc313ce37dd91cb"
+    },
+    {
+      "file": "ux03/evidence/15-clear-local-data-scope.png",
+      "sha256": "979fb9301864c2c9b765c5beb70830bf39f030a8a997e08a1335ea432e6109fd"
+    },
+    {
+      "file": "ux03/evidence/16-empty-tag-retirement-still-blocked.png",
+      "sha256": "9b5c9bdd27625d940ff9fa9443882382d3438328bc8e6899a2b7d4bfb3273630"
+    },
+    {
+      "file": "ux03/evidence/18-mobile-devices.png",
+      "sha256": "89b8c1808fd8851777b92e4ce3fd1f5ba2ff1b81e13eee0c2e9496a5e5806de2"
+    },
+    {
+      "file": "ux03/evidence/19-remove-machine-confirmation.png",
+      "sha256": "29eebd5537e796599e948036a5500ee730f3b64fdf3757ac47619d9b36baa56a"
+    },
+    {
+      "file": "ux03/evidence/20-migration-source-and-target.png",
+      "sha256": "a262ce974b1e6196e31592b0de3a123f2a4c06fec18d57557c6e3b2d7fd454d4"
+    },
+    {
+      "file": "ux03/evidence/21-migration-handoff-details-only.png",
+      "sha256": "cbc2da5a5454d9690a2334db90aea397379015ff26259737092ee43a50a6186c"
+    },
+    {
+      "file": "ux04/evidence/ux04-clear-local-profiles-scope.png",
+      "sha256": "9d6d1d75b0a8fe0f4fa6d4deaf01a06fc2c619232dc2b0381f9b1cbaaeca3f61"
+    },
+    {
+      "file": "ux04/evidence/ux04-delete-cleanup-review.png",
+      "sha256": "306595a96d2b8027fb98867855d0b4e6070623ab8bb0f6f62cf61a0be593667a"
+    },
+    {
+      "file": "ux04/evidence/ux04-duplicate-email-created-no-warning.png",
+      "sha256": "90dc09c6cdeb86bf59aceb9eb26d4aeccca418d7bd919bf9ce181f7c660e1e37"
+    },
+    {
+      "file": "ux04/evidence/ux04-duplicate-email-policy-rejected.png",
+      "sha256": "a279b43be835c60892f7196d13233cd7487f173f68ea63416ca36ef698d404a3"
+    },
+    {
+      "file": "ux04/evidence/ux04-duplicate-email-principal-fallback.png",
+      "sha256": "9995911b2ad42f85a2bce8dc3913a5ab60eb5bd19e80142cdfb3d520b77ca4d5"
+    },
+    {
+      "file": "ux04/evidence/ux04-duplicate-member.png",
+      "sha256": "655c6fd3b0615ed607aa031640d8da2039fd83c6f48a6e74cf23095cd1900a92"
+    },
+    {
+      "file": "ux04/evidence/ux04-final-no-local-profiles.png",
+      "sha256": "999fa1a42c202e5a0df7f9dbf2988f1b39b9baa2a522c1375de1054e3142319a"
+    },
+    {
+      "file": "ux04/evidence/ux04-management-key-expired-session-active.png",
+      "sha256": "09249c5744df0e2dcce4f33de6c63740e103e84dbc108ce563f9e02dee0ba86f"
+    },
+    {
+      "file": "ux04/evidence/ux04-member-delete-protection.png",
+      "sha256": "381656d4dbbf8751671951663d0e74c58bbe564c48e34350bcd9a7d3b1e28c09"
+    },
+    {
+      "file": "ux04/evidence/ux04-mobile-dark-devices.png",
+      "sha256": "673b43c8f7a745bcfd41d2ea88812bed128d96c7b5dc6cb30ca857f748a7b06b"
+    },
+    {
+      "file": "ux04/evidence/ux04-mobile-members-verified.png",
+      "sha256": "093881b0deb7ad7c60683a512ccd96d4ab3d41b977f2eeb69e32cd69244b2777"
+    },
+    {
+      "file": "ux04/evidence/ux04-noemail-rename-policy-review.png",
+      "sha256": "82055675fed90211e0f1a986395d844a5a1cdb427faf3be7841459a332f447dc"
+    },
+    {
+      "file": "ux04/evidence/ux04-policy-principal-review.png",
+      "sha256": "95ce8a84ea52b06ca6158c35c21248c74f07227f7303b5def52dd98feda475b5"
+    },
+    {
+      "file": "ux04/evidence/ux04-renamed-member-refs.png",
+      "sha256": "a5731c7dce2ce62bf088ff478bf0073fa32d3c123251b0b3fc4a0deed5b72b13"
+    },
+    {
+      "file": "ux04/evidence/ux04-restored-personal-result.png",
+      "sha256": "cee64d9704649625f6353cff3de0a7263a8f8097ea27fe2b40bad5341d85edbd"
+    },
+    {
+      "file": "ux04/evidence/ux04-tag-retirement-blocked.png",
+      "sha256": "a6edfead1514d379f789fd959d31fc87f70287e7cf8264c2bf44d5dd487ee082"
+    },
+    {
+      "file": "ux05/evidence/01-empty-overview.png",
+      "sha256": "1a2f14654713f8007cdcd50ac1458af3f3016ec540eedd4901cea8d6ae872ae9"
+    },
+    {
+      "file": "ux05/evidence/02-auth-key-defaults.png",
+      "sha256": "0c7f98f8aa70210f71b994f472051097e1993f60eca439b08c5152a356e344f9"
+    },
+    {
+      "file": "ux05/evidence/03-user-delete-protection.png",
+      "sha256": "148eba18916cdb82f8e37e6a50de69659a7a20271b12d9ef5aac3412adc47be9"
+    },
+    {
+      "file": "ux05/evidence/04-policy-publication-review.png",
+      "sha256": "b9050bdfb1d5d3ac82be0778d1f4db9d0cbeba54170834331909bfdbb90906f8"
+    },
+    {
+      "file": "ux05/evidence/05-complete-tags-review.png",
+      "sha256": "787cf17b4ffdb8bc82897d5769d220be67394117219a4c76596884d9c9598597"
+    },
+    {
+      "file": "ux05/evidence/06-routes-approved.png",
+      "sha256": "8f4b1fbac07b5ad17388c25a10a19f07a4bf0d70a1e2ffb3bcba6073e8f7859e"
+    },
+    {
+      "file": "ux05/evidence/07-migration-preserves-unrelated-tag.png",
+      "sha256": "76a5a346a71d1668deb37620adb0331af3477d6221e9c58a9e2ebc96cfb3c22d"
+    },
+    {
+      "file": "ux05/evidence/08-migration-lands-readonly-details.png",
+      "sha256": "7735fab7b0d7325d52e12aae95e281cb2522f45edc3ae98f74c2b05cee337914"
+    },
+    {
+      "file": "ux05/evidence/09-manual-migration-complete-set.png",
+      "sha256": "200ed049de712a0156cca6c3dd3b2be8575579baa609027138759d043f27742f"
+    },
+    {
+      "file": "ux05/evidence/10-retirement-blocked-by-policy-reference.png",
+      "sha256": "a564ac6c4354764892230cc5aa89b0bee1115f91b3170a36b44afac1db1dc8ca"
+    },
+    {
+      "file": "ux05/evidence/11-retirement-empty-but-blocked.png",
+      "sha256": "0d4d380f1f589eaed22517a5ae20506527961949219cbf69e1c97006c7636ea4"
+    },
+    {
+      "file": "ux05/evidence/12-backfill-scope-confirmation.png",
+      "sha256": "ccaa3f7f87932440de0d2ae6a121188401b6c97193a8cca58e788e928d12f3b5"
+    },
+    {
+      "file": "ux05/evidence/13-chinese-dark-overview.png",
+      "sha256": "572fd12b60f8ab7008767d6951285fbaf48f3b54ca5edbbe80ea5e8f05a86b8c"
+    },
+    {
+      "file": "ux05/evidence/14-personal-identity-restored-readback.png",
+      "sha256": "d25b45fc6dedeb7d8333718acb9fd9bb844c338992ec60f13afd4b29071d7907"
+    },
+    {
+      "file": "ux05/evidence/15-renamed-user-old-name-on-machines.png",
+      "sha256": "0605960f2bb81c3db335f64295d3a45f2e780f2aef8f2180047137d5e18c6120"
+    },
+    {
+      "file": "ux05/evidence/16-renamed-user-current-name-on-users.png",
+      "sha256": "4ee00d45b281e5dfcbe5782ef394a92ee76288e3d9846897ce01ea850253b140"
+    },
+    {
+      "file": "ux05/evidence/19-device-removed.png",
+      "sha256": "a224c0fc6c69d9db79ecf574cb0ab3a34c8db41ec770442fe30f26123b13c352"
+    },
+    {
+      "file": "ux05/evidence/21-clear-local-profiles-scope.png",
+      "sha256": "82e22b943993a9092116cb46c50a266ecb0354c0a8bf38d113d2fe8af290a771"
+    },
+    {
+      "file": "ux06/evidence/devices-real-clients.png",
+      "sha256": "7bc8401320b7c6f29681ba51367d4a58aff807f190b851f0cd5ed3d96934ba1a"
+    },
+    {
+      "file": "ux06/evidence/empty-tag-retirement-blocked.png",
+      "sha256": "a63e805d35aa4ced3bbe1de0d6e557d45cae20ff443c76744154672386886f7c"
+    },
+    {
+      "file": "ux06/evidence/local-profiles-cleared.png",
+      "sha256": "4785ec9403e4cda388b9739f9c6eb60371a933b42909f23f3486716defd1c04c"
+    },
+    {
+      "file": "ux06/evidence/overview-chinese-dark.png",
+      "sha256": "7012942f5fa3762ce11385de373c89511c05bbc5f860022366cd60c2fc80efa0"
+    },
+    {
+      "file": "ux06/evidence/personal-identity-restored.png",
+      "sha256": "455bf3ee49a80ec6ab66dc1c9c477a385892a37ec9f6cfeda7d2b8c3cb292b80"
+    },
+    {
+      "file": "ux06/evidence/policy-deny-review.png",
+      "sha256": "45ffffb373d03ed872da522a19bf4f1376c7f5fbbfbfce05ef1a9c0aff0a5d08"
+    },
+    {
+      "file": "ux06/evidence/policy-first-review.png",
+      "sha256": "a30acd11779772b49104fcd4acfc3576dc5d8e6626eff4912476e20d55d6c696"
+    },
+    {
+      "file": "ux06/evidence/policy-saved-stale-validation-copy.png",
+      "sha256": "51908bf876cb320737f53a1bec01e58a88eb5e7d7ca0eb3eaead1381817d54c1"
+    },
+    {
+      "file": "ux06/evidence/policy-stale-prepare-target.png",
+      "sha256": "028e4ad2a797432e5edd6d4906d91ff44f0749e0ee6e218de3ba29ca3de23528"
+    },
+    {
+      "file": "ux06/evidence/preferences-submenu.png",
+      "sha256": "21df75d80f5e156ecc2229a7f19e91d8448c140125c7ff8791b1f5700661d881"
+    },
+    {
+      "file": "ux06/evidence/tag-retirement-blocked.png",
+      "sha256": "7c6ff06230a2d127dcde2c6b32b38b925c26365712e41105ae5a53c6faca4eb2"
+    },
+    {
+      "file": "ux06/evidence/tag-set-preservation-review.png",
+      "sha256": "64df9c7532495b4ab2f11eea12b13ab0e7b7d6602559099a22f6f29d8ce71e6f"
+    },
+    {
+      "file": "ux06/evidence/user-delete-protection.png",
+      "sha256": "7934f1887d2b7ae2b7ba4823dd39fe3842855a5c9c4905bcf862ae2adb8d74ce"
+    },
+    {
+      "file": "ux07/evidence/clear-profiles-confirm.png",
+      "sha256": "7d32f850f7e5db243c584a7cdcd612d2dd0eb67f1769e900b43502f2b248fe2c"
+    },
+    {
+      "file": "ux07/evidence/cross-tab-logout.png",
+      "sha256": "f644fa4aa07f095cd1b705e1841b5f2eabe641a73509b957180d775792338615"
+    },
+    {
+      "file": "ux07/evidence/login-zh-dark.png",
+      "sha256": "1234f8448d8c886f0aa0a3dc7969a7ec8d81fe93798ad2ecd5ba30465de1e033"
+    },
+    {
+      "file": "ux07/evidence/machines-desktop.png",
+      "sha256": "c5e429717e5e9ab562c75099d0435cacae3f58debb150ae382a1b77331cb0e62"
+    },
+    {
+      "file": "ux07/evidence/machines-mobile.png",
+      "sha256": "db691f5c262a06c3e9df4627e34e6458a07be573c1789822e1db8aca499762f1"
+    },
+    {
+      "file": "ux07/evidence/maintenance-router-to-service.png",
+      "sha256": "2640e5e432c47f804b6e0522f9a0d23c94ab04986bfd21ff90780eea1866af37"
+    },
+    {
+      "file": "ux07/evidence/policy-publication-review.png",
+      "sha256": "2c0508132448fad1de2a726e2bab7359003b8d5ea26838d4f4849e3f4a6ef5b0"
+    },
+    {
+      "file": "ux07/evidence/restore-identity-readback.png",
+      "sha256": "adcde26967bf125efe9f1d2467712267b7ad4f298278ea62861d73f0ce6efb91"
+    },
+    {
+      "file": "ux07/evidence/routes-approved.png",
+      "sha256": "a32cf2e7b5649ce96632213f3e717a62627fab5482a4f4acb32edda2d4565380"
+    },
+    {
+      "file": "ux07/evidence/routes-pending.png",
+      "sha256": "4af8d7a41cdc8701bd69a62416e121783aa841e399c4b228606ec354475b4c31"
+    },
+    {
+      "file": "ux07/evidence/tag-preserve-review.png",
+      "sha256": "599c85b702ccbba1ab48093ba5c45bf9d248defe6677eb2624d282301578e7e0"
+    },
+    {
+      "file": "ux07/evidence/tag-retirement-check.png",
+      "sha256": "a98067b0897290733123c2fec4dc4e5ab4efc50affad36fe1c249776dfb57b84"
+    },
+    {
+      "file": "ux07/evidence/user-delete-protection.png",
+      "sha256": "3d584cdeef356cc2d5e133367860ce73180da32b6e30deec100fd27a123b3e36"
+    },
+    {
+      "file": "ux08/evidence/devices-chinese-dark-desktop.png",
+      "sha256": "a23f3033275754a1789a91db7de7f575cc6d04dddb46e1f45afc4a3c71ed1c32"
+    },
+    {
+      "file": "ux08/evidence/devices-chinese-dark-mobile.png",
+      "sha256": "6891f300e24f225506aa6d67495bd3c1c6004144b2da4d558dcc87b8e970c3cd"
+    },
+    {
+      "file": "ux08/evidence/policy-saved-stale-nothing-saved.png",
+      "sha256": "198e234d49325744abb8ac9270156653e5c9e9891ce3f501fe8249ffda2d6869"
+    },
+    {
+      "file": "ux08/evidence/restore-ambiguous-ownership.png",
+      "sha256": "747d405de7763bce94b93701236e729b55ad097baba5bc583018798af08ca984"
+    },
+    {
+      "file": "ux08/evidence/user-device-deletion-protection.png",
+      "sha256": "c0aee7bbb1968fede50b2e5fce67eaa7eee6e7632c2e3bf9b229da5c5de6b9be"
+    },
+    {
+      "file": "ux09/evidence/01-empty-overview.png",
+      "sha256": "b39fbc9db2a92187e29627a3383b8ae5325961742803068d127cdbd98392cc18"
+    },
+    {
+      "file": "ux09/evidence/02-user-delete-protected.png",
+      "sha256": "c57edcb078c0606a59fd015aa22ef7667b85971f1cd1e9e8374e81c68f913cbb"
+    },
+    {
+      "file": "ux09/evidence/03-policy-publish-review.png",
+      "sha256": "a957545bf6433801760a2d95932f775206be99f3787da0564c3f4cf878eb50ae"
+    },
+    {
+      "file": "ux09/evidence/04-stale-draft-blocked.png",
+      "sha256": "cd030bce54c45d01439e92478af9bbab586a3a946916d268ede620f2ce9c37f1"
+    },
+    {
+      "file": "ux09/evidence/05-tag-retirement-blocked.png",
+      "sha256": "f5bd6d59053ab89230b31a2fd7871fcab22cb92391b2483c2cfdead234c46867"
+    },
+    {
+      "file": "ux09/evidence/06-password-lock-discards-draft.png",
+      "sha256": "e1ea042c29d36f0dcbb9e4aca47496be32a63fae87b26e3d9399699d3804ba3b"
+    },
+    {
+      "file": "ux09/evidence/07-restore-baseline-loop.png",
+      "sha256": "40acaae7e77af2a9932df3eb9aa3916a1101321f7114709e60c4a004770c79aa"
+    },
+    {
+      "file": "ux09/evidence/08-personal-identity-readback.png",
+      "sha256": "b989c056d0c50d0dc21bdc6d6f932c038ff41049a454ad7e1f6922243683b62b"
+    },
+    {
+      "file": "ux09/evidence/09-chinese-dark-access.png",
+      "sha256": "8dc5b3d393c9ec02d62dd402e81cfdca05b6c7bcaf175679b7f4ba0451fd02ef"
+    },
+    {
+      "file": "ux09/evidence/10-filter-before-user-details.png",
+      "sha256": "1486591473aea225b29ada98f9b13d98a7865ef37af75c6690f8ea1ae5df15b2"
+    },
+    {
+      "file": "ux09/evidence/11-filter-lost-after-user-details.png",
+      "sha256": "f1e449365827f9b8c701d7982a7dc5d51b3da52a65ccac8b5da7ab9c4207e043"
+    },
+    {
+      "file": "ux09/evidence/12-local-clear-scope.png",
+      "sha256": "62ea15cb6f5f07661c91d99fcf5476bd9f8d56cd5946bce3b166ba072b0717ea"
+    },
+    {
+      "file": "ux09/evidence/13-local-clear-shared-session.png",
+      "sha256": "3f88df4aa844774bf78459ab4527b7b1c60abe519cc655854f40c504eb6a116e"
+    },
+    {
+      "file": "ux10/evidence/01-mobile-add-server.png",
+      "sha256": "0aee230b710244932337847b78d033057c09f0d7a9c2d1e6ee40dd55dedef177"
+    },
+    {
+      "file": "ux10/evidence/02-mobile-overview-empty.png",
+      "sha256": "9c809e6d1d84caf83424744529803dda1b03189689af71f6a1a7ad71d11f1ce2"
+    },
+    {
+      "file": "ux10/evidence/03-mobile-add-server-actual.png",
+      "sha256": "b091bcb94cbb5546bafb97b657970f5c066335df16e13b8504d35f269524563c"
+    },
+    {
+      "file": "ux10/evidence/04-clear-data-scope.png",
+      "sha256": "d5091df606023c4bfdb30d8b1a1b2b0b1e5848eb5ed04dc01d225579ae27034b"
+    },
+    {
+      "file": "ux10/evidence/05-mobile-auth-key-defaults.png",
+      "sha256": "568a4936f86d27af624709633e7f6db0ea0a9034540521cc0c7f26aef62623c2"
+    },
+    {
+      "file": "ux10/evidence/06-mobile-two-machines.png",
+      "sha256": "ee53062932dc097c5a61239074502bfe4602e955c4452e94994f1df18296a116"
+    },
+    {
+      "file": "ux10/evidence/07-mobile-routes-approved.png",
+      "sha256": "6964de9ab2ec3b7ba918c700764430717ffcee764a92c83ef92c780c65d4fd28"
+    },
+    {
+      "file": "ux10/evidence/08-mobile-tag-policy-dialog.png",
+      "sha256": "b1c02aeb9952df79ff84b2ee79ecfb6215dd47516bab4dcbd2b9487241f3fd04"
+    },
+    {
+      "file": "ux10/evidence/09-mobile-policy-review.png",
+      "sha256": "927aa5a0e15d96b52020e277fc2346acf2aaafba83c39d7a9ed8f3272be3abb3"
+    },
+    {
+      "file": "ux10/evidence/10-mobile-tag-empty-suggestions-copy.png",
+      "sha256": "52c7e13eca70defdbbf6bc8c324cd26dd85989b578d250a779e3578dd2e1af7c"
+    },
+    {
+      "file": "ux10/evidence/11-mobile-tag-retirement-blocked.png",
+      "sha256": "2e63bb74b7fb1e9e262fceca451fa36059d40acacb0ac75a72219b2666d714fd"
+    },
+    {
+      "file": "ux10/evidence/12-mobile-personal-identity-restored.png",
+      "sha256": "52e2bbd1a6ce20012853b073c29d15ac8dfb51d6ee2d249828ad5bdbe0f0febd"
+    },
+    {
+      "file": "ux10/evidence/13-mobile-backfill-confirmation.png",
+      "sha256": "b9ccb1c5af3e8d738361b6b784b48e811d33a02c6c8ab435abd06f3dc8a6dbee"
+    },
+    {
+      "file": "ux10/evidence/14-mobile-arabic-overview.png",
+      "sha256": "4ab7af2df88e7e046a24d579eee4c4d461acfef8a47fb99d24aa858bbb6b7a3c"
+    },
+    {
+      "file": "ux10/evidence/15-mobile-arabic-dark-machines.png",
+      "sha256": "19c8d154745a28ba9167e83416ab5e0c5a754b6575dc49313eee59b71a818ff3"
+    },
+    {
+      "file": "ux10/evidence/16-mobile-authkey-deletion-scope.png",
+      "sha256": "81afd4e03440194306e95fff0a0ce3ca0659ca639303ebe2e637596fcfd9730f"
+    },
+    {
+      "file": "ux10/evidence/17-mobile-offline.png",
+      "sha256": "5ec5e84bcbbcfeabfb6eb2914957026a1054339520cd7babf80ea958fd0a922f"
+    },
+    {
+      "file": "ux10/evidence/18-mobile-worker-offline.png",
+      "sha256": "fc07d1a463c263a524e60fb50974e281505b932db4428431d740f2f03691059f"
+    },
+    {
+      "file": "ux10/evidence/19-mobile-network-recovered.png",
+      "sha256": "b2ac546ad902b7d72cb106f34d30f75265bceb0c40a04e07c91476bd02159b8f"
+    },
+    {
+      "file": "ux10/evidence/20-mobile-table-keyboard-right.png",
+      "sha256": "086aeb7f6b15e6e06ded421e131c95fdb5f704ef9f227b0c22cb84f76a05419c"
+    },
+    {
+      "file": "ux10/evidence/21-desktop-light-machines.png",
+      "sha256": "1417bac90f370b2b67b536d8725c4ec83934e34a59cee456fa78d38ade8aeb99"
+    },
+    {
+      "file": "ux10/evidence/22-short-screen-date-picker.png",
+      "sha256": "132bb1c409396ec327b7682270774aef0b083f16ed5f018d4cfcd14e4b82961b"
+    },
+    {
+      "file": "ux10/evidence/23-mobile-user-delete-review.png",
+      "sha256": "976e65a5b931fa06e41775825daa4a37bf78e879af47fb57dc04977ec6054002"
+    },
+    {
+      "file": "ux10/evidence/24-final-cleared-profiles.png",
+      "sha256": "737ffad73d3cda78f1f05c8ef9f908f11a73dbe42235fb014d605041d7925496"
+    },
+    {
+      "file": "ux10/evidence/keyboard-1365x900.png",
+      "sha256": "0fe3566d32a65a35cd142501a37c1f44ae97ffc7a20c38de85d275c338dde024"
+    },
+    {
+      "file": "ux10/evidence/keyboard-375x812.png",
+      "sha256": "4df9f47b27250b7ec74ff0d9dcc869c80f1e4ed916374c43725a288f3c0c6adb"
+    },
+    {
+      "file": "ux10/evidence/keyboard-789x510.png",
+      "sha256": "6e841e94c28cda8176c9049c51be6d6e6532338b301a0ef27c7d0120885f3fff"
+    },
+    {
+      "file": "ux11/evidence/ux11-01-empty-overview.png",
+      "sha256": "362905f452e8ec1ed3f9b83e1ccdac7f2c8ffc4458cf57bb4d9d43a555360907"
+    },
+    {
+      "file": "ux11/evidence/ux11-02-full-policy-review.png",
+      "sha256": "345d743f2b6dfff4b0387e7d1b321280110a1ac0c1dd382bfc2b0bdeac850323"
+    },
+    {
+      "file": "ux11/evidence/ux11-03-restore-identity-guide.png",
+      "sha256": "b2e7fed59f45717a623c341319e2b588344236fafaaf920f9ad6d5f9bce1e332"
+    },
+    {
+      "file": "ux11/evidence/ux11-04-retirement-blocked-reference.png",
+      "sha256": "b187542de7f55c39f066490393b6d5948eec467784998b0838f217486094f98b"
+    },
+    {
+      "file": "ux11/evidence/ux11-05-local-language-dark.png",
+      "sha256": "d58bea5b76102865260e17df843e1ac98025639d4638ff7dbbfc7f7ab1225014"
+    },
+    {
+      "file": "ux11/evidence/ux11-06-duplicate-email-created.png",
+      "sha256": "f054c14f1107a5abfaef313f8c5b67e9a4fdb8c66567836f7385a3ddcf03a7ad"
+    },
+    {
+      "file": "ux11/evidence/ux11-07-ambiguous-principal-policy-error.png",
+      "sha256": "fee42c24993b0641b95d931feaead2cc816c2b6c3518459d3f13e8b51ef3df17"
+    },
+    {
+      "file": "ux11/evidence/ux11-08-real-ssh-approved.png",
+      "sha256": "99767b88eb28e925e49ee2c188df256f5f62a821f1c8234666b2f34ebf09a3c0"
+    },
+    {
+      "file": "ux11/evidence/ux11-09-real-ssh-rejected.png",
+      "sha256": "99767b88eb28e925e49ee2c188df256f5f62a821f1c8234666b2f34ebf09a3c0"
+    },
+    {
+      "file": "ux11/evidence/ux11-10-final-devices-desktop.png",
+      "sha256": "cf0a54b6b549a883313618b3c32e6567032d5ae911a2d0e4020a8afd3dc15620"
+    },
+    {
+      "file": "ux12/evidence/ux12-a-pending-delete-before-switch.png",
+      "sha256": "5dac8e12b1603a7607012ff9883d026c622bb0bfbd0f1fc3979c55e5849e0071"
+    },
+    {
+      "file": "ux12/evidence/ux12-clear-all-scope.png",
+      "sha256": "6220d2079e4baf85868283955d2447d03968905eac2b5e3eee3d0d0ff1b3b2fd"
+    },
+    {
+      "file": "ux12/evidence/ux12-draft-discard-on-lock.png",
+      "sha256": "bb604f4b9a7e0f1dd1e207d42b4486076ab6d5ec6ffea60f44fc269122858bac"
+    },
+    {
+      "file": "ux12/evidence/ux12-final-empty-profile-other-tab.png",
+      "sha256": "3f88df4aa844774bf78459ab4527b7b1c60abe519cc655854f40c504eb6a116e"
+    },
+    {
+      "file": "ux12/evidence/ux12-invalid-api-key-rejected.png",
+      "sha256": "ad6e3f7e62f03f81b724436fdb272ee5562f71e62bc634d7db3a31fb4300a980"
+    },
+    {
+      "file": "ux12/evidence/ux12-personal-identity-restored.png",
+      "sha256": "fef52b57760c07012d4f4509020114d6d4d944460407be3d7b9ad2c527a69480"
+    },
+    {
+      "file": "ux12/evidence/ux12-policy-review.png",
+      "sha256": "5369ae34f9935dd879fcfcf911fc5b069e3f609204b126a6fefbd3193fbdef69"
+    },
+    {
+      "file": "ux12/evidence/ux12-retirement-no-visible-dependency-blocked.png",
+      "sha256": "ec3514a7292eb9a8cca39c56dc629d4135386edaf3c03fc27d8d017941ba84c6"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-after-switch-no-stale-delete.png",
+      "sha256": "d3121c585d9800ade655f14e3257c2cc022d3cfaff3f643de021a6bed75b0980"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-delete-blocked-default.png",
+      "sha256": "02f78a28ff7ee1d82434107b0742ef1dfaaa7a0233ce882ba76fb169b72b7dbe"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-delete-workaround.png",
+      "sha256": "0ca11b0b788ed8a66f1b82dd4d92f265e015766f73e974a0a19d6a515777a426"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-device-mobile.png",
+      "sha256": "bbb9f9c55629b1ecd65f8268003bba72bb158e5068e093c55c4b01575af752d0"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-member-policy-restrictions.png",
+      "sha256": "a81ec53ebca7493a1d36521a60b7ad322dd039a5a1dfc87e36f01bd9bd1330dc"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-readonly-1280.png",
+      "sha256": "e2edf9d4cfe36267ccab0def7554e6c38d269837a79579655cfe04df4ebf903e"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-readonly-desktop.png",
+      "sha256": "7221d91943e6faa448c9604c976c5177571de0ab683617f1f57a3c1c4b82d468"
+    },
+    {
+      "file": "ux12/evidence/ux12-secondary-user1-filter.png",
+      "sha256": "8aaf43ddb1ff11e743ac18851ed42cbbaaa352e291396e847da22ec96e37ec18"
+    },
+    {
+      "file": "ux12/evidence/ux12-tag-migration-detail.png",
+      "sha256": "02189877395d08a129bec83bcac832d7827e527099e8c7c54ba5d7016edf333e"
+    },
+    {
+      "file": "ux12/evidence/ux12-tag-migration-preview.png",
+      "sha256": "829e4ff5cde22937b562fbb625f93150ea3a00f3d99c7338ad98c543922b6ae9"
+    },
+    {
+      "file": "ux12/evidence/ux12-unreachable-profile-error.png",
+      "sha256": "6a1b348ce789fda62653e6a7bde7610d3edddda64ee3aad67c875f48f92e50b2"
+    },
+    {
+      "file": "ux12/evidence/ux12-user-delete-protection.png",
+      "sha256": "e4bea3b9a0dd099e11f19ad7e48985007c2572c634a370006750caa1a6e0cdc0"
+    }
+  ],
+  "imagesScanned": 182,
+  "method": "local macOS Vision OCR; Headscale full-key format candidates only; not a proof against all possible secrets",
+  "textFilesCheckedBeforeFinalSummary": 109,
+  "fullKeyPatternCandidates": [],
+  "scopeNote": "本机文本格式扫描与截图OCR检查未发现完整Headscale key；不等于对任意秘密不存在的形式化证明。文件哈希用于确认OCR检查对象与最终截图一致。"
+}

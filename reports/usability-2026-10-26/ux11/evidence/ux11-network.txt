@@ -1,0 +1,1626 @@
+
+=== 2026-10-26T01:29:06.558453+08:00 default-no-policy ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.2:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:29:06 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:29:07 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=1
+STDOUT:
+
+STDERR:
+Error: loading ACL policy: rpc error: code = Unknown desc = loading ACL from database: acl policy not found
+command terminated with exit code 1
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:29:08.757875+08:00 routes-before-approval ===
+client-a/tailscale$ sh -c wget -T 5 -S -O - http://10.42.0.43:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+wget: can't connect to remote host (10.42.0.43): Connection refused
+command terminated with exit code 1
+
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://10.42.0.43:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 502 Bad Gateway
+wget: server returned error: HTTP/1.1 502 Bad Gateway
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://10.42.0.43:8081/
+exit=0
+STDOUT:
+ux11-subnet-target
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:29:10 GMT
+  Content-Type: text/html
+  Content-Length: 19
+  Last-Modified: Sun, 25 Oct 2026 17:18:12 GMT
+  Connection: close
+  ETag: "6ade39d4-13"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    19  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale nodes list-routes -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 2,
+		"machine_key": "[PUBLIC_KEY_REDACTED]",
+		"node_key": "[PUBLIC_KEY_REDACTED]",
+		"disco_key": "[PUBLIC_KEY_REDACTED]",
+		"ip_addresses": [
+			"100.64.0.2",
+			"fd7a:115c:a1e0::2"
+		],
+		"name": "ux11-client-b",
+		"user": {
+			"id": 2,
+			"name": "ux11-bob-renamed",
+			"created_at": {
+				"seconds": 1792949142,
+				"nanos": 700126253
+			},
+			"display_name": "UX11 Bob",
+			"email": "ux11-bob@example.com"
+		},
+		"last_seen": {
+			"seconds": 1792949250,
+			"nanos": 612823912
+		},
+		"pre_auth_key": {
+			"user": {
+				"id": 2,
+				"name": "ux11-bob-renamed",
+				"created_at": {
+					"seconds": 1792949142,
+					"nanos": 700126253
+				},
+				"display_name": "UX11 Bob",
+				"email": "ux11-bob@example.com"
+			},
+			"id": 2,
+			"key": "[CREDENTIAL_REDACTED]***",
+			"reusable": true,
+			"expiration": {
+				"seconds": 1793554020
+			},
+			"created_at": {
+				"seconds": 1792949240,
+				"nanos": 545191831
+			}
+		},
+		"created_at": {
+			"seconds": 1792949244,
+			"nanos": 650772612
+		},
+		"register_method": 1,
+		"given_name": "ux11-client-b",
+		"online": true,
+		"available_routes": [
+			"0.0.0.0/0",
+			"::/0",
+			"10.42.0.43/32"
+		]
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:29:22.541620+08:00 routes-approved ===
+client-a/tailscale$ sh -c wget -T 5 -S -O - http://10.42.0.43:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+wget: can't connect to remote host (10.42.0.43): Connection refused
+command terminated with exit code 1
+
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://10.42.0.43:8081/
+exit=0
+STDOUT:
+ux11-subnet-target
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 19
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:29:24 GMT
+  Etag: "6ade39d4-13"
+  Last-Modified: Sun, 25 Oct 2026 17:18:12 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    19  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://10.42.0.43:8081/
+exit=0
+STDOUT:
+ux11-subnet-target
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:29:24 GMT
+  Content-Type: text/html
+  Content-Length: 19
+  Last-Modified: Sun, 25 Oct 2026 17:18:12 GMT
+  Connection: close
+  ETag: "6ade39d4-13"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    19  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale nodes list-routes -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 2,
+		"machine_key": "[PUBLIC_KEY_REDACTED]",
+		"node_key": "[PUBLIC_KEY_REDACTED]",
+		"disco_key": "[PUBLIC_KEY_REDACTED]",
+		"ip_addresses": [
+			"100.64.0.2",
+			"fd7a:115c:a1e0::2"
+		],
+		"name": "ux11-client-b",
+		"user": {
+			"id": 2,
+			"name": "ux11-bob-renamed",
+			"created_at": {
+				"seconds": 1792949142,
+				"nanos": 700126253
+			},
+			"display_name": "UX11 Bob",
+			"email": "ux11-bob@example.com"
+		},
+		"last_seen": {
+			"seconds": 1792949250,
+			"nanos": 612823912
+		},
+		"pre_auth_key": {
+			"user": {
+				"id": 2,
+				"name": "ux11-bob-renamed",
+				"created_at": {
+					"seconds": 1792949142,
+					"nanos": 700126253
+				},
+				"display_name": "UX11 Bob",
+				"email": "ux11-bob@example.com"
+			},
+			"id": 2,
+			"key": "[CREDENTIAL_REDACTED]***",
+			"reusable": true,
+			"expiration": {
+				"seconds": 1793554020
+			},
+			"created_at": {
+				"seconds": 1792949240,
+				"nanos": 545191831
+			}
+		},
+		"created_at": {
+			"seconds": 1792949244,
+			"nanos": 650772612
+		},
+		"register_method": 1,
+		"given_name": "ux11-client-b",
+		"online": true,
+		"approved_routes": [
+			"10.42.0.43/32"
+		],
+		"available_routes": [
+			"0.0.0.0/0",
+			"::/0",
+			"10.42.0.43/32"
+		],
+		"subnet_routes": [
+			"10.42.0.43/32"
+		]
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:29:39.741396+08:00 exit-approved-selected ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://10.43.253.39:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://10.43.253.39:8081/
+exit=0
+STDOUT:
+ux11-subnet-target
+
+STDERR:
+Connecting to 10.43.253.39:8081 (10.43.253.39:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:29:47 GMT
+  Content-Type: text/html
+  Content-Length: 19
+  Last-Modified: Sun, 25 Oct 2026 17:18:12 GMT
+  Connection: close
+  ETag: "6ade39d4-13"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    19  0:00:00 ETA
+written to stdout
+
+
+=== 2026-10-26T01:30:16.077483+08:00 routes-revoked ===
+client-a/tailscale$ sh -c wget -T 5 -S -O - http://10.42.0.43:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+wget: can't connect to remote host (10.42.0.43): Connection refused
+command terminated with exit code 1
+
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://10.42.0.43:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://10.42.0.43:8081/
+exit=0
+STDOUT:
+ux11-subnet-target
+
+STDERR:
+Connecting to 10.42.0.43:8081 (10.42.0.43:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:30:24 GMT
+  Content-Type: text/html
+  Content-Length: 19
+  Last-Modified: Sun, 25 Oct 2026 17:18:12 GMT
+  Connection: close
+  ETag: "6ade39d4-13"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    19  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale nodes list-routes -o json
+exit=0
+STDOUT:
+[
+  {
+    "id": 2,
+    "name": "ux11-client-b",
+    "given_name": "ux11-client-b",
+    "online": true,
+    "available_routes": [
+      "0.0.0.0/0",
+      "::/0",
+      "10.42.0.43/32"
+    ]
+  }
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:42:56.169815+08:00 peer-new-ip-before-restrict ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:42:56 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:42:56 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "0.0.0.0/0",
+        "::/0"
+      ],
+      "dst": [
+        "0.0.0.0/0:*"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "0.0.0.0/0",
+        "::/0"
+      ],
+      "dst": [
+        "::/0:*"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:43:40.200119+08:00 peer-restricted-negative ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:43:47 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:44:00.922917+08:00 email-group-single-principal-positive ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:44:01 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:44:01 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:44:15.691989+08:00 email-duplicate-created-attempt1 ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:44:23 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	},
+	{
+		"id": 4,
+		"name": "ux11-alice-duplicate",
+		"created_at": {
+			"seconds": 1792950244,
+			"nanos": 389744858
+		},
+		"display_name": "UX11 Duplicate",
+		"email": "ux11-alice@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:44:24.068644+08:00 email-duplicate-created-attempt2 ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:44:31 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	},
+	{
+		"id": 4,
+		"name": "ux11-alice-duplicate",
+		"created_at": {
+			"seconds": 1792950244,
+			"nanos": 389744858
+		},
+		"display_name": "UX11 Duplicate",
+		"email": "ux11-alice@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:44:45.806244+08:00 email-duplicate-deleted-recovery1 ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:44:46 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:44:46 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:44:47.227235+08:00 email-duplicate-deleted-recovery2 ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:44:47 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:44:47 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:45:31.770459+08:00 unrelated-email-create-control ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:45:32 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:45:32 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+policy_stdout_sha256=5a050ae0a3d4f08b9f4cabdaeaa5fc54bb24c4445cdb72d600b28b0c4d839f9b
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	},
+	{
+		"id": 5,
+		"name": "ux11-unrelated",
+		"created_at": {
+			"seconds": 1792950330,
+			"nanos": 494588292
+		},
+		"display_name": "UX11 Unrelated",
+		"email": "ux11-unrelated@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:45:37.388035+08:00 unrelated-email-delete-control ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:45:37 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:45:37 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+policy_stdout_sha256=5a050ae0a3d4f08b9f4cabdaeaa5fc54bb24c4445cdb72d600b28b0c4d839f9b
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:45:53.568521+08:00 email-duplicate-second-cycle-created ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=1
+STDOUT:
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+wget: download timed out
+command terminated with exit code 1
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:46:01 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+policy_stdout_sha256=5a050ae0a3d4f08b9f4cabdaeaa5fc54bb24c4445cdb72d600b28b0c4d839f9b
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	},
+	{
+		"id": 6,
+		"name": "ux11-alice-duplicate2",
+		"created_at": {
+			"seconds": 1792950351,
+			"nanos": 299516569
+		},
+		"display_name": "UX11 Duplicate2",
+		"email": "ux11-alice@example.com"
+	}
+]
+
+STDERR:
+
+
+=== 2026-10-26T01:46:28.302002+08:00 email-duplicate-second-cycle-deleted ===
+client-a/tailscale$ sh -c http_proxy=http://127.0.0.1:1056 wget -T 7 -S -O - http://100.64.0.3:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:1056 (127.0.0.1:1056)
+  HTTP/1.1 200 OK
+  Accept-Ranges: bytes
+  Content-Length: 14
+  Content-Type: text/html
+  Date: Sun, 25 Oct 2026 17:46:28 GMT
+  Etag: "6ade39d5-e"
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Server: nginx/1.30.5
+  Connection: close
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+client-b/tailscale$ sh -c wget -T 4 -S -O - http://127.0.0.1:8081/
+exit=0
+STDOUT:
+ux11-client-b
+
+STDERR:
+Connecting to 127.0.0.1:8081 (127.0.0.1:8081)
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  Date: Sun, 25 Oct 2026 17:46:28 GMT
+  Content-Type: text/html
+  Content-Length: 14
+  Last-Modified: Sun, 25 Oct 2026 17:18:13 GMT
+  Connection: close
+  ETag: "6ade39d5-e"
+  Accept-Ranges: bytes
+  
+writing to stdout
+-                    100% |********************************|    14  0:00:00 ETA
+written to stdout
+
+control/headscale$ headscale policy get
+exit=0
+policy_stdout_sha256=5a050ae0a3d4f08b9f4cabdaeaa5fc54bb24c4445cdb72d600b28b0c4d839f9b
+STDOUT:
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+
+STDERR:
+
+control/headscale$ headscale users list -o json
+exit=0
+STDOUT:
+[
+	{
+		"id": 1,
+		"name": "ux11-alice",
+		"created_at": {
+			"seconds": 1792949130,
+			"nanos": 95315938
+		},
+		"display_name": "UX11 Alice",
+		"email": "ux11-alice@example.com"
+	},
+	{
+		"id": 2,
+		"name": "ux11-bob-renamed",
+		"created_at": {
+			"seconds": 1792949142,
+			"nanos": 700126253
+		},
+		"display_name": "UX11 Bob",
+		"email": "ux11-bob@example.com"
+	}
+]
+
+STDERR:
+

@@ -1,0 +1,43 @@
+{
+  "verifiedAt": "2026-10-26T02:54:57.861852+08:00",
+  "revision": "4d21dd98c97055ba8e77aa9e2e42659d82478de5",
+  "memberReports": 12,
+  "deduplicatedGroups": 27,
+  "uniqueSourceItems": 54,
+  "jsonFilesParsed": 70,
+  "jsonlRecordsParsed": 1205,
+  "localMarkdownLinksChecked": 294,
+  "brokenLocalLinks": [],
+  "fullHeadscaleKeyPatternCandidates": [],
+  "screenshotsOCRAndHashMatched": 182,
+  "duplicateEmailEvidenceAssertions": "PASS",
+  "realPublicExitEvidenceAssertions": "PASS",
+  "twoBackendCredentialRoutingAssertions": "PASS (1160 known A/B credential requests, 0 origin mismatches)",
+  "realSSHDecisionMarkers": "approved/denied present; remote command not permitted, not marked shell success",
+  "remainingOwnedNamespaces": 0,
+  "remainingOwnedObjects": 0,
+  "remainingOwnedChromeProcesses": 0,
+  "remainingCDPListeners": [],
+  "temporaryRunDirectoryExists": false,
+  "trackedFilesOutsideReportsChanged": false,
+  "gitStatus": "?? reports/",
+  "reportHashes": {
+    "ux01": "e9cdda4e41f1190626194951095075d094ea661c37ec350a31441b357531a846",
+    "ux02": "b47f3499ee6f2c61b3dc8287da05bb94c85a347a3983fd460646e6efd84547d2",
+    "ux03": "a30a55f8d23bd46d593a8967e796ca30fffa3d284d989b2d9f922d894ae7a5f9",
+    "ux04": "32c331758819c4aee76ebe4cf9a7ff056987fc212442d86bb0acafbb73f13c2c",
+    "ux05": "cf8add507bad0da057d019ce991a0d15b687602edfafd465929deb91ebd7d059",
+    "ux06": "c427ee2efaaed7f49dae6b28c583e76d81710e06cb1f4e386574fefbcf140745",
+    "ux07": "15ffc7e911541ba78ee2232df2937b7fea861541a47da6431fc874047696ae02",
+    "ux08": "e13794f2cca9dee68758d50a83d518915711e0e1dc2c89fc2fa39c68e4818b17",
+    "ux09": "ce4bf12ff7565b1a46a8b2b875e71530213e84970f2759f6da292a32061da9fd",
+    "ux10": "e0a5f9416f1e942e551cd65d2eddfdf6071ec08c47aed257655cecfc427ab09b",
+    "ux11": "079e350c6ffe1e8c874e05333b7114159dbb0e27a58c5ba45eb91cda67478a6c",
+    "ux12": "9b508c3f0cfeb752ed76a09453ee9cdf77d53f9159692529c2ed97fb0b20d93c"
+  },
+  "limits": [
+    "本次验证的是报告、既有实验记录与清理状态，不是重新启动全部用户场景。",
+    "文本格式和截图OCR检查不等于任意秘密不存在的形式化证明。",
+    "全仓verify未运行；没有宣称单元测试、lint、所有E2E通过。"
+  ]
+}

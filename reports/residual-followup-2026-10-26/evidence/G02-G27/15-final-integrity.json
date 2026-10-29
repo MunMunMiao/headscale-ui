@@ -1,0 +1,124 @@
+{
+  "logs": [
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/01-component-red.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/02-hook-red.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/03-calibrated-component-red.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/04-component-green.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/05-hook-green.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/06-format.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/07-scoped-browser-green.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/08-real-green.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/10-typecheck.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/11-scoped-lint.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/evidence/G02-G27/12-final-diff-check.log",
+      "counts": {
+        "auth_request": 0,
+        "full_auth_key": 0,
+        "bearer_value": 0,
+        "private_key": 0
+      }
+    }
+  ],
+  "frozenSourceUnchanged": true,
+  "permissionChecks": {
+    "directory": "0o700",
+    "filesRestricted": true
+  },
+  "realLaneFailureScreenshots": {
+    "runStartedAt": "2026-10-26T18:20:58+08:00",
+    "preExisting": [
+      {
+        "path": "/Users/munmunmiao/Documents/web/headscale-ui/.vitest/attachments/failure-screenshots/tag-lifecycle.browser.test.tsx/G02-real-recovery-changed-tags--replace-tags--reauthenticate-from-the-same-editor-and-approve-only-the-reviewed-baseline.png",
+        "modifiedAt": "2026-10-26T13:08:19.249550+08:00",
+        "predatesRun": true
+      },
+      {
+        "path": "/Users/munmunmiao/Documents/web/headscale-ui/.vitest/attachments/failure-screenshots/tag-lifecycle.browser.test.tsx/G02-real-recovery-control--replace-tags--reauthenticate-from-the-same-editor-and-approve-only-the-reviewed-baseline.png",
+        "modifiedAt": "2026-10-26T13:08:03.241855+08:00",
+        "predatesRun": true
+      }
+    ],
+    "new": []
+  }
+}

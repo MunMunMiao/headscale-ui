@@ -1,82 +1,180 @@
-import { createRouter, createWebHistory, type RouteRecordRaw, type Router } from "vue-router";
-import { useMasterPassword } from "@/composables/useMasterPassword";
-import { profileStorage as storage } from "@/lib/profile-storage";
+import {
+  createRootRouteWithContext,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  Outlet,
+  type RouterHistory,
+  redirect,
+} from "@tanstack/react-router";
+import { createElement } from "react";
+import ErrorScreen from "@/components/ErrorScreen";
+import type { Session } from "@/composables/session-context";
+import { useSessionRestore } from "@/composables/useSessionRestore";
+import { parseSearch, stringifySearch } from "./search";
 
-export const routes: RouteRecordRaw[] = [
-  {
-    path: "/unlock",
-    name: "unlock",
-    component: () => import("@/components/UnlockOverlay.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/login",
-    name: "login",
-    component: () => import("@/pages/LoginPage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/",
-    component: () => import("@/pages/AppLayout.vue"),
-    meta: { requiresAuth: true },
-    children: [
-      { path: "", redirect: { name: "home" } },
-      { path: "home", name: "home", component: () => import("@/pages/HomePage.vue") },
-      { path: "devices", name: "devices", component: () => import("@/pages/DevicesPage.vue") },
-      { path: "members", name: "members", component: () => import("@/pages/MembersPage.vue") },
-      { path: "invites", name: "invites", component: () => import("@/pages/InvitesPage.vue") },
-      { path: "routes", name: "routes", component: () => import("@/pages/RoutesPage.vue") },
-      { path: "access", name: "access", component: () => import("@/pages/AccessPage.vue") },
-    ],
-  },
-  {
-    path: "/:profileId/:group(home|devices|members|invites|routes|access)?",
-    redirect: (to) => ({
-      path: `/${to.params.group || "home"}`,
-      query: { profile: to.params.profileId as string },
-    }),
-  },
-  { path: "/:pathMatch(.*)*", redirect: "/login" },
-];
-
-export function installAuthGuard(target: Router) {
-  target.beforeEach((to) => {
-    // Passphrase gate runs ahead of auth — a locked vault means no profile can decrypt.
-    const mp = useMasterPassword();
-    if (mp.needsUnlock.value && to.name !== "unlock") {
-      return {
-        name: "unlock",
-        query: { redirect: to.fullPath },
-      };
-    }
-    if (to.name === "unlock" && !mp.needsUnlock.value) {
-      const redirect = typeof to.query.redirect === "string" ? to.query.redirect : "/";
-      return redirect;
-    }
-
-    if (to.meta.requiresAuth === false) return true;
-
-    const hasSession = storage.readActiveProfile() !== null && storage.hasAnyProfile();
-    if (!hasSession) {
-      return {
-        name: "login",
-        query: to.query.profile ? { profile: to.query.profile as string } : undefined,
-      };
-    }
-
-    const requestedProfile = typeof to.query.profile === "string" ? to.query.profile : null;
-    if (requestedProfile && !storage.hasProfile(requestedProfile)) {
-      storage.clearActiveProfile();
-      return { name: "login", query: { profile: requestedProfile } };
-    }
-
-    return true;
-  });
+declare module "@tanstack/react-router" {
+  interface StaticDataRouteOption {
+    requiresAuth?: boolean;
+  }
 }
 
-export const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-});
+const protectedPaths = new Set([
+  "/",
+  "/home",
+  "/devices",
+  "/members",
+  "/invites",
+  "/routes",
+  "/access",
+]);
+interface Location {
+  pathname: string;
+  href: string;
+  search: Record<string, unknown>;
+}
+export function guardRoute(
+  session: Pick<Session, "auth">,
+  location: Location,
+): void {
+  const pathname = location.pathname.replace(/\/+$/, "").toLowerCase() || "/";
+  const requested =
+    typeof location.search.profile === "string"
+      ? location.search.profile
+      : null;
+  const current = session.auth.getSessionSnapshot();
+  if (
+    pathname === "/unlock" ||
+    (protectedPaths.has(pathname) &&
+      (session.auth.getSnapshot().status !== "ready-unlocked" ||
+        current?.status !== "unlocked" ||
+        (requested && current.profile?.id !== requested)))
+  )
+    throw redirect({
+      to: "/login",
+      search: {
+        ...(requested ? { profile: requested } : {}),
+        ...(pathname === "/unlock"
+          ? location.search
+          : { redirect: location.href }),
+      },
+      replace: true,
+    });
+}
 
-installAuthGuard(router);
+function ApplicationRoot() {
+  useSessionRestore();
+  return createElement(Outlet);
+}
+
+export function createApplicationRouter(
+  session: Session,
+  history?: RouterHistory,
+) {
+  const root = createRootRouteWithContext<{ session: Session }>()({
+    component: ApplicationRoot,
+    validateSearch: (search: Record<string, unknown>) => search,
+    beforeLoad: ({ context, location }) =>
+      guardRoute(context.session, location),
+  });
+  const login = createRoute({
+    getParentRoute: () => root,
+    path: "/login",
+    component: lazyRouteComponent(() => import("@/pages/LoginPage")),
+  });
+  const unlock = createRoute({
+    getParentRoute: () => root,
+    path: "/unlock",
+  });
+  const layout = createRoute({
+    getParentRoute: () => root,
+    id: "authenticated",
+    staticData: { requiresAuth: true },
+    component: lazyRouteComponent(() => import("@/pages/AppLayout")),
+  });
+  const index = createRoute({
+    getParentRoute: () => layout,
+    path: "/",
+    beforeLoad: () => {
+      throw redirect({ to: "/home", search: true, hash: true, replace: true });
+    },
+  });
+  const pages = [
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/home",
+      component: lazyRouteComponent(() => import("@/pages/HomePage")),
+    }),
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/devices",
+      component: lazyRouteComponent(() => import("@/pages/DevicesPage")),
+    }),
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/members",
+      component: lazyRouteComponent(() => import("@/pages/MembersPage")),
+    }),
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/invites",
+      component: lazyRouteComponent(() => import("@/pages/InvitesPage")),
+    }),
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/routes",
+      component: lazyRouteComponent(() => import("@/pages/RoutesPage")),
+    }),
+    createRoute({
+      getParentRoute: () => layout,
+      path: "/access",
+      component: lazyRouteComponent(() => import("@/pages/AccessPage")),
+    }),
+  ];
+  const legacy = createRoute({
+    getParentRoute: () => root,
+    path: "/$profileId",
+    beforeLoad: ({ params }) => {
+      throw redirect({
+        to: "/home",
+        search: { profile: params.profileId },
+        replace: true,
+      });
+    },
+  });
+  const legacyGroup = createRoute({
+    getParentRoute: () => root,
+    path: "/$profileId/$group",
+    beforeLoad: ({ params }) => {
+      const target = `/${params.group}`;
+      throw redirect({
+        to: protectedPaths.has(target) ? target : "/login",
+        search: protectedPaths.has(target) ? { profile: params.profileId } : {},
+        replace: true,
+      });
+    },
+  });
+  const unknown = createRoute({
+    getParentRoute: () => root,
+    path: "/$",
+    beforeLoad: () => {
+      throw redirect({ to: "/login", replace: true });
+    },
+  });
+  return createRouter({
+    routeTree: root.addChildren([
+      login,
+      unlock,
+      layout.addChildren([index, ...pages]),
+      legacy,
+      legacyGroup,
+      unknown,
+    ]),
+    context: { session },
+    defaultErrorComponent: ErrorScreen,
+    history,
+    basepath: import.meta.env.BASE_URL,
+    parseSearch,
+    stringifySearch,
+  });
+}

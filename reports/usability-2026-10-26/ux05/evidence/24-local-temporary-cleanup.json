@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-26T01:18:50.038231+08:00",
+  "removed_only_member_created_temporary_files": [
+    "ux05-capture.mjs",
+    "ux05-password.mjs",
+    "ux05-approve.mjs",
+    "ux05-new-password.json",
+    "ux05-auth-request.json",
+    "ux05-ux05-a.key",
+    "ux05-a.key",
+    "ux05-b.key",
+    "ux05-old.key",
+    "ux05-new.key"
+  ],
+  "remaining_requested_targets": [],
+  "allocated_ux05_json_not_touched": true,
+  "namespace_and_chrome_cleanup": "pending coordinator",
+  "ui_actions_saved": 177
+}

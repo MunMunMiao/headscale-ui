@@ -1,0 +1,480 @@
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/pages/InvitesPage.tsx
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.tsx
+@@ -806,7 +806,7 @@
+               {copy.keyOneTimeNotice}
+             </p>
+             {actionOutcome("create-invite")?.status === "confirmed" &&
+-              (segmentStatus.identity !== "ready" ||
++              (segmentStatus.identity === "error" ||
+                 Boolean(refreshErrors.identity)) && (
+                 <p
+                   data-testid="invite-created-refresh-failed"
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/composables/useCreatePreAuthKey.ts
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.ts
+@@ -80,7 +80,7 @@
+       // The key inventory is the identity segment; an unrelated fabric or policy failure
+       // must not be reported as an inventory read failure.
+       const identityReadFailed =
+-        state.segmentStatus.identity !== "ready" ||
++        state.segmentStatus.identity === "error" ||
+         Boolean(state.refreshErrors.identity);
+       if (
+         tagLifecycle.isCurrent(scope) &&
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/pages/DevicesPage.tsx
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.tsx
+@@ -254,7 +254,7 @@
+     useSegment("fabric", "identity");
+   const snapshotState = useStore(session.snapshot);
+   const identityInventoryFailed =
+-    snapshotState.segmentStatus.identity !== "ready" ||
++    snapshotState.segmentStatus.identity === "error" ||
+     Boolean(snapshotState.refreshErrors.identity);
+   const { settings } = useHeadscaleClient();
+   const { actionError, actionOutcome, clearActionFeedback, isActionPending } =
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/pages/InvitesPage.lifecycle.browser.test.tsx
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.lifecycle.browser.test.tsx
+@@ -1217,6 +1217,102 @@
+   },
+ );
+ 
++test("G27: a successful creation followed by a slow inventory read is unverified, not failed", async () => {
++  const ctx = await setup();
++  await open("invites");
++  await page.getByTestId("create-invite").click();
++  await expect
++    .element(page.getByTestId("invite-create-dialog"))
++    .not.toBeInTheDocument();
++  expect(ctx.session.feedback.actionOutcome("create-invite")).toMatchObject({
++    status: "confirmed",
++    refresh: "succeeded",
++  });
++  const secret = ctx.session.deviceSetup.getSnapshot().lastCreatedInvite;
++  const copied = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
++  const read = Promise.withResolvers<void>();
++  ctx.holdRead(read.promise);
++  try {
++    await page.getByTestId("refresh-auth-keys").click();
++    await expect
++      .poll(() => ctx.session.snapshot.getSnapshot().segmentStatus.identity)
++      .toBe("loading");
++    expect(
++      ctx.session.snapshot.getSnapshot().refreshErrors.identity,
++    ).toBeUndefined();
++    await expect
++      .element(page.getByTestId("created-invite-status"))
++      .toMatchTextContent("not verified");
++    await expect.element(page.getByTestId("refresh-auth-keys")).toBeDisabled();
++    await expect.element(page.getByTestId("copy-created-invite")).toBeEnabled();
++    await page.getByTestId("copy-created-invite").click();
++    expect(copied.mock.calls.some(([value]) => value === secret)).toBe(true);
++    expect(
++      ctx.session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++    ).toBe(true);
++    expect(ctx.writes).toHaveLength(1);
++    await expect
++      .element(page.getByTestId("invite-created-refresh-failed"))
++      .not.toBeInTheDocument();
++  } finally {
++    ctx.holdRead(undefined);
++    read.resolve();
++  }
++  await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
++  await expect
++    .element(page.getByTestId("created-invite-status"))
++    .not.toBeInTheDocument();
++  await expect
++    .element(page.getByTestId("invite-created-refresh-failed"))
++    .not.toBeInTheDocument();
++  expect(ctx.writes).toHaveLength(1);
++  expect(
++    ctx.session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++  ).toBe(true);
++});
++
++test("G27: retrying a failed inventory read retains its known warning until a successful read", async () => {
++  const ctx = await setup();
++  ctx.failAfterCreate("/api/v1/preauthkey");
++  await open("invites");
++  await page.getByTestId("create-invite").click();
++  await expect
++    .element(page.getByTestId("invite-created-refresh-failed"))
++    .toBeVisible();
++  const secret = ctx.session.deviceSetup.getSnapshot().lastCreatedInvite;
++  ctx.failRead("");
++  const read = Promise.withResolvers<void>();
++  ctx.holdRead(read.promise);
++  try {
++    await page.getByTestId("invite-refresh-devices").click();
++    await expect
++      .poll(() => ctx.session.snapshot.getSnapshot().segmentStatus.identity)
++      .toBe("loading");
++    expect(
++      ctx.session.snapshot.getSnapshot().refreshErrors.identity,
++    ).toBeTruthy();
++    await expect
++      .element(page.getByTestId("invite-created-refresh-failed"))
++      .toBeVisible();
++    await expect.element(page.getByTestId("copy-created-invite")).toBeEnabled();
++    expect(ctx.writes).toHaveLength(1);
++  } finally {
++    ctx.holdRead(undefined);
++    read.resolve();
++  }
++  await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
++  expect(
++    ctx.session.snapshot.getSnapshot().refreshErrors.identity,
++  ).toBeUndefined();
++  await expect
++    .element(page.getByTestId("invite-created-refresh-failed"))
++    .not.toBeInTheDocument();
++  expect(
++    ctx.session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++  ).toBe(true);
++  expect(ctx.writes).toHaveLength(1);
++});
++
+ test("confirmed creation with a failed refresh keeps the secret and explains that no device has joined", async () => {
+   const ctx = await setup();
+   ctx.failAfterCreate("/api/v1/preauthkey");
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/pages/DevicesPage.fixes.browser.test.tsx
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.fixes.browser.test.tsx
+@@ -327,6 +327,44 @@
+   );
+ }
+ 
++test("G27: a slow setup inventory refresh keeps the created key usable without claiming failure", async () => {
++  const ctx = await setup();
++  await generateKey("server");
++  const secret = ctx.session.deviceSetup.getSnapshot().lastCreatedInvite;
++  const copied = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
++  const release = ctx.holdReads();
++  try {
++    await page.getByTestId("setup-refresh-devices").click();
++    await expect
++      .poll(() => ctx.session.snapshot.getSnapshot().segmentStatus.identity)
++      .toBe("loading");
++    expect(
++      ctx.session.snapshot.getSnapshot().refreshErrors.identity,
++    ).toBeUndefined();
++    await expect
++      .element(page.getByTestId("copy-setup-install-command"))
++      .toBeEnabled();
++    await page.getByTestId("copy-setup-install-command").click();
++    expect(copied.mock.calls.some(([value]) => value.includes(secret))).toBe(
++      true,
++    );
++    expect(
++      ctx.session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++    ).toBe(true);
++    expect(keyWrites(ctx)).toHaveLength(1);
++    await expect
++      .element(page.getByTestId("setup-created-refresh-failed"))
++      .not.toBeInTheDocument();
++  } finally {
++    release();
++  }
++  await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
++  expect(
++    ctx.session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++  ).toBe(true);
++  expect(keyWrites(ctx)).toHaveLength(1);
++});
++
+ test("a confirmed setup key whose inventory read fails keeps the explanation on the created card", async () => {
+   const ctx = await setup();
+   const add = vi.spyOn(ctx.session.feedback.toastManager, "add");
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/src/composables/useCreatePreAuthKey.test.ts
++++ /Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.test.ts
+@@ -580,8 +580,11 @@
+     expect(ctx.feedback.actionOutcome("create-invite")?.status).toBe("unknown");
+   });
+ 
+-  test("a confirmed creation with a failed inventory refresh publishes one warning and keeps the secret out of it", async () => {
++  test("G27: a newer slow inventory read cannot turn a confirmed creation into a failure notification", async () => {
+     let written = false;
++    let holdInventory = false;
++    const policy = Promise.withResolvers<void>();
++    const inventory = Promise.withResolvers<void>();
+     const ctx = setup(
+       () => {
+         written = true;
+@@ -589,6 +592,64 @@
+           preAuthKey: { id: "9", key: "confirmed-secret" },
+         });
+       },
++      async (path) => {
++        if (written && path === "/api/v1/policy") await policy.promise;
++        if (holdInventory && path === "/api/v1/preauthkey")
++          await inventory.promise;
++        return undefined;
++      },
++    );
++    const add = vi.spyOn(ctx.feedback.toastManager, "add");
++    const creation = ctx.create(payload);
++    let refresh: Promise<boolean> | undefined;
++    try {
++      await vi.waitFor(() => {
++        expect(ctx.bodies).toHaveLength(1);
++        expect(ctx.snapshot.getSnapshot().segmentStatus).toMatchObject({
++          identity: "ready",
++          policy: "loading",
++        });
++      });
++      holdInventory = true;
++      refresh = ctx.snapshot.refreshSegments(["identity"]);
++      await vi.waitFor(() => {
++        expect(ctx.snapshot.getSnapshot().segmentStatus.identity).toBe(
++          "loading",
++        );
++      });
++      policy.resolve();
++      expect(await creation).toBe(true);
++      expect(ctx.snapshot.getSnapshot().refreshErrors.identity).toBeUndefined();
++      expect(
++        ctx.deviceSetup.getSnapshot().lastCreatedInvite === "confirmed-secret",
++      ).toBe(true);
++      expect(ctx.feedback.actionOutcome("create-invite")).toMatchObject({
++        status: "confirmed",
++        refresh: "succeeded",
++      });
++      expect(ctx.bodies).toHaveLength(1);
++      expect(add).not.toHaveBeenCalled();
++    } finally {
++      policy.resolve();
++      inventory.resolve();
++      await Promise.allSettled([creation, refresh]);
++    }
++    expect(ctx.snapshot.getSnapshot().segmentStatus.identity).toBe("ready");
++    expect(
++      ctx.deviceSetup.getSnapshot().lastCreatedInvite === "confirmed-secret",
++    ).toBe(true);
++    expect(ctx.bodies).toHaveLength(1);
++  });
++
++  test("a confirmed creation with a failed inventory refresh publishes one warning and keeps the secret out of it", async () => {
++    let written = false;
++    const ctx = setup(
++      () => {
++        written = true;
++        return Response.json({
++          preAuthKey: { id: "9", key: "confirmed-secret" },
++        });
++      },
+       (path) =>
+         written && path === "/api/v1/preauthkey"
+           ? Response.json({ message: "post-read unavailable" }, { status: 503 })
+--- /tmp/headscale-ui-g02-g27-before.ETfnit/e2e/tag-lifecycle.browser.test.tsx
++++ /Users/munmunmiao/Documents/web/headscale-ui/e2e/tag-lifecycle.browser.test.tsx
+@@ -551,6 +551,22 @@
+     if (scenario === "changed-tags") {
+       expect(await writeCount("auth.register")).toBe(0);
+       expect(input.value.length > 0).toBe(true);
++      // Controlled stale confirmations reproduce the loop, not its unknown historical cause.
++      for (let attempt = 2; attempt <= 3; attempt++) {
++        await page.getByTestId("restore-source-confirm").click();
++        await page.getByTestId("restore-personal-confirm").click();
++        await expect
++          .element(page.getByTestId("restore-source-confirm"))
++          .not.toBeChecked();
++        await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
++        expect(await writeCount("auth.register")).toBe(0);
++        expect(input.value.length > 0).toBe(true);
++      }
++      await capture("three-stale-confirmations-without-dispatch");
++      console.info(
++        "G02 controlled confirmation loop",
++        JSON.stringify(evidence.at(-1)),
++      );
+       // Business contract: a blocked, unconsumed request has a visible way to rereview.
+       expect(
+         Boolean(
+@@ -1078,6 +1094,189 @@
+     ),
+   ).toMatchObject([{ upstreamRequests: 1, status: 200 }]);
+ });
++
++test.each(["slow-success", "failed-read"] as const)(
++  "G27 real inventory %s: preserve the confirmed key through reads without recreating it",
++  async (scenario) => {
++    await connect();
++    await page.getByTestId("section-invites").click();
++    await page.getByTestId("open-create-invite").click();
++    await page.getByTestId("invite-user").selectOptions("1");
++    await commands.tagNetworkIntercept({
++      method: "POST",
++      pathPattern: "^/api/v1/preauthkey$",
++    });
++    await page.getByTestId("create-invite").click();
++    await captured();
++    const creation = (await commands.tagNetworkObservations()).find(
++      (call) => call.method === "POST" && call.path === "/api/v1/preauthkey",
++    );
++    expect(creation).toMatchObject({ status: 200, upstreamRequests: 1 });
++    expect(await writeCount("preauthkey.create")).toBe(1);
++    const inventory = (await commands.tagFixtureSnapshot()).keys;
++    expect(inventory).toHaveLength(1);
++    const keyId = inventory[0]?.id;
++    expect(keyId !== undefined).toBe(true);
++    if (scenario === "failed-read") {
++      // Replacing the captured POST gate releases its real success only after GET failure is armed.
++      await commands.tagNetworkIntercept({
++        method: "GET",
++        pathPattern: "^/api/v1/preauthkey$",
++        failure: "G27 injected inventory read unavailable",
++      });
++      await captured(0);
++    } else {
++      await commands.tagNetworkRelease();
++    }
++    await expect
++      .poll(
++        () =>
++          document.querySelector('[data-testid="invite-create-dialog"]') ===
++          null,
++      )
++      .toBe(true);
++    const secret = session.deviceSetup.getSnapshot().lastCreatedInvite;
++    expect(secret.length > 0).toBe(true);
++    expect(session.feedback.actionOutcome("create-invite")).toMatchObject({
++      status: "confirmed",
++      refresh: scenario === "failed-read" ? "failed" : "succeeded",
++    });
++    let duringRead: object;
++    if (scenario === "failed-read") {
++      await expect
++        .element(page.getByTestId("invite-created-refresh-failed"))
++        .toMatchTextContent(
++          "Do not create another key just to refresh the list.",
++        );
++      const failure = (await commands.tagNetworkObservations()).find(
++        (call) =>
++          call.method === "GET" &&
++          call.path === "/api/v1/preauthkey" &&
++          call.status === 503,
++      );
++      expect(failure).toMatchObject({ status: 503, upstreamRequests: 0 });
++      duringRead = {
++        injected: true,
++        readStatus: failure?.status,
++        upstreamRequests: failure?.upstreamRequests,
++        identityStatus: session.snapshot.getSnapshot().segmentStatus.identity,
++        warningVisible:
++          document.querySelector(
++            '[data-testid="invite-created-refresh-failed"]',
++          ) !== null,
++      };
++      expect(
++        session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++      ).toBe(true);
++      expect(
++        (page.getByTestId("copy-created-invite").element() as HTMLButtonElement)
++          .disabled,
++      ).toBe(false);
++      expect(await writeCount("preauthkey.create")).toBe(1);
++      await commands.tagNetworkRelease();
++      await page.getByTestId("refresh-auth-keys").click();
++    } else {
++      await commands.tagNetworkIntercept({
++        method: "GET",
++        pathPattern: "^/api/v1/preauthkey$",
++      });
++      await page.getByTestId("refresh-auth-keys").click();
++      try {
++        await captured();
++        expect(session.snapshot.getSnapshot().segmentStatus.identity).toBe(
++          "loading",
++        );
++        expect(
++          session.snapshot.getSnapshot().refreshErrors.identity,
++        ).toBeUndefined();
++        await expect
++          .element(page.getByTestId("created-invite-status"))
++          .toMatchTextContent("not verified");
++        expect(
++          (page.getByTestId("refresh-auth-keys").element() as HTMLButtonElement)
++            .disabled,
++        ).toBe(true);
++        expect(
++          (
++            page
++              .getByTestId("copy-created-invite")
++              .element() as HTMLButtonElement
++          ).disabled,
++        ).toBe(false);
++        expect(
++          document.querySelector(
++            '[data-testid="invite-created-refresh-failed"]',
++          ) === null,
++        ).toBe(true);
++        expect(
++          session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++        ).toBe(true);
++        expect(await writeCount("preauthkey.create")).toBe(1);
++        duringRead = {
++          injected: false,
++          identityStatus: session.snapshot.getSnapshot().segmentStatus.identity,
++          warningVisible: false,
++        };
++      } finally {
++        await commands.tagNetworkRelease();
++      }
++    }
++    await expect
++      .poll(() => session.snapshot.getSnapshot().segmentStatus.identity)
++      .toBe("ready");
++    await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
++    expect(
++      session.snapshot.getSnapshot().refreshErrors.identity,
++    ).toBeUndefined();
++    expect(
++      document.querySelector(
++        '[data-testid="invite-created-refresh-failed"]',
++      ) === null,
++    ).toBe(true);
++    expect(
++      document.querySelector('[data-testid="created-invite-status"]') === null,
++    ).toBe(true);
++    expect(session.deviceSetup.getSnapshot().lastCreatedInvite === secret).toBe(
++      true,
++    );
++    expect(
++      session.snapshot
++        .getSnapshot()
++        .snapshot.preAuthKeys.some((key) => key.id === keyId),
++    ).toBe(true);
++    const registered = await commands.tagFixtureRegisterKey(
++      "g27-created-device",
++      secret,
++    );
++    const node = await liveNode(registered.nodeId);
++    expect(node?.machineKey === registered.machineKey).toBe(true);
++    expect(node?.user?.id).toBe("1");
++    expect(node?.tags).toEqual([]);
++    expect(
++      (await commands.tagFixtureSnapshot()).keys.find((key) => key.id === keyId)
++        ?.used,
++    ).toBe(true);
++    expect(await writeCount("preauthkey.create")).toBe(1);
++    console.info(
++      "G27 real inventory evidence",
++      scenario,
++      JSON.stringify({
++        creation: {
++          status: creation?.status,
++          upstreamRequests: creation?.upstreamRequests,
++        },
++        duringRead,
++        identityStatus: session.snapshot.getSnapshot().segmentStatus.identity,
++        secretRetained:
++          session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
++        creationRequests: await writeCount("preauthkey.create"),
++        registeredSameMachine: node?.machineKey === registered.machineKey,
++        registeredUser: node?.user?.id,
++        registeredTags: node?.tags,
++      }),
++    );
++  },
++);
+ 
+ test("A33: lost create response plus an identical concurrent key is inventory only, never claimed or revoked; a new operation needs a separate click", async () => {
+   await commands.tagFixtureSeedPolicy(

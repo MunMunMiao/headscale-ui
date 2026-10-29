@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-25T17:08:51.122212+00:00",
+  "label": "all-users-devices-cleaned",
+  "users": null,
+  "nodes": null,
+  "policy": {
+    "groups": {
+      "group:ux04-ops": []
+    },
+    "tagOwners": {
+      "tag:ux04-service": [
+        "group:ux04-ops"
+      ],
+      "tag:ux04-keep": []
+    },
+    "acls": [
+      {
+        "action": "accept",
+        "src": [
+          "group:ux04-ops"
+        ],
+        "dst": [
+          "100.64.0.2:8081"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "firstUiEvent": "2026-10-25T17:12:03.332Z",
+  "lastUiEvent": "2026-10-25T17:43:05.492Z",
+  "finishedLocal": "2026-10-26T01:45:00.094399+08:00",
+  "versions": {
+    "control": {
+      "exit": 0,
+      "version": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/amd64"
+    },
+    "client-a": {
+      "exit": 0,
+      "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)"
+    }
+  },
+  "scope": "ux09 only; namespace and Chrome cleanup remains assigned to coordinator"
+}

@@ -1,5 +1,9 @@
-import type { HeadscaleNode, PreAuthKey } from "@/api/types";
-import { isTimestampExpired as isExpired, nodeConnectionStatus } from "@/domain/node-status";
+import type { HeadscaleNode, PreAuthKey } from "@/api/contracts";
+import {
+  isTimestampExpired as isExpired,
+  nodeConnectionStatus,
+} from "@/domain/node-status";
+import { registrationKeyStatus } from "@/domain/tag-lifecycle";
 
 export function isExitRoute(route: string): boolean {
   return route === "0.0.0.0/0" || route === "::/0";
@@ -43,9 +47,17 @@ export function nodeStatusClass(node: HeadscaleNode): string {
 }
 
 export function keyStatusClass(key: PreAuthKey): string {
-  if (key.used) return PALETTES.sky;
-  if (isExpired(key.expiration)) return PALETTES.rose;
-  return PALETTES.emerald;
+  return {
+    available: PALETTES.emerald,
+    exhausted: PALETTES.sky,
+    expired: PALETTES.rose,
+    unknown: PALETTES.amber,
+    deleted: PALETTES.slate,
+  }[registrationKeyStatus(key).registration];
+}
+
+export function apiKeyStatusClass(key: { expiration?: string | null }): string {
+  return isExpired(key.expiration) ? PALETTES.rose : PALETTES.emerald;
 }
 
 export function keyKindClass(key: PreAuthKey): string {
@@ -82,7 +94,11 @@ const KEY_TAG_RULES: ReadonlyArray<readonly [readonly string[], string]> = [
   [["db"], PALETTES.indigo],
 ];
 
-function matchTag(tag: string, rules: typeof DEVICE_TAG_RULES, fallback: string): string {
+function matchTag(
+  tag: string,
+  rules: typeof DEVICE_TAG_RULES,
+  fallback: string,
+): string {
   const lowered = tag.toLowerCase();
   for (const [keywords, palette] of rules) {
     if (keywords.some((kw) => lowered.includes(kw))) return palette;

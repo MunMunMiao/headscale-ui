@@ -1,5 +1,13 @@
-import { type Ref, ref, watchEffect } from "vue";
-import { readSetting, writeSetting } from "@/lib/settings-storage";
+import {
+  captureSettingsWriteEpoch,
+  hydrateSettings,
+  isSettingsHydrated,
+  readSetting,
+  subscribePreferenceChanges,
+  writeSetting,
+} from "@/lib/settings-storage";
+import { createStore } from "@/lib/store";
+import { useSession, useStore } from "./session-context";
 
 export type ThemeMode = "light" | "dark" | "auto";
 
@@ -12,7 +20,10 @@ function initialThemeMode(): ThemeMode {
 }
 
 function prefersDarkMode() {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
 }
 
 export function isThemeMode(value: string | null): value is ThemeMode {
@@ -21,42 +32,75 @@ export function isThemeMode(value: string | null): value is ThemeMode {
 
 function applyThemeMode(mode: ThemeMode) {
   if (typeof document !== "undefined") {
-    document.documentElement.classList.toggle(
-      "dark",
-      mode === "dark" || (mode === "auto" && prefersDarkMode()),
-    );
+    const dark = mode === "dark" || (mode === "auto" && prefersDarkMode());
+    // Both classes are set so the stylesheet can tell "explicit light" from "no choice yet".
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.classList.toggle("light", !dark);
   }
-  writeSetting(THEME_SETTING_KEY, mode);
 }
 
-interface UseThemeReturn {
-  colorMode: Ref<ThemeMode>;
-  themeModes: readonly ThemeMode[];
-  setTheme(mode: ThemeMode): void;
+/** Applies the stored mode (or the OS preference) without reading unhydrated settings. */
+export function applyStoredTheme(): void {
+  const saved = isSettingsHydrated() ? readSetting(THEME_SETTING_KEY) : null;
+  applyThemeMode(isThemeMode(saved) ? saved : "auto");
 }
 
-let instance: UseThemeReturn | null = null;
-
-/** Internal: invoked by `__testing.ts` only. */
-export const themeTestingHandle = {
-  reset() {
-    instance = null;
-  },
-};
-
-export function useTheme(): UseThemeReturn {
-  if (instance) return instance;
-  const colorMode = ref<ThemeMode>(initialThemeMode());
-  watchEffect(() => {
-    applyThemeMode(colorMode.value);
+export function createThemeStore() {
+  const state = createStore<{
+    colorMode: ThemeMode;
+    themeError: "not-saved" | null;
+  }>({
+    colorMode: initialThemeMode(),
+    themeError: null,
   });
-  instance = {
-    colorMode,
+  let generation = 0;
+  function applyTheme() {
+    applyThemeMode(state.getSnapshot().colorMode);
+  }
+  function refreshFromSettings() {
+    ++generation;
+    state.setState({ colorMode: initialThemeMode(), themeError: null });
+    applyTheme();
+  }
+  return {
+    getSnapshot: state.getSnapshot,
+    subscribe: state.subscribe,
     themeModes,
-    setTheme(mode: ThemeMode) {
-      colorMode.value = mode;
-      applyThemeMode(mode);
+    applyTheme,
+    refreshFromSettings,
+    startPreferenceSync() {
+      let active = true;
+      const stop = subscribePreferenceChanges((key) => {
+        if (key !== "theme") return;
+        const request = generation;
+        void hydrateSettings().then(
+          () => {
+            if (active && request === generation) refreshFromSettings();
+          },
+          () => {
+            // Retain the current appearance when the preference cannot be read.
+          },
+        );
+      });
+      return () => {
+        active = false;
+        stop();
+      };
+    },
+    async setTheme(colorMode: ThemeMode): Promise<void> {
+      const request = ++generation;
+      const epoch = captureSettingsWriteEpoch();
+      state.setState({ colorMode, themeError: null });
+      applyTheme();
+      try {
+        await writeSetting(THEME_SETTING_KEY, colorMode, epoch);
+      } catch {
+        if (request === generation) state.setState({ themeError: "not-saved" });
+      }
     },
   };
-  return instance;
+}
+
+export function useTheme() {
+  return useStore(useSession().theme);
 }

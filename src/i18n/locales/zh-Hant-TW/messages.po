@@ -1,0 +1,3286 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh-Hant-TW\n"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionalField"
+msgstr "（選填）"
+
+#: src/i18n/descriptors.ts
+msgid "plural.labelRemovalDevices"
+msgstr "{count, plural, other {有 {formattedCount} 台裝置帶有此標籤。這些裝置會保留該標籤：在此刪除標籤不會移除裝置上的標籤。}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.devicesTagged"
+msgstr "{count, plural, other {{formattedCount} 台裝置}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.teamMembers"
+msgstr "{count, plural, other {{formattedCount} 位成員}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.orphanReferences"
+msgstr "{count, plural, other {有 {formattedCount} 個參照無法對應現有帳號、團隊或裝置標籤。}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.openAccessWarnings"
+msgstr "{count, plural, other {有 {formattedCount} 條規則包含廣泛的來源或目標。請審閱其確切範圍：}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.moreItems"
+msgstr "{count, plural, other {還有 {formattedCount} 項}}"
+
+#: src/i18n/descriptors.ts
+msgid "plural.cleanupOrphans"
+msgstr "{count, plural, other {清除 {formattedCount} 個失效參照}}"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginUnlockedNotice"
+msgstr "{name} 已在此瀏覽器中解鎖。"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardSubtitle"
+msgstr "集中管理裝置、成員和私人路由。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsRequired"
+msgstr "沒有所屬使用者的金鑰至少需要一個 ACL 標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagKeyUndeclaredHint"
+msgstr "格式合法但未宣告的標籤可用於金鑰。後續裝置管理可能需要策略定義。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteRotationHint"
+msgstr "替換用的帶標籤金鑰可取代現有裝置的完整標籤集合，並影響暫時性裝置的行為。停用舊金鑰前，請檢查所有標籤並測試部署。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreSourceRequired"
+msgstr "連結指向同一伺服器並不能證明請求來自目標裝置。核准前，請透過該裝置的可信通道確認請求。"
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameTaken"
+msgstr "已有使用者使用這個名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNameTaken"
+msgstr "已有同名的使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceHelp"
+msgstr "關於此過時引用"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.access"
+msgstr "存取控制"
+
+#: src/i18n/descriptors.ts
+msgid "product.actions"
+msgstr "操作"
+
+#: src/i18n/descriptors.ts
+msgid "product.statusActive"
+msgstr "有效"
+
+#: src/i18n/descriptors.ts
+msgid "product.activeAuthKeys"
+msgstr "有效認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableActivity"
+msgstr "活動"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLabelManager"
+msgstr "新增用戶端申請授權"
+
+#: src/i18n/descriptors.ts
+msgid "product.addClientDeviceTitle"
+msgstr "新增客戶端裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.addDevice"
+msgstr "新增裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.addLinuxServerTitle"
+msgstr "新增 Linux 伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMemberToTeam"
+msgstr "新增成員"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDefine"
+msgstr "新增策略定義"
+
+#: src/i18n/descriptors.ts
+msgid "product.addIpRule"
+msgstr "新增規則"
+
+#: src/i18n/descriptors.ts
+msgid "common.addServerProfile"
+msgstr "新增伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagAdd"
+msgstr "新增此標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.addUserToGroup"
+msgstr "加入使用者群組"
+
+#: src/i18n/descriptors.ts
+msgid "product.addMember"
+msgstr "新增使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsTitle"
+msgstr "為該使用者分配使用者群組"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDevice"
+msgstr "新增第一台裝置"
+
+#: src/i18n/descriptors.ts
+msgid "common.addingProfile"
+msgstr "正在新增"
+
+#: src/i18n/descriptors.ts
+msgid "product.addresses"
+msgstr "地址"
+
+#: src/i18n/descriptors.ts
+msgid "product.advertisedRoutes"
+msgstr "已公佈路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeAdvertisers"
+msgstr "公佈路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyIdentityRemovalImpact"
+msgstr "受影響的規則：'{'rules'}'。受影響的原則測試：'{'tests'}'。"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeIpRuleConsequence"
+msgstr "儲存後，僅由此規則允許的連線將被封鎖。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagAllSelected"
+msgstr "所有相容標籤均已選取。"
+
+#: src/i18n/descriptors.ts
+msgid "product.allAuthKeys"
+msgstr "全部金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.allMachines"
+msgstr "所有裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyAllPorts"
+msgstr "所有連接埠"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilesClearedNotice"
+msgstr "已清除所有伺服器設定。新增伺服器即可重新開始。"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcAllLabel"
+msgstr "全部服務"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantTagToUser"
+msgstr "允許透過用戶端申請標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsTitle"
+msgstr "允許透過用戶端申請標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmDescription"
+msgstr "允許以下來源透過列出的連接埠存取帶有此標籤的裝置？此操作不會新增通訊協定限制。"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupReferencesOption"
+msgstr "同時從這些策略項目移除這位使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameUpdateReferencesOption"
+msgstr "同時將這些原則項目更新為新名稱"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedDescription"
+msgstr "舊頁面仍佔用本機資料庫。請關閉其他 Headscale UI 分頁以繼續。已儲存的連線將會保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNameTaken"
+msgstr "已有其他裝置使用此名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadDescription"
+msgstr "另一個頁面已升級本機資料庫。請重新載入此頁面後再繼續。已儲存的連線將會保留。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionBusy"
+msgstr "正在解鎖或切換伺服器，請等待完成後重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.allUsersChoice"
+msgstr "所有使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyDescription"
+msgstr "允許所有使用者透過任何服務存取個人裝置。此範本權限較寬，請確認符合你的使用情境。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKey"
+msgstr "API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyPlaceholder"
+msgstr "由 headscale apikeys create 產生的 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyExpiration"
+msgstr "API 金鑰到期時間"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeys"
+msgstr "API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysTitle"
+msgstr "API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeysDescription"
+msgstr "API 金鑰可以控制這部 Headscale 伺服器。完整金鑰只會顯示一次。"
+
+#: src/i18n/descriptors.ts
+msgid "product.applyAssignment"
+msgstr "應用"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreRefreshFailed"
+msgstr "核准已獲確認，但讀回失敗。請再次讀取，不要重新傳送 Auth ID。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreUncertain"
+msgstr "核准已獲確認，但無法可靠地關聯原裝置。仍未確認個人身分已還原。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreIdentityPending"
+msgstr "核准已獲確認；尚未透過讀回結果確認目標身分。"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationLead"
+msgstr "核准正在等待此伺服器處理的裝置登入或 SSH 檢查。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesTitle"
+msgstr "核準公佈路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveAll"
+msgstr "全部核準"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitNode"
+msgstr "核准出口節點"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesTitle"
+msgstr "核準出口路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckDescription"
+msgstr "核准或拒絕等待中的 SSH check；這不會註冊裝置。目前的 API 無法提供可信任的來源、目標或登入使用者摘要。核准前，請透過可信任管道與請求者核對本次請求及這些身分。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoute"
+msgstr "核準此路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteTitle"
+msgstr "核準路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmApproveRoutes"
+msgstr "核準路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveSshCheck"
+msgstr "核准 SSH 檢查"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreApprove"
+msgstr "核准此裝置以所選使用者身分註冊"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusApproved"
+msgstr "已核準"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesApproved"
+msgstr "已核準"
+
+#: src/i18n/descriptors.ts
+msgid "product.approvedRoutes"
+msgstr "已核準路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignedBadgeLabel"
+msgstr "已分配"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodAuthKey"
+msgstr "認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteKey"
+msgstr "認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyCreated"
+msgstr "已建立認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupKeyAwaitingDevice"
+msgstr "已建立認證金鑰。尚未驗證裝置已加入。"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.invites"
+msgstr "認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesTitle"
+msgstr "認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "common.inviteCount"
+msgstr "顯示驗證金鑰：{shown} / {total}"
+
+#: src/i18n/descriptors.ts
+msgid "product.authSource"
+msgstr "認證來源"
+
+#: src/i18n/descriptors.ts
+msgid "product.useTagsDescription"
+msgstr "使用標籤認證並控制裝置存取權限。帶標籤伺服器不需要頻繁處理裝置金鑰過期。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeralDescription"
+msgstr "裝置離線後自動從 tailnet 移除。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteRegistrationReady"
+msgstr "可用於新註冊"
+
+#: src/i18n/descriptors.ts
+msgid "product.previousStep"
+msgstr "上一步"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIps"
+msgstr "回填裝置 IP"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillResult"
+msgstr "回填結果"
+
+#: src/i18n/descriptors.ts
+msgid "common.cancel"
+msgstr "取消"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancel"
+msgstr "取消"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelAssignment"
+msgstr "取消"
+
+#: src/i18n/descriptors.ts
+msgid "product.cancelIpRuleEdit"
+msgstr "取消編輯"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionChangePassphrase"
+msgstr "變更設定檔密碼"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberDescription"
+msgstr "修改這個帳號在 Headscale 中使用的使用者名。"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineDescription"
+msgstr "修改 Headscale 中顯示的裝置名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "common.securityProfileHint"
+msgstr "修改 {name} 的密碼。其他已儲存伺服器的密碼保持不變。"
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoading"
+msgstr "正在切換語言…"
+
+#: src/i18n/descriptors.ts
+msgid "product.checkPolicy"
+msgstr "檢查原則"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreEphemeral"
+msgstr "確認舊的認證金鑰關聯已消失。對於暫時性裝置，請驗證其中斷連線的時間超過清理時限並重新啟動後仍然存在；核准回應並不能證明這一點。"
+
+#: src/i18n/descriptors.ts
+msgid "common.checkingCredentials"
+msgstr "正在驗證認證資訊"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorTitle"
+msgstr "選擇伺服器設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreChooseUser"
+msgstr "選擇目標使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.expirationMustBeFuture"
+msgstr "請選擇未來的過期時間。"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepAuthKeyDescription"
+msgstr "選擇認證金鑰的使用方式。"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignMembershipsDescription"
+msgstr "選擇此使用者所屬的群組。套用後會先開啟審閱，再發布完整策略。"
+
+#: src/i18n/descriptors.ts
+msgid "product.assignTagOwnershipsDescription"
+msgstr "選擇此使用者可透過用戶端申請的標籤。套用時會發布完整策略；不會變更現有裝置標籤或已核發的金鑰。群組關係仍可能授予申請權限。"
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotConfirmTitle"
+msgstr "清除所有加密資料？"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionForgottenButton"
+msgstr "清除所有已儲存的伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "product.clearFilters"
+msgstr "清除篩選"
+
+#: src/i18n/descriptors.ts
+msgid "product.clearSearch"
+msgstr "清除搜尋"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteClearTag"
+msgstr "清除標籤篩選"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodCli"
+msgstr "命令列"
+
+#: src/i18n/descriptors.ts
+msgid "product.labelManagersLabel"
+msgstr "用戶端申請授權"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyOwnerDependencies"
+msgstr "用戶端申請授權相依路徑"
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDevice"
+msgstr "客戶端裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyOwnerImpact"
+msgstr "用戶端申請授權與網路存取權限彼此獨立。新增獲准申請者不會建立流量規則，但可能讓該身分符合現有規則。移除獲准申請者不會清除裝置標籤，也不會撤銷已核發的邀請。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwners"
+msgstr "用戶端標籤申請授權"
+
+#: src/i18n/descriptors.ts
+msgid "common.close"
+msgstr "關閉"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseBlockedTitle"
+msgstr "關閉舊的 Headscale UI 分頁"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesTitle"
+msgstr "不儲存這部伺服器？"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRawDiff"
+msgstr "變更前後完整原文比較"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagCompleteSet"
+msgstr "完整的目標標籤集合"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirm"
+msgstr "確定"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagApply"
+msgstr "確認取代完整標籤集合"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionConfirmPassphrase"
+msgstr "確認設定檔密碼"
+
+#: src/i18n/descriptors.ts
+msgid "product.restorePublicServer"
+msgstr "已確認的對外 login-server"
+
+#: src/i18n/descriptors.ts
+msgid "common.connect"
+msgstr "連線"
+
+#: src/i18n/descriptors.ts
+msgid "common.connection"
+msgstr "連線"
+
+#: src/i18n/descriptors.ts
+msgid "product.installCommand"
+msgstr "連線指令"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionTroubleshooting"
+msgstr "連線疑難排解：CORS 與混合內容"
+
+#: src/i18n/descriptors.ts
+msgid "common.continueToServer"
+msgstr "繼續"
+
+#: src/i18n/descriptors.ts
+msgid "common.copied"
+msgstr "已複製"
+
+#: src/i18n/descriptors.ts
+msgid "product.copied"
+msgstr "已複製"
+
+#: src/i18n/descriptors.ts
+msgid "common.copy"
+msgstr "複製"
+
+#: src/i18n/descriptors.ts
+msgid "product.copy"
+msgstr "複製"
+
+#: src/i18n/descriptors.ts
+msgid "product.copyCommand"
+msgstr "複製指令"
+
+#: src/i18n/descriptors.ts
+msgid "common.copyFailed"
+msgstr "複製失敗。請選取文字後手動複製。"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyOnlyShownOnce"
+msgstr "請立即複製並妥善保存。Headscale 不會再次回傳完整金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCopy"
+msgstr "請立即複製完整金鑰；Headscale 只會顯示一次。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyBufferedInvalid"
+msgstr "保留或發布變更前，請先修正本機輸入中無效或未完成的內容。"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionCorruptedBadge"
+msgstr "資料損毀"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateReadFailed"
+msgstr "無法讀取目前的金鑰清單。未傳送任何建立請求。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPrereadFailed"
+msgstr "無法讀取目前策略。這不表示寫入失敗。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReturnReadFailed"
+msgstr "還原前無法重新整理。已儲存的非機密輸入仍會保留；請重試或取消返回。"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRefreshFailed"
+msgstr "無法重新整理資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteReturnReadFailed"
+msgstr "無法重新整理使用者和策略。已保留邀請表單輸入；請先重試，再還原輸入。"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockFailed"
+msgstr "無法使用提供的密碼解鎖此設定檔。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsHint"
+msgstr "建立裝置標籤，即可統一管理同類裝置的存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepCreate"
+msgstr "使用 Headscale CLI 建立短效 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamDescription"
+msgstr "建立一個團隊，允許他們一起透過 SSH 和網頁共享一組裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsHint"
+msgstr "建立一個團隊，便於一次給一群人授權。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createApiKeyTitle"
+msgstr "建立 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.createInvite"
+msgstr "建立認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.invitesSubtitle"
+msgstr "建立可讓裝置加入網路的金鑰，不必暴露伺服器端細節。"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepGenerateDescription"
+msgstr "建立金鑰並複製連線指令。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createMember"
+msgstr "建立使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyCreatedAt"
+msgstr "建立時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.createdApiKey"
+msgstr "已建立 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreatedAt"
+msgstr "建立時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateNewOperationHint"
+msgstr "再次建立金鑰會傳送新請求，先前請求可能已經建立了金鑰。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateAfter"
+msgstr "建立後的目前金鑰清單"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRetirementObserved"
+msgstr "目前受管範圍的觀察結果中已無相關使用，外部部署負責人也已確認。但這不保證此名稱永遠不會再次出現。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyInventoryReadback"
+msgstr "目前的觀察結果不能證明執行時已載入、已持久儲存或用戶端能夠連線。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingDiffers"
+msgstr "目前的策略觀察結果與提交的目標不同。請保留較新的草稿並檢查差異。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingMatches"
+msgstr "目前的策略觀察結果與提交的目標相符；原請求的結果仍未確定。"
+
+#: src/i18n/descriptors.ts
+msgid "common.currentServerPassword"
+msgstr "目前的設定檔密碼"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreIdentityObserved"
+msgstr "目前的讀回結果與預期使用者、空標籤集合及原裝置身分相符。連線狀況須另行檢查。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreAssociationCleared"
+msgstr "目前的讀回結果已不再顯示認證金鑰關聯；仍須驗證執行時清理和連線狀況。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagSelection"
+msgstr "目前選擇"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationObserved"
+msgstr "已觀察到目前的目標狀態——不保證持久儲存或連線狀況"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomLabel"
+msgstr "自訂連接埠"
+
+#: src/i18n/descriptors.ts
+msgid "common.dark"
+msgstr "深色"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackStatus"
+msgstr "資料與操作狀態"
+
+#: src/i18n/descriptors.ts
+msgid "product.dataRefreshed"
+msgstr "資料已更新"
+
+#: src/i18n/descriptors.ts
+msgid "common.database"
+msgstr "資料庫"
+
+#: src/i18n/descriptors.ts
+msgid "product.days"
+msgstr "天"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessSubtitle"
+msgstr "替裝置加上標籤、將使用者組成團隊，再決定誰能存取哪些裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyTitle"
+msgstr "為你的網路設定存取權限"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDefinitionUnknown"
+msgstr "宣告狀態未知——無法讀取策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDeclareTag"
+msgstr "宣告此名稱，並將用戶端申請授權名單留空"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDeclared"
+msgstr "上次讀取的策略中已宣告"
+
+#: src/i18n/descriptors.ts
+msgid "product.decreaseDays"
+msgstr "減少天數"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDefinitionUnknown"
+msgstr "無法讀取定義"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyTitle"
+msgstr "刪除 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteApiKey"
+msgstr "刪除 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteTitle"
+msgstr "刪除認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeDeviceLabel"
+msgstr "刪除裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInvite"
+msgstr "刪除金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteInvite"
+msgstr "刪除金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "common.deleteProfile"
+msgstr "刪除設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeam"
+msgstr "刪除團隊"
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileTitle"
+msgstr "刪除此連線設定？"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMember"
+msgstr "刪除使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberTitle"
+msgstr "刪除使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmDeleteMember"
+msgstr "刪除使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteDeleteEffectHint"
+msgstr "刪除金鑰後，攜帶該金鑰的請求會在查詢金鑰時失敗。此操作不會移除現有裝置、清除其標籤，也不會使其立即中斷連線。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationPlaceholder"
+msgstr "目標"
+
+#: src/i18n/descriptors.ts
+msgid "product.details"
+msgstr "詳細資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvTitle"
+msgstr "開發 + 生產分離"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogTitle"
+msgstr "裝置標籤策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelsSection"
+msgstr "裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupLabels"
+msgstr "裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessView"
+msgstr "這個團隊可以存取的裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyObservedNodes"
+msgstr "裝置觀察結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindDevice"
+msgstr "裝置登入"
+
+#: src/i18n/descriptors.ts
+msgid "product.aclTags"
+msgstr "裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceCount"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberDevices"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteDescription"
+msgstr "其他裝置將不再透過這部裝置使用此路由，其餘已核準的路由保持啟用。如果存取原則會自動核準該路由，則這部裝置下次通告該路由時，它可能被再次核準。"
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsDescription"
+msgstr "直接覆寫這部裝置目前的標籤。若要修改相同標籤下裝置的存取權限，請到「存取控制」中編輯對應的裝置標籤策略。"
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiry"
+msgstr "停用過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryTitle"
+msgstr "停用裝置過期？"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesTitle"
+msgstr "捨棄所有未儲存的變更？"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChanges"
+msgstr "捨棄變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChanges"
+msgstr "捨棄變更"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsDiscard"
+msgstr "捨棄草稿並繼續"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyConfirm"
+msgstr "捨棄金鑰並繼續"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogUnsavedChangesBody"
+msgstr "捨棄只還原此對話框內的變更。「發布並關閉」會先審閱，再將完整策略發布至 Headscale。若要保留尚未發布的編輯，請取消後選擇「保留在策略草稿中」。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardIpDraftBody"
+msgstr "捨棄此規則中尚未確認的輸入？取消可繼續編輯。已確認的原則修改仍保留在頁面草稿中，此操作不會儲存原則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyTitle"
+msgstr "捨棄尚未複製的驗證金鑰？"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardDialogChanges"
+msgstr "捨棄這些變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.displayName"
+msgstr "顯示名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsLabel"
+msgstr "DNS"
+
+#: src/i18n/descriptors.ts
+msgid "product.finish"
+msgstr "完成"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleTitle"
+msgstr "草稿屬於另一台伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcCustomPlaceholder"
+msgstr "如 8080, 9000-9100"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationPreserve"
+msgstr "每次裝置操作只會取代完整標籤集合中的此標籤，去除重複的目標標籤，並保留無關標籤。請在裝置編輯器中檢查完整集合。"
+
+#: src/i18n/descriptors.ts
+msgid "product.editNodeTagsTitle"
+msgstr "編輯裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "common.editProfile"
+msgstr "編輯設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.editIpRule"
+msgstr "編輯規則"
+
+#: src/i18n/descriptors.ts
+msgid "product.editTags"
+msgstr "編輯標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.email"
+msgstr "電子郵件"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionEncryptedBadge"
+msgstr "已加密"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSectionTitle"
+msgstr "加密"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestInvalid"
+msgstr "請輸入以 hskey-authreq- 開頭的請求 ID，或貼上完整連結。"
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameRequired"
+msgstr "請輸入使用者名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "product.emailInvalid"
+msgstr "請輸入有效的電子郵件地址，或將此欄留空。"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionInvalidUrl"
+msgstr "請輸入完整的 HTTP(S) 伺服器網址。"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionApiKeyRequired"
+msgstr "請輸入 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagsRequiredForTaggedNode"
+msgstr "請至少輸入一個標籤。即使裝置尚無標籤，Headscale 也不接受空白標籤清單。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSecretRequired"
+msgstr "請重新輸入 API 金鑰和此設定檔的密碼後再提交。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleDestinationHasPort"
+msgstr "目標中請勿包含連接埠，連接埠請填寫在「連接埠」欄位。"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordRequired"
+msgstr "請輸入設定檔密碼。"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectSubtitle"
+msgstr "輸入 Headscale 伺服器位址與 API 金鑰，以儲存連線設定。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ephemeral"
+msgstr "暫時裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardPolicyChangesBody"
+msgstr "此頁面上所有未儲存的變更都會還原為最近一次從 Headscale 載入的策略。此操作無法復原。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteExactTag"
+msgstr "精確標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameHint"
+msgstr "例如：ops、dev、security"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelNameHint"
+msgstr "例如：server、workstation、database"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyManageDraftWarning"
+msgstr "現有策略草稿會保留。請明確發布所有變更、先完成這些草稿，或不發布直接返回。"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusExit"
+msgstr "出口"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNode"
+msgstr "出口節點"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitRoute"
+msgstr "出口路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeExitRouteDescription"
+msgstr "出口路由會成對撤銷：IPv4 和 IPv6 路由會一併移除，其他裝置將不再透過這部裝置傳送網際網路流量。其餘已核準的路由保持啟用。如果存取原則會自動核準出口路由，則這部裝置下次通告它們時，它們可能被再次核準。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteExpiration"
+msgstr "過期時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.expire"
+msgstr "設為過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyTitle"
+msgstr "讓 API 金鑰過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireApiKey"
+msgstr "讓 API 金鑰過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteTitle"
+msgstr "使認證金鑰過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInvite"
+msgstr "使金鑰過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpireInvite"
+msgstr "使金鑰過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineTitle"
+msgstr "讓裝置過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmExpire"
+msgstr "使裝置過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.expiredOnly"
+msgstr "已過期"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyKeyDeployment"
+msgstr "已過期或已消耗的金鑰可能仍被舊部署及符合條件的重新註冊流程引用。過期不等於刪除，兩者都不會移除現有裝置身分。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteOldDeploymentHint"
+msgstr "已過期或已使用的金鑰可能仍被舊部署引用。現有節點的某些重新註冊流程可略過過期或使用情況檢查。請另行檢查部署和伺服器紀錄；過期不等於刪除。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteRegistrationExpired"
+msgstr "已過期；不可用於新註冊"
+
+#: src/i18n/descriptors.ts
+msgid "product.expires"
+msgstr "過期時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteExpiryEffectHint"
+msgstr "將金鑰設為過期會阻止需要一般驗證的新註冊。此操作不會移除現有裝置，也不保證能阻止現有節點的所有重新註冊。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyExplicitAccess"
+msgstr "明確設定的 ACL/grants 限制（包括空清單）會保留。定義變更不代表已驗證連線狀況。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreTargetUser"
+msgstr "明確指定的目標使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.exportData"
+msgstr "匯出資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRetirementExternalMissing"
+msgstr "尚未確認已清除外部部署相依項目。"
+
+#: src/i18n/descriptors.ts
+msgid "product.filters"
+msgstr "篩選"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorSearchPlaceholder"
+msgstr "查找人、團隊或標籤…"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedKeyCreatorHint"
+msgstr "對於有標籤的金鑰，所選使用者記錄的是建立者，而非加入裝置的擁有者；這些裝置由標籤管理。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreNewRequest"
+msgstr "若要再次嘗試，請在目標裝置上發起新的身分驗證請求；切勿重複使用已消耗的 Auth ID。"
+
+#: src/i18n/descriptors.ts
+msgid "common.forgotServerPasswordHint"
+msgstr "忘記了此設定檔的密碼？請先取消，再點選其卡片上的刪除圖示，只刪除這一個設定檔，然後用 API 金鑰重新新增伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagFreshReadRequired"
+msgstr "此次寫入前須重新讀取裝置和策略。未傳送任何寫入請求。"
+
+#: src/i18n/descriptors.ts
+msgid "product.source"
+msgstr "來源"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelBadge"
+msgstr "來自裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyFullSubmitted"
+msgstr "將要提交的完整策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.generate"
+msgstr "產生"
+
+#: src/i18n/descriptors.ts
+msgid "product.generateInstallCommand"
+msgstr "產生連線指令"
+
+#: src/i18n/descriptors.ts
+msgid "product.addAccessor"
+msgstr "授予存取"
+
+#: src/i18n/descriptors.ts
+msgid "product.highRiskConfirmTitle"
+msgstr "確認要開放這麼大權限嗎？"
+
+#: src/i18n/descriptors.ts
+msgid "product.groupName"
+msgstr "團隊名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.groups"
+msgstr "團隊"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideDescription"
+msgstr "請先在伺服器端 CLI 建立 Headscale API 金鑰，再連線至 UI。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRouteDescription"
+msgstr "Headscale 會同時核准 IPv4 和 IPv6 兩條出口路由，之後其他裝置可以經由這部裝置存取網際網路。請確認可以信任這部裝置作為該路徑的出口。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorTagsNotPermitted"
+msgstr "Headscale 未接受這些標籤。管理員指派標籤時，已載入的策略中必須有對應的 tagOwners 定義；其中的擁有者清單可以為空。請檢查標籤格式及伺服器已載入的設定。"
+
+#: src/i18n/descriptors.ts
+msgid "common.headscaleDocs"
+msgstr "Headscale 文件"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyCheckPassed"
+msgstr "Headscale 未在此原則中發現問題。未儲存任何內容。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyFileModeNoPath"
+msgstr "Headscale 設定為從檔案讀取存取原則（policy.mode: file），但未設定原則檔案（policy.path 為空），因此這裡沒有可編輯的內容。請在 Headscale 設定中將 policy.mode 設為 database，以便在本應用程式中管理存取規則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUpdateDisabled"
+msgstr "Headscale 從檔案讀取存取原則（policy.mode: file），因此無法在此處儲存變更。請在 Headscale 伺服器上編輯原則檔案，或將 policy.mode 設為 database，以便在本應用程式中管理存取規則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberOwnsDevices"
+msgstr "Headscale 不允許刪除仍擁有裝置的使用者。請先移除以下裝置："
+
+#: src/i18n/descriptors.ts
+msgid "product.policyKnownReadOnly"
+msgstr "Headscale 在目前設定下拒絕策略寫入。請設定負責人編輯、檢查並載入實際設定來源；此頁面不會切換模式或重新啟動服務。"
+
+#: src/i18n/descriptors.ts
+msgid "common.appTitle"
+msgstr "Headscale UI"
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorTitle"
+msgstr "Headscale UI 遇到了問題"
+
+#: src/i18n/descriptors.ts
+msgid "product.openAccessBannerTitle"
+msgstr "高風險：偵測到開放存取"
+
+#: src/i18n/descriptors.ts
+msgid "product.hour"
+msgstr "小時"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideTitle"
+msgstr "如何取得 API 金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRenameExternal"
+msgstr "我已檢查外部設定，並審閱了此次僅限策略的重新命名的完整範圍。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreBackup"
+msgstr "我有可用於此裝置的備用管理通道。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagUserNodeAcknowledge"
+msgstr "我了解，這會移除裝置的個人使用者歸屬。無法透過提交空標籤集合來清除標籤；還原個人身分需要不使用預先驗證金鑰重新驗證。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillAcknowledge"
+msgstr "我了解此操作會依伺服器設定的位址前綴，為所有裝置新增或移除 IP 位址。"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyAcknowledge"
+msgstr "我了解目前工作階段將失去存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreServerConfirm"
+msgstr "我已在部署設定中確認此對外 login-server；它可能不同於 API 代理。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideHint"
+msgstr "如果金鑰遺失或過期，請在伺服器上停用舊金鑰並建立新金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.increaseDays"
+msgstr "增加天數"
+
+#: src/i18n/descriptors.ts
+msgid "product.connectionCommandHint"
+msgstr "請先安裝 Tailscale，再於目標電腦的 POSIX shell 執行此連線指令。"
+
+#: src/i18n/descriptors.ts
+msgid "product.addFirstDeviceDescription"
+msgstr "在另一部裝置上安裝 Tailscale，並連線至這部 Headscale 伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateBefore"
+msgstr "建立前的金鑰清單"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateInventoryUnknown"
+msgstr "清單讀取失敗或尚未完成；無法確認清單是否完整。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyObservedKeys"
+msgstr "邀請觀察結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionTitle"
+msgstr "IP 與全部目標存取規則（進階）"
+
+#: src/i18n/descriptors.ts
+msgid "product.joined"
+msgstr "加入時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.keyExpiryHint"
+msgstr "除非用於重複安裝的自動化流程，否則認證金鑰應維持短效。"
+
+#: src/i18n/descriptors.ts
+msgid "common.keepEditingProfile"
+msgstr "繼續編輯"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDraftOnly"
+msgstr "保留在策略草稿中"
+
+#: src/i18n/descriptors.ts
+msgid "product.dialogChangesKeptHint"
+msgstr "「保留在策略草稿中」只保留編輯，不會發布。關閉後，請選擇頁面頂端的「發布所有策略變更」來審閱並發布完整文件。"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveIpRule"
+msgstr "將規則保留在策略草稿中"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRenameConfirm"
+msgstr "將已檢查的重新命名保留在策略草稿中"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteKeyCreatedNotJoined"
+msgstr "已建立金鑰。尚未驗證任何裝置已註冊。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateConfirmedRefreshFailed"
+msgstr "已確認建立了金鑰，但重新整理清單失敗。不要只為重新整理清單而再建立金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreatorLabel"
+msgstr "金鑰建立時關聯的使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceLabelName"
+msgstr "標籤名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.labelNameInvalid"
+msgstr "標籤名稱必須以英文字母 (A–Z) 開頭，且不能包含空格、逗號、冒號 (:) 或 @。"
+
+#: src/i18n/descriptors.ts
+msgid "common.language"
+msgstr "語言"
+
+#: src/i18n/descriptors.ts
+msgid "product.lastSeen"
+msgstr "最後線上"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyLastUsed"
+msgstr "最後使用"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRawCurrent"
+msgstr "最新策略讀回結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.learnMore"
+msgstr "瞭解更多"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverCredentialEditHint"
+msgstr "僅修改名稱或儲存位置時，請將 API 金鑰和密碼留白。修改網址或 API 金鑰時，必須重新輸入 API 金鑰和目前的設定檔密碼。"
+
+#: src/i18n/descriptors.ts
+msgid "common.light"
+msgstr "淺色"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServer"
+msgstr "Linux 伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMaintenance"
+msgstr "線上標籤維護"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoading"
+msgstr "正在載入使用者…"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDraftChanged"
+msgstr "本機定義或存取權限變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDraftDefinition"
+msgstr "僅存在於本機草稿——不可作為指派選項"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionLockedBadge"
+msgstr "已鎖定"
+
+#: src/i18n/descriptors.ts
+msgid "common.logout"
+msgstr "登出"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrl"
+msgstr "登入伺服器網址"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableMachine"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineDetails"
+msgstr "裝置詳細資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.machineName"
+msgstr "裝置名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeTags"
+msgstr "裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.devices"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTitle"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "common.machineCount"
+msgstr "顯示的裝置：{shown} / {total}"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackNetworkData"
+msgstr "裝置、路由與伺服器狀態"
+
+#: src/i18n/descriptors.ts
+msgid "common.primaryNavigation"
+msgstr "主要導覽"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenance"
+msgstr "維護"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsDescription"
+msgstr "管理伺服器級憑證和維護操作。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteManageTags"
+msgstr "在「存取控制」中管理標籤定義"
+
+#: src/i18n/descriptors.ts
+msgid "product.manageTags"
+msgstr "在存取控制中管理標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamDetailDialogTitle"
+msgstr "管理團隊"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesSubtitle"
+msgstr "管理已連上這個 tailnet 的裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersSubtitle"
+msgstr "管理網路中的使用者和權限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDetailDialogSubtitle"
+msgstr "管理誰可以透過用戶端申請此標籤，並另行檢查網路存取權限。變更授權可能讓獲准者取得現有標籤規則所允許的存取權限，但不會變更裝置或已核發金鑰上的標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyManageContext"
+msgstr "正在為 {source} 管理 {tag}。已保留原始輸入中的非機密內容；返回時會重新整理並再次驗證這些內容。"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamMembersSection"
+msgstr "成員"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationTitle"
+msgstr "遷移 {name}"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrateAndUnlock"
+msgstr "遷移並解鎖"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrate"
+msgstr "遷移身分"
+
+#: src/i18n/descriptors.ts
+msgid "common.migrationRequired"
+msgstr "需要遷移"
+
+#: src/i18n/descriptors.ts
+msgid "product.minute"
+msgstr "分鐘"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationNew"
+msgstr "遷移至新身分"
+
+#: src/i18n/descriptors.ts
+msgid "product.mustBeBetweenDays"
+msgstr "必須在 1 到 90 天之間。"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshHint"
+msgstr "僅允許網路連接埠 22。Tailscale SSH 的登入使用者及 ssh accept/check 工作階段規則須在 Headscale 策略中另行設定。"
+
+#: src/i18n/descriptors.ts
+msgid "product.never"
+msgstr "從不"
+
+#: src/i18n/descriptors.ts
+msgid "product.newDeviceLabel"
+msgstr "新增裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "common.newProfile"
+msgstr "新伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "common.newServerPassword"
+msgstr "新的設定檔密碼"
+
+#: src/i18n/descriptors.ts
+msgid "product.newTeam"
+msgstr "建立團隊"
+
+#: src/i18n/descriptors.ts
+msgid "product.nextStep"
+msgstr "下一步"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAccessors"
+msgstr "此處未列出 ACL 授權。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamAccess"
+msgstr "這裡沒有列出此團隊到裝置標籤的 ACL 授權。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noActiveAuthKeys"
+msgstr "沒有有效的認證金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noRoutes"
+msgstr "目前沒有待審核路由。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noApiKeys"
+msgstr "沒有可顯示的 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeys"
+msgstr "沒有符合篩選條件的認證金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noAuthKeysYet"
+msgstr "尚無認證金鑰。建立一個即可新增裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNoChanges"
+msgstr "無需任何變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagNoOptions"
+msgstr "未讀取到相容的標籤定義。請先建立或調整策略定義，使其相容。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeFirstConnection"
+msgstr "尚未新增連線設定。新增 Headscale 伺服器位址與 API 金鑰，即可開始管理網路。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsMatch"
+msgstr "沒有符合搜尋的裝置標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDeviceLabelsYet"
+msgstr "目前沒有裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.noGroupsAvailable"
+msgstr "尚無使用者群組。請先在存取控制中建立。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noIpRules"
+msgstr "目前沒有 IP 或全部目標規則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagNoSuggestions"
+msgstr "沒有已知標籤可供建議。輸入格式合法的標籤即可新增，無須策略定義。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noDevices"
+msgstr "沒有符合篩選條件的裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noLabelManagers"
+msgstr "目前沒有管理員"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectAccessorEmpty"
+msgstr "沒有相符項"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerEmpty"
+msgstr "沒有相符項"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagNoMatches"
+msgstr "沒有相符的標籤。清除搜尋內容可查看可用標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberEmpty"
+msgstr "沒有相符的使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyTagOwnerEntries"
+msgstr "此處未授權任何成員透過用戶端申請此標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyEmptyOwners"
+msgstr "此處未授權任何成員透過用戶端申請此標籤。管理員指派標籤與帶標籤邀請採用不同的規則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyGroupMembers"
+msgstr "目前沒有成員。"
+
+#: src/i18n/descriptors.ts
+msgid "product.emptyTeamWarning"
+msgstr "目前沒有成員。新增成員之前，此團隊不會授予任何人存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeNoSession"
+msgstr "沒有其他開啟的分頁讓工作階段保持解鎖，因此重新整理或重新開啟頁面後工作階段已鎖定。請輸入設定檔密碼繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteNoOwner"
+msgstr "無所屬使用者（僅標籤）"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPersonalDevices"
+msgstr "沒有個人裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreNoAutomatic"
+msgstr "不會執行遠端指令，也不會自動變更身分。"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerTitle"
+msgstr "沒有任何規則允許存取"
+
+#: src/i18n/descriptors.ts
+msgid "product.noTagsAvailable"
+msgstr "尚無標籤授權。請先在存取控制中建立。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noPolicyReferences"
+msgstr "沒有團隊成員關係或標籤管理權限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noTeamsYet"
+msgstr "還沒有團隊"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsers"
+msgstr "沒有可用使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsersMatch"
+msgstr "沒有相符篩選條件的使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.noUsersYet"
+msgstr "還沒有使用者。新增使用者即可開始。"
+
+#: src/i18n/descriptors.ts
+msgid "product.nodeId"
+msgstr "裝置 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorNodeNotFound"
+msgstr "找不到裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "common.nodes"
+msgstr "裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.noRouteValues"
+msgstr "無"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagUndeclared"
+msgstr "上次讀取的策略中未宣告"
+
+#: src/i18n/descriptors.ts
+msgid "product.notReported"
+msgstr "未回報"
+
+#: src/i18n/descriptors.ts
+msgid "common.notifications"
+msgstr "通知"
+
+#: src/i18n/descriptors.ts
+msgid "common.offline"
+msgstr "離線"
+
+#: src/i18n/descriptors.ts
+msgid "product.offlineOnly"
+msgstr "離線"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethodOidc"
+msgstr "OIDC"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreClientInstructions"
+msgstr "在目標裝置上清除公告的標籤，並使用其現有的、不依賴認證金鑰的登入方式強制重新驗證身分。此主控台不會遠端執行指令。請勿改用不帶標籤的認證金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.oneTimeKey"
+msgstr "一次性金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "common.online"
+msgstr "線上"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineOnly"
+msgstr "線上"
+
+#: src/i18n/descriptors.ts
+msgid "product.onlineDevices"
+msgstr "線上裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.grantsPreservedHint"
+msgstr "此處僅顯示和編輯 ACL 規則。現有 grants 會保留，並可能另外授予存取權限。重新命名或刪除團隊、標籤前，請先在 Headscale 原則中更新其 grants 參照。"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRecentResultsHint"
+msgstr "僅顯示每種操作類型的最新結果。此檢視不包含操作目標或操作歷程。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRenameScope"
+msgstr "僅重新命名策略定義及已建模的引用。目前使用此名稱的裝置及可用金鑰清單必須為空，並須檢查外部設定。此操作不是全域重新命名。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRouteDescription"
+msgstr "只會核準目前這一條路由，並保留這台裝置已有的已核準路由。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSelfOnlyTitle"
+msgstr "開放個人裝置存取"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRawOriginal"
+msgstr "最初的策略原文"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.home"
+msgstr "總覽"
+
+#: src/i18n/descriptors.ts
+msgid "product.owner"
+msgstr "所屬使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteOwner"
+msgstr "所屬使用者"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticePasswordChanged"
+msgstr "密碼已修改。請使用新的設定檔密碼解鎖伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepPaste"
+msgstr "將金鑰和 Headscale HTTPS URL 貼到這裡。"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestHelp"
+msgstr "貼上 tailscale up 或 SSH 檢查提示中顯示的連結或 ID。請求 ID 的有效期很短。"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeStatusPending"
+msgstr "待審"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDraftAdded"
+msgstr "本機草稿中待宣告"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDraftRemoved"
+msgstr "本機草稿中待移除"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRoutes"
+msgstr "待審路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.personalDevices"
+msgstr "個人裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagIdentityImpact"
+msgstr "個人使用者身分將變為標籤身分。存取規則、autogroup 比對及此管理連線可能會變更。請另行驗證存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileSelectorDescription"
+msgstr "選擇已儲存的伺服器連線，或新增另一部 Headscale 伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessEmptyHint"
+msgstr "選一個起點開始，之後隨時能改。"
+
+#: src/i18n/descriptors.ts
+msgid "product.dateTimePlaceholder"
+msgstr "選擇日期和時間"
+
+#: src/i18n/descriptors.ts
+msgid "common.policy"
+msgstr "策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.policy"
+msgstr "存取策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.policySaveConflictTitle"
+msgstr "伺服器上的策略已變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyCheckFailed"
+msgstr "策略檢查未通過"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPublishCheckScope"
+msgstr "策略檢查僅驗證策略是否可被接受，並不能證明有寫入權限、執行時已載入策略、已持久儲存或能夠連線。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDeclaredSource"
+msgstr "策略定義"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadOnlyTitle"
+msgstr "目前無法編輯策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyObservedReferences"
+msgstr "策略引用"
+
+#: src/i18n/descriptors.ts
+msgid "product.userPolicyReferencesUnknown"
+msgstr "無法核實策略參照。你可以不清理策略而只刪除使用者；請透過可信任的管理管道檢查參照。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingTitle"
+msgstr "策略寫入結果未知"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadOnlyAssignment"
+msgstr "此處無法寫入策略。這並不全域禁止管理員針對最新讀回結果中的相容定義執行 SetTags；最終仍以伺服器已載入的策略為準。"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpHint"
+msgstr "連接埠 3389"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcDnsHint"
+msgstr "連接埠 53"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulePortsPlaceholder"
+msgstr "連接埠"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebHint"
+msgstr "連接埠 80 和 443"
+
+#: src/i18n/descriptors.ts
+msgid "product.apiKeyPrefix"
+msgstr "前綴"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationSequence"
+msgstr "請先準備替代定義、規則、金鑰和用戶端設定，並進行小規模試行。然後停止已知的舊註冊入口、重新整理資料，並檢查每項剩餘資源。重新開啟時會重建此清單；沒有任何操作在背景執行。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationPrepare"
+msgstr "在策略草稿中準備空的目標定義"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyPasswordLabel"
+msgstr "原共用密碼"
+
+#: src/i18n/descriptors.ts
+msgid "common.profile"
+msgstr "伺服器"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileName"
+msgstr "設定名稱"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPassword"
+msgstr "設定檔密碼"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPublishAll"
+msgstr "發布所有策略變更"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesSaveAndClose"
+msgstr "發布並關閉"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyNormalizationNotice"
+msgstr "發布會將整份策略改寫為標準化 JSON，不保留 HuJSON 註解和格式。列內確認只更新策略草稿；「發布所有策略變更」會將完整文件提交至 Headscale。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagRetry"
+msgstr "再次讀取"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReadOnlyCheck"
+msgstr "僅讀取目前狀態"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingRead"
+msgstr "僅讀取策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberFreshReadRequired"
+msgstr "必須重新讀取使用者目錄，尚未傳送建立請求。"
+
+#: src/i18n/descriptors.ts
+msgid "product.unused"
+msgstr "可使用"
+
+#: src/i18n/descriptors.ts
+msgid "product.readyKeys"
+msgstr "可用金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.recentDevices"
+msgstr "最近使用的裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRecentResults"
+msgstr "本工作階段的最近結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadbackDefinition"
+msgstr "最近讀取的宣告"
+
+#: src/i18n/descriptors.ts
+msgid "product.refreshData"
+msgstr "重新整理資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateReadOnly"
+msgstr "僅重新整理清單"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyInventoryRefresh"
+msgstr "重新整理所需資料來源"
+
+#: src/i18n/descriptors.ts
+msgid "product.routeRefreshRequired"
+msgstr "確認前須成功重新整理路由資料。請重試或取消。"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerMethod"
+msgstr "註冊方式"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPendingDescription"
+msgstr "註冊或審核正在等待的裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationTitle"
+msgstr "註冊待核准裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.registerPendingNode"
+msgstr "註冊待核准裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.registeredNode"
+msgstr "已註冊裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.rejectSshCheck"
+msgstr "拒絕 SSH 檢查"
+
+#: src/i18n/descriptors.ts
+msgid "common.databaseReloadTitle"
+msgstr "重新載入此頁面"
+
+#: src/i18n/descriptors.ts
+msgid "common.rememberConnection"
+msgstr "在此瀏覽器中記住這個連線"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcRdpLabel"
+msgstr "遠端桌面"
+
+#: src/i18n/descriptors.ts
+msgid "product.remove"
+msgstr "移除"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeItem"
+msgstr "移除"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeRule"
+msgstr "刪除"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeAccessor"
+msgstr "移除存取權"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirm"
+msgstr "清理所有失效引用？"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeLabelManager"
+msgstr "移除直接用戶端申請授權"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeFromReference"
+msgstr "從引用中移除"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineTitle"
+msgstr "移除裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemove"
+msgstr "確認移除"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeTeamMember"
+msgstr "移除成員"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPolicyOnlyRemove"
+msgstr "僅移除策略定義及列出的引用"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeOwnerFilter"
+msgstr "移除所屬使用者篩選"
+
+#: src/i18n/descriptors.ts
+msgid "common.connectionUrlParts"
+msgstr "請從伺服器網址中移除使用者名稱、密碼、查詢參數（?…）或片段（#…）。"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemTitle"
+msgstr "刪除這一項？"
+
+#: src/i18n/descriptors.ts
+msgid "product.rename"
+msgstr "重新命名"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMachineTitle"
+msgstr "重新命名裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMember"
+msgstr "重新命名使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberTitle"
+msgstr "重新命名使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceTitle"
+msgstr "要用此範本取代開放存取嗎？"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceConfirm"
+msgstr "取代規則"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRequestConfirmed"
+msgstr "請求已確認"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestLabel"
+msgstr "請求連結或 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRequestNotSent"
+msgstr "請求未傳送"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackRequestRejected"
+msgstr "請求遭拒絕"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKind"
+msgstr "請求類型"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyInventoryUnknown"
+msgstr "所需資料來源的狀態未知或已過時。舊的觀察結果仍會顯示，但自動移除和除役操作已被阻止。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyInventoryUnknownTitle"
+msgstr "所需資料來源尚未驗證"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreRereadForReview"
+msgstr "重新讀取裝置基線以供核對"
+
+#: src/i18n/descriptors.ts
+msgid "product.resourceAccessTitle"
+msgstr "資源存取控制"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateResponseUnknown"
+msgstr "回應未知"
+
+#: src/i18n/descriptors.ts
+msgid "product.restorePersonalLead"
+msgstr "透過不使用認證金鑰的方式重新驗證身分，將帶標籤裝置還原為個人使用者身分。不保證保留 Node ID 和 IP 位址，也不保證存取不中斷。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagRestorePersonal"
+msgstr "還原個人身分"
+
+#: src/i18n/descriptors.ts
+msgid "common.result"
+msgstr "結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardResult"
+msgstr "結果"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRetirement"
+msgstr "除役檢查"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRetirementBlocked"
+msgstr "目前裝置、註冊入口、策略參照、未知來源或尚未確認的外部部署阻止了退役。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReturnRetry"
+msgstr "重試還原輸入"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteRetryReturn"
+msgstr "重試還原邀請"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyManageReturn"
+msgstr "返回原表單——繼續操作但不提交"
+
+#: src/i18n/descriptors.ts
+msgid "product.reusable"
+msgstr "可重複使用"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationReview"
+msgstr "請檢查這兩個身分，以及預期允許和拒絕的流量。不會合併或複製現有目標的擁有者和規則，也不會同時加上新舊兩個標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyStopScope"
+msgstr "請分別檢查用戶端申請授權名單及每個邀請。如有需要，可保留正式環境中的裝置及定義。不會全域停用此名稱，也不會建立永久禁止重複使用此名稱的紀錄；管理員仍可核發新的帶標籤金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyViewDevice"
+msgstr "檢查裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesSubtitle"
+msgstr "先審核子網路由和出口路由，再開放給使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPublishReview"
+msgstr "檢查本次發布的完整策略"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReview"
+msgstr "檢查完整的目標標籤集合"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepResultDescription"
+msgstr "檢查執行結果並繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRenameReview"
+msgstr "檢查此次僅限策略的重新命名"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeExitNode"
+msgstr "撤銷出口節點"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRoute"
+msgstr "撤銷此路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.revokeRouteTitle"
+msgstr "撤銷路由核準"
+
+#: src/i18n/descriptors.ts
+msgid "product.exitNodeDescription"
+msgstr "讓網路流量透過這台裝置轉發。"
+
+#: src/i18n/descriptors.ts
+msgid "common.routes"
+msgstr "路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.routes"
+msgstr "路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableRoutes"
+msgstr "路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.routes"
+msgstr "路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.routesTitle"
+msgstr "路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRuleRestrictions"
+msgstr "規則限制"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmBackfillNodeIps"
+msgstr "執行回填"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideCommandLabel"
+msgstr "在 Headscale 伺服器上執行"
+
+#: src/i18n/descriptors.ts
+msgid "product.savePolicy"
+msgstr "儲存"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveAndUnlock"
+msgstr "儲存並解鎖"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveName"
+msgstr "儲存名稱"
+
+#: src/i18n/descriptors.ts
+msgid "common.saveProfile"
+msgstr "儲存設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveTags"
+msgstr "儲存標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.keyOneTimeNotice"
+msgstr "請立即安全保存完整金鑰。捨棄副本或鎖定工作階段後，無法再次取得完整值。"
+
+#: src/i18n/descriptors.ts
+msgid "product.saveMemberName"
+msgstr "儲存使用者名"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultConflict"
+msgstr "已儲存的連線發生變更。請重新載入後重試；如果密碼已變更，請重新解鎖。"
+
+#: src/i18n/descriptors.ts
+msgid "common.resetMetadataWarning"
+msgstr "已清除儲存的資料，但無法移除此分頁的暫存設定。請關閉此分頁並開啟新分頁。"
+
+#: src/i18n/descriptors.ts
+msgid "common.unreadableRecordsNotice"
+msgstr "無法讀取且未列出的已儲存設定檔記錄：{count} 筆。清除所有已儲存的設定檔會將其移除。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policySavedNewerEdits"
+msgstr "已儲存提交的原則。之後的編輯仍未儲存。"
+
+#: src/i18n/descriptors.ts
+msgid "common.savingProfile"
+msgstr "正在儲存"
+
+#: src/i18n/descriptors.ts
+msgid "product.replaceTagsWarning"
+msgstr "儲存會替換目前標籤，而不是追加標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteApiKeyDescription"
+msgstr "使用此金鑰的指令碼與整合將立即失去對伺服器的存取權限，且該金鑰會被永久刪除。此操作無法復原。"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireApiKeyDescription"
+msgstr "使用此金鑰的指令碼與整合將立即失去對伺服器的存取權限。該金鑰會以「已過期」狀態保留在清單中，且無法恢復。"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDevices"
+msgstr "按名稱、歸屬、標籤、版本搜尋..."
+
+#: src/i18n/descriptors.ts
+msgid "product.searchDeviceLabels"
+msgstr "搜尋裝置標籤…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchAuthKeys"
+msgstr "搜尋金鑰、所屬使用者或裝置標籤..."
+
+#: src/i18n/descriptors.ts
+msgid "product.tagSearch"
+msgstr "搜尋標籤（選填）"
+
+#: src/i18n/descriptors.ts
+msgid "product.selectLabelManagerSearchPlaceholder"
+msgstr "搜尋使用者、團隊…"
+
+#: src/i18n/descriptors.ts
+msgid "product.searchUsers"
+msgstr "搜尋使用者..."
+
+#: src/i18n/descriptors.ts
+msgid "product.selectMemberSearchPlaceholder"
+msgstr "搜尋使用者…"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationMissing"
+msgstr "請從最近一次成功讀取的策略中選擇適用的定義，而非尚未發布的草稿。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceSetupLead"
+msgstr "選擇裝置設定，產生連線指令。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSplitEnvDescription"
+msgstr "將開發和維運分成兩個團隊，各自存取帶有對應標籤的伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsHint"
+msgstr "多個小寫標籤以逗號或空格分隔，例如 tag:server tag:db。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreatePossiblyApplied"
+msgstr "伺服器發生錯誤；建立操作可能已生效"
+
+#: src/i18n/descriptors.ts
+msgid "product.openServerSettings"
+msgstr "伺服器設定"
+
+#: src/i18n/descriptors.ts
+msgid "product.serverSettingsTitle"
+msgstr "伺服器設定"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverUrl"
+msgstr "伺服器 URL"
+
+#: src/i18n/descriptors.ts
+msgid "product.ports"
+msgstr "服務"
+
+#: src/i18n/descriptors.ts
+msgid "product.linuxServerDescription"
+msgstr "執行在虛擬機、容器和路由器上的服務。"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionSessionOnlyBadge"
+msgstr "僅限本次工作階段"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileMigrationHint"
+msgstr "請設定設定檔密碼，以遷移已儲存的連線。遷移失敗時，原有資料保持不變。"
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyExpirationDescription"
+msgstr "設定這部裝置可使用認證金鑰的短期有效期間；已加入的裝置會保留原本的到期時間。"
+
+#: src/i18n/descriptors.ts
+msgid "product.wizardStepPreferencesDescription"
+msgstr "設定裝置標籤和生命週期行為。"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupAuthKey"
+msgstr "設定認證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupDevice"
+msgstr "設定裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorCannotRemoveAllTags"
+msgstr "SetTags 無法移除最後一個標籤。若要還原個人身分，請清除用戶端公告的標籤，然後不使用認證金鑰，以使用者身分重新驗證。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateSmallTeamTitle"
+msgstr "小團隊共享"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackDataStale"
+msgstr "部分資料可能不是最新的"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanRefBannerTitle"
+msgstr "策略引用的帳號或團隊已失效"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultData"
+msgstr "部分已儲存的連線資料無法讀取。現有資料已保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleSourcePlaceholder"
+msgstr "來源"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRuleFieldsRequired"
+msgstr "來源、目標和連接埠均為必填項目。"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupSpecial"
+msgstr "特殊"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcSshLabel"
+msgstr "SSH"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestKindSsh"
+msgstr "SSH 檢查"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckApproved"
+msgstr "已核准 SSH 檢查。"
+
+#: src/i18n/descriptors.ts
+msgid "product.sshCheckRejected"
+msgstr "已拒絕 SSH 檢查。"
+
+#: src/i18n/descriptors.ts
+msgid "common.apiKeyGuideStepServer"
+msgstr "透過 SSH 登入執行 Headscale 的伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceBadge"
+msgstr "引用已失效"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateNewOperation"
+msgstr "另行發起新的建立操作"
+
+#: src/i18n/descriptors.ts
+msgid "product.templatesSectionTitle"
+msgstr "從範本開始"
+
+#: src/i18n/descriptors.ts
+msgid "product.status"
+msgstr "狀態"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyStopEntrances"
+msgstr "停止已知註冊入口"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReadbackHint"
+msgstr "建議來自上次讀取的策略，而非尚未發布的編輯；這不能證明執行時已載入該策略。"
+
+#: src/i18n/descriptors.ts
+msgid "common.system"
+msgstr "系統"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSharedNote"
+msgstr "此瀏覽器的分頁共用已解鎖的伺服器。連續 30 分鐘未操作後，工作階段將鎖定。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagName"
+msgstr "裝置標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedOnly"
+msgstr "帶標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.taggedKeys"
+msgstr "帶標籤金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.tags"
+msgstr "標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.dashboardTitle"
+msgstr "Tailnet 總覽"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationTarget"
+msgstr "目標標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferences"
+msgstr "團隊成員關係與標籤管理權限"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamName"
+msgstr "團隊名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamNameInvalid"
+msgstr "團隊名稱不能包含空格、逗號、冒號 (:) 或 @。"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamsSection"
+msgstr "團隊"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupTeams"
+msgstr "團隊"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceNameConflict"
+msgstr "該群組名稱或標籤名稱已被使用。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionChanged"
+msgstr "目前的伺服器已切換。請檢查此頁面後重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.loginServerUrlHint"
+msgstr "裝置連線 Headscale 時使用的網址。如果此主控台透過代理存取 API，請修改它。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorRequestFailed"
+msgstr "API 金鑰遭拒，可能已失效或過期。請透過 Headscale CLI 取得有效金鑰，再更新此連線設定。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreLateFailure"
+msgstr "核准操作可能已變更裝置並消耗 Auth ID。輸入已清除，且不會重送。請保留預期目標，並透過僅讀取來驗證，或使用目前部署的手動身分驗證流程。"
+
+#: src/i18n/descriptors.ts
+msgid "product.discardKeyDescription"
+msgstr "認證金鑰不會再次顯示。請先複製，或稍後重新建立金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "common.preferencesReloadFailed"
+msgstr "瀏覽器無法重新載入偏好設定。請重新載入頁面後重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.storageWrite"
+msgstr "瀏覽器無法儲存此變更。先前的資料已保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackPossiblyApplied"
+msgstr "變更可能已套用"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreUserChanged"
+msgstr "所選使用者已被移除或重新命名。請重新選擇並確認預期使用者；未選擇任何替代使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateUnknown"
+msgstr "建立結果未知，金鑰可能已經建立。請在「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreObservationFailed"
+msgstr "無法讀取裝置與使用者的目前狀態。原核准操作的結果保持不變。請勿重新提交舊的 Auth ID。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreBaselineReread"
+msgstr "已重新讀取目前的裝置基線。請核對原始使用者欄位和完整標籤，並重新確認伺服器、備用管理通道和本次請求來源。尚未傳送核准請求。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagObservedConflict"
+msgstr "目前的觀察結果與提交的目標不同。請保留草稿並檢查差異。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagObservedMatch"
+msgstr "目前的觀察結果與目標相符。這不能證明原請求或持久儲存已成功。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagNoChange"
+msgstr "目前的標籤集合已相符。無須寫入。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreBaselineReadFailed"
+msgstr "無法重新讀取裝置基線。尚未提交的請求已保留，但核准已遭阻擋。請再次讀取並核對目前的裝置後再確認。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagDecisionChanged"
+msgstr "裝置身分、標籤、策略或伺服器版本已變更。已保留你的選擇；請檢查新的基準後再次確認。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyExternalConfirm"
+msgstr "外部部署負責人已檢查指令碼、離線用戶端及舊金鑰重新註冊的相依關係，並確認沒有尚未處理的使用情況。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReturnNewerEdit"
+msgstr "還原過程中，表單或檢視畫面已變更。先前的標籤草稿仍保留；如有開啟的表單，請先關閉，再選擇還原或捨棄該草稿。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createMemberDescription"
+msgstr "Headscale CLI 使用使用者名稱。存取控制會選擇可唯一解析的策略身分：依序嘗試電子郵件、使用者名稱及 provider 身分。顯示名稱僅用於展示。重複的電子郵件可能使現有策略身分產生歧義。"
+
+#: src/i18n/descriptors.ts
+msgid "common.languageNotSaved"
+msgstr "語言已切換，但無法儲存偏好設定，請重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.languageLoadFailed"
+msgstr "無法載入此語言，請重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createdKeyUnavailable"
+msgstr "最近一次成功重新整理已確認此金鑰無法再用：它已被刪除、已到期，或已作為一次性金鑰使用。請建立另一把金鑰來加入裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreAssociationPending"
+msgstr "舊的認證金鑰關聯仍然存在，或無法確認已清除。"
+
+#: src/i18n/descriptors.ts
+msgid "common.operationFailed"
+msgstr "無法完成此操作。"
+
+#: src/i18n/descriptors.ts
+msgid "product.setupExpiredReturn"
+msgstr "原定的絕對過期時間已過。請明確選擇新的過期時間；原過期時間未被延長。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyImplicitAccess"
+msgstr "原策略隱含預設允許存取。宣告標籤會保留這項存取基準；限制流量屬於另一項變更。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteStopUnresolved"
+msgstr "使此認證金鑰過期或將其刪除的請求結果未知。請在「認證金鑰」清單核對其目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.passwordsMismatch"
+msgstr "兩次輸入的密碼不一致。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policySaveConflict"
+msgstr "伺服器上的原則已變更。你的草稿已保留，尚未儲存。請捨棄變更或重新載入原則後再試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagPolicyUnreadable"
+msgstr "無法讀取或安全解析策略。請重試讀取；現有選擇會保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRetirementDefinition"
+msgstr "策略定義仍然存在。請在存取控制中審閱並發布定義的刪除，再重新檢查退役條件："
+
+#: src/i18n/descriptors.ts
+msgid "product.policySaveContextChanged"
+msgstr "原則已儲存。此編輯器內容已變更，請檢查後重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPublishRace"
+msgstr "寫入前會再次讀取策略。這不是比較並交換操作，也不是跨資源快照；請協調確保只有一個寫入方，並在需要時保留存取受限的原始備份。"
+
+#: src/i18n/descriptors.ts
+msgid "product.writeOutcomeVerifyInAccess"
+msgstr "策略寫入結果未知。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagPolicyDependency"
+msgstr "策略寫入結果未知。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingBody"
+msgstr "策略寫入結果未知。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingRelease"
+msgstr "策略寫入結果未知。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingReleased"
+msgstr "策略寫入結果未知。請在「存取控制」中核對目前策略。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.discardProfileChangesDescription"
+msgstr "伺服器設定已有變更。現在關閉會捨棄尚未儲存的內容。"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordChanged"
+msgstr "設定檔密碼已修改，需要使用時請重新解鎖。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreWrongServer"
+msgstr "註冊連結屬於另一個對外 login-server。不會傳送核准請求。"
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnreachable"
+msgstr "請求未完成。請檢查伺服器位址、網路連線和伺服器的跨來源（CORS）設定。如果你正在儲存變更，請先檢查伺服器的目前狀態再重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateReviewRequired"
+msgstr "請求結果未知。請在「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.writeOutcomeVerifyInDevices"
+msgstr "請求結果未知。請在「裝置」或「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagUnresolved"
+msgstr "請求結果未知。請在「裝置」或「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReleaseGate"
+msgstr "請求結果未知。請在「裝置」或「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagPriorUnresolved"
+msgstr "請求結果未知。請在「裝置」或「認證金鑰」清單核對目前狀態。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionCancelled"
+msgstr "請求已取消。準備好後可重試。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionOutcomeUnknown"
+msgstr "無法確認操作結果，伺服器可能已儲存變更。請先檢查目前狀態，再決定是否重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteUserUnavailable"
+msgstr "所選使用者已不再可用。請明確選擇一名使用者，或為帶標籤的金鑰選擇不設所屬使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "common.requestUnexpectedResponse"
+msgstr "伺服器傳回了非預期的回應（HTTP {status}）。請確認位址指向 Headscale，且前置反向代理運作正常。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagWriteConfirmed"
+msgstr "伺服器已確認寫入。尚未獨立驗證連線狀況與持久儲存。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorRequestForbidden"
+msgstr "請求遭伺服器或代理拒絕。請檢查此部署的存取限制。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionSavedLocked"
+msgstr "伺服器設定檔已儲存，但尚未解鎖。請輸入其密碼以解鎖。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreNameRace"
+msgstr "伺服器根據使用者名稱註冊。此 ID/名稱檢查不是伺服器端的比較並交換操作，無法防止並行重複使用名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeExpired"
+msgstr "工作階段在 30 分鐘沒有操作後已鎖定。請輸入設定檔密碼繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagConfirmationStale"
+msgstr "工作階段或伺服器已變更。請重新開啟此操作並再次確認。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionUnavailable"
+msgstr "共用工作階段無法使用。請重新連線並解鎖伺服器後繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeClockReversed"
+msgstr "系統時鐘被調回，工作階段因此已鎖定。請輸入設定檔密碼繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "common.themeNotSaved"
+msgstr "佈景主題已切換，但無法儲存偏好設定，請重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyIdentityUnverified"
+msgstr "暫時無法核對使用者目錄。請成功重新整理目錄後再清理使用者參照。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberCleanupPending"
+msgstr "使用者已刪除，但原則中仍參照該使用者。請重試，或在存取控制中移除這些參照。"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberPolicyPending"
+msgstr "使用者已重新命名，但原則中仍使用舊名稱。請重試，或在存取控制中更新這些參照。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagRefreshFailed"
+msgstr "寫入已獲確認，但清單重新整理失敗。請再次讀取，不要重新傳送。"
+
+#: src/i18n/descriptors.ts
+msgid "common.theme"
+msgstr "主題"
+
+#: src/i18n/descriptors.ts
+msgid "product.maintenanceDescription"
+msgstr "這些操作會影響整個伺服器端。僅在修複或核驗 Headscale 狀態時使用。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDependencyDisclaimer"
+msgstr "這裡顯示的是已宣告的直接相依關係、群組相依關係及巢狀標籤相依關係，並非與 Headscale 等效的授權評估器。現有的巢狀擁有者會保留；不提供新增巢狀擁有者的功能。"
+
+#: src/i18n/descriptors.ts
+msgid "product.ipRulesSectionHint"
+msgstr "這些規則允許存取指定的 IP 位址、網段或全部目標 (*)，可以在此新增、編輯或刪除。"
+
+#: src/i18n/descriptors.ts
+msgid "common.insecureServerUrlWarning"
+msgstr "此網址使用未加密的 HTTP，API 金鑰會以明文在網路上傳輸。除非網路可信，否則請使用 HTTPS。"
+
+#: src/i18n/descriptors.ts
+msgid "product.backfillNodeIpsDescription"
+msgstr "此操作會依照伺服器設定的位址前綴，為所有節點新增或移除 IP 位址。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveRoutesDescription"
+msgstr "這會核准這部裝置目前公佈的所有路由。"
+
+#: src/i18n/descriptors.ts
+msgid "common.clearAllProfilesHint"
+msgstr "這會清除此瀏覽器中所有已儲存的設定檔。如果只想刪除一個，請登出後點選其卡片上的刪除圖示。"
+
+#: src/i18n/descriptors.ts
+msgid "common.clearProfilesDescription"
+msgstr "此操作會刪除此瀏覽器中所有已儲存的伺服器設定、鎖定共用工作階段，並重設語言和主題偏好。之後需要重新新增伺服器和 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPolicyOnlyScope"
+msgstr "此操作的範圍僅限於策略，即使已知裝置或邀請仍使用此名稱也一樣。不會變更這些資源、全域撤銷該身分，也不代表已完成除役。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreBaselineUnavailable"
+msgstr "無法唯一且安全地重建此裝置基線，或裝置的使用者歸屬已變更。尚未傳送核准請求。請關閉此流程，透過可信通道核實裝置後再重新開始。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceEntityMissing"
+msgstr "此群組或標籤已不存在。"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberIdentityConflict"
+msgstr "此身分會使現有原則參照產生歧義，請使用可區分的名稱或電子郵件。"
+
+#: src/i18n/descriptors.ts
+msgid "product.approveExitRoutesDescription"
+msgstr "其中包含出口路由，可能會讓網際網路流量經過這部裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsRegistration"
+msgstr "這是裝置登入連結。請將請求類型切換為裝置登入；SSH 檢查操作不會註冊裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.authRequestIsSshCheck"
+msgstr "這是 SSH 檢查連結。請將請求類型切換為 SSH 檢查；它無法註冊裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.mobileSetupHint"
+msgstr "這不是手機端指令。在 Android 或 iOS 安裝 Tailscale 應用程式並選擇自訂登入伺服器。請依平台文件操作；若註冊等待核准，可將顯示的連結用於「註冊待核准裝置」。"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyWarning"
+msgstr "此金鑰用於驗證目前工作階段。一旦它過期或被刪除，目前工作階段將失去對伺服器的存取權限，需要使用 Headscale CLI 建立新的 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.expireInviteDescription"
+msgstr "這把金鑰將無法再讓新裝置加入。"
+
+#: src/i18n/descriptors.ts
+msgid "product.createdKeyUnverified"
+msgstr "尚未核實此金鑰的目前狀態。請成功重新整理驗證金鑰清單後再確認；已儲存的副本會保留。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deviceOnlyLabelHint"
+msgstr "此標籤來自裝置，尚未在策略中定義，因此無法在此重新命名或刪除。授予存取或新增標籤管理員即可定義它。"
+
+#: src/i18n/descriptors.ts
+msgid "product.disableExpiryDescription"
+msgstr "這部裝置將不再過期，在手動使其過期之前，無需重新登入即可保持存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.renameMemberPrincipalConflict"
+msgstr "這個名稱無法唯一識別此使用者。更新策略參照前，請先檢查使用者目錄。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorInvalidDnsLabel"
+msgstr "此名稱無效。請使用不超過 63 個字母、數字或連字號，且必須以字母或數字開頭和結尾。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyRenameInUse"
+msgstr "裝置或可用邀請仍在使用此名稱。請改用明確列出資源的遷移清單，而不是僅在策略中重新命名。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyIncompatibleTag"
+msgstr "此處觀察到的名稱無法在策略中宣告。請使用相容的替代標籤，不要反覆嘗試宣告。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionReloadRequired"
+msgstr "此頁面與共用工作階段不相容。請關閉舊分頁並重新載入此頁面。"
+
+#: src/i18n/descriptors.ts
+msgid "common.appErrorDescription"
+msgstr "此頁面未能完成載入或顯示。這通常是暫時的，例如更新之後、使用無痕模式，或快取檔案已過期。請重試以重新載入。已儲存的連線不會被刪除。"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverPasswordHint"
+msgstr "此密碼僅用於加密這台伺服器的 API 金鑰，無法找回。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReferenceUnsupported"
+msgstr "此原則包含無法安全更新的欄位。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyReadOnlyError"
+msgstr "無法安全讀取此原則，已禁止修改。請在 Headscale 中修正原則後重新整理。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyManagementIncompatible"
+msgstr "此策略名稱會保留，但管理員操作裝置及邀請所用的 API 要求使用相容的小寫名稱。"
+
+#: src/i18n/descriptors.ts
+msgid "common.legacyProfileMigrateFirst"
+msgstr "此設定檔使用舊的儲存格式。修改其網址或 API 金鑰前，請先從卡片開啟並完成遷移。你可以在這裡重新命名。"
+
+#: src/i18n/descriptors.ts
+msgid "product.cleanupOrphanRefsConfirmBody"
+msgstr "只會刪除標示為「引用已失效」的項目。清理後仍需按一下頁面頂端的「儲存」，才會寫入策略。"
+
+#: src/i18n/descriptors.ts
+msgid "product.confirmRemovePolicyItemDescription"
+msgstr "這會從你的存取設定中刪掉它。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteInviteDescription"
+msgstr "這會從 Headscale 刪除該認證金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeMachineDescription"
+msgstr "這會從 Headscale 移除該裝置，無法在目前的 UI 中復原。"
+
+#: src/i18n/descriptors.ts
+msgid "common.confirmDeleteProfileDescription"
+msgstr "這會從目前的瀏覽器刪除已儲存的伺服器 URL 和 API 金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.deleteMemberDescription"
+msgstr "這會從 Headscale 刪除該使用者。繼續前請檢查其裝置和認證金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.removeReferenceDescription"
+msgstr "這會將這位使用者從此原則項目中移除，並立即在伺服器上儲存原則。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyTagRenameScope"
+msgstr "這會重新命名原則中的標籤。裝置標籤和外部設定保持不變。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionInvalidRequest"
+msgstr "無法傳送此請求。請重新載入頁面後重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyAdvancedRuleHint"
+msgstr "此規則包含額外限制，請在 Headscale 原則中編輯它允許的服務。"
+
+#: src/i18n/descriptors.ts
+msgid "common.unreadableProfileRepair"
+msgstr "無法讀取此已儲存的設定檔。請輸入伺服器網址和 API 金鑰，並設定新的設定檔密碼來取代它，或在其卡片上刪除它。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPublishScope"
+msgstr "此操作會傳送整份策略，包括所有現有的 ACL 和擁有者設定草稿。不會指派裝置標籤或更新邀請。"
+
+#: src/i18n/descriptors.ts
+msgid "common.unsupportedServerVersion"
+msgstr "此伺服器回報的版本為 Headscale {version}，而本應用程式針對 0.29.x。部分頁面可能無法載入或顯示不完整的資料。"
+
+#: src/i18n/descriptors.ts
+msgid "common.serverVersionUnreadable"
+msgstr "此伺服器回報的版本為 Headscale {version}，本應用程式不支援該版本，且無法讀取其回應。請使用 Headscale 0.29.x 伺服器。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeProfileChanged"
+msgstr "此伺服器已儲存的設定檔已被修改（例如密碼），工作階段因此已鎖定。請輸入設定檔密碼繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationOccupied"
+msgstr "已在策略、裝置或邀請中觀察到此目標，包括僅由金鑰使用的情況。它不是新身分。"
+
+#: src/i18n/descriptors.ts
+msgid "product.templateReplaceBody"
+msgstr "此範本會刪除下列規則，這些規則目前允許所有裝置互相存取。儲存後，只有範本中的規則允許存取：未加標籤的裝置，以及標籤不在範本涵蓋範圍內的裝置，除非有其他規則涵蓋，否則將失去存取權限。"
+
+#: src/i18n/descriptors.ts
+msgid "product.userImpactOnDeleteHeading"
+msgstr "下列策略項目引用了這位使用者："
+
+#: src/i18n/descriptors.ts
+msgid "product.expireMachineDescription"
+msgstr "裝置必須重新認證後才能再次連線。"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreSourceConfirm"
+msgstr "我已透過目標裝置的可信管理通道，確認此 Auth ID 或連結確實屬於該裝置及這次重新驗證身分的嘗試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.time"
+msgstr "時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.destination"
+msgstr "目標"
+
+#: src/i18n/descriptors.ts
+msgid "product.teamAccessViewHint"
+msgstr "若要修改權限，請關閉此視窗並開啟對應的裝置標籤。"
+
+#: src/i18n/descriptors.ts
+msgid "product.serviceSelectionHint"
+msgstr "若要改用自訂連接埠，請先輸入並確認連接埠，再取消最後一個預設服務。取消最後一個服務會移除此存取項目；可用「授予存取」重新新增。"
+
+#: src/i18n/descriptors.ts
+msgid "product.totalDevices"
+msgstr "所有裝置"
+
+#: src/i18n/descriptors.ts
+msgid "common.tryAgain"
+msgstr "重試"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyDefinitionAbsent"
+msgstr "最新讀回結果中未宣告"
+
+#: src/i18n/descriptors.ts
+msgid "product.unknown"
+msgstr "未知"
+
+#: src/i18n/descriptors.ts
+msgid "common.encryptionUnlockSubmit"
+msgstr "解鎖"
+
+#: src/i18n/descriptors.ts
+msgid "common.profileUnlockTitle"
+msgstr "解鎖 {name}"
+
+#: src/i18n/descriptors.ts
+msgid "common.vaultLocked"
+msgstr "請先解鎖已儲存的連線再繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionLocked"
+msgstr "請解鎖此伺服器後繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUnmodeledReview"
+msgstr "介面尚未建模的參照位置已保留在下方完整文件中。請在實際設定來源中檢閱；自動身分改寫已被阻止。"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesBadge"
+msgstr "未儲存"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeDiscardedPolicy"
+msgstr "工作階段鎖定時，未儲存的存取控制修改已被捨棄。"
+
+#: src/i18n/descriptors.ts
+msgid "product.unsavedChangesTitle"
+msgstr "改動尚未儲存"
+
+#: src/i18n/descriptors.ts
+msgid "product.openInvites"
+msgstr "未使用且未到期的驗證金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "common.updatedProfile"
+msgstr "更新時間"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidMachineName"
+msgstr "請使用 1 到 63 個字母、數字或連字號，並以字母或數字開頭和結尾。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagReplaceIncompatible"
+msgstr "使用相容的替代標籤"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationExisting"
+msgstr "使用現有身分"
+
+#: src/i18n/descriptors.ts
+msgid "common.profilePasswordMinLength"
+msgstr "至少使用 8 個字元。"
+
+#: src/i18n/descriptors.ts
+msgid "product.invalidTags"
+msgstr "請使用以 tag: 開頭的小寫標籤，例如 tag:server。多個標籤以逗號或空格分隔。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteTagsPrefix"
+msgstr "請使用以 tag: 開頭的小寫標籤，例如 tag:server。多個標籤以逗號或空格分隔。"
+
+#: src/i18n/descriptors.ts
+msgid "product.pendingRegistrationDescription"
+msgstr "使用待核准裝置顯示的註冊金鑰。"
+
+#: src/i18n/descriptors.ts
+msgid "product.authKeyAutomationHint"
+msgstr "適合在自動化流程中批次加入多部裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.reusableDescription"
+msgstr "使用這個金鑰認證多台裝置。"
+
+#: src/i18n/descriptors.ts
+msgid "product.applyTemplate"
+msgstr "使用此範本"
+
+#: src/i18n/descriptors.ts
+msgid "product.used"
+msgstr "已使用"
+
+#: src/i18n/descriptors.ts
+msgid "product.currentApiKeyBadge"
+msgstr "目前工作階段正在使用"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteRegistrationUsed"
+msgstr "單次使用金鑰已用過；不可用於新註冊"
+
+#: src/i18n/descriptors.ts
+msgid "product.devicesTableUser"
+msgstr "使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.userDetails"
+msgstr "使用者詳細資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.userId"
+msgstr "使用者 ID"
+
+#: src/i18n/descriptors.ts
+msgid "product.memberName"
+msgstr "使用者名稱"
+
+#: src/i18n/descriptors.ts
+msgid "product.userNameInvalid"
+msgstr "使用者名稱不能包含空格或控制字元。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserNotFound"
+msgstr "找不到使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.errorUserStillOwns"
+msgstr "這位使用者仍擁有裝置。請先刪除裝置或將其移轉給其他使用者，再刪除此使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "product.clientDeviceDescription"
+msgstr "使用者自己的筆電、手機和桌上型電腦。"
+
+#: src/i18n/descriptors.ts
+msgid "common.users"
+msgstr "使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.nav.members"
+msgstr "使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersTitle"
+msgstr "使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.optionGroupUsers"
+msgstr "使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.feedbackIdentityData"
+msgstr "使用者與金鑰"
+
+#: src/i18n/descriptors.ts
+msgid "product.membersLoadFailed"
+msgstr "無法載入使用者。"
+
+#: src/i18n/descriptors.ts
+msgid "common.usersShown"
+msgstr "已顯示 {shown} 位使用者，共 {total} 位"
+
+#: src/i18n/descriptors.ts
+msgid "product.restoreConnectivity"
+msgstr "請另行驗證 SSH、管理存取，以及需要允許和拒絕的連線。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyPendingOperator"
+msgstr "請在「存取控制」中核對目前策略。"
+
+#: src/i18n/descriptors.ts
+msgid "product.inviteCreateManualCheck"
+msgstr "請在「認證金鑰」清單核對目前狀態。標籤或選項相同不能證明金鑰來自此次操作，請勿據此撤銷其他金鑰。不會自動重試。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOperatorVerify"
+msgstr "請在「裝置」或「認證金鑰」清單核對目前狀態。"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewDetails"
+msgstr "檢視詳細資料"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyViewInvites"
+msgstr "查看精確相符的邀請"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachine"
+msgstr "檢視裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewMachines"
+msgstr "檢視裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewRoutes"
+msgstr "檢視路由"
+
+#: src/i18n/descriptors.ts
+msgid "product.viewUser"
+msgstr "檢視使用者"
+
+#: src/i18n/descriptors.ts
+msgid "product.orphanReferenceTooltip"
+msgstr "找不到相符的帳號、團隊或裝置標籤，可能是拼字錯誤、格式不一致或物件已被刪除。請開啟詳細資訊，使用該項目的移除操作。"
+
+#: src/i18n/descriptors.ts
+msgid "product.svcWebLabel"
+msgstr "網頁"
+
+#: src/i18n/descriptors.ts
+msgid "common.rememberConnectionHint"
+msgstr "取消勾選後，此設定檔只會顯示在目前分頁及從它開啟的分頁中。無論是否勾選，加密後的 API 金鑰都會保存在此瀏覽器中，直到你刪除此設定檔或清除本機資料。"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagAccessorsSection"
+msgstr "誰可以存取帶有此標籤的裝置"
+
+#: src/i18n/descriptors.ts
+msgid "product.tagOwnersSection"
+msgstr "誰可以透過用戶端申請此標籤（選填）"
+
+#: src/i18n/descriptors.ts
+msgid "product.denyAllBannerBody"
+msgstr "依此策略，裝置之間無法互相存取。請新增規則或從範本開始以允許存取。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyMigrationPending"
+msgstr "寫入結果未知，請在相應清單核對目前狀態。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionDraftsStaleBody"
+msgstr "你有一份屬於 {name} 的未完成草稿，無法將其提交至目前的伺服器。請捨棄此草稿後繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "product.policyUnsavedBlocked"
+msgstr "存取控制頁有尚未發布的策略變更。請先在該處發布或捨棄，再從此處修改策略。"
+
+#: src/i18n/descriptors.ts
+msgid "common.loginNoticeLoggedOut"
+msgstr "你已在此分頁或其他分頁中登出。請輸入設定檔密碼繼續。"
+
+#: src/i18n/descriptors.ts
+msgid "common.sessionExpired"
+msgstr "工作階段已過期，請重新解鎖此伺服器。"

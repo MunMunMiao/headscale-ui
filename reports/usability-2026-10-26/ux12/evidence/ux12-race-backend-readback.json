@@ -1,0 +1,21 @@
+{
+  "control": [
+    {
+      "id": 2,
+      "name": "ux12-a-bob-renamed",
+      "display_name": "A 主服 Bob"
+    },
+    {
+      "id": 3,
+      "name": "ux12-a-race-write",
+      "display_name": "A 在途请求"
+    }
+  ],
+  "control-secondary": [
+    {
+      "id": 1,
+      "name": "ux12-b-carol",
+      "display_name": "B 独立服 Carol"
+    }
+  ]
+}

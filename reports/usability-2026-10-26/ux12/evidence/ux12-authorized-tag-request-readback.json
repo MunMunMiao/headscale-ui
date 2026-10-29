@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "name": "ux12-client-b",
+    "given_name": "ux12-client-b",
+    "tags": null,
+    "requested_tags": null,
+    "valid_tags": null,
+    "invalid_tags": null,
+    "forced_tags": null,
+    "username": "ux12-a-bob-renamed"
+  }
+]

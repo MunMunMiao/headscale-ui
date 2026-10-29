@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-26T01:14:49.209120+08:00",
+  "browser_profiles_cleared_via_ui": true,
+  "headscale_users_remaining": 2,
+  "headscale_nodes_remaining": 1,
+  "node_states": [
+    {
+      "id": 2,
+      "name": "ux05-client-b",
+      "approved_routes": [],
+      "tags": []
+    }
+  ],
+  "management_keys_remaining": 1,
+  "policy_read_exit": 0,
+  "old_tag_present_in_policy_read": false,
+  "namespace": "hsux-1026-0020-ux05",
+  "namespace_resources_still_exist": [
+    {
+      "pod": "client-a",
+      "phase": "Running"
+    },
+    {
+      "pod": "client-b",
+      "phase": "Running"
+    },
+    {
+      "pod": "control",
+      "phase": "Running"
+    },
+    {
+      "pod": "target",
+      "phase": "Running"
+    }
+  ],
+  "cleanup_owner": "coordinator; member did not delete namespace or stop Chrome"
+}

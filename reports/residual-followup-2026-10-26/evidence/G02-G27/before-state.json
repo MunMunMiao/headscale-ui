@@ -1,0 +1,33 @@
+{
+  "backup": "/tmp/headscale-ui-g02-g27-before.ETfnit",
+  "files": [
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.tsx",
+      "sha256": "457a5bfaa450eecd0a88698d4144586fb577dfa4b408838324ca912afeb995e1"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.ts",
+      "sha256": "0cb56bccca2567a35c4af7b662500cd944e95f58b0ed351565deb8061ff0e683"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.tsx",
+      "sha256": "420e8d0990406025a570bc7afe5fc64bb48cbad21d81d69f8f9db4950e11e986"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/InvitesPage.lifecycle.browser.test.tsx",
+      "sha256": "d9db02938c064dd89b426e86d3cc79ac39e8c1eeb8624484f2077380a5858823"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.fixes.browser.test.tsx",
+      "sha256": "2dde4366e926abaebc94a74ea1cdfba8195a85fed5453dd6e378e1822b7619f1"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/src/composables/useCreatePreAuthKey.test.ts",
+      "sha256": "a6fd298b70d921e775cd242dbe74618018004503bfe99321d8174449f9f05355"
+    },
+    {
+      "path": "/Users/munmunmiao/Documents/web/headscale-ui/e2e/tag-lifecycle.browser.test.tsx",
+      "sha256": "fa4918b46252d7a4a7cd205eb8413ccc99e8ec125d19aa268c1c7f8224670dca"
+    }
+  ]
+}

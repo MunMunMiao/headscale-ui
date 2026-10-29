@@ -1,0 +1,47 @@
+{
+  "phase": "exit-approved",
+  "utc": "2026-10-25T16:42:21.549240+00:00",
+  "url": "http://example.com",
+  "transport": "client-a tailscaled HTTP proxy 127.0.0.1:1056",
+  "before": {
+    "state": "Running",
+    "exitNode": {
+      "ID": "1",
+      "Online": true,
+      "TailscaleIPs": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ]
+    },
+    "peers": [
+      {
+        "host": "ux07-client-b",
+        "exit": true,
+        "tx": 7468,
+        "rx": 7996
+      }
+    ]
+  },
+  "exit": 0,
+  "stdout": "<!doctype html><html lang=en><head><meta charset=utf-8><link rel=icon href=data:,><meta name=viewport content=\"width=device-width,initial-scale=1\"><title>Example Domain</title><style>html{color-scheme:light dark;background:light-dark(#eee,#222)}body{font:16px/1.6 system-ui,sans-serif;max-width:26em;margin:auto;padding:25vh 2em 2em;text-align:center}</style></head><body><p>This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.</p><script src=/s.js></script></body></html>",
+  "stderr": "Connecting to 127.0.0.1:1056 (127.0.0.1:1056)\n  HTTP/1.1 200 OK\n  Age: 1\n  Allow: GET, HEAD\n  Alt-Svc: h3=\":443\"; ma=86400\n  Cf-Cache-Status: HIT\n  Cf-Ray: a502ac899c4f04f3-HKG\n  Content-Type: text/html; charset=utf-8\n  Date: Sun, 25 Oct 2026 16:42:21 GMT\n  Last-Modified: Sat, 24 Oct 2026 11:34:40 GMT\n  Server: cloudflare\n  Connection: close\n  Transfer-Encoding: chunked\n  \nwriting to stdout\n-                    100% |********************************|   577  0:00:00 ETA\nwritten to stdout",
+  "after": {
+    "state": "Running",
+    "exitNode": {
+      "ID": "1",
+      "Online": true,
+      "TailscaleIPs": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ]
+    },
+    "peers": [
+      {
+        "host": "ux07-client-b",
+        "exit": true,
+        "tx": 7788,
+        "rx": 8940
+      }
+    ]
+  }
+}

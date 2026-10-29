@@ -1,201 +1,403 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { type PolicyDesignerState, toMemberRef } from "@/domain/policy-designer";
-import { policyDesignerTestingHandle, usePolicyDesigner } from "./usePolicyDesigner";
-
-beforeEach(() => policyDesignerTestingHandle.reset());
+import { describe, expect, test } from "vitest";
+import {
+  createGroup,
+  createRule,
+  type PolicyDesignerState,
+  parsePolicy,
+  removeRuleById,
+  toMemberRef,
+  upsertGroup,
+} from "@/domain/policy-designer";
+import { addRule } from "@/test/policy-state";
+import {
+  createPolicyDesignerStore,
+  POLICY_FILE_MODE_WITHOUT_PATH,
+  policyBlockedMessage,
+} from "./usePolicyDesigner";
 
 const state = (): PolicyDesignerState => ({
   rules: [
     { id: "wide", action: "accept", source: "*", destination: "*", ports: "*" },
-    { id: "narrow", action: "accept", source: "group:ops", destination: "tag:web", ports: "443" },
+    {
+      id: "narrow",
+      action: "accept",
+      source: "group:ops",
+      destination: "tag:web",
+      ports: "443",
+    },
   ],
   groups: [
-    { id: "ops", name: "group:ops", members: [toMemberRef("alice@example.com")] },
-    { id: "dev", name: "group:dev", members: [toMemberRef("bob@example.com")] },
+    {
+      id: "ops",
+      name: "group:ops",
+      members: [toMemberRef("alice@example.com")],
+    },
   ],
   tagOwners: [
     { id: "web", tag: "tag:web", owners: [toMemberRef("group:ops")] },
-    { id: "db", tag: "tag:db", owners: [toMemberRef("carol@example.com")] },
   ],
-  extras: { zeta: true, alpha: 1 },
+  extras: { hosts: { db: "100.64.0.1" } },
 });
 
-describe("usePolicyDesigner", () => {
-  test("treats an unserializable draft as dirty so refresh cannot discard it", () => {
-    const designer = usePolicyDesigner();
+describe("policy draft store", () => {
+  test("starts clean before any load with the absent policy's default access intact", () => {
+    const designer = createPolicyDesignerStore();
+    expect(designer.isPolicyDirty).toBe(false);
+    expect(designer.getSnapshot().policyDraft).toBe("");
+    expect(designer.getSnapshot().editRevision).toBe(0);
+    expect(designer.policyPayload).toEqual({
+      groups: {},
+      tagOwners: {},
+      acls: [
+        { action: "accept", src: ["0.0.0.0/0", "::/0"], dst: ["0.0.0.0/0:*"] },
+        { action: "accept", src: ["0.0.0.0/0", "::/0"], dst: ["::/0:*"] },
+      ],
+    });
+    designer.commitState(parsePolicy(""));
+    expect(designer.getSnapshot().editRevision).toBe(0);
+    expect(designer.isPolicyDirty).toBe(false);
+  });
+
+  test("tracks real edits before the first load and releases protection on discard or reset", () => {
+    const designer = createPolicyDesignerStore();
+    designer.commitState({ ...designer.policyDesignerState, rules: [] });
+    expect(designer.getSnapshot().editRevision).toBe(1);
+    expect(designer.isPolicyDirty).toBe(true);
+    expect(designer.policyPayload?.acls).toEqual([]);
+    designer.commitState(parsePolicy(designer.getSnapshot().policyDraft));
+    expect(designer.isPolicyDirty).toBe(false);
+    designer.commitState(
+      upsertGroup(designer.policyDesignerState, createGroup("group:local")),
+    );
+    expect(designer.isPolicyDirty).toBe(true);
+    designer.load("");
+    expect(designer.isPolicyDirty).toBe(false);
+    expect(designer.getSnapshot().policyGroups).toEqual([]);
+    expect(designer.getSnapshot().policyRules).toHaveLength(1);
+  });
+
+  test("keeps an unreadable policy untouched until a valid load repairs it", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"groups":{"group:previous":["alice@"]},"acls":[]}');
+    const unreadable = '{"acls":[';
+    designer.load(unreadable);
+    designer.commitState(state());
+    expect(designer.policyPayload).toBeNull();
+    expect(designer.getSnapshot().policyDraft).toBe(unreadable);
+    expect(designer.policyDesignerState).toMatchObject({
+      rules: [],
+      groups: [],
+      tagOwners: [],
+    });
+    expect(designer.isPolicyDirty).toBe(false);
+    expect(designer.beginSave(state())).toBeNull();
+    designer.load('{"groups":{"group:repaired":["bob@"]},"acls":[]}');
+    expect(designer.policyPayload).toMatchObject({
+      groups: { "group:repaired": ["bob@"] },
+      acls: [],
+    });
+    designer.commitState(
+      addRule(
+        designer.policyDesignerState,
+        createRule("bob@", "tag:web", "443"),
+      ),
+    );
+    expect(designer.isPolicyDirty).toBe(true);
+  });
+
+  test("keeps an unserializable draft dirty so refresh cannot discard it", () => {
+    const designer = createPolicyDesignerStore();
     designer.load('{"acls":[]}');
     const extras: Record<string, unknown> = {};
     extras.circular = extras;
-    designer.policyExtraSections.value = extras;
-
-    expect(designer.isPolicyDirty.value).toBe(true);
-    expect(designer.policyExtraSections.value.circular).toBe(designer.policyExtraSections.value);
-    expect(designer.policyDraft.value).toBe('{"acls":[]}');
+    designer.commitState({ ...designer.policyDesignerState, extras });
+    expect(designer.isPolicyDirty).toBe(true);
+    expect(designer.getSnapshot().policyExtraSections.circular).toBe(extras);
+    expect(designer.getSnapshot().policyDraft).toBe('{"acls":[]}');
+    expect(designer.beginSave(designer.policyDesignerState)).toBeNull();
   });
 
-  test("tracks a canonical saved baseline, including initially empty policies", () => {
-    const designer = usePolicyDesigner();
-    const saved = '{"acls":[], "tagOwners":{}, "groups":{"group:ops":["alice@example.com"]}}';
-    designer.load(saved);
-    expect(designer.policyDraft.value).toBe(saved);
-    expect(designer.isPolicyDirty.value).toBe(false);
-
-    designer.policyGroups.value[0].members.push(toMemberRef("bob@example.com"));
-    expect(designer.isPolicyDirty.value).toBe(true);
-    designer.policyDraft.value = JSON.stringify(designer.policyPayload.value, null, 2);
-    expect(designer.isPolicyDirty.value).toBe(false);
-
-    designer.load("");
-    expect(designer.isPolicyDirty.value).toBe(false);
-    designer.addPolicyGroup();
-    expect(designer.isPolicyDirty.value).toBe(true);
-  });
-
-  test("shares initial state and exposes stable choice and risk helpers", () => {
-    const designer = usePolicyDesigner();
-
-    expect(usePolicyDesigner()).toBe(designer);
-    expect(designer.policyChoiceId("source", " Group:Ops / Admin ")).toBe("source-group-ops-admin");
-    expect(designer.policyChoiceId("ports", "***")).toBe("ports-any");
-    expect(designer.isPolicyRuleHighRisk({ source: " * ", destination: "*", ports: " *" })).toBe(
-      true,
+  test("an incomplete edited rule is unsaved and cannot be serialized", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load(
+      '{"acls":[{"action":"accept","src":["alice@"],"dst":["10.0.0.1:22"]}]}',
     );
-    expect(
-      designer.isPolicyRuleHighRisk({ source: "group:ops", destination: "*", ports: "*" }),
-    ).toBe(false);
-
-    const members = [toMemberRef("alice@example.com")];
-    expect(designer.addUniqueMemberRef(members, " ")).toBe(members);
-    expect(designer.addUniqueMemberRef(members, " alice@example.com ")).toBe(members);
-    expect(designer.addUniqueMemberRef(members, " group:ops ")).toEqual([
-      ...members,
-      toMemberRef("group:ops"),
-    ]);
+    const current = designer.policyDesignerState;
+    designer.commitState({
+      ...current,
+      rules: current.rules.map((rule) => ({ ...rule, ports: " " })),
+    });
+    expect(designer.policyPayload).toBeNull();
+    expect(designer.isPolicyDirty).toBe(true);
+    expect(designer.getSnapshot().policyRules[0]?.ports).toBe(" ");
   });
 
-  test("commits, filters, serializes, and loads policy state", () => {
-    const designer = usePolicyDesigner();
-    const next = state();
-    designer.commitState(next);
+  test("tracks a canonical accepted baseline, including initially empty policies", () => {
+    const designer = createPolicyDesignerStore();
+    const saved =
+      '{"acls":[], "tagOwners":{}, "groups":{"group:ops":["alice@example.com"]}}';
+    designer.load(saved);
+    expect(designer.getSnapshot().policyDraft).toBe(saved);
+    expect(designer.isPolicyDirty).toBe(false);
+    const current = designer.policyDesignerState;
+    designer.commitState({
+      ...current,
+      groups: current.groups.map((group) => ({
+        ...group,
+        members: [...group.members, toMemberRef("bob@example.com")],
+      })),
+    });
+    expect(designer.isPolicyDirty).toBe(true);
+    const ticket = designer.beginSave(designer.policyDesignerState);
+    if (!ticket) throw new Error("Expected a writable policy");
+    designer.acceptSavedPolicy(ticket, ticket.submittedText);
+    designer.finishSave(ticket.operationId);
+    expect(designer.isPolicyDirty).toBe(false);
+    designer.load("");
+    expect(designer.isPolicyDirty).toBe(false);
+    designer.commitState(
+      upsertGroup(designer.policyDesignerState, createGroup("group:new")),
+    );
+    expect(designer.isPolicyDirty).toBe(true);
+  });
 
-    expect(designer.policyDesignerState.value).toEqual(next);
-    expect(designer.policyPayload.value).toMatchObject({ zeta: true, alpha: 1 });
-    expect(designer.policyExtraSectionKeys.value).toEqual(["alpha", "zeta"]);
-    expect(designer.policyRiskCount.value).toBe(1);
-    expect(designer.filteredPolicyGroups.value).toBe(designer.policyGroups.value);
-    expect(designer.filteredPolicyTagOwners.value).toBe(designer.policyTagOwners.value);
-
-    designer.policyGroupSearch.value = "ALICE";
-    designer.policyTagOwnerSearch.value = "CAROL";
-    expect(designer.filteredPolicyGroups.value.map((group) => group.id)).toEqual(["ops"]);
-    expect(designer.filteredPolicyTagOwners.value.map((owner) => owner.id)).toEqual(["db"]);
-
+  test("isolates stores and loads the complete structured policy", () => {
+    const designer = createPolicyDesignerStore();
+    const other = createPolicyDesignerStore();
+    const otherBefore = other.getSnapshot();
+    designer.commitState(state());
+    expect(other.getSnapshot()).not.toBe(designer.getSnapshot());
+    expect(other.getSnapshot()).toBe(otherBefore);
+    expect(designer.policyDesignerState).toEqual(state());
     designer.load(
       JSON.stringify({
-        acls: [{ action: "accept", src: ["group:loaded"], dst: ["tag:loaded:22"] }],
+        acls: [
+          { action: "accept", src: ["group:loaded"], dst: ["tag:loaded:22"] },
+        ],
         groups: { "group:loaded": ["loaded@example.com"] },
         tagOwners: { "tag:loaded": ["group:loaded"] },
         hosts: { db: "100.64.0.1" },
       }),
     );
-    expect(designer.policyRules.value[0]).toMatchObject({
+    expect(designer.getSnapshot().policyRules[0]).toMatchObject({
       source: "group:loaded",
       destination: "tag:loaded",
       ports: "22",
     });
-    expect(designer.policyGroups.value[0]?.name).toBe("group:loaded");
-    expect(designer.policyTagOwners.value[0]?.tag).toBe("tag:loaded");
-    expect(designer.policyExtraSections.value).toEqual({ hosts: { db: "100.64.0.1" } });
-  });
-
-  test("adds rules with defaults and closes the rule dialog", () => {
-    const designer = usePolicyDesigner();
-    designer.policyRules.value = [];
-    designer.policyRuleForm.source = "";
-    designer.policyRuleForm.destination = "";
-    designer.policyRuleForm.ports = "";
-    designer.policyRuleDialogOpen.value = true;
-
-    designer.addPolicyRule();
-
-    expect(designer.policyRules.value).toHaveLength(1);
-    expect(designer.policyRules.value[0]).toMatchObject({
-      action: "accept",
-      source: "*",
-      destination: "*",
-      ports: "*",
+    expect(designer.getSnapshot().policyGroups[0]?.name).toBe("group:loaded");
+    expect(designer.getSnapshot().policyTagOwners[0]?.tag).toBe("tag:loaded");
+    expect(designer.getSnapshot().policyExtraSections).toEqual({
+      hosts: { db: "100.64.0.1" },
     });
-    expect(designer.policyRuleDialogOpen.value).toBe(false);
   });
 
-  test("creates and edits groups while ignoring blank names", () => {
-    const designer = usePolicyDesigner();
-    designer.policyGroups.value = [];
-    designer.policyGroupForm.name = " ";
-    designer.addPolicyGroup();
-    expect(designer.policyGroups.value).toEqual([]);
-
-    designer.policyGroupForm.name = " group:new ";
-    designer.policyGroupForm.members = [toMemberRef("alice@example.com")];
-    designer.policyGroupDialogOpen.value = true;
-    designer.addPolicyGroup();
-    expect(designer.policyGroups.value[0]).toMatchObject({ name: "group:new" });
-    expect(designer.policyGroupDialogOpen.value).toBe(false);
-
-    const existing = designer.policyGroups.value[0];
-    if (!existing) throw new Error("Expected the group to be created");
-    designer.policyGroupEditing.value = existing;
-    designer.policyGroupForm.name = "group:renamed";
-    designer.policyGroupForm.members = [toMemberRef("bob@example.com")];
-    designer.addPolicyGroup();
-    expect(designer.policyGroups.value).toHaveLength(1);
-    expect(designer.policyGroups.value[0]?.id).toBe(existing.id);
-    expect(designer.policyGroups.value[0]?.name).toBe("group:renamed");
-    expect(designer.policyGroups.value[0]?.members.map((member) => member.value)).toEqual([
-      "bob@example.com",
-    ]);
-    expect(designer.policyGroupEditing.value).toBeNull();
+  test("advances edit revision only for structured draft changes", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[],"groups":{"group:ops":["alice@"]}}');
+    const revision = designer.getSnapshot().editRevision;
+    designer.setState({ teamDetailOpen: true, teamDetailCurrent: "group:ops" });
+    designer.commitState(parsePolicy(designer.getSnapshot().policyDraft));
+    expect(designer.getSnapshot().editRevision).toBe(revision);
+    designer.commitState(
+      upsertGroup(designer.policyDesignerState, createGroup("group:new")),
+    );
+    expect(designer.getSnapshot().editRevision).toBe(revision + 1);
   });
 
-  test("creates and edits tag owners while ignoring blank tags", () => {
-    const designer = usePolicyDesigner();
-    designer.policyTagOwners.value = [];
-    designer.policyTagOwnerForm.tag = " ";
-    designer.addPolicyTagOwner();
-    expect(designer.policyTagOwners.value).toEqual([]);
-
-    designer.policyTagOwnerForm.tag = " tag:new ";
-    designer.policyTagOwnerForm.owners = [toMemberRef("group:ops")];
-    designer.policyTagOwnerDialogOpen.value = true;
-    designer.addPolicyTagOwner();
-    expect(designer.policyTagOwners.value[0]).toMatchObject({ tag: "tag:new" });
-    expect(designer.policyTagOwnerDialogOpen.value).toBe(false);
-
-    const existing = designer.policyTagOwners.value[0];
-    if (!existing) throw new Error("Expected the tag owner to be created");
-    designer.policyTagOwnerEditing.value = existing;
-    designer.policyTagOwnerForm.tag = "tag:renamed";
-    designer.policyTagOwnerForm.owners = [toMemberRef("carol@example.com")];
-    designer.addPolicyTagOwner();
-    expect(designer.policyTagOwners.value).toHaveLength(1);
-    expect(designer.policyTagOwners.value[0]?.id).toBe(existing.id);
-    expect(designer.policyTagOwners.value[0]?.tag).toBe("tag:renamed");
-    expect(designer.policyTagOwners.value[0]?.owners.map((owner) => owner.value)).toEqual([
-      "carol@example.com",
-    ]);
-    expect(designer.policyTagOwnerEditing.value).toBeNull();
+  test("ignores completion from a ticket replaced by a new loaded session", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    const old = designer.beginSave(designer.policyDesignerState);
+    if (!old) throw new Error("Missing old save ticket");
+    designer.load('{"acls":[],"groups":{"group:new":["new@"]}}');
+    const current = designer.beginSave(designer.policyDesignerState);
+    if (!current) throw new Error("Missing current save ticket");
+    const before = designer.getSnapshot();
+    expect(designer.acceptSavedPolicy(old, old.submittedText)).toEqual({
+      hasNewerEdits: true,
+    });
+    designer.finishSave(old.operationId);
+    expect(designer.getSnapshot()).toBe(before);
+    expect(designer.isPolicySaving).toBe(true);
+    designer.finishSave(current.operationId);
+    expect(designer.isPolicySaving).toBe(false);
   });
 
-  test("removes rules, groups, and tag owners by id", () => {
-    const designer = usePolicyDesigner();
+  test("keeps an unreadable accepted response as baseline and disables later writes", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    const ticket = designer.beginSave(designer.policyDesignerState);
+    if (!ticket) throw new Error("Missing save ticket");
+    const accepted = '{"acls":[';
+    designer.acceptSavedPolicy(ticket, accepted);
+    expect(designer.getSnapshot().policyDraft).toBe(accepted);
+    expect(designer.policyPayload).toBeNull();
+    expect(designer.policyDesignerState.error).toBeTruthy();
+  });
+});
+
+describe("policy workspace lifecycle", () => {
+  test("publishes a loaded policy and its saved draft together", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    const dirtyStates: boolean[] = [];
+    const unsubscribe = designer.subscribe(() =>
+      dirtyStates.push(designer.isPolicyDirty),
+    );
+    designer.load('{"acls":[],"groups":{"group:ops":["alice@example.com"]}}');
+    unsubscribe();
+    expect(dirtyStates.length).toBeGreaterThan(0);
+    expect(dirtyStates.every((dirty) => !dirty)).toBe(true);
+  });
+
+  test.each([
+    { editingIpRuleId: "rule" },
+    { assignMembershipsOpen: true },
+    { assignTagOwnershipsOpen: true },
+    { tagDetailOpen: true },
+    { teamDetailOpen: true },
+    { policyRemovalDialogOpen: true },
+    { highRiskConfirmOpen: true },
+  ])("protects each active editor from background replacement: %j", (patch) => {
+    const designer = createPolicyDesignerStore();
+    expect(designer.isPolicyEditing).toBe(false);
+    designer.setState(patch);
+    expect(designer.isPolicyEditing).toBe(true);
+    designer.load('{"acls":[]}');
+    expect(designer.isPolicyEditing).toBe(false);
+  });
+
+  test("closes Access editors without clearing Members assignments or current policy", () => {
+    const designer = createPolicyDesignerStore();
     designer.commitState(state());
+    const previous = designer.getSnapshot();
+    designer.setState({
+      editingIpRuleId: "wide",
+      tagDetailOpen: true,
+      tagDetailCurrent: "tag:web",
+      teamDetailOpen: true,
+      teamDetailCurrent: "group:ops",
+      policyRemovalDialogOpen: true,
+      pendingPolicyRemoval: { kind: "group", id: "ops", label: "Operations" },
+      highRiskConfirmOpen: true,
+      pendingHighRiskAction: () =>
+        designer.commitState(
+          removeRuleById(designer.policyDesignerState, "wide"),
+        ),
+      assignMembershipsOpen: true,
+      assignTagOwnershipsOpen: true,
+    });
+    designer.closeAccessEditors();
+    expect(designer.getSnapshot()).toMatchObject({
+      editingIpRuleId: null,
+      tagDetailOpen: false,
+      tagDetailCurrent: "",
+      teamDetailOpen: false,
+      teamDetailCurrent: "",
+      policyRemovalDialogOpen: false,
+      pendingPolicyRemoval: null,
+      highRiskConfirmOpen: false,
+      pendingHighRiskAction: null,
+      assignMembershipsOpen: true,
+      assignTagOwnershipsOpen: true,
+    });
+    expect(designer.getSnapshot().policyRules).toBe(previous.policyRules);
+    expect(designer.policyDesignerState).toEqual(state());
+  });
+});
 
-    designer.removeRule("wide");
-    designer.removeGroup("ops");
-    designer.removeTagOwner("web");
+describe("policy file mode without a path", () => {
+  test.each(['{"acls":[]}', ""])(
+    "keeps unsaved edits dirty while file mode blocks writes (%j)",
+    (baseline) => {
+      const designer = createPolicyDesignerStore();
+      designer.load(baseline);
+      designer.commitState(
+        upsertGroup(designer.policyDesignerState, createGroup("group:local")),
+      );
+      const draft = designer.getSnapshot();
+      expect(designer.isPolicyDirty).toBe(true);
 
-    expect(designer.policyRules.value.map((rule) => rule.id)).toEqual(["narrow"]);
-    expect(designer.policyGroups.value.map((group) => group.id)).toEqual(["dev"]);
-    expect(designer.policyTagOwners.value.map((owner) => owner.id)).toEqual(["db"]);
+      designer.setFileModeWithoutPath(true);
+
+      expect(designer.isPolicyDirty).toBe(true);
+      expect(designer.getSnapshot().policyDraft).toBe(baseline);
+      expect(designer.getSnapshot().policyGroups).toBe(draft.policyGroups);
+      expect(designer.getSnapshot().policyRules).toBe(draft.policyRules);
+      expect(designer.policyPayload).toBeNull();
+      expect(designer.beginSave(designer.policyDesignerState)).toBeNull();
+      designer.commitState(state());
+      expect(designer.getSnapshot().policyGroups).toBe(draft.policyGroups);
+      expect(designer.isPolicyDirty).toBe(true);
+
+      designer.setFileModeWithoutPath(false);
+      expect(designer.getSnapshot().policyError).toBeNull();
+      expect(designer.isPolicyDirty).toBe(true);
+      expect(designer.policyPayload?.groups).toEqual({ "group:local": [] });
+      designer.load(baseline);
+      expect(designer.isPolicyDirty).toBe(false);
+    },
+  );
+
+  test("blocks writes in read-only file mode and survives loads", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    designer.setFileModeWithoutPath(true);
+    expect(designer.getSnapshot().policyError).toBe(
+      POLICY_FILE_MODE_WITHOUT_PATH,
+    );
+    expect(designer.beginSave(state())).toBeNull();
+    expect(designer.policyPayload).toBeNull();
+    expect(designer.isPolicyDirty).toBe(false);
+    const rules = designer.getSnapshot().policyRules;
+    designer.commitState(state());
+    expect(designer.getSnapshot().policyRules).toBe(rules);
+    designer.load("");
+    expect(designer.getSnapshot().policyError).toBe(
+      POLICY_FILE_MODE_WITHOUT_PATH,
+    );
+    designer.setFileModeWithoutPath(true);
+    expect(designer.getSnapshot().policyError).toBe(
+      POLICY_FILE_MODE_WITHOUT_PATH,
+    );
+  });
+
+  test("closes open editors when locking and keeps the lock after a save is accepted", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    const ticket = designer.beginSave(state());
+    if (!ticket) throw new Error("expected save ticket");
+    designer.setState({ tagDetailOpen: true, editingIpRuleId: "wide" });
+    designer.setFileModeWithoutPath(true);
+    expect(designer.isPolicyEditing).toBe(false);
+    designer.acceptSavedPolicy(ticket, '{"acls":[]}');
+    expect(designer.getSnapshot().policyError).toBe(
+      POLICY_FILE_MODE_WITHOUT_PATH,
+    );
+  });
+
+  test("unlocking restores the parse state of the draft", () => {
+    const designer = createPolicyDesignerStore();
+    designer.load('{"acls":[]}');
+    designer.setFileModeWithoutPath(true);
+    designer.setFileModeWithoutPath(false);
+    expect(designer.getSnapshot().policyError).toBeNull();
+    designer.load('{"acls":[');
+    const parseError = designer.getSnapshot().policyError;
+    expect(parseError).toBeTruthy();
+    designer.setFileModeWithoutPath(true);
+    designer.setFileModeWithoutPath(false);
+    expect(designer.getSnapshot().policyError).toBe(parseError);
+  });
+
+  test("picks the blocked copy matching the policy error", () => {
+    const copy = {
+      policyReadOnlyError: "unreadable",
+      policyFileModeNoPath: "no path",
+    };
+    expect(policyBlockedMessage(copy, POLICY_FILE_MODE_WITHOUT_PATH)).toBe(
+      "no path",
+    );
+    expect(policyBlockedMessage(copy, "Unexpected token")).toBe("unreadable");
   });
 });

@@ -1,0 +1,13 @@
+{
+  "scope": "existing isolated Headscale fixture startup and cleanup, not product acceptance",
+  "runtime": "Bun 1.4.4; Docker client/server 29.9.2",
+  "runner": "createTagLifecycleRunner(createChildRunner(process.cwd()))",
+  "fixture": "createTagLifecycleFixture()",
+  "operation": "authenticated GET /api/v1/user",
+  "expectedHttpStatus": 200,
+  "observedResult": "PASS isolated Headscale fixture: authenticated user read succeeds",
+  "exitCode": 0,
+  "cleanup": "fixture.close() in finally plus owner runner cleanup; subsequent docker ps showed no running containers",
+  "secretsLogged": false,
+  "productionChanges": false
+}

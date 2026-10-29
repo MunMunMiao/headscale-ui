@@ -1,0 +1,190 @@
+{
+  "capturedAt": "2026-10-26T18:04:22.700780+08:00",
+  "containers": [
+    {
+      "ID": "7ddd69ccafee",
+      "Names": "crm2944-pg",
+      "Image": "postgres:17",
+      "State": "exited",
+      "Status": "Exited (0) 40 hours ago"
+    },
+    {
+      "ID": "266beee7fd58",
+      "Names": "crm22944-ck-c896",
+      "Image": "clickhouse/clickhouse-server:26.6",
+      "State": "exited",
+      "Status": "Exited (0) 5 days ago"
+    },
+    {
+      "ID": "4cc73e946194",
+      "Names": "crm22944-pg-c896",
+      "Image": "postgres:17.9",
+      "State": "exited",
+      "Status": "Exited (0) 40 hours ago"
+    }
+  ],
+  "networks": [
+    {
+      "ID": "e65d558d961d",
+      "Name": "bridge",
+      "Driver": "bridge",
+      "Scope": "local"
+    },
+    {
+      "ID": "8d5f07b1a9fe",
+      "Name": "crm22944-loopback-c896",
+      "Driver": "bridge",
+      "Scope": "local"
+    },
+    {
+      "ID": "c1c017a8210a",
+      "Name": "crm22944-native-c896",
+      "Driver": "bridge",
+      "Scope": "local"
+    },
+    {
+      "ID": "69275d73c904",
+      "Name": "host",
+      "Driver": "host",
+      "Scope": "local"
+    },
+    {
+      "ID": "b20685f59808",
+      "Name": "none",
+      "Driver": "null",
+      "Scope": "local"
+    }
+  ],
+  "volumes": [
+    {
+      "Name": "1af42cf3424b69073a55239c73f1ec8cd2f9c781258672c09513b403bdab4556",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "1e835869ed677ecbea53dc393d7645df94e2b0bde48e1af83d269a7455c8fc99",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "2eda22c5bbb348b92a8615690cdb837f28ebdf1319d86ca202be735888750734",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "5cf3b8af32599d1860ed1b843b9d0eeb2a8bb48402d4681f31c0b2099311b33e",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "6d48f5bae96933e5355f5da35c3b8c4e78509212560b100c38ee6ca26a1fb47b",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "6e82cd0254604f435297c3ee93570c20f737c0e22dd94fd07cf9c9f571b8bf64",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "8e0b3278b96978a26c8bb2141a2b1e8c8049fcbf2ec40eccce6f5b43019c0562",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "70a3ad6aaf8ee827d1ded738819666c4f25eedd9649e7bdea489457fd8ca8021",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "72a14da8df82da2dcf68cb91d41dbe94317f2ab03bcebf9f5573f5cd2a93b102",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "4040d122622615ea0d6663afab9dce9871e036116ece29c381b4dd31be02b366",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "9304c29f142b28d2e91108cd1223511baaecdb6ecabea544bc4790ff8c62b356",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "acc9c617a76da95c0cc5927783e0ece9f073db80efa03a288f7428c91df395b9",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "ad412434782b9c67d0a3760a5d475377c2a4b4fd7cdcdb22aeb9c52bed80cbb7",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "b0bd56c6b6642b1664eba56795a149125c01317ba3c126afbff841ec6a36724c",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "bc29d0314e618e757bd2e17d625829d875fc20dd7b7e02c2ee0f8ff583c56366",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "c612982f56aff8689296176b0fbdc79802c344b6e642813eaafe0e95480bf07e",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "d6da116ac84609477dfc68255fd20137c5ff9e1b1b6b7629e127fb68a4369f2e",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "d7ff84971d158f641667203769130339405e13721d20e722aaba963df3573d6a",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "deb63d2e474ea5ff15d7da9cb4ecc48eb0d1c4b814b23c23a2e8e16fc2aab50c",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "e01c6b7a3475987f5e0c5065a1a6a86fa9b59b8c71f578a9d8026018a935cc76",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "ee6278b69fd242ecbffe0a31582bf7ce79fed2a93b1cef0f31263c0a9bc2e1df",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "eed1eeb6c3b9efc99b50d5af167411b1a0467c96ae6ed47beb2c6222f3d5063e",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "f8e6eff19d215e49b3386b43731309edf4e2ebafa1942848f673f9a4e64fe184",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "fdf703558328f74075c98af0896e5dbea12469bf4af8435a545dd6b4af4f6612",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "febe8cc11b283024006f7b894c5ebe4ff4b4d02a99f8872908577df4bd4b7482",
+      "Driver": "local",
+      "Scope": "local"
+    },
+    {
+      "Name": "ff2e8d97bac33606bac2a1bbb3ab0f42bf44bc794568f2d3b602743bad356003",
+      "Driver": "local",
+      "Scope": "local"
+    }
+  ]
+}

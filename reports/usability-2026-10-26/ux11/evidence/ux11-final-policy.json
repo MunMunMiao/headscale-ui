@@ -1,0 +1,50 @@
+{
+  "ssh": [
+    {
+      "action": "check",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server"
+      ],
+      "users": [
+        "root"
+      ],
+      "checkPeriod": "always"
+    }
+  ],
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops",
+      "ux11-bob@example.com"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ]
+}
+

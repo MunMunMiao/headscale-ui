@@ -1,0 +1,128 @@
+{
+  "startedAt": "2026-10-26T10:22:01.133Z",
+  "status": "failed",
+  "scope": "Disposable SSH fixture; normal approval API; not a UI rerun or a historical syscall trace",
+  "marker": "G18_SSH_SHELL_MARKER",
+  "deadlinesMs": {
+    "wholeRun": 240000,
+    "ssh": 45000,
+    "pendingCheck": 18000
+  },
+  "events": [
+    {
+      "at": "2026-10-26T10:22:01.142Z",
+      "phase": "native-tools",
+      "evidence": {
+        "ssh": "OpenSSH_10.3p1, LibreSSL 3.3.6",
+        "bun": "1.4.4"
+      }
+    },
+    {
+      "at": "2026-10-26T10:22:03.968Z",
+      "phase": "control-plane",
+      "evidence": {
+        "headscaleVersion": "headscale version v0.29.4\ncommit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b\nbuild time: 2026-09-23T19:19:22Z\nbuilt with: go1.26.5 linux/arm64",
+        "reuse": "Existing owned fixture unchanged; zero-capability assertions apply to every SSH peer, not its control-plane helpers"
+      }
+    },
+    {
+      "at": "2026-10-26T10:22:07.804Z",
+      "phase": "daemon",
+      "evidence": {
+        "kind": "source",
+        "name": "headscale-tag-lifecycle-41709-c904cfc0-g18-source",
+        "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+        "kernel": {
+          "Uid": "0\t0\t0\t0",
+          "Gid": "0\t0\t0\t0",
+          "Groups": "0",
+          "CapInh": "0000000000000000",
+          "CapPrm": "0000000000000000",
+          "CapEff": "0000000000000000",
+          "CapBnd": "0000000000000000",
+          "CapAmb": "0000000000000000",
+          "NoNewPrivs": "1",
+          "Seccomp": "2",
+          "Seccomp_filters": "1",
+          "LSM": ""
+        },
+        "container": {
+          "user": "0:0",
+          "capDrop": [
+            "ALL"
+          ],
+          "capAdd": null,
+          "securityOpt": [
+            "no-new-privileges"
+          ],
+          "privileged": false,
+          "networkMode": "headscale-tag-lifecycle-41709-c904cfc0",
+          "devices": [],
+          "groupAdd": null,
+          "imageId": "sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065"
+        }
+      }
+    },
+    {
+      "at": "2026-10-26T10:22:10.383Z",
+      "phase": "daemon",
+      "evidence": {
+        "kind": "root",
+        "name": "headscale-tag-lifecycle-41709-c904cfc0-g18-root",
+        "version": "1.102.5\n  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115\n  long version: 1.102.5-1-t5fb2a81b0\n  go version: go1.26.6 (tailscale/go 7275f792d4)",
+        "kernel": {
+          "Uid": "0\t0\t0\t0",
+          "Gid": "0\t0\t0\t0",
+          "Groups": "0",
+          "CapInh": "0000000000000000",
+          "CapPrm": "0000000000000000",
+          "CapEff": "0000000000000000",
+          "CapBnd": "0000000000000000",
+          "CapAmb": "0000000000000000",
+          "NoNewPrivs": "1",
+          "Seccomp": "2",
+          "Seccomp_filters": "1",
+          "LSM": ""
+        },
+        "container": {
+          "user": "0:0",
+          "capDrop": [
+            "ALL"
+          ],
+          "capAdd": null,
+          "securityOpt": [
+            "no-new-privileges"
+          ],
+          "privileged": false,
+          "networkMode": "headscale-tag-lifecycle-41709-c904cfc0",
+          "devices": [],
+          "groupAdd": null,
+          "imageId": "sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065"
+        }
+      }
+    },
+    {
+      "at": "2026-10-26T10:22:25.570Z",
+      "phase": "failure",
+      "evidence": {
+        "error": "Coordination-advertised SSH host keys unavailable\nError: Coordination-advertised SSH host keys unavailable\n    at waitUntil (/Users/munmunmiao/Documents/web/headscale-ui/scripts/harness/wait-until.ts:10:50)\n    at async check (/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/g18-ssh-probe.ts:195:9)\n    at async main (/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/g18-ssh-probe.ts:309:9)"
+      }
+    },
+    {
+      "at": "2026-10-26T10:22:26.568Z",
+      "phase": "cleanup",
+      "evidence": {
+        "remaining": {
+          "sshContainers": "",
+          "fixtureContainers": "",
+          "fixtureNetworks": "",
+          "fixtureVolumes": ""
+        },
+        "failures": []
+      }
+    }
+  ],
+  "project": "headscale-tag-lifecycle-41709-c904cfc0",
+  "error": "Coordination-advertised SSH host keys unavailable\nError: Coordination-advertised SSH host keys unavailable\n    at waitUntil (/Users/munmunmiao/Documents/web/headscale-ui/scripts/harness/wait-until.ts:10:50)\n    at async check (/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/g18-ssh-probe.ts:195:9)\n    at async main (/Users/munmunmiao/Documents/web/headscale-ui/reports/residual-followup-2026-10-26/g18-ssh-probe.ts:309:9)",
+  "finishedAt": "2026-10-26T10:22:26.569Z"
+}

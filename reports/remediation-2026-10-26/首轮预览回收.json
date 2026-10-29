@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-26T05:49:22.147907+08:00",
+  "retiredPreviewProjects": [
+    "headscale-tag-lifecycle-67075-c0fbe726",
+    "headscale-tag-lifecycle-68395-9a49429d"
+  ],
+  "remainingOwned": {
+    "containers": [],
+    "networks": [],
+    "volumes": []
+  },
+  "remainingPrivateDirectories": [],
+  "scope": "首轮两个独立预览均已回收；不代表后续最终验证环境已创建或已回收。"
+}

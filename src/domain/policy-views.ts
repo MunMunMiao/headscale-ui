@@ -1,5 +1,6 @@
 import {
   classifyMember,
+  createPolicyId,
   createRule,
   joinCommaList,
   type PolicyDesignerState,
@@ -23,10 +24,6 @@ const SERVICE_PRESETS: ServicePreset[] = [
   { id: "rdp", ports: ["3389"] },
   { id: "dns", ports: ["53"] },
 ];
-
-export function getServicePresets(): readonly ServicePreset[] {
-  return SERVICE_PRESETS;
-}
 
 export function parsePortsToServices(ports: string): {
   presets: ServiceId[];
@@ -60,7 +57,10 @@ export function parsePortsToServices(ports: string): {
   };
 }
 
-export function servicesToPortsString(presets: readonly ServiceId[], custom: string): string {
+export function servicesToPortsString(
+  presets: readonly ServiceId[],
+  custom: string,
+): string {
   if (presets.includes("all")) {
     return "*";
   }
@@ -83,15 +83,25 @@ export function servicesToPortsString(presets: readonly ServiceId[], custom: str
   return ports.length > 0 ? joinCommaList(ports) : "";
 }
 
+function ruleServices(rule: PolicyRule) {
+  return rule.extras?.proto !== undefined && rule.extras.proto !== "tcp"
+    ? { presets: [], custom: rule.ports }
+    : parsePortsToServices(rule.ports);
+}
+
 export interface TagAccessor {
   who: string;
   whoKind: PolicyMemberKind;
   services: ServiceId[];
   customPorts: string;
   ruleIds: string[];
+  readOnly?: boolean;
 }
 
-export function getTagAccessors(state: PolicyDesignerState, tagName: string): TagAccessor[] {
+export function getTagAccessors(
+  state: PolicyDesignerState,
+  tagName: string,
+): TagAccessor[] {
   const buckets = new Map<string, TagAccessor>();
 
   for (const rule of state.rules) {
@@ -103,7 +113,7 @@ export function getTagAccessors(state: PolicyDesignerState, tagName: string): Ta
     const sources = parseCommaList(rule.source);
     for (const who of sources) {
       const existing = buckets.get(who);
-      const { presets, custom } = parsePortsToServices(rule.ports);
+      const { presets, custom } = ruleServices(rule);
 
       if (!existing) {
         buckets.set(who, {
@@ -112,6 +122,7 @@ export function getTagAccessors(state: PolicyDesignerState, tagName: string): Ta
           services: presets,
           customPorts: custom,
           ruleIds: [rule.id],
+          readOnly: Boolean(rule.extras && Object.keys(rule.extras).length > 0),
         });
         continue;
       }
@@ -127,6 +138,9 @@ export function getTagAccessors(state: PolicyDesignerState, tagName: string): Ta
         services: Array.from(mergedServices),
         customPorts: mergedCustom,
         ruleIds: [...existing.ruleIds, rule.id],
+        readOnly:
+          existing.readOnly ||
+          Boolean(rule.extras && Object.keys(rule.extras).length > 0),
       });
     }
   }
@@ -140,7 +154,10 @@ export interface GroupAccess {
   customPorts: string;
 }
 
-export function getGroupAccess(state: PolicyDesignerState, groupName: string): GroupAccess[] {
+export function getGroupAccess(
+  state: PolicyDesignerState,
+  groupName: string,
+): GroupAccess[] {
   const buckets = new Map<string, GroupAccess>();
 
   for (const rule of state.rules) {
@@ -155,12 +172,18 @@ export function getGroupAccess(state: PolicyDesignerState, groupName: string): G
         continue;
       }
 
-      const { presets, custom } = parsePortsToServices(rule.ports);
+      const { presets, custom } = ruleServices(rule);
       const existing = buckets.get(dest);
       if (!existing) {
-        buckets.set(dest, { tagName: dest, services: presets, customPorts: custom });
+        buckets.set(dest, {
+          tagName: dest,
+          services: presets,
+          customPorts: custom,
+        });
       } else {
-        existing.services = Array.from(new Set([...existing.services, ...presets]));
+        existing.services = Array.from(
+          new Set([...existing.services, ...presets]),
+        );
         existing.customPorts = joinCommaList([
           ...parseCommaList(existing.customPorts),
           ...parseCommaList(custom),
@@ -180,6 +203,16 @@ export function setTagAccessor(
 ): PolicyDesignerState {
   if (!tagName.trim() || !who.trim()) {
     return state;
+  }
+
+  if (
+    getTagAccessors(state, tagName).some(
+      (accessor) => accessor.who === who && accessor.readOnly,
+    )
+  ) {
+    throw new Error(
+      "ACL extensions cannot be safely edited through aggregated tag access.",
+    );
   }
 
   const next = removeTagAccessor(state, tagName, who);
@@ -210,14 +243,24 @@ export function removeTagAccessor(
     const remainingSources = sources.filter((s) => s !== who);
     const remainingDestinations = destinations.filter((d) => d !== tagName);
 
-    if (remainingSources.length > 0 && destinations.length === 1) {
-      filteredRules.push({ ...rule, source: joinCommaList(remainingSources) });
-    } else if (remainingDestinations.length > 0 && sources.length === 1) {
-      filteredRules.push({ ...rule, destination: joinCommaList(remainingDestinations) });
-    } else if (remainingSources.length > 0 && remainingDestinations.length > 0) {
-      filteredRules.push(rule);
+    // S x D minus (who, tag) == S x (D - tag) union (S - who) x {tag}. The first part keeps the id;
+    // both empty drops the rule.
+    const parts: PolicyRule[] = [];
+    if (remainingDestinations.length > 0) {
+      parts.push({
+        ...rule,
+        destination: joinCommaList(remainingDestinations),
+      });
     }
-    // When both remainingSources and remainingDestinations are empty, drop the rule entirely.
+    if (remainingSources.length > 0) {
+      parts.push({
+        ...rule,
+        id: parts.length > 0 ? createPolicyId() : rule.id,
+        source: joinCommaList(remainingSources),
+        destination: tagName,
+      });
+    }
+    filteredRules.push(...parts);
   }
 
   return { ...state, rules: filteredRules };
@@ -230,12 +273,53 @@ export interface OpenAccessWarning {
   ports: string;
 }
 
-export function getOpenAccessWarnings(state: PolicyDesignerState): OpenAccessWarning[] {
+const ALL_ADDRESS_CIDRS = ["0.0.0.0/0", "::/0"];
+
+export function hasOnlyDefaultAccess(state: PolicyDesignerState): boolean {
+  if (
+    state.rules.some(
+      (rule) => rule.extras && Object.keys(rule.extras).length > 0,
+    )
+  ) {
+    return false;
+  }
+  if (
+    state.rules.length === 1 &&
+    state.rules[0].source.trim() === "*" &&
+    state.rules[0].destination.trim() === "*" &&
+    state.rules[0].ports.trim() === "*"
+  ) {
+    return true;
+  }
+
+  const destinations = new Set<string>();
+  for (const rule of state.rules) {
+    const sources = parseCommaList(rule.source);
+    const targets = parseCommaList(rule.destination);
+    if (
+      rule.ports.trim() !== "*" ||
+      !ALL_ADDRESS_CIDRS.every((cidr) => sources.includes(cidr)) ||
+      !sources.every((source) => ALL_ADDRESS_CIDRS.includes(source)) ||
+      targets.length === 0 ||
+      !targets.every((target) => ALL_ADDRESS_CIDRS.includes(target))
+    ) {
+      return false;
+    }
+    for (const target of targets) destinations.add(target);
+  }
+  return ALL_ADDRESS_CIDRS.every((cidr) => destinations.has(cidr));
+}
+
+export function getOpenAccessWarnings(
+  state: PolicyDesignerState,
+): OpenAccessWarning[] {
   const warnings: OpenAccessWarning[] = [];
 
   for (const rule of state.rules) {
-    const hasOpenSource = parseCommaList(rule.source).includes("*");
-    const hasOpenDestination = parseCommaList(rule.destination).includes("*");
+    const isOpen = (value: string) =>
+      value === "*" || ALL_ADDRESS_CIDRS.includes(value);
+    const hasOpenSource = parseCommaList(rule.source).some(isOpen);
+    const hasOpenDestination = parseCommaList(rule.destination).some(isOpen);
     if (hasOpenSource || hasOpenDestination) {
       warnings.push({
         ruleId: rule.id,
@@ -254,6 +338,7 @@ export interface IpRule {
   source: string;
   destination: string;
   ports: string;
+  extras?: Record<string, unknown>;
 }
 
 const TAG_PATTERN = /^tag:/;
@@ -265,8 +350,26 @@ export function updateIpRule(
 ): PolicyDesignerState {
   return {
     ...state,
-    rules: state.rules.map((rule) => (rule.id === ruleId ? { ...rule, ...patch } : rule)),
+    rules: state.rules.map((rule) =>
+      rule.id === ruleId ? { ...rule, ...patch } : rule,
+    ),
   };
+}
+
+// A port typed into the destination would be saved as "host:22:22". Prefixed aliases and bare IPv6
+// addresses look like "host:port" too, so only unambiguous forms are flagged.
+export function destinationHasPort(destination: string): boolean {
+  return parseCommaList(destination).some((target) => {
+    const slash = target.indexOf("/");
+    if (slash >= 0) return target.slice(slash).includes(":");
+    const [alias, port, ...rest] = target.split(":");
+    return (
+      rest.length === 0 &&
+      port !== undefined &&
+      !["group", "tag", "autogroup"].includes(alias) &&
+      /^(\*|\d+(-\d+)?)$/.test(port)
+    );
+  });
 }
 
 export function getIpRules(state: PolicyDesignerState): IpRule[] {
@@ -282,6 +385,7 @@ export function getIpRules(state: PolicyDesignerState): IpRule[] {
         source: rule.source,
         destination: rule.destination,
         ports: rule.ports,
+        extras: rule.extras,
       });
     }
   }
@@ -291,8 +395,9 @@ export function getIpRules(state: PolicyDesignerState): IpRule[] {
 export function listTagsFromState(state: PolicyDesignerState): string[] {
   const seen = new Set<string>();
 
+  // Blank tag names never reach a state: parsePolicy rejects them and upsertTagOwner validates names.
   for (const owner of state.tagOwners) {
-    if (owner.tag) seen.add(owner.tag);
+    seen.add(owner.tag);
   }
   for (const rule of state.rules) {
     for (const dest of parseCommaList(rule.destination)) {

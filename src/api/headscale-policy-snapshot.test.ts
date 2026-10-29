@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { fetchSnapshot } from "@/composables/useSnapshot";
-import { isolateHttpConnections } from "@/test-utils/headscale.test";
-import { RestHeadscaleClient } from "./headscale-client";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { createFixtureHttp, fixtureExecute } from "@/test/dispatch-fixture";
+import { fetchSnapshot, readPolicy } from "./snapshot";
 
 let server: ReturnType<typeof Bun.serve>;
 let policyErrorMessage = "";
@@ -30,14 +29,17 @@ function responseFor(path: string) {
   return {};
 }
 
+let policyErrorStatus = 500;
 function policyError(message: string) {
-  return Response.json({ code: 2, message, details: [] }, { status: 500 });
+  return Response.json(
+    { code: 2, message, details: [] },
+    { status: policyErrorStatus },
+  );
 }
 
-let restoreHttpAgent: () => void;
 beforeEach(() => {
-  restoreHttpAgent = isolateHttpConnections();
   policyErrorMessage = "";
+  policyErrorStatus = 500;
   policyRequested = false;
   server = Bun.serve({
     hostname: "127.0.0.1",
@@ -57,18 +59,35 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  restoreHttpAgent();
   server.stop(true);
 });
 
 function client() {
-  return new RestHeadscaleClient({
-    baseUrl: `http://127.0.0.1:${server.port}`,
-    apiKey: "test-token",
-  });
+  return fixtureExecute(
+    createFixtureHttp({
+      baseUrl: `http://127.0.0.1:${server.port}`,
+      apiKey: "test-token",
+    }),
+  );
 }
 
 describe("Headscale policy snapshot", () => {
+  test("reads a configured policy and preserves its nullable timestamp and extensions", async () => {
+    server.reload({
+      fetch: () =>
+        Response.json({
+          policy: '{"acls":[]}',
+          updatedAt: null,
+          revision: "1",
+        }),
+    });
+    expect(await readPolicy(client())).toEqual({
+      policy: '{"acls":[]}',
+      updatedAt: null,
+      revision: "1",
+    });
+  });
+
   test("keeps snapshot loading when Headscale has no ACL policy yet", async () => {
     policyErrorMessage = "loading ACL from database: acl policy not found";
 
@@ -80,12 +99,61 @@ describe("Headscale policy snapshot", () => {
     expect(policyRequested).toBe(true);
   });
 
+  test("reports file mode without a policy path instead of failing the snapshot", async () => {
+    policyErrorMessage =
+      'reading policy from path "": open : no such file or directory';
+
+    const snapshot = await fetchSnapshot(client());
+
+    expect(snapshot.policy).toEqual({ policy: "", fileModeWithoutPath: true });
+    expect(snapshot.users).toHaveLength(1);
+    expect(snapshot.nodes).toHaveLength(1);
+  });
+
   test.each([
-    "database connectivity failed",
-    "policy not found",
-  ])("propagates policy errors: %s", async (message) => {
+    [
+      500,
+      'reading policy from path "/etc/headscale/acl.hujson": open /etc/headscale/acl.hujson: no such file or directory',
+    ],
+    [500, "reading policy from file: unexpected EOF"],
+    [403, 'reading policy from path "": open : no such file or directory'],
+    [503, 'reading policy from path "": open : no such file or directory'],
+  ])("keeps failing for status %i: %s", async (status, message) => {
+    policyErrorStatus = status;
     policyErrorMessage = message;
 
-    await expect(fetchSnapshot(client())).rejects.toThrow(message);
+    await expect(fetchSnapshot(client())).rejects.toMatchObject({
+      code: "HTTP_STATUS",
+      status,
+      data: { message },
+    });
+  });
+
+  test.each(["database connectivity failed", "policy not found"])(
+    "propagates policy errors: %s",
+    async (message) => {
+      policyErrorMessage = message;
+
+      await expect(fetchSnapshot(client())).rejects.toMatchObject({
+        code: "HTTP_STATUS",
+        status: 500,
+        data: { message },
+      });
+    },
+  );
+
+  test("does not turn a denied policy request into an unconfigured policy", async () => {
+    server.reload({
+      fetch: () =>
+        Response.json(
+          { code: 7, message: "acl policy not found" },
+          { status: 403 },
+        ),
+    });
+    await expect(readPolicy(client())).rejects.toMatchObject({
+      code: "HTTP_STATUS",
+      status: 403,
+      data: { code: 7, message: "acl policy not found" },
+    });
   });
 });

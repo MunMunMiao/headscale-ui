@@ -1,0 +1,16 @@
+/* 测试截图隐藏凭据字形，保留真实值、布局和交互；不加载到生产页面。 */
+:is(
+  input[type="password"],
+  input[autocomplete*="password"],
+  #connect-api-key,
+  #pending-node-key,
+  [data-testid="created-api-key"] code,
+  [data-testid="created-invite"] code,
+  [data-testid="invite-table"] code,
+  [data-testid="invite-action-key"]
+) {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  caret-color: transparent;
+}

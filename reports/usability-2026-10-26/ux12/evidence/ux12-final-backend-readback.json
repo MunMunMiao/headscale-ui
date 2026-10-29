@@ -1,0 +1,139 @@
+{
+  "at": "2026-10-26T02:08:53.023804+08:00",
+  "local_profiles_cleared": true,
+  "backends": {
+    "control": {
+      "users": [
+        {
+          "id": 2,
+          "name": "ux12-a-bob-renamed",
+          "display_name": "A 主服 Bob",
+          "email": "ux12-bob@example.test"
+        }
+      ],
+      "nodes": [
+        {
+          "id": 1,
+          "name": "ux12-client-b",
+          "given_name": "ux12-client-b",
+          "ip_addresses": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "tags": [
+            "tag:ux12-a-server"
+          ],
+          "approved_routes": null,
+          "available_routes": [
+            "0.0.0.0/0",
+            "::/0",
+            "10.42.0.46/32"
+          ],
+          "online": true,
+          "expiry": null,
+          "username": "tagged-devices"
+        }
+      ],
+      "apikeys": {
+        "count": 2,
+        "records": [
+          {
+            "id": 1,
+            "expiration": {
+              "seconds": 1792992073,
+              "nanos": 345641064
+            },
+            "created_at": {
+              "seconds": 1792948873,
+              "nanos": 557726592
+            }
+          },
+          {
+            "id": 2,
+            "expiration": {
+              "seconds": 1792949919,
+              "nanos": 562924479
+            },
+            "created_at": {
+              "seconds": 1792949897,
+              "nanos": 292890355
+            }
+          }
+        ]
+      },
+      "policy": {
+        "groups": {
+          "group:ux12-a-ops": [
+            "ux12-bob@example.test"
+          ]
+        },
+        "tagOwners": {
+          "tag:ux12-a-server": [
+            "group:ux12-a-ops"
+          ],
+          "tag:ux12-a-server-v2": []
+        },
+        "acl_count": 3,
+        "contains_unpublished_draft": false
+      }
+    },
+    "control-secondary": {
+      "users": [
+        {
+          "id": 1,
+          "name": "ux12-b-carol",
+          "display_name": "B 独立服 Carol",
+          "email": "ux12-carol@example.test"
+        }
+      ],
+      "nodes": [
+        {
+          "id": 1,
+          "name": "ux12-b-traveler",
+          "given_name": "ux12-b-server-only",
+          "ip_addresses": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "tags": null,
+          "approved_routes": null,
+          "available_routes": null,
+          "online": true,
+          "expiry": null,
+          "username": "ux12-b-carol"
+        }
+      ],
+      "apikeys": {
+        "count": 2,
+        "records": [
+          {
+            "id": 1,
+            "expiration": {
+              "seconds": 1792992080,
+              "nanos": 520947760
+            },
+            "created_at": {
+              "seconds": 1792948880,
+              "nanos": 741384363
+            }
+          },
+          {
+            "id": 2,
+            "expiration": {
+              "seconds": 1792950904,
+              "nanos": 989593989
+            },
+            "created_at": {
+              "seconds": 1792950502,
+              "nanos": 902619006
+            }
+          }
+        ]
+      },
+      "policy": {
+        "exit": 1,
+        "error": "Error: loading ACL policy: rpc error: code = Unknown desc = reading policy from path \"\": open : no such file or directory\ncommand terminated with exit code 1"
+      }
+    }
+  }
+}

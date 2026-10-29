@@ -1,0 +1,115 @@
+{
+  "at": "2026-10-25T17:03:25.329005+00:00",
+  "label": "duplicate-email-repro-created",
+  "users": [
+    {
+      "id": 1,
+      "name": "ux04-alice-renamed",
+      "created_at": {
+        "seconds": 1792946274,
+        "nanos": 404889542
+      },
+      "display_name": "Alice Member",
+      "email": "alice-ux04@example.test"
+    },
+    {
+      "id": 2,
+      "name": "ux04-bob",
+      "created_at": {
+        "seconds": 1792946282,
+        "nanos": 615482749
+      },
+      "display_name": "Bob Member",
+      "email": "bob-ux04@example.test"
+    },
+    {
+      "id": 5,
+      "name": "ux04-email-collision-repro",
+      "created_at": {
+        "seconds": 1792947795,
+        "nanos": 132643401
+      },
+      "display_name": "Duplicate Email Repro",
+      "email": "alice-ux04@example.test"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "name": "ux04-client-a",
+      "given_name": "ux04-alice-laptop",
+      "ip_addresses": [
+        "100.64.0.1",
+        "fd7a:115c:a1e0::1"
+      ],
+      "user": {
+        "id": 1,
+        "name": "ux04-alice",
+        "created_at": {
+          "seconds": 1792946274,
+          "nanos": 404889542
+        },
+        "display_name": "Alice Member",
+        "email": "alice-ux04@example.test"
+      },
+      "tags": null,
+      "online": true,
+      "expiry": null,
+      "available_routes": null,
+      "approved_routes": null
+    },
+    {
+      "id": 2,
+      "name": "ux04-client-b",
+      "given_name": "ux04-client-b",
+      "ip_addresses": [
+        "100.64.0.2",
+        "fd7a:115c:a1e0::2"
+      ],
+      "user": {
+        "id": 2,
+        "name": "ux04-bob",
+        "created_at": {
+          "seconds": 1792946282,
+          "nanos": 615482749
+        },
+        "display_name": "Bob Member",
+        "email": "bob-ux04@example.test"
+      },
+      "tags": null,
+      "online": true,
+      "expiry": null,
+      "available_routes": [
+        "0.0.0.0/0",
+        "::/0",
+        "10.42.0.248/32"
+      ],
+      "approved_routes": null
+    }
+  ],
+  "policy": {
+    "groups": {
+      "group:ux04-ops": [
+        "alice-ux04@example.test"
+      ]
+    },
+    "tagOwners": {
+      "tag:ux04-service": [
+        "group:ux04-ops",
+        "alice-ux04@example.test"
+      ],
+      "tag:ux04-keep": []
+    },
+    "acls": [
+      {
+        "action": "accept",
+        "src": [
+          "group:ux04-ops"
+        ],
+        "dst": [
+          "100.64.0.2:8081"
+        ]
+      }
+    ]
+  }
+}

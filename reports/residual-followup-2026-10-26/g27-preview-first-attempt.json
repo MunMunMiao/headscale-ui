@@ -1,0 +1,15 @@
+{
+  "mode": "real served application, normal UI login, temporary native browser context",
+  "fixtureProject": "headscale-tag-lifecycle-41057-23a1b9f6",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "screenshotsMaskAllCodeElements": true,
+  "creationConfirmed": true,
+  "failed": true,
+  "nativeBrowserContextClosed": true,
+  "exitCode": 1,
+  "reason": "Probe waited for local card refresh button to disable; that button does not own the toolbar busy state. No product failure was established.",
+  "backendUnpausedAfterFailure": true
+}

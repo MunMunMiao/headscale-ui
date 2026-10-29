@@ -1,64 +1,60 @@
-import { type Ref, reactive, ref } from "vue";
-import type { HeadscaleNode } from "@/api/types";
+import { type RefObject, useEffect } from "react";
+import type { HeadscaleNode } from "@/api/contracts";
+import { createStore } from "@/lib/store";
+import { useSession, useStore } from "./session-context";
 
 export type AddDeviceTask = "server" | "client" | "pending";
-type AddDeviceStep = "type" | "preferences" | "authKey" | "generate" | "pending" | "result";
+type AddDeviceStep =
+  "type" | "preferences" | "authKey" | "generate" | "pending" | "result";
 
-interface PendingRegistrationForm {
-  user: string;
-  key: string;
-}
-
-interface UseDeviceSetupReturn {
-  open: Ref<boolean>;
-  task: Ref<AddDeviceTask | null>;
-  step: Ref<AddDeviceStep>;
-  authKeyExpiryDays: Ref<number>;
-  returnAfterInvite: Ref<boolean>;
-  lastCreatedInvite: Ref<string>;
-  lastRegisteredNode: Ref<HeadscaleNode | null>;
-  pendingRegistrationForm: PendingRegistrationForm;
-}
-
-function defaultPendingRegistrationForm(): PendingRegistrationForm {
-  return {
-    user: "",
-    key: "",
+interface DeviceSetupState {
+  open: boolean;
+  task: AddDeviceTask | null;
+  step: AddDeviceStep;
+  authKeyExpiryDays: number;
+  /** The `--login-server` the admin typed for this session; null uses the profile's address. */
+  loginServer: string | null;
+  lastCreatedInvite: string;
+  /** One-shot: focus the created key once; the key itself persists in the session store. */
+  revealCreatedInvite: boolean;
+  lastRegisteredNode: HeadscaleNode | null;
+  pendingRegistrationForm: {
+    user: string;
+    key: string;
+    kind: "device" | "ssh";
   };
+  lastAuthDecision: "approved" | "rejected" | null;
 }
 
-let instance: UseDeviceSetupReturn | null = null;
+export function createDeviceSetupStore() {
+  return createStore<DeviceSetupState>({
+    open: false,
+    task: null,
+    step: "type",
+    authKeyExpiryDays: 7,
+    loginServer: null,
+    lastCreatedInvite: "",
+    revealCreatedInvite: false,
+    lastRegisteredNode: null,
+    pendingRegistrationForm: { user: "", key: "", kind: "device" },
+    lastAuthDecision: null,
+  });
+}
 
-/** Internal: invoked by `__testing.ts` only. */
-export const deviceSetupTestingHandle = {
-  reset() {
-    instance = null;
-  },
-};
+export function useDeviceSetup() {
+  return useStore(useSession().deviceSetup);
+}
 
-export function useDeviceSetup(): UseDeviceSetupReturn {
-  if (instance) return instance;
-
-  const open = ref(false);
-  const task = ref<AddDeviceTask | null>(null);
-  const step = ref<AddDeviceStep>("type");
-  const authKeyExpiryDays = ref(7);
-  const returnAfterInvite = ref(false);
-  const lastCreatedInvite = ref("");
-  const lastRegisteredNode = ref<HeadscaleNode | null>(null);
-  const pendingRegistrationForm = reactive<PendingRegistrationForm>(
-    defaultPendingRegistrationForm(),
-  );
-
-  instance = {
-    open,
-    task,
-    step,
-    authKeyExpiryDays,
-    returnAfterInvite,
-    lastCreatedInvite,
-    lastRegisteredNode,
-    pendingRegistrationForm,
-  };
-  return instance;
+export function useRevealCreatedInvite(
+  ref: RefObject<HTMLElement | null>,
+  ready = true,
+) {
+  const { revealCreatedInvite, lastCreatedInvite, setState } = useDeviceSetup();
+  useEffect(() => {
+    if (!revealCreatedInvite || !lastCreatedInvite || !ready || !ref.current)
+      return;
+    ref.current.scrollIntoView({ block: "nearest" });
+    ref.current.focus();
+    setState({ revealCreatedInvite: false });
+  }, [revealCreatedInvite, lastCreatedInvite, ready, ref, setState]);
 }

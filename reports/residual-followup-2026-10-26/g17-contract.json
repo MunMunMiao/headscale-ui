@@ -1,0 +1,70 @@
+{
+  "finding": "G17",
+  "checkedAt": "2026-10-26",
+  "status": "blocked-upstream-contract",
+  "productInterfaceChanged": false,
+  "trustedRequestSummaryImplemented": false,
+  "versions": {
+    "headscale": "v0.29.4",
+    "headscaleCommit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+    "tailscale": "1.102.5",
+    "tailscaleCommit": "5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115"
+  },
+  "confirmed": [
+    {
+      "fact": "The management auth RPC set contains register, approve and reject, but no pending-auth metadata read RPC. Approve and reject accept only auth_id and return empty messages.",
+      "sources": [
+        "https://github.com/juanfont/headscale/blob/v0.29.4/proto/headscale/v1/headscale.proto#L143-L164",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/proto/headscale/v1/auth.proto#L16-L26",
+        "/Users/munmunmiao/Documents/web/headscale-ui/src/api/requests.ts:155-182"
+      ]
+    },
+    {
+      "fact": "Headscale internally stores an immutable SSH source/destination node pair on the pending auth request. It is not exposed by the management API, and the binding does not store the login username.",
+      "sources": [
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/types/common.go#L224-L231",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/types/common.go#L249-L319"
+      ]
+    },
+    {
+      "fact": "The destination-authenticated Noise SSH action handler logs local_user but does not pass it into the cached auth binding. It returns or waits for SSH decisions, not a UI metadata document.",
+      "sources": [
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/noise.go#L407-L449",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/noise.go#L530-L563",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/noise.go#L633-L696"
+      ]
+    },
+    {
+      "fact": "Without OIDC, GET /auth/{auth_id} only renders a CLI approval instruction. With OIDC, this route starts an authentication flow whose callback can finish the auth decision; it is not a side-effect-free metadata API.",
+      "sources": [
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/handlers.go#L334-L355",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/oidc.go#L148-L194",
+        "https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/oidc.go#L386-L446"
+      ]
+    },
+    {
+      "fact": "The product already discloses the missing trusted source/target/login-user summary and requires a trusted-channel check. Current SSH decisions send only the Auth ID and do not infer metadata from the selected registration user.",
+      "sources": [
+        "/Users/munmunmiao/Documents/web/headscale-ui/src/i18n/descriptors.ts:2555-2558",
+        "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.tsx:1674-1713",
+        "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesPage.tsx:2616-2619",
+        "/Users/munmunmiao/Documents/web/headscale-ui/src/pages/DevicesMembers.browser.test.tsx:639-662"
+      ]
+    }
+  ],
+  "archivedEvidence": [
+    "/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux11/evidence/ux11-private-browser.txt:26-34",
+    "/Users/munmunmiao/Documents/web/headscale-ui/reports/usability-2026-10-26/ux11/evidence/ux11-versions.txt:1-16"
+  ],
+  "requiredExternalContract": {
+    "description": "An authenticated, side-effect-free, expiry-aware read of a server-bound pending SSH request, including trusted source node/identity, destination node and the originally bound login username. The username must first be retained in trusted server-side request metadata.",
+    "approvalRequired": "Explicit authorization to change the external Headscale service contract or repository; not authorized in this task.",
+    "proposedEndpointName": null
+  },
+  "authorizationBoundary": [
+    "No source/target/user summary inferred from opaque Auth IDs, caller-supplied URL parameters or the selected registration owner.",
+    "No synthetic backend endpoint, direct database access, Noise impersonation or bypass of approval.",
+    "No product source, shared harness, external repository, deployment or production data changed."
+  ],
+  "verificationLimit": "This is a pinned-source contract audit and archived UI evidence check, not a new browser execution. The separate G18 probe tests normal decision APIs on fresh real SSH requests and must not be reported as a UI rerun."
+}

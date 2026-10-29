@@ -1,44 +1,45 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { deviceSetupTestingHandle, useDeviceSetup } from "./useDeviceSetup";
+import { describe, expect, test } from "vitest";
+import { createDeviceSetupStore } from "./useDeviceSetup";
 
-beforeEach(() => deviceSetupTestingHandle.reset());
-
-describe("useDeviceSetup", () => {
-  test("starts with the add-device defaults and shares the singleton", () => {
-    const setup = useDeviceSetup();
-
-    expect(useDeviceSetup()).toBe(setup);
-    expect({
-      open: setup.open.value,
-      task: setup.task.value,
-      step: setup.step.value,
-      authKeyExpiryDays: setup.authKeyExpiryDays.value,
-      returnAfterInvite: setup.returnAfterInvite.value,
-      lastCreatedInvite: setup.lastCreatedInvite.value,
-      lastRegisteredNode: setup.lastRegisteredNode.value,
-      pendingRegistrationForm: { ...setup.pendingRegistrationForm },
-    }).toEqual({
+describe("createDeviceSetupStore", () => {
+  test("starts with the add-device defaults", () => {
+    expect(createDeviceSetupStore().getSnapshot()).toEqual({
       open: false,
       task: null,
       step: "type",
       authKeyExpiryDays: 7,
-      returnAfterInvite: false,
+      loginServer: null,
       lastCreatedInvite: "",
+      revealCreatedInvite: false,
       lastRegisteredNode: null,
-      pendingRegistrationForm: { user: "", key: "" },
+      pendingRegistrationForm: { user: "", key: "", kind: "device" },
+      lastAuthDecision: null,
     });
   });
 
-  test("reset creates fresh mutable state", () => {
-    const first = useDeviceSetup();
-    first.open.value = true;
-    first.pendingRegistrationForm.user = "alice";
+  test("keeps device setup isolated between application instances", () => {
+    const first = createDeviceSetupStore();
+    const previous = first.getSnapshot();
+    first.setState({
+      open: true,
+      pendingRegistrationForm: { user: "alice", key: "", kind: "device" },
+    });
+    const second = createDeviceSetupStore();
+    expect(first.getSnapshot().open).toBe(true);
+    expect(first.getSnapshot().pendingRegistrationForm.user).toBe("alice");
+    expect(previous.open).toBe(false);
+    expect(previous.pendingRegistrationForm.user).toBe("");
+    expect(second.getSnapshot().open).toBe(false);
+    expect(second.getSnapshot().pendingRegistrationForm.user).toBe("");
+  });
 
-    deviceSetupTestingHandle.reset();
-    const second = useDeviceSetup();
-
-    expect(second).not.toBe(first);
-    expect(second.open.value).toBe(false);
-    expect(second.pendingRegistrationForm.user).toBe("");
+  test("the one-shot reveal flag returns to false with the initial snapshot", () => {
+    const store = createDeviceSetupStore();
+    const initial = store.getSnapshot();
+    store.setState({ lastCreatedInvite: "key", revealCreatedInvite: true });
+    expect(store.getSnapshot().revealCreatedInvite).toBe(true);
+    store.setState(initial);
+    expect(store.getSnapshot()).toEqual(initial);
+    expect(store.getSnapshot().revealCreatedInvite).toBe(false);
   });
 });

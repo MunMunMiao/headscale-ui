@@ -1,0 +1,53 @@
+{
+  "verifiedAt": "2026-10-26T19:50:19.718342+08:00",
+  "docker": {
+    "containers": {
+      "baselineCount": 3,
+      "currentCount": 3,
+      "baselinePreserved": true,
+      "addedCount": 0
+    },
+    "volumes": {
+      "baselineCount": 26,
+      "currentCount": 26,
+      "baselinePreserved": true,
+      "addedCount": 0
+    },
+    "networks": {
+      "baselineNamesPreserved": true,
+      "nonDefaultBridgeIdsPreserved": true,
+      "identityChanges": {
+        "bridge": {
+          "before": "e65d558d961d",
+          "after": "31d9db01eaec"
+        }
+      },
+      "defaultBridgeCreatedAt": "2026-10-26T11:46:30.39555825Z"
+    }
+  },
+  "limits": [
+    "Docker默认bridge ID重建，名称/驱动仍为bridge；未确认Docker Desktop生命周期原因，不能宣称全部网络ID未变。本轮没有删除默认bridge或重启Docker的命令。"
+  ],
+  "kubernetes": {
+    "ownedNamespaces": [
+      "hs-g19-1026-0feb8335414f",
+      "hs-g19-1026-2f8ff2591d32",
+      "hs-g19-1026-43dd8d783352",
+      "hs-g19-1026-51fbf8933fa0",
+      "hs-g19-1026-648861789365",
+      "hs-g19-1026-932f6019ebf7",
+      "hs-g19-1026-b9b158c62e5b",
+      "hs-g19-1026-c28401a5f201",
+      "hs-g19-1026-d507e6c8e50a"
+    ],
+    "remaining": [],
+    "readbackExit": 0,
+    "privateCredentialDirectoriesRemoved": true
+  },
+  "previews": {
+    "allOwnedStopped": true,
+    "lastProject": "headscale-tag-lifecycle-41057-23a1b9f6",
+    "lastOwnedCredentialDirectoryRemoved": true
+  },
+  "rollbackBackup": "私有源码基线备份保留；不是运行资源或认证凭据。"
+}

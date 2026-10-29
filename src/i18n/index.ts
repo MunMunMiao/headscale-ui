@@ -1,79 +1,140 @@
-import { computed } from "vue";
-import { createI18n, useI18n as useVueI18n } from "vue-i18n";
-import type { OperationGroup, OperationId } from "@/domain/headscale-operations";
-import { readSetting, writeSetting } from "@/lib/settings-storage";
+import { useLingui } from "@lingui/react";
+import { useSyncExternalStore } from "react";
+import {
+  captureSettingsWriteEpoch,
+  hydrateSettings,
+  readSetting,
+  subscribePreferenceChanges,
+  writeSetting,
+} from "@/lib/settings-storage";
+import { createStore } from "@/lib/store";
+import { subscribeVaultChanges } from "@/lib/vault-state";
+import { commonDescriptors, type MessageKey } from "./descriptors";
 import {
   DEFAULT_LOCALE,
   LOCALE_META,
   type Locale,
   resolveLocale,
-  SUPPORTED_LOCALES,
 } from "./locales";
-import { commonMessages, getGroupLabel, getOperationMessage, type MessageKey } from "./messages";
+import { i18n, loadLocale } from "./runtime";
 
 const LOCALE_SETTING_KEY = "locale";
-
-export const i18n = createI18n<[Record<MessageKey, string>], Locale>({
-  legacy: false,
-  globalInjection: false,
-  locale: DEFAULT_LOCALE,
-  fallbackLocale: false,
-  messages: commonMessages,
+export type LocaleChangeResult = {
+  status:
+    "activated" | "activated-not-persisted" | "superseded" | "load-failed";
+};
+const localeChanges = createStore<{
+  pendingLocale: Locale | null;
+  localeError: "load-failed" | "not-saved" | null;
+  settingsError: "reload-failed" | null;
+}>({ pendingLocale: null, localeError: null, settingsError: null });
+let localeGeneration = 0;
+let settingsRefreshGeneration = 0;
+let localeAdoptionGeneration = 0;
+subscribeVaultChanges((change) => {
+  if (change.reset) {
+    ++localeGeneration;
+    localeChanges.setState({ pendingLocale: null, localeError: null });
+  }
+  const refresh = ++settingsRefreshGeneration;
+  void hydrateSettings().then(
+    () => {
+      if (refresh === settingsRefreshGeneration)
+        localeChanges.setState({ settingsError: null });
+    },
+    () => {
+      if (refresh === settingsRefreshGeneration)
+        localeChanges.setState({ settingsError: "reload-failed" });
+    },
+  );
 });
 
-function syncDocument(locale: Locale) {
+subscribePreferenceChanges((key) => {
+  if (key !== "locale") return;
+  const refresh = ++settingsRefreshGeneration;
+  const adoption = ++localeAdoptionGeneration;
+  const generation = localeGeneration;
+  void hydrateSettings().then(
+    () => {
+      if (refresh === settingsRefreshGeneration)
+        localeChanges.setState({ settingsError: null });
+      if (
+        adoption !== localeAdoptionGeneration ||
+        generation !== localeGeneration
+      )
+        return;
+      void changeLocale(resolveLocale(readSetting(LOCALE_SETTING_KEY)), false);
+    },
+    () => {
+      if (refresh === settingsRefreshGeneration)
+        localeChanges.setState({ settingsError: "reload-failed" });
+    },
+  );
+});
+
+function activateLocale(locale: Locale): void {
+  i18n.activate(locale);
   if (typeof document !== "undefined") {
     document.documentElement.lang = locale;
     document.documentElement.dir = LOCALE_META[locale].dir;
   }
-  writeSetting(LOCALE_SETTING_KEY, locale);
 }
 
-/**
- * Pulls the persisted locale out of settings-storage and applies it. Called
- * by main.ts once hydrateSettings() has resolved, before the app mounts.
- */
-export function applyStoredLocale(): void {
-  const next = resolveLocale(readSetting(LOCALE_SETTING_KEY));
-  // With legacy: false the global is a Composer where locale is a
-  // WritableComputedRef<Locale>; vue-i18n's union typing forces a narrow cast.
-  (i18n.global.locale as unknown as { value: Locale }).value = next;
-  syncDocument(next);
+async function changeLocale(
+  locale: Locale,
+  persist: boolean,
+): Promise<LocaleChangeResult> {
+  const generation = ++localeGeneration;
+  const epoch = persist ? captureSettingsWriteEpoch() : undefined;
+  localeChanges.setState({ pendingLocale: locale, localeError: null });
+  try {
+    await loadLocale(locale);
+  } catch {
+    if (generation !== localeGeneration) return { status: "superseded" };
+    localeChanges.setState({ pendingLocale: null, localeError: "load-failed" });
+    return { status: "load-failed" };
+  }
+  if (generation !== localeGeneration) return { status: "superseded" };
+  activateLocale(locale);
+  if (epoch !== undefined) {
+    try {
+      await writeSetting(LOCALE_SETTING_KEY, locale, epoch);
+    } catch {
+      if (generation !== localeGeneration) return { status: "superseded" };
+      localeChanges.setState({ pendingLocale: null, localeError: "not-saved" });
+      return { status: "activated-not-persisted" };
+    }
+  }
+  if (generation !== localeGeneration) return { status: "superseded" };
+  localeChanges.setState({ pendingLocale: null, localeError: null });
+  return { status: "activated" };
 }
 
+export function setLocale(locale: Locale): Promise<LocaleChangeResult> {
+  return changeLocale(locale, true);
+}
+
+export async function applyStoredLocale(): Promise<void> {
+  activateLocale(DEFAULT_LOCALE);
+  await changeLocale(resolveLocale(readSetting(LOCALE_SETTING_KEY)), false);
+}
+
+export function t(
+  key: MessageKey,
+  named?: Record<string, string | number>,
+): string {
+  return i18n._(commonDescriptors[key].id, named);
+}
 export function useHeadscaleI18n() {
-  const composer = useVueI18n<[Record<MessageKey, string>], Locale>({
-    useScope: "global",
-  });
-  const locale = computed(() => composer.locale.value);
-  const meta = computed(() => LOCALE_META[composer.locale.value]);
-
-  function setLocale(localeValue: Locale) {
-    composer.locale.value = localeValue;
-    syncDocument(localeValue);
-  }
-
-  function t(key: MessageKey, named?: Record<string, string | number>): string {
-    return named !== undefined ? composer.t(key, named) : composer.t(key);
-  }
-
-  function tg(group: OperationGroup) {
-    return getGroupLabel(composer.locale.value, group);
-  }
-
-  function toperation(id: OperationId) {
-    return getOperationMessage(composer.locale.value, id);
-  }
-
-  return {
-    locale,
-    meta,
-    setLocale,
-    t,
-    tg,
-    toperation,
-  };
+  useLingui();
+  const changes = useSyncExternalStore(
+    localeChanges.subscribe,
+    localeChanges.getSnapshot,
+  );
+  const locale = i18n.locale as Locale;
+  return { locale, meta: LOCALE_META[locale], setLocale, t, ...changes };
 }
 
+export { LOCALE_META, SUPPORTED_LOCALES } from "./locales";
 export type { Locale };
-export { LOCALE_META, SUPPORTED_LOCALES };
+export { i18n };

@@ -1,0 +1,136 @@
+2026-10-26 01:46:51.871975 real SSH preconditions
+client-b tailscale set --ssh=true
+exit=0
+
+
+
+client-a tailscale ssh --help
+exit=0
+
+SSH to a Tailscale machine
+
+USAGE
+  tailscale ssh [user@]<host> [args...]
+
+The 'tailscale ssh' command is an optional wrapper around the system 'ssh'
+command that's useful in some cases. Tailscale SSH does not require its use;
+most users running the Tailscale SSH server will prefer to just use the normal
+'ssh' command or their normal SSH client.
+
+The 'tailscale ssh' wrapper adds a few things:
+
+* It resolves the destination server name in its arguments using MagicDNS,
+  even if --accept-dns=false.
+* It works in userspace-networking mode, by supplying a ProxyCommand to the
+  system 'ssh' command that connects via a pipe through tailscaled.
+* It automatically checks the destination server's SSH host key against the
+  node's SSH host key as advertised via the Tailscale coordination server.
+
+
+client-b sh -c id; grep -E "^Cap(Eff|Prm|Bnd):" /proc/self/status; command -v ssh || true
+exit=0
+uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	0000000000000000
+
+
+
+real SSH without SSH action policy
+client-a timeout 12 tailscale ssh root@100.64.0.3 echo ux11-real-ssh-before-check-policy
+exit=255
+
+tailscale: tailnet policy does not permit you to SSH to this node
+Connection closed by UNKNOWN port 65535
+command terminated with exit code 255
+
+
+2026-10-26 01:49:25.501436 LAB FIXTURE ONLY: add a real SSH check policy via normal Headscale CLI/gRPC (not a UI publication, not a synthetic request)
+{
+  "groups": {
+    "group:ux11-ops": [
+      "ux11-alice@example.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:ux11-server": [
+      "group:ux11-ops"
+    ],
+    "tag:ux11-secondary": []
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server:22,8081"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "100.64.0.3:22,8081"
+      ]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "check",
+      "src": [
+        "group:ux11-ops"
+      ],
+      "dst": [
+        "tag:ux11-server"
+      ],
+      "users": [
+        "root"
+      ],
+      "checkPeriod": "always"
+    }
+  ]
+}
+exit=0
+Policy updated.
+
+2026-10-26 01:50:16.776090 REAL SSH round 1: request_link_saved=True local_transport_running=True
+# Headscale SSH requires an additional check.
+# To authenticate, visit: [REAL_SSH_CHECK_URL_REDACTED]
+# Authentication checked with Headscale SSH.
+
+2026-10-26 01:51:06.691607 REAL SSH round 1 readback
+# Headscale SSH requires an additional check.
+# To authenticate, visit: [REAL_SSH_CHECK_URL_REDACTED]
+# Authentication checked with Headscale SSH.
+operation not permitted
+
+UX11_SSH_EXIT=1
+
+2026-10-26 01:51:34.161746 read-only target SSH logs
+2026/10/25 17:46:52 EditPrefs: MaskedPrefs{RunSSH=true}
+2026/10/25 17:47:52 ssh-conn-20261025T174752-efec2aec47: handling conn: 100.64.0.1:20176->root@100.64.0.3:22
+2026/10/25 17:47:52 ssh-conn-20261025T174752-efec2aec47: tailnet policy does not permit you to SSH to this node: failed to evaluate policy, result: no policy
+2026/10/25 17:50:16 ssh-conn-20261025T175016-9c860bff81: handling conn: 100.64.0.1:33500->root@100.64.0.3:22
+2026/10/25 17:51:05 ssh-conn-20261025T175016-9c860bff81: starting session: sess-20261025T175105-8aecb56c02
+2026/10/25 17:51:05 ssh-session(sess-20261025T175105-8aecb56c02): handling new SSH connection from ux11-alice@example.com (100.64.0.1) to ssh-user "root"
+2026/10/25 17:51:05 ssh-session(sess-20261025T175105-8aecb56c02): access granted to ux11-alice@example.com as ssh-user "root"
+2026/10/25 17:51:05 audit: SSH login: user=root uid=0 from=100.64.0.1 ts_user=ux11-alice@example.com node=ux11-laptop.example.test.
+2026/10/25 17:51:05 ssh-session(sess-20261025T175105-8aecb56c02): starting non-pty command: [/usr/local/bin/tailscaled be-child ssh --login-shell=/bin/sh --uid=0 --gid=0 --groups=0,1,2,3,4,6,10,11,20,26,27 --local-user=root --home-dir=/root --remote-user=ux11-alice@example.com --remote-ip=100.64.0.1 --has-tty=false --tty-name= --cmd=echo ux11-real-ssh-round-1]
+2026/10/25 17:51:05 ssh-session(sess-20261025T175105-8aecb56c02): Wait: code=1
+2026-10-26 01:52:18.859933 REAL SSH round 2: request_link_saved=True local_transport_running=True
+# Headscale SSH requires an additional check.
+# To authenticate, visit: [REAL_SSH_CHECK_URL_REDACTED]
+# Authentication checked with Headscale SSH.
+
+2026-10-26 01:52:22.384825 REAL SSH round 2 readback
+# Headscale SSH requires an additional check.
+# To authenticate, visit: [REAL_SSH_CHECK_URL_REDACTED]
+# Authentication checked with Headscale SSH.
+tailscale: access deniedConnection closed by UNKNOWN port 65535
+
+UX11_SSH_EXIT=255
+

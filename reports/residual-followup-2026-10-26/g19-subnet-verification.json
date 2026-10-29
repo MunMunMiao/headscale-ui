@@ -1,0 +1,227 @@
+{
+  "evidenceChecksPassed": true,
+  "defaultExitPrivateForwardingPassed": false,
+  "defaultRFC1918RejectionExpected": true,
+  "defaultHistoricalExit": 2,
+  "defaultSourceResult": "g19-932f6019ebf7-result.json",
+  "defaultCaptureBeforeRunIn": true,
+  "defaultCapturedOwnedSYNHeaders": 5,
+  "defaultCaptureExit": 143,
+  "explicitSubnetForwardingPassed": true,
+  "subnetExperimentExit": 0,
+  "subnetSourceResult": "g19-0feb8335414f-result.json",
+  "subnetSameRouterNetns": "4026536023",
+  "sameSecurityContextsAndVersions": true,
+  "subnetACLUnchanged": true,
+  "subnetStages": [
+    {
+      "name": "subnet-unapproved",
+      "proxyExit": [
+        1,
+        1
+      ],
+      "httpStatus": [
+        502,
+        502
+      ],
+      "sourceIsRouter": [
+        false,
+        false
+      ],
+      "counterDeltas": {
+        "A": {
+          "tx": 40,
+          "rx": 0
+        },
+        "R": {
+          "tx": 0,
+          "rx": 32
+        }
+      }
+    },
+    {
+      "name": "subnet-approved",
+      "proxyExit": [
+        0,
+        0
+      ],
+      "httpStatus": [
+        200,
+        200
+      ],
+      "sourceIsRouter": [
+        true,
+        true
+      ],
+      "counterDeltas": {
+        "A": {
+          "tx": 1152,
+          "rx": 896
+        },
+        "R": {
+          "tx": 944,
+          "rx": 1088
+        }
+      }
+    },
+    {
+      "name": "subnet-revoked",
+      "proxyExit": [
+        1,
+        1
+      ],
+      "httpStatus": [
+        null,
+        null
+      ],
+      "sourceIsRouter": [
+        false,
+        false
+      ],
+      "counterDeltas": {
+        "A": {
+          "tx": 0,
+          "rx": 32
+        },
+        "R": {
+          "tx": 40,
+          "rx": 0
+        }
+      }
+    },
+    {
+      "name": "subnet-restored",
+      "proxyExit": [
+        0,
+        0
+      ],
+      "httpStatus": [
+        200,
+        200
+      ],
+      "sourceIsRouter": [
+        true,
+        true
+      ],
+      "counterDeltas": {
+        "A": {
+          "tx": 1712,
+          "rx": 1344
+        },
+        "R": {
+          "tx": 1416,
+          "rx": 1616
+        }
+      }
+    }
+  ],
+  "runs": [
+    {
+      "run": "0feb8335414f",
+      "namespace": "hs-g19-1026-0feb8335414f",
+      "processExit": 0
+    },
+    {
+      "run": "2f8ff2591d32",
+      "namespace": "hs-g19-1026-2f8ff2591d32",
+      "processExit": 1
+    },
+    {
+      "run": "43dd8d783352",
+      "namespace": "hs-g19-1026-43dd8d783352",
+      "processExit": 1
+    },
+    {
+      "run": "51fbf8933fa0",
+      "namespace": "hs-g19-1026-51fbf8933fa0",
+      "processExit": 2
+    },
+    {
+      "run": "648861789365",
+      "namespace": "hs-g19-1026-648861789365",
+      "processExit": 1
+    },
+    {
+      "run": "932f6019ebf7",
+      "namespace": "hs-g19-1026-932f6019ebf7",
+      "processExit": 2
+    },
+    {
+      "run": "b9b158c62e5b",
+      "namespace": "hs-g19-1026-b9b158c62e5b",
+      "processExit": 2
+    },
+    {
+      "run": "c28401a5f201",
+      "namespace": "hs-g19-1026-c28401a5f201",
+      "processExit": 1
+    },
+    {
+      "run": "d507e6c8e50a",
+      "namespace": "hs-g19-1026-d507e6c8e50a",
+      "processExit": 1
+    }
+  ],
+  "namespaceReadback": {
+    "command": [
+      "kubectl",
+      "--context",
+      "home",
+      "--request-timeout=20s",
+      "get",
+      "namespace",
+      "hs-g19-1026-0feb8335414f",
+      "hs-g19-1026-2f8ff2591d32",
+      "hs-g19-1026-43dd8d783352",
+      "hs-g19-1026-51fbf8933fa0",
+      "hs-g19-1026-648861789365",
+      "hs-g19-1026-932f6019ebf7",
+      "hs-g19-1026-b9b158c62e5b",
+      "hs-g19-1026-c28401a5f201",
+      "hs-g19-1026-d507e6c8e50a",
+      "--ignore-not-found",
+      "-o",
+      "json"
+    ],
+    "exit": 0,
+    "stdoutBytes": 0,
+    "items": []
+  },
+  "credentialAndParseScanFiles": [
+    "G19核验.md",
+    "g19-0feb8335414f-events.jsonl",
+    "g19-0feb8335414f-manifest.json",
+    "g19-0feb8335414f-result.json",
+    "g19-2f8ff2591d32-events.jsonl",
+    "g19-2f8ff2591d32-manifest.json",
+    "g19-2f8ff2591d32-result.json",
+    "g19-43dd8d783352-events.jsonl",
+    "g19-43dd8d783352-manifest.json",
+    "g19-43dd8d783352-result.json",
+    "g19-51fbf8933fa0-events.jsonl",
+    "g19-51fbf8933fa0-filter-assertions.json",
+    "g19-51fbf8933fa0-manifest.json",
+    "g19-51fbf8933fa0-result.json",
+    "g19-648861789365-events.jsonl",
+    "g19-648861789365-manifest.json",
+    "g19-648861789365-result.json",
+    "g19-932f6019ebf7-events.jsonl",
+    "g19-932f6019ebf7-manifest.json",
+    "g19-932f6019ebf7-result.json",
+    "g19-b9b158c62e5b-assertions.json",
+    "g19-b9b158c62e5b-events.jsonl",
+    "g19-b9b158c62e5b-manifest.json",
+    "g19-b9b158c62e5b-result.json",
+    "g19-c28401a5f201-events.jsonl",
+    "g19-c28401a5f201-manifest.json",
+    "g19-c28401a5f201-result.json",
+    "g19-d507e6c8e50a-events.jsonl",
+    "g19-d507e6c8e50a-manifest.json",
+    "g19-d507e6c8e50a-result.json",
+    "g19-reproduce.py",
+    "g19-subnet-verification.json",
+    "g19-verification.json",
+    "g19-verify-evidence.py"
+  ],
+  "reproduceScriptSha256": "777e2705c45145da6a207c52cb10ad166874e4af47dbc2e82e61939c87172337"
+}

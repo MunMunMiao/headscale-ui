@@ -1,0 +1,80 @@
+[
+  {
+    "scenario": "initial_empty_profiles",
+    "at": "2026-10-25T17:24:44.242Z",
+    "url": "https://10.0.0.17:32113/login?redirect=%2F",
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - 'button \"Language: English\"'\n  - 'button \"Theme: System\"'\n- main:\n  - heading \"Choose a server profile\" [level=1]\n  - paragraph: Pick a saved profile like an operating system login, or add another Headscale server.\n  - text: No connection profiles yet. Add your Headscale server URL and API key to get started.\n  - button \"Add server New profile\"\n  - button \"Clear all saved profiles\"\n- region \"Notifications\""
+  },
+  {
+    "scenario": "initial_empty_dashboard",
+    "at": "2026-10-25T17:25:12.425Z",
+    "url": "https://10.0.0.17:32113/home",
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"Profile\" [expanded]\n  - menu \"Profile\":\n    - group \"UX12 Primary A\":\n      - separator\n      - menuitem \"Language\" [expanded]\n      - group:\n        - menu \"Language\":\n          - group:\n            - menuitemradio \"English\" [checked]\n            - menuitemradio \"简体中文\"\n            - menuitemradio \"繁體中文（台灣）\"\n            - menuitemradio \"繁體中文（香港）\"\n            - menuitemradio \"日本語\"\n            - menuitemradio \"한국어\"\n            - menuitemradio \"Français\"\n            - menuitemradio \"Русский\"\n            - menuitemradio \"Español\"\n            - menuitemradio \"Italiano\"\n            - menuitemradio \"العربية\"\n      - menuitem \"Theme\"\n      - separator\n      - menuitem \"Server settings\"\n      - menuitem \"Log out\"\n  - navigation \"Main navigation\":\n    - link \"Overview\":\n      - /url: /home\n    - link \"Machines\":\n      - /url: /devices\n    - link \"Users\":\n      - /url: /members\n    - link \"Auth keys\":\n      - /url: /invites\n    - link \"Routes\":\n      - /url: /routes\n    - link \"Access controls\":\n      - /url: /access\n- main:\n  - paragraph\n  - heading \"Tailnet overview\" [level=1]\n  - paragraph: A home base for devices, people and private routes.\n  - button \"Refresh data\"\n  - link \"Online devices 0\":\n    - /url: /devices?filter=online\n    - paragraph: Online devices\n    - paragraph: \"0\"\n  - link \"Total devices 0\":\n    - /url: /devices\n    - paragraph: Total devices\n    - paragraph: \"0\"\n  - link \"Users 0\":\n    - /url: /members\n    - paragraph: Users\n    - paragraph: \"0\"\n  - link \"Unused, unexpired auth keys 0\":\n    - /url: /invites?filter=ready\n    - paragraph: Unused, unexpired auth keys\n    - paragraph: \"0\"\n  - link \"Pending routes 0\":\n    - /url: /routes\n    - paragraph: Pending routes\n    - paragraph: \"0\"\n  - heading \"Recent machines\" [level=2]\n  - paragraph: Install Tailscale on another device and connect it to this Headscale server.\n- region \"Notifications\""
+  },
+  {
+    "scenario": "file_policy_readonly",
+    "at": "2026-10-25T17:47:11.226Z",
+    "url": "https://10.0.0.17:32113/access",
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"服务器\"\n  - navigation \"主导航\":\n    - link \"概览\":\n      - /url: /home\n    - link \"设备\":\n      - /url: /devices\n    - link \"用户\":\n      - /url: /members\n    - link \"认证密钥\":\n      - /url: /invites\n    - link \"路由\":\n      - /url: /routes\n    - link \"访问控制\":\n      - /url: /access\n- main:\n  - paragraph\n  - heading \"资源访问控制\" [level=1]\n  - paragraph: 为设备添加标签、把用户组成团队，再决定谁能访问哪些设备。\n  - button \"发布所有策略更改\" [disabled]\n  - text: 目前无法编辑策略\n  - paragraph: \"Headscale 被设置为从文件读取访问策略（policy.mode: file），但未配置策略文件（policy.path 为空），因此这里没有可编辑的内容。请在 Headscale 配置中将 policy.mode 设为 database，以便在本应用中管理访问规则。\"\n  - paragraph: 此处无法写入策略。这并不全局禁止管理员针对最新读回结果中的兼容定义执行 SetTags；最终仍以服务器已加载的策略为准。\n- region \"通知\""
+  },
+  {
+    "scenario": "readonly_delete_default_trap",
+    "at": "2026-10-25T17:51:20.114Z",
+    "url": "https://10.0.0.17:32113/members",
+    "snapshot": "- region \"通知\"\n- alertdialog \"删除用户\":\n  - heading \"删除用户\" [level=2]\n  - paragraph: 这会从 Headscale 删除该用户。继续前请检查其设备和认证密钥。 B 独立服 Dave\n  - paragraph: \"设备: 0\"\n  - paragraph: \"有效认证密钥: 0\"\n  - paragraph: 以下策略条目引用了该用户：\n  - paragraph: \"Headscale 被设置为从文件读取访问策略（policy.mode: file），但未配置策略文件（policy.path 为空），因此这里没有可编辑的内容。请在 Headscale 配置中将 policy.mode 设为 database，以便在本应用中管理访问规则。\"\n  - list\n  - checkbox \"同时从这些策略条目中移除该用户\" [checked]\n  - text: 同时从这些策略条目中移除该用户\n  - button \"取消\"\n  - button \"删除用户\" [disabled]"
+  },
+  {
+    "scenario": "readonly_delete_user_only_enabled",
+    "at": "2026-10-25T17:51:29.136Z",
+    "url": "https://10.0.0.17:32113/members",
+    "snapshot": "- region \"通知\"\n- alertdialog \"删除用户\":\n  - heading \"删除用户\" [level=2]\n  - paragraph: 这会从 Headscale 删除该用户。继续前请检查其设备和认证密钥。 B 独立服 Dave\n  - paragraph: \"设备: 0\"\n  - paragraph: \"有效认证密钥: 0\"\n  - paragraph: 以下策略条目引用了该用户：\n  - paragraph: \"Headscale 被设置为从文件读取访问策略（policy.mode: file），但未配置策略文件（policy.path 为空），因此这里没有可编辑的内容。请在 Headscale 配置中将 policy.mode 设为 database，以便在本应用中管理访问规则。\"\n  - list\n  - checkbox \"同时从这些策略条目中移除该用户\"\n  - text: 同时从这些策略条目中移除该用户\n  - button \"取消\"\n  - button \"删除用户\""
+  },
+  {
+    "scenario": "migration_full_target_keeps_unrelated_tag",
+    "at": "2026-10-25T17:36:21.075Z",
+    "url": "https://10.0.0.17:32113/devices",
+    "snapshot": "- region \"通知\"\n- dialog \"编辑设备标签\":\n  - heading \"编辑设备标签\" [level=2]\n  - paragraph: 直接覆盖这台设备当前的标签。要修改同一标签下设备的访问权限，请到「访问控制」中编辑对应的设备标签策略。\n  - group \"当前选择 (2)\":\n    - text: 当前选择 (2) tag:ux12-a-keep 上次读取的策略中已声明\n    - button \"移除 tag:ux12-a-keep\"\n    - text: tag:ux12-a-server-v2 上次读取的策略中已声明\n    - button \"移除 tag:ux12-a-server-v2\"\n  - text: 搜索标签（可选）\n  - textbox \"搜索标签（可选）\"\n  - button \"tag:ux12-a-server\"\n  - paragraph: 建议来自上次读取的策略，而非尚未发布的编辑；这不能证明运行时已加载该策略。\n  - button \"再次读取\"\n  - button \"在访问控制中管理标签\"\n  - paragraph: 保存会替换当前标签，而不是追加标签。\n  - heading \"完整的目标标签集合\" [level=3]\n  - paragraph: ux12-client-b · 1\n  - text: tag:ux12-a-keep tag:ux12-a-server-v2\n  - paragraph: + tag:ux12-a-server-v2\n  - paragraph: − tag:ux12-a-server\n  - button \"确认替换完整标签集合\"\n  - button \"恢复个人身份\"\n  - button \"取消\"\n  - button \"检查完整的目标标签集合\"\n  - button \"关闭\""
+  },
+  {
+    "scenario": "personal_identity_readback_confirmed",
+    "at": "2026-10-25T17:37:38.235Z",
+    "url": "https://10.0.0.17:32113/devices",
+    "snapshot": "- region \"通知\"\n- dialog \"恢复个人身份\":\n  - heading \"恢复个人身份\" [level=2]\n  - paragraph: 通过不使用认证密钥的方式重新认证，将带标签设备恢复为个人用户身份。不保证保留 Node ID 和 IP 地址，也不保证访问不中断。\n  - navigation \"添加设备\":\n    - button \"1 注册待审批设备 注册或审核正在等待的设备。\" [disabled]\n    - button \"2 结果 检查执行结果并继续。\" [disabled]\n  - heading \"注册待审批设备\" [level=3]\n  - paragraph: 粘贴 tailscale up 或 SSH 检查提示中显示的链接或 ID。请求 ID 的有效期很短。\n  - heading \"ux12-client-b · 1\" [level=3]\n  - paragraph: 在目标设备上清除公布的标签，并使用其现有的、不依赖认证密钥的登录方式强制重新认证。此控制台不会远程运行命令。请勿改用不带标签的认证密钥。\n  - code: tailscale up --advertise-tags= --force-reauth\n  - link \"了解更多\":\n    - /url: https://headscale.net/stable/ref/tags/\n  - checkbox \"我有可用于此设备的备用管理通道。\" [checked]\n  - text: 我有可用于此设备的备用管理通道。\n  - paragraph: 不会执行远程命令，也不会自动更改身份。\n  - text: 请求类型\n  - combobox \"请求类型\" [disabled]:\n    - option \"设备登录\" [selected]\n    - option \"SSH 检查\"\n  - text: 明确指定的目标用户\n  - combobox \"明确指定的目标用户\":\n    - option \"选择目标用户\"\n    - option \"A 主服 Alice (ux12-a-alice · 1)\"\n    - option \"A 主服 Bob (ux12-a-bob-renamed · 2)\" [selected]\n  - text: 请求链接或 ID\n  - textbox \"请求链接或 ID\":\n    - /placeholder: hskey-authreq-…\n  - text: 已确认的对外 login-server\n  - textbox \"已确认的对外 login-server\": https://10.0.0.17:32113\n  - checkbox \"我已在部署配置中核实此对外 login-server；它可能不同于 API 代理。\" [checked]\n  - text: 我已在部署配置中核实此对外 login-server；它可能不同于 API 代理。\n  - checkbox \"我已通过目标设备的可信管理通道，核实此 Auth ID 或链接确实属于该设备及本次重新认证。\" [disabled]\n  - text: 我已通过目标设备的可信管理通道，核实此 Auth ID 或链接确实属于该设备及本次重新认证。\n  - paragraph: 链接指向同一服务器并不能证明请求来自目标设备。批准前，请通过该设备的可信通道核实请求。\n  - paragraph: 服务器根据用户名注册。此 ID/名称检查不是服务器端的比较并交换操作，无法防止并发复用名称。\n  - paragraph: ux12-a-bob-renamed · 2\n  - text: 当前读回结果与预期用户、空标签集合及原设备身份一致。连通性须另行检查。\n  - button \"仅读取当前状态\"\n  - paragraph: 请另行验证 SSH、管理访问，以及需要允许和拒绝的连接。\n  - paragraph: 当前读回结果已不再显示认证密钥关联；仍需验证运行时清理和连通性。\n  - button \"批准此设备以所选用户身份注册\" [disabled]\n  - button \"上一步\"\n  - button \"下一步\"\n  - button \"关闭\""
+  },
+  {
+    "scenario": "retirement_block_without_visible_dependency",
+    "at": "2026-10-25T17:57:55.413Z",
+    "url": "https://10.0.0.17:32113/access",
+    "snapshot": "- region \"通知\"\n- dialog \"在线标签维护 · tag:ux12-a-keep\":\n  - heading \"在线标签维护 · tag:ux12-a-keep\" [level=2]\n  - paragraph: 当前观察结果不能证明运行时已加载、已持久化存储或客户端能够连通。\n  - button \"迁移身份\"\n  - button \"停止已知注册入口\"\n  - button \"退役检查\"\n  - button \"刷新所需数据源\"\n  - heading \"设备观察结果\" [level=3]\n  - heading \"邀请观察结果\" [level=3]\n  - paragraph: 已过期或已消耗的密钥可能仍被旧部署及符合条件的重新注册流程引用。过期不等于删除，两者都不会移除现有设备身份。\n  - button \"查看精确匹配的邀请\"\n  - heading \"策略引用\" [level=3]\n  - group: \"最新策略读回结果 { \\\"groups\\\": { \\\"group:ux12-a-ops\\\": [] }, \\\"tagOwners\\\": { \\\"tag:ux12-a-server\\\": [ \\\"group:ux12-a-ops\\\" ], \\\"tag:ux12-a-keep\\\": [], \\\"tag:ux12-a-server-v2\\\": [] }, \\\"acls\\\": [ { \\\"action\\\": \\\"accept\\\", \\\"src\\\": [ \\\"group:ux12-a-ops\\\" ], \\\"dst\\\": [ \\\"tag:ux12-a-server:8081\\\" ] }, { \\\"action\\\": \\\"accept\\\", \\\"src\\\": [ \\\"0.0.0.0/0\\\", \\\"::/0\\\" ], \\\"dst\\\": [ \\\"0.0.0.0/0:*\\\" ] }, { \\\"action\\\": \\\"accept\\\", \\\"src\\\": [ \\\"0.0.0.0/0\\\", \\\"::/0\\\" ], \\\"dst\\\": [ \\\"::/0:*\\\" ] } ] }\"\n  - checkbox \"外部部署负责人已核查脚本、离线客户端及旧密钥重新注册的依赖，并确认没有尚未处理的使用情况。\" [checked]\n  - text: 外部部署负责人已核查脚本、离线客户端及旧密钥重新注册的依赖，并确认没有尚未处理的使用情况。\n  - paragraph: 当前设备、注册入口、策略引用、未知来源或尚未确认的外部部署阻止了退役。\n  - button \"关闭\""
+  },
+  {
+    "scenario": "old_password_rejected",
+    "at": "2026-10-25T17:49:43.771Z",
+    "url": "https://10.0.0.17:32113/login?redirect=%2Faccess",
+    "snapshot": "- region \"通知\"\n- dialog \"解锁 UX12 Primary A\":\n  - heading \"解锁 UX12 Primary A\" [level=2]\n  - paragraph: 此浏览器的标签页共享已解锁的服务器。连续 30 分钟无操作后，会话将锁定。\n  - paragraph: https://10.0.0.17:32113\n  - text: 配置密码\n  - textbox \"配置密码\" [invalid]\n  - paragraph: 无法使用提供的密码解锁此配置。\n  - button \"取消\"\n  - button \"解锁\" [disabled]\n  - paragraph: 忘记了此配置的密码？请先取消，再点击其卡片上的删除图标，只删除这一个配置，然后用 API 密钥重新添加服务器。\n  - button \"关闭\""
+  },
+  {
+    "scenario": "profile_edit_invalid_key_rejected",
+    "at": "2026-10-25T17:52:10.121Z",
+    "url": "https://10.0.0.17:32113/login?redirect=%2Faccess",
+    "snapshot": "- region \"通知\"\n- dialog \"编辑配置 UX12 Secondary B EDITED\":\n  - heading \"编辑配置 UX12 Secondary B EDITED\" [level=2]\n  - paragraph: 只修改名称或保存位置时，请留空 API 密钥和密码。修改网址或 API 密钥时，必须重新输入 API 密钥和当前配置密码。\n  - text: 配置名称\n  - textbox \"配置名称\": UX12 Secondary B EDITED\n  - text: 服务器 URL\n  - textbox \"服务器 URL\": https://10.0.0.17:30325\n  - text: API 密钥\n  - textbox \"API 密钥\":\n    - /placeholder: 由 headscale apikeys create 生成的 API 密钥\n  - button \"如何获取 API 密钥\"\n  - text: 当前配置密码\n  - textbox \"当前配置密码\"\n  - text: 只修改名称或保存位置时，请留空 API 密钥和密码。修改网址或 API 密钥时，必须重新输入 API 密钥和当前配置密码。\n  - checkbox \"在此浏览器中记住这次连接\" [checked]\n  - text: 在此浏览器中记住这次连接 取消勾选后，此配置只会显示在当前标签页及从它打开的标签页中。无论是否勾选，加密后的 API 密钥都会保存在此浏览器中，直到你删除此配置或清除本地数据。\n  - link \"连接排障：CORS 与混合内容\":\n    - /url: https://github.com/MunMunMiao/headscale-ui#connecting-to-headscale-cors\n  - paragraph: API 密钥被拒绝，可能已失效或过期。请通过 Headscale CLI 获取有效密钥，再更新此连接配置。\n  - button \"关闭\"\n  - button \"保存配置\""
+  },
+  {
+    "scenario": "clear_all_scope",
+    "at": "2026-10-25T18:05:05.598Z",
+    "url": "https://10.0.0.17:32113/login?redirect=%2Faccess",
+    "snapshot": "- region \"通知\"\n- alertdialog \"清除所有加密数据？\":\n  - heading \"清除所有加密数据？\" [level=2]\n  - paragraph: 此操作会删除浏览器中所有已保存的服务器配置，并锁定共享会话。之后需要重新添加服务器和 API 密钥。\n  - button \"取消\"\n  - button \"清除所有已保存的服务器\""
+  },
+  {
+    "scenario": "all_profiles_cleared",
+    "at": "2026-10-25T18:05:59.540Z",
+    "url": "https://10.0.0.17:32113/login?cleared=1",
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - 'button \"Language: English\"'\n  - 'button \"Theme: System\"'\n- main:\n  - heading \"Choose a server profile\" [level=1]\n  - paragraph: Pick a saved profile like an operating system login, or add another Headscale server.\n  - text: All saved profiles have been cleared. Add a server to start fresh.\n  - button \"Add server New profile\"\n  - button \"Clear all saved profiles\"\n- region \"Notifications\""
+  },
+  {
+    "scenario": "dirty_policy_discard_notice",
+    "at": "2026-10-25T17:45:08.058Z",
+    "url": "https://10.0.0.17:32113/login?redirect=%2Faccess",
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - 'button \"语言: 简体中文\"'\n  - 'button \"主题: 系统\"'\n- main:\n  - heading \"选择服务器配置\" [level=1]\n  - paragraph: 选择已保存的服务器连接，或添加另一台 Headscale 服务器。\n  - text: 你已在此标签页或其他标签页中退出。请输入配置密码继续。 会话锁定时，未保存的访问控制修改已被丢弃。\n  - button \"UX UX12 Primary A https://10.0.0.17:32113 更新时间 2026年10月26日 01:24 已锁定\"\n  - 'button \"编辑配置: UX12 Primary A\"'\n  - 'button \"删除配置: UX12 Primary A\"'\n  - button \"UX UX12 Secondary B FILE https://10.0.0.17:30325 更新时间 2026年10月26日 01:41 已锁定\"\n  - 'button \"编辑配置: UX12 Secondary B FILE\"'\n  - 'button \"删除配置: UX12 Secondary B FILE\"'\n  - button \"添加服务器 新服务器\"\n  - button \"清除所有已保存的服务器\"\n- region \"通知\""
+  }
+]

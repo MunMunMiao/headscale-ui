@@ -1,0 +1,77 @@
+{
+  "verifiedAt": "2026-10-26T16:42:54.905132+08:00",
+  "branch": "codex/audit-remediation",
+  "HEAD": "4d21dd98c97055ba8e77aa9e2e42659d82478de5",
+  "incrementalFiles": 32,
+  "previousSnapshotFilesPreserved": 362,
+  "tests": {
+    "filesPassed": 152,
+    "passed": 3438,
+    "preExistingSkipped": 3,
+    "coveredFiles": 114,
+    "fourMetricsEveryFile": 100,
+    "exitCode": 0
+  },
+  "e2e": {
+    "lanePassed": [
+      89,
+      23,
+      67
+    ],
+    "totalLanePassed": 179,
+    "allDownstreamScripts": "passed",
+    "exitCode": 0
+  },
+  "staticChecks": {
+    "lint": "passed",
+    "format": "370 files passed",
+    "types": "485 files / 2 projects passed",
+    "i18n": "11 languages / 820 each stable; no missing/obsolete",
+    "build": "passed"
+  },
+  "review": {
+    "G01": "Spec compliant / Quality Approved",
+    "G02": "I1/I2/I3 ADDRESSED, no new Critical/Important",
+    "additionalCoverageTests": "real blank/cleared input, no production changes"
+  },
+  "originalMemberReportsUnchanged": 12,
+  "originalEvidenceImagesUnchanged": 182,
+  "upstreamUIUnchanged": true,
+  "noDependencyOrPermissionChanges": true,
+  "reports": {
+    "localLinksChecked": 33,
+    "brokenLinks": [],
+    "fullKeyPatternCandidates": [],
+    "limit": "格式扫描不等于任意秘密不存在的形式化证明；本轮截图均由主协调者实际查看。"
+  },
+  "cleanup": {
+    "planWorkspaceEntryCountsBeforeRemoval": {
+      "G01-身份歧义-TDD方案": 460,
+      "G02-恢复基线-TDD方案": 918
+    },
+    "bothOwnedPlanWorkspacesRemoved": true,
+    "ownedTmpLogsRemoved": [
+      "headscale-g01-g02-verified-coverage-20261026.log",
+      "headscale-g01-g02-integrated-coverage-20261026.log",
+      "headscale-g01-g02-final-e2e-20261026.log",
+      "headscale-g01-g02-final-coverage-20261026.log",
+      "headscale-g01-g02-verified-e2e-20261026.log",
+      "headscale-g01-e2e-gate-target-green-20261026.log",
+      "headscale-g01-e2e-gate-target-green-01-20261026.log",
+      "headscale-g01-e2e-gate-preflight-regression-20261026.log",
+      "headscale-g01-e2e-gate-adjacent-20261026.log",
+      "headscale-g01-e2e-gate-static-20261026.log"
+    ],
+    "remainingPreviewPorts": [],
+    "runtimeFixtureAndImageChecks": "zero owned containers/networks/volumes and exact temporary image tags, see final manifest and preview cleanup report",
+    "untouched": "其它项目容器/卷、兄弟任务目录、宿主个人浏览器、普通缓存和工作区代码均保留。"
+  },
+  "committed": false,
+  "pushed": false,
+  "limitations": [
+    "G01不消除外部GET→POST竞争或提供服务端全局唯一。",
+    "G02修复已复现的安全重审缺口，不断言历史UX09唯一根因已复原。",
+    "真实后端固定0.29.4；3个既有skip不计通过。",
+    "E2E已存警告如实记录，网络重置故障注入与一次idle timeout不隐藏。"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "tool_diagnostic",
+  "wrong_capture_characters": 24,
+  "correct_scoped_capture_characters": 88,
+  "observed_error_excerpt": "backend error: handling register with auth key: failed to parse auth-key: key too short, expected at least 77 chars after prefix, got 13",
+  "excerpt_provenance": "Transcribed from the actual lab.py join output during this participant run; no secret values copied.",
+  "recovery": "Scoped actual visible group Auth key created -> first code, private file only; real join succeeded."
+}

@@ -2,6 +2,7 @@ node_modules/
 dist/
 artifacts/
 output/
+.vitest/
 .vitest-attachments/
 .playwright-cli/
 playwright-report/
@@ -11,5 +12,7 @@ e2e/__screenshots__/
 *.log
 .claude
 .codex
+.superpowers/
+docs/
 .grok
 coverage/

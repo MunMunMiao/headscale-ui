@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-25T17:44:28.540Z",
+  "fixture": "CDP Network offline on ux10 pages and SharedWorker only",
+  "targets": [
+    {
+      "type": "shared_worker",
+      "url": "/shared-session-worker.js"
+    },
+    {
+      "type": "page",
+      "url": "/access"
+    },
+    {
+      "type": "page",
+      "url": "/devices"
+    }
+  ],
+  "offline": {
+    "online": false,
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"服务器\"\n  - navigation \"主导航\":\n    - link \"概览\":\n      - /url: /home\n    - link \"设备\":\n      - /url: /devices\n    - link \"用户\":\n      - /url: /members\n    - link \"认证密钥\":\n      - /url: /invites\n    - link \"路由\":\n      - /url: /routes\n    - link \"访问控制\":\n      - /url: /access\n- main:\n  - paragraph\n  - button \"数据与操作状态\"\n  - heading \"设备\" [level=1]\n  - paragraph:\n    - text: 管理已经接入这个 tailnet 的设备。\n    - link \"了解更多\":\n      - /url: https://tailscale.com/kb/1017/install\n  - button \"添加设备\"\n  - text: 按名称、归属、标签、版本搜索...\n  - textbox \"按名称、归属、标签、版本搜索...\"\n  - text: 筛选\n  - combobox \"筛选\":\n    - option \"全部设备\" [selected]\n    - option \"在线\"\n    - option \"离线\"\n    - option \"已过期\"\n    - option \"公布路由\"\n    - option \"带标签\"\n  - paragraph: 2 / 2\n  - button \"刷新数据\"\n  - button \"导出数据\"\n  - table \"设备\":\n    - rowgroup:\n      - row \"设备 用户 路由 活动\":\n        - columnheader \"设备\"\n        - columnheader \"用户\"\n        - columnheader \"路由\"\n        - columnheader \"活动\"\n    - rowgroup:\n      - 'row \"ux10-mobile-a 100.64.0.1 fd7a:115c:a1e0::1 操作: ux10-mobile-a Alice Mobile ux10-alice@example.invalid 在线 过期时间: 从不\"':\n        - 'cell \"ux10-mobile-a 100.64.0.1 fd7a:115c:a1e0::1 操作: ux10-mobile-a\"':\n          - button \"ux10-mobile-a\"\n          - text: 100.64.0.1 fd7a:115c:a1e0::1\n          - 'button \"操作: ux10-mobile-a\"'\n        - cell \"Alice Mobile ux10-alice@example.invalid\":\n          - button \"Alice Mobile\"\n          - paragraph: ux10-alice@example.invalid\n        - cell\n        - 'cell \"在线 过期时间: 从不\"':\n          - text: 在线\n          - paragraph: \"过期时间: 从不\"\n      - 'row \"ux10-client-b 100.64.0.2 fd7a:115c:a1e0::2 操作: ux10-client-b Bob Routes ux10-router 0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审 在线 过期时间: 从不\"':\n        - 'cell \"ux10-client-b 100.64.0.2 fd7a:115c:a1e0::2 操作: ux10-client-b\"':\n          - button \"ux10-client-b\"\n          - text: 100.64.0.2 fd7a:115c:a1e0::2\n          - 'button \"操作: ux10-client-b\"'\n        - cell \"Bob Routes ux10-router\":\n          - button \"Bob Routes\"\n          - paragraph: ux10-router\n        - cell \"0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审\":\n          - button \"0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审\"\n        - 'cell \"在线 过期时间: 从不\"':\n          - text: 在线\n          - paragraph: \"过期时间: 从不\"\n- region \"通知\":\n  - dialog \"无法刷新数据\":\n    - heading \"无法刷新数据\" [level=2]\n    - button \"关闭\"",
+    "failures": [
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      },
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      },
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      },
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      },
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      },
+      {
+        "sessionId": "05B2C3BDB58436B63F88B14994B3BC20",
+        "error": "net::ERR_INTERNET_DISCONNECTED",
+        "type": "Fetch"
+      }
+    ]
+  },
+  "recovered": {
+    "online": true,
+    "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"服务器\"\n  - navigation \"主导航\":\n    - link \"概览\":\n      - /url: /home\n    - link \"设备\":\n      - /url: /devices\n    - link \"用户\":\n      - /url: /members\n    - link \"认证密钥\":\n      - /url: /invites\n    - link \"路由\":\n      - /url: /routes\n    - link \"访问控制\":\n      - /url: /access\n- main:\n  - paragraph: 数据已更新\n  - heading \"设备\" [level=1]\n  - paragraph:\n    - text: 管理已经接入这个 tailnet 的设备。\n    - link \"了解更多\":\n      - /url: https://tailscale.com/kb/1017/install\n  - button \"添加设备\"\n  - text: 按名称、归属、标签、版本搜索...\n  - textbox \"按名称、归属、标签、版本搜索...\"\n  - text: 筛选\n  - combobox \"筛选\":\n    - option \"全部设备\" [selected]\n    - option \"在线\"\n    - option \"离线\"\n    - option \"已过期\"\n    - option \"公布路由\"\n    - option \"带标签\"\n  - paragraph: 2 / 2\n  - button \"刷新数据\"\n  - button \"导出数据\"\n  - table \"设备\":\n    - rowgroup:\n      - row \"设备 用户 路由 活动\":\n        - columnheader \"设备\"\n        - columnheader \"用户\"\n        - columnheader \"路由\"\n        - columnheader \"活动\"\n    - rowgroup:\n      - 'row \"ux10-mobile-a 100.64.0.1 fd7a:115c:a1e0::1 操作: ux10-mobile-a Alice Mobile ux10-alice@example.invalid 在线 过期时间: 从不\"':\n        - 'cell \"ux10-mobile-a 100.64.0.1 fd7a:115c:a1e0::1 操作: ux10-mobile-a\"':\n          - button \"ux10-mobile-a\"\n          - text: 100.64.0.1 fd7a:115c:a1e0::1\n          - 'button \"操作: ux10-mobile-a\"'\n        - cell \"Alice Mobile ux10-alice@example.invalid\":\n          - button \"Alice Mobile\"\n          - paragraph: ux10-alice@example.invalid\n        - cell\n        - 'cell \"在线 过期时间: 从不\"':\n          - text: 在线\n          - paragraph: \"过期时间: 从不\"\n      - 'row \"ux10-client-b 100.64.0.2 fd7a:115c:a1e0::2 操作: ux10-client-b Bob Routes ux10-router 0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审 在线 过期时间: 从不\"':\n        - 'cell \"ux10-client-b 100.64.0.2 fd7a:115c:a1e0::2 操作: ux10-client-b\"':\n          - button \"ux10-client-b\"\n          - text: 100.64.0.2 fd7a:115c:a1e0::2\n          - 'button \"操作: ux10-client-b\"'\n        - cell \"Bob Routes ux10-router\":\n          - button \"Bob Routes\"\n          - paragraph: ux10-router\n        - cell \"0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审\":\n          - button \"0.0.0.0/0 出口 · 待审 ::/0 出口 · 待审 10.42.0.28/32 待审\"\n        - 'cell \"在线 过期时间: 从不\"':\n          - text: 在线\n          - paragraph: \"过期时间: 从不\"\n- region \"通知\":\n  - dialog \"数据已更新\":\n    - heading \"数据已更新\" [level=2]\n    - button \"关闭\""
+  }
+}

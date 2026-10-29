@@ -1,0 +1,25 @@
+{
+  "mode": "real served application, normal UI login, temporary native browser context",
+  "fixtureProject": "headscale-tag-lifecycle-41057-23a1b9f6",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "screenshotsMaskAllCodeElements": true,
+  "creationConfirmed": true,
+  "pendingRead": {
+    "refreshPending": true,
+    "falseFailureCount": 0,
+    "keyStillPresent": true,
+    "copyStillEnabled": true,
+    "verificationText": "This key's current status is not verified. Refresh the auth key list successfully to check it; the saved copy is kept."
+  },
+  "afterRead": {
+    "refreshEnabled": true,
+    "falseFailureCount": 0,
+    "keyStillPresent": true,
+    "unverifiedStatusCount": 0
+  },
+  "pageErrors": [],
+  "nativeBrowserContextClosed": true
+}

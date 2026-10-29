@@ -1,0 +1,240 @@
+{
+  "revision": "4d21dd98c97055ba8e77aa9e2e42659d82478de5",
+  "independentKeys": 10,
+  "independentChromeProfiles": 10,
+  "bundleSha256": "9637474929fc9956c817872d07c84032b7ed872f980313bad4421a13e64e168f",
+  "instances": [
+    {
+      "member": "ux01",
+      "namespace": "hsux-1026-0020-ux01",
+      "origin": "https://10.0.0.17:32112",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux02",
+      "namespace": "hsux-1026-0020-ux02",
+      "origin": "https://10.0.0.17:32346",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux03",
+      "namespace": "hsux-1026-0020-ux03",
+      "origin": "https://10.0.0.17:30360",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux04",
+      "namespace": "hsux-1026-0020-ux04",
+      "origin": "https://10.0.0.17:32626",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux05",
+      "namespace": "hsux-1026-0020-ux05",
+      "origin": "https://10.0.0.17:31307",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux06",
+      "namespace": "hsux-1026-0020-ux06",
+      "origin": "https://10.0.0.17:30957",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux07",
+      "namespace": "hsux-1026-0020-ux07",
+      "origin": "https://10.0.0.17:32198",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux08",
+      "namespace": "hsux-1026-0020-ux08",
+      "origin": "https://10.0.0.17:30671",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux09",
+      "namespace": "hsux-1026-0020-ux09",
+      "origin": "https://10.0.0.17:32375",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    },
+    {
+      "member": "ux10",
+      "namespace": "hsux-1026-0020-ux10",
+      "origin": "https://10.0.0.17:32516",
+      "users": 0,
+      "version": {
+        "version": "v0.29.4",
+        "commit": "8106636c7f8d0cf8c9d4fb0beae94415069b768b",
+        "buildTime": "2026-09-23T19:19:22Z",
+        "go": {
+          "version": "go1.26.5",
+          "os": "linux",
+          "arch": "amd64"
+        },
+        "dirty": false
+      }
+    }
+  ],
+  "chrome": [
+    {
+      "member": "ux01",
+      "pidAtStart": 26111,
+      "cdpPort": 9411,
+      "headless": true
+    },
+    {
+      "member": "ux02",
+      "pidAtStart": 26145,
+      "cdpPort": 9412,
+      "headless": true
+    },
+    {
+      "member": "ux03",
+      "pidAtStart": 26163,
+      "cdpPort": 9413,
+      "headless": true
+    },
+    {
+      "member": "ux04",
+      "pidAtStart": 26181,
+      "cdpPort": 9414,
+      "headless": true
+    },
+    {
+      "member": "ux05",
+      "pidAtStart": 26197,
+      "cdpPort": 9415,
+      "headless": true
+    },
+    {
+      "member": "ux06",
+      "pidAtStart": 26215,
+      "cdpPort": 9416,
+      "headless": true
+    },
+    {
+      "member": "ux07",
+      "pidAtStart": 26233,
+      "cdpPort": 9417,
+      "headless": true
+    },
+    {
+      "member": "ux08",
+      "pidAtStart": 26249,
+      "cdpPort": 9418,
+      "headless": true
+    },
+    {
+      "member": "ux09",
+      "pidAtStart": 26265,
+      "cdpPort": 9419,
+      "headless": true
+    },
+    {
+      "member": "ux10",
+      "pidAtStart": 26281,
+      "cdpPort": 9420,
+      "headless": true
+    }
+  ]
+}

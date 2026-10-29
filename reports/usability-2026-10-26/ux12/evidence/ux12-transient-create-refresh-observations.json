@@ -1,0 +1,16 @@
+[
+  {
+    "at": "2026-10-25T17:26:29.659Z",
+    "url": "https://10.0.0.17:32113/invites",
+    "message": "已确认创建了密钥，但刷新清单失败。不要仅为刷新列表而再创建密钥。",
+    "key_owner_Alice": true,
+    "key_owner_Carol": false
+  },
+  {
+    "at": "2026-10-25T17:42:51.492Z",
+    "url": "https://10.0.0.17:32113/invites",
+    "message": "已确认创建了密钥，但刷新清单失败。不要仅为刷新列表而再创建密钥。",
+    "key_owner_Alice": false,
+    "key_owner_Carol": true
+  }
+]

@@ -1,0 +1,78 @@
+{
+  "method": "Each selected probe opens a new tailscale nc TCP connection; sends HTTP/1.0 with Connection: close and holds stdin open for 2 seconds. Remote timeout is 9 seconds. Waited for policy publication to settle before accepted outcomes.",
+  "coreAccessControl": [
+    {
+      "exit": 0,
+      "stdout": "HTTP/1.1 200 OK\nServer: nginx/1.30.5\nDate: Sun, 25 Oct 2026 17:02:23 GMT\nContent-Type: text/html\nContent-Length: 14\nLast-Modified: Sun, 25 Oct 2026 16:32:32 GMT\nConnection: close\nETag: \"6ade2f20-e\"\nAccept-Ranges: bytes\n\nux06-client-b",
+      "stderr": "",
+      "phase": "final-control-allow-8081",
+      "utc": "2026-10-25T17:02:25.048702+00:00",
+      "source": "client-a",
+      "target": "100.64.0.1",
+      "port": "8081",
+      "seconds": 2.29
+    },
+    {
+      "exit": 143,
+      "stdout": "",
+      "stderr": "Terminated\ncommand terminated with exit code 143",
+      "phase": "final-control-deny-after-settled",
+      "utc": "2026-10-25T17:02:59.160361+00:00",
+      "source": "client-a",
+      "target": "100.64.0.1",
+      "port": "8081",
+      "seconds": 9.35
+    },
+    {
+      "exit": 0,
+      "stdout": "HTTP/1.1 200 OK\nServer: nginx/1.30.5\nDate: Sun, 25 Oct 2026 17:03:19 GMT\nContent-Type: text/html\nContent-Length: 14\nLast-Modified: Sun, 25 Oct 2026 16:32:32 GMT\nConnection: close\nETag: \"6ade2f20-e\"\nAccept-Ranges: bytes\n\nux06-client-b",
+      "stderr": "",
+      "phase": "final-control-restored-after-settled",
+      "utc": "2026-10-25T17:03:21.263115+00:00",
+      "source": "client-a",
+      "target": "100.64.0.1",
+      "port": "8081",
+      "seconds": 2.44
+    }
+  ],
+  "subnetRouting": [
+    {
+      "exit": 0,
+      "stdout": "HTTP/1.1 200 OK\nServer: nginx/1.30.5\nDate: Sun, 25 Oct 2026 16:48:25 GMT\nContent-Type: text/html\nContent-Length: 19\nLast-Modified: Sun, 25 Oct 2026 16:32:30 GMT\nConnection: close\nETag: \"6ade2f1e-13\"\nAccept-Ranges: bytes\n\nux06-subnet-target",
+      "stderr": "",
+      "phase": "subnet-approved",
+      "utc": "2026-10-25T16:48:27.146962+00:00",
+      "source": "client-a",
+      "target": "10.42.0.8",
+      "port": "8081",
+      "seconds": 2.29
+    },
+    {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Dial(\"10.42.0.8\", 8081): dial tcp 10.42.0.8:8081: connect: connection refused\ncommand terminated with exit code 1",
+      "phase": "subnet-revoked",
+      "utc": "2026-10-25T16:49:14.594786+00:00",
+      "source": "client-a",
+      "target": "10.42.0.8",
+      "port": "8081",
+      "seconds": 2.2
+    },
+    {
+      "exit": 0,
+      "stdout": "HTTP/1.1 200 OK\nServer: nginx/1.30.5\nDate: Sun, 25 Oct 2026 16:49:18 GMT\nContent-Type: text/html\nContent-Length: 19\nLast-Modified: Sun, 25 Oct 2026 16:32:30 GMT\nConnection: close\nETag: \"6ade2f1e-13\"\nAccept-Ranges: bytes\n\nux06-subnet-target",
+      "stderr": "",
+      "phase": "subnet-reapproved",
+      "utc": "2026-10-25T16:49:20.542949+00:00",
+      "source": "client-a",
+      "target": "10.42.0.8",
+      "port": "8081",
+      "seconds": 2.19
+    }
+  ],
+  "excludedFromAcceptance": [
+    "port-8082-rule-denies-8081: HTTP proxy connection reuse can preserve an old connection.",
+    "fresh-nc-restored-8081-allow: immediate stdin EOF produced no HTTP body, not accepted as success.",
+    "final-control-deny-8081-rule8082: probe ran while publication was still in progress, not accepted as settled deny result."
+  ]
+}

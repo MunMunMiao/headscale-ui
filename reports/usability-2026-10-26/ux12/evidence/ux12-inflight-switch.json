@@ -1,0 +1,34 @@
+{
+  "events": [
+    {
+      "phase": "before-A-create",
+      "at": "2026-10-25T18:02:22.025Z"
+    },
+    {
+      "phase": "A-create-click-returned",
+      "at": "2026-10-25T18:02:22.061Z"
+    },
+    {
+      "phase": "shared-logout-click-returned",
+      "at": "2026-10-25T18:02:22.266Z"
+    },
+    {
+      "phase": "B-unlock-click-returned",
+      "at": "2026-10-25T18:02:22.574Z"
+    },
+    {
+      "phase": "B-settled",
+      "at": "2026-10-25T18:02:28.575Z"
+    }
+  ],
+  "tabs": [
+    {
+      "url": "https://10.0.0.17:32113/access",
+      "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"服务器\"\n  - navigation \"主导航\":\n    - link \"概览\":\n      - /url: /home\n    - link \"设备\":\n      - /url: /devices\n    - link \"用户\":\n      - /url: /members\n    - link \"认证密钥\":\n      - /url: /invites\n    - link \"路由\":\n      - /url: /routes\n    - link \"访问控制\":\n      - /url: /access\n- main:\n  - paragraph\n  - heading \"资源访问控制\" [level=1]\n  - paragraph: 为设备添加标签、把用户组成团队，再决定谁能访问哪些设备。\n  - button \"发布所有策略更改\" [disabled]\n  - text: 目前无法编辑策略\n  - paragraph: \"Headscale 被设置为从文件读取访问策略（policy.mode: file），但未配置策略文件（policy.path 为空），因此这里没有可编辑的内容。请在 Headscale 配置中将 policy.mode 设为 database，以便在本应用中管理访问规则。\"\n  - paragraph: 此处无法写入策略。这并不全局禁止管理员针对最新读回结果中的兼容定义执行 SetTags；最终仍以服务器已加载的策略为准。\n- region \"通知\""
+    },
+    {
+      "url": "https://10.0.0.17:32113/members",
+      "snapshot": "- banner:\n  - text: Headscale UI\n  - link \"GitHub\":\n    - /url: https://github.com/MunMunMiao/headscale-ui\n  - button \"服务器\"\n  - navigation \"主导航\":\n    - link \"概览\":\n      - /url: /home\n    - link \"设备\":\n      - /url: /devices\n    - link \"用户\":\n      - /url: /members\n    - link \"认证密钥\":\n      - /url: /invites\n    - link \"路由\":\n      - /url: /routes\n    - link \"访问控制\":\n      - /url: /access\n- main:\n  - paragraph\n  - heading \"用户\" [level=1]\n  - paragraph: 管理网络中的用户和他们的权限。\n  - paragraph: \"Headscale 被设置为从文件读取访问策略（policy.mode: file），但未配置策略文件（policy.path 为空），因此这里没有可编辑的内容。请在 Headscale 配置中将 policy.mode 设为 database，以便在本应用中管理访问规则。\"\n  - text: 搜索用户...\n  - textbox \"搜索用户...\"\n  - paragraph: 1 / 1\n  - button \"刷新数据\"\n  - button \"导出数据\"\n  - button \"添加用户\"\n  - table \"用户\":\n    - rowgroup:\n      - row \"用户 设备 加入时间 认证来源\":\n        - columnheader \"用户\"\n        - columnheader \"设备\"\n        - columnheader \"加入时间\"\n        - columnheader \"认证来源\"\n    - rowgroup:\n      - 'row \"B 独立服 Carol ux12-b-carol ux12-carol@example.test 操作: B 独立服 Carol ux12-b-server-only 在线 2026年10月26日 01:41 -\"':\n        - 'cell \"B 独立服 Carol ux12-b-carol ux12-carol@example.test 操作: B 独立服 Carol\"':\n          - button \"B 独立服 Carol\"\n          - paragraph: ux12-b-carol\n          - paragraph: ux12-carol@example.test\n          - 'button \"操作: B 独立服 Carol\"'\n        - cell \"ux12-b-server-only 在线\":\n          - button \"ux12-b-server-only 在线\"\n        - cell \"2026年10月26日 01:41\"\n        - cell \"-\"\n- region \"通知\""
+    }
+  ]
+}

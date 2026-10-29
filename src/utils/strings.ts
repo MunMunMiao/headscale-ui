@@ -11,8 +11,33 @@ export function normalizedBaseUrl(baseUrl: string): string {
  * `<= 18` chars are returned as-is; longer values become `<first-12>...<last-4>`.
  * Returns `fallback` for empty input.
  */
-export function shortSecret(value: string | undefined, fallback: string): string {
+export function shortSecret(
+  value: string | undefined,
+  fallback: string,
+): string {
   if (!value) return fallback;
   if (value.length <= 18) return value;
   return `${value.slice(0, 12)}...${value.slice(-4)}`;
+}
+
+export function parseList(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function isHttpUrl(value: string): boolean {
+  const url = value.trim();
+  return /^https?:\/\//i.test(url) && URL.canParse(url);
+}
+
+export function tailscaleUpCommand(
+  baseUrl: string,
+  authKey: string,
+  advertiseExitNode = false,
+): string {
+  const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+  const command = `tailscale up --login-server ${quote(normalizedBaseUrl(baseUrl))} --authkey ${quote(authKey)}`;
+  return advertiseExitNode ? `${command} --advertise-exit-node` : command;
 }

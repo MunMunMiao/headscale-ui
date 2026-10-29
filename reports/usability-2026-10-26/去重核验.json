@@ -1,0 +1,1271 @@
+{
+  "review_date": "2026-10-26",
+  "scope": {
+    "reviewer_role": "只读报告证据核验助手，不是模拟成员，不计入参与人数",
+    "structured_input": "已归档成员结果.jsonl",
+    "archived_member_count": 10,
+    "archived_finding_count": 28,
+    "additional_report": "ux11/报告.md",
+    "incremental_report": "ux12/报告.md",
+    "ux12": {
+      "included": true,
+      "reason": "首轮结束后协调者明确通知报告已归档，随后只增量读取第6节 F01—F03、O01—O04 及其相关证据；没有等待、轮询或重跑环境。",
+      "reviewed_section": "ux12/报告.md 第145—185行（第6节）"
+    },
+    "member_reports": {
+      "ux01": "ux01/报告.md",
+      "ux02": "ux02/报告.md",
+      "ux03": "ux03/报告.md",
+      "ux04": "ux04/报告.md",
+      "ux05": "ux05/报告.md",
+      "ux06": "ux06/报告.md",
+      "ux07": "ux07/报告.txt",
+      "ux08": "ux08/报告.md",
+      "ux09": "ux09/报告.md",
+      "ux10": "ux10/报告.md",
+      "ux11": "ux11/报告.md",
+      "ux12": "ux12/报告.md"
+    },
+    "boundaries": [
+      "只读取报告、findings 指向的证据及相关问题段落；浏览轨迹仅定位相关事件，不重走用户流程。",
+      "未读取业务源码，未进行浏览器、集群、网络或产品 API 操作，未派生子代理。",
+      "只写本文件，不修改成员原文或其他文件；不承担实验覆盖或资源清理审计。"
+    ]
+  },
+  "counts": {
+    "reviewed_simulated_members": 12,
+    "reviewer_added_participants": 0,
+    "original_indexed_source_items": 42,
+    "original_indexed_source_definition": "前10人的28条 findings，加 UX11-F01、O01—O03、L01—L03 共7个编号问题或边界项，以及 UX12 第6节 F01—F03、O01—O04 共7项",
+    "supplemental_report_locator_items": 12,
+    "total_indexed_source_items": 54,
+    "grouped_source_items": 51,
+    "excluded_source_items": 3,
+    "source_group_links": 52,
+    "multi_group_source_ids": {"UX12-O02": ["G08", "G26"]},
+    "deduplicated_groups": 27,
+    "by_kind": {
+      "已确认功能故障": 2,
+      "体验/文案/可访问性观察": 21,
+      "上游/环境": 3,
+      "测试工具问题": 1
+    },
+    "by_severity": {
+      "高": 1,
+      "中": 12,
+      "低": 14
+    },
+    "groups_pending_core_artifact_evidence": ["G13", "G21"]
+  },
+  "incremental_review": {
+    "member": "ux12",
+    "source_count": 7,
+    "source_group_links": 8,
+    "new_groups": ["G24", "G25", "G26", "G27"],
+    "updated_existing_groups": ["G04", "G05", "G08", "G22"],
+    "source_mapping": {
+      "UX12-F01": ["G24"],
+      "UX12-F02": ["G05"],
+      "UX12-F03": ["G04"],
+      "UX12-O01": ["G25"],
+      "UX12-O02": ["G08", "G26"],
+      "UX12-O03": ["G27"],
+      "UX12-O04": ["G22"]
+    },
+    "limits": [
+      "只读取 UX12 第6节与该节相关证据；没有重新审查前11人的报告或运行流程。",
+      "UX12-F01 的政策清理不可执行与用户本身可删除已分开：取消清理勾选后按钮启用，B 的 DELETE /user/2 为200，最终用户列表不再含 Dave。",
+      "UX12-O02 同时包含空资料密码提示和未说明偏好重置，拆到两个组但只计一个来源项。",
+      "UX12-O03 仅有脱敏文字提示，未建立完整刷新失败链；UX12-O04 没有在第6节指向的材料中存下双页即时主题对照，不借 UX09 的证据替代 UX12 的独立复证。"
+    ]
+  },
+  "groups": [
+    {
+      "id": "G01",
+      "title": "新增重复邮箱用户使正在使用的邮箱 principal 歧义，既有允许连接中断并影响策略维护",
+      "severity": "高",
+      "kind": "已确认功能故障",
+      "subkind": "用户目录与策略身份解析的跨功能集成故障",
+      "status": "归档证据支持故障现象及创建/删除对照；实现责任未定位",
+      "source_ids": ["ux04-F01", "UX11-F01"],
+      "members": ["ux04", "ux11"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux04", "ux11"],
+      "evidence": [
+        {
+          "path": "ux04/evidence/ux04-state-duplicate-email-repro-created.json",
+          "locator": "users 中 ID 1、5 同邮箱；policy.groups 与 ACL",
+          "checked": "实际读取 JSON，并与恢复状态中的 policy 对象比较",
+          "supports": "不同用户名/ID 共享 alice-ux04@example.test；既有组确实使用该邮箱 principal。"
+        },
+        {
+          "path": "ux04/evidence/ux04-state-duplicate-email-repro-recovered.json",
+          "locator": "users、policy",
+          "checked": "实际读取 JSON；创建状态与恢复状态的 policy 对象完全相等",
+          "supports": "删除新用户后只剩原用户，策略不需要改变。"
+        },
+        {
+          "path": "ux04/evidence/ux04-network.jsonl",
+          "locator": "第17、22—28条，尤其 collision-repro-no-policy-write、collision-repro-service-alive、collision-repro-delete-restored",
+          "checked": "核对同一 client-a→100.64.0.2:8081 的退出状态、正文及目标健康对照",
+          "supports": "重复邮箱存在时超时，目标本机仍返回 ux04-client-b；删除重复用户后原请求恢复相同正文。"
+        },
+        {
+          "path": "ux04/evidence/ux04-duplicate-email-policy-rejected.png",
+          "checked": "实际查看截图",
+          "supports": "策略写入明确返回 multiple users found，并列出同邮箱的两个用户；不是单凭邮箱重复猜测后果。"
+        },
+        {
+          "path": "ux11/evidence/ux11-network.txt",
+          "locator": "email-group-single-principal-positive、email-duplicate-*、unrelated-email-*-control，共9个相关阶段",
+          "checked": "提取每段 policy get 的实际 STDOUT 重新计算 SHA-256，并检查客户端及本机健康输出",
+          "supports": "9段策略原文重算均为 5a050ae0a3d4f08b9f4cabdaeaa5fc54bb24c4445cdb72d600b28b0c4d839f9b；两轮同邮箱创建后超时、删除后恢复，不同邮箱创建/删除均保持 HTTP 200，目标始终健康。"
+        },
+        {
+          "path": "ux11/evidence/ux11-06-duplicate-email-created.png",
+          "checked": "实际查看截图",
+          "supports": "Users 同时显示 UX11 Alice 与 UX11 Duplicate 使用同一邮箱，常规创建已进入目录。"
+        },
+        {
+          "path": "ux11/evidence/ux11-07-ambiguous-principal-policy-error.png",
+          "checked": "实际查看截图",
+          "supports": "UI Check policy 明确报邮箱 token multiple users found；组成员显示同一邮箱。"
+        }
+      ],
+      "summary": "两个成员的既有记录均支持：UI 生成并使用邮箱 principal 后，常规新增同邮箱用户可以在策略原文不变时破坏已允许的连接，删除新用户又恢复。保留为功能集成故障；需要在目录操作与策略身份选择之间处理可预见的歧义影响。",
+      "limits": [
+        "不预设产品必须全面禁止重复邮箱；应解决的是已使用 principal 的歧义及其未告知影响，具体业务方案尚无源码契约依据。",
+        "已证明的是各实验的同源同目标端口连接及相关策略维护受影响，不是所有流量中断、权限扩大或持久数据损坏。",
+        "核验者仅重算归档文本哈希并核对记录，没有独立运行复现，也没有定位前端、Headscale 或某个函数的唯一责任。"
+      ]
+    },
+    {
+      "id": "G02",
+      "title": "标签替换后沿仍打开的编辑器恢复个人身份，重新确认基线仍连续受阻",
+      "severity": "中",
+      "kind": "已确认功能故障",
+      "subkind": "身份恢复向导无法按自身提示继续",
+      "status": "归档操作序列支持连续阻断及刷新重开后的恢复",
+      "source_ids": ["UX09-F01"],
+      "members": ["ux09"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux09"],
+      "evidence": [
+        {
+          "path": "ux09/evidence/ui-operations-redacted.jsonl",
+          "locator": "第113—126条；第119、121、122条为连续基线提示，第123—126条为关闭、刷新、重开及成功读回",
+          "checked": "实际核对动作、复选确认状态、按钮状态和结果快照",
+          "supports": "删除 audit 标签并提交后直接进入恢复；三次审批尝试后同一基线提示反复清空请求归属确认；关闭刷新后列表仍为 server 标签身份，重开后恢复成功。"
+        },
+        {
+          "path": "ux09/evidence/07-restore-baseline-loop.png",
+          "checked": "实际查看截图",
+          "supports": "向导显示 identity/tags/policy/server version changed，并禁用后续动作。"
+        },
+        {
+          "path": "ux09/evidence/08-personal-identity-readback.png",
+          "checked": "实际查看截图",
+          "supports": "恢复后的 UI 明确读回目标用户、空标签与原设备身份匹配。"
+        },
+        {
+          "path": "ux09/evidence/control-readbacks.jsonl",
+          "locator": "第1条 non-authkey-personal-restoration",
+          "checked": "实际读取节点 ID、user、tags、register_method",
+          "supports": "节点2属于 ux09-bob，tags=null，register_method=2。"
+        }
+      ],
+      "summary": "可确认的故障是：按向导提示重新确认无法解除本次 UI 阻断，而关闭、刷新、重开可以继续。保留为可恢复的向导流程故障，不把安全基线检查本身视为应取消的保护。",
+      "limits": [
+        "短期请求已脱敏，关闭前后使用完全相同请求这一点只能由成员报告支持，不能从被遮蔽的值独立比对。",
+        "没有完整逐次服务器版本快照或失败请求 HAR，不能断言精确根因就是某个陈旧 state，也不能外推所有身份恢复都会失败。",
+        "仅一个模拟成员的一段既有操作序列；核验者未重新产生真实认证请求。"
+      ]
+    },
+    {
+      "id": "G03",
+      "title": "从筛选设备查看所属用户再关闭详情，会丢失原设备搜索和筛选上下文",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "跨实体导航状态丢失",
+      "status": "前后截图支持；保留为导航体验问题",
+      "source_ids": ["UX02-01", "UX09-F02"],
+      "members": ["ux02", "ux09"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux02", "ux09"],
+      "evidence": [
+        {
+          "path": "ux02/evidence/07-filter-before-owner-drilldown.png",
+          "checked": "实际查看截图",
+          "supports": "搜索 ux02-client-b、Online 筛选、1/2。"
+        },
+        {
+          "path": "ux02/evidence/08-filter-lost-after-owner-drilldown.png",
+          "checked": "实际查看截图",
+          "supports": "搜索为空、All machines、2/2。"
+        },
+        {
+          "path": "ux09/evidence/10-filter-before-user-details.png",
+          "checked": "实际查看截图",
+          "supports": "搜索 client-b、1/2。"
+        },
+        {
+          "path": "ux09/evidence/11-filter-lost-after-user-details.png",
+          "checked": "实际查看截图",
+          "supports": "返回设备页后搜索为空、2/2。"
+        },
+        {
+          "path": "ux09/报告.md",
+          "locator": "第92—104行 UX09-F02",
+          "checked": "核对相关问题段落",
+          "supports": "记录 /devices?search=client-b → /members?user=2&from=devices&popup=user → /devices 的实际导航。"
+        }
+      ],
+      "summary": "两人均需要重新构建设备筛选才能继续逐项检查。合并搜索与 Online 筛选丢失为同一个跨实体返回上下文问题；按最高已报告影响保留中等体验优先级。",
+      "source_assessments": [
+        {
+          "source_id": "UX09-F02",
+          "decision": "保留事实，但统一归为导航体验观察",
+          "reason": "截图证明状态丢失，不额外声称违反未读取的持久化契约或造成服务端数据丢失。"
+        }
+      ],
+      "limits": ["截图本身不包含操作全程；动作顺序由相应报告与归档轨迹记述支持。", "没有证据表明设备数据、权限或后端查询实现错误。"]
+    },
+    {
+      "id": "G04",
+      "title": "标签维护的 Review device tags 进入只读详情，迁移目标与后续编辑缺少直接交接",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "标签迁移工作流衔接与上下文保留",
+      "status": "多份截图及事件支持；不认定标签写入功能失效",
+      "source_ids": ["UX01-03", "UX03-F01", "UX05-01", "UX07-O01", "UX08-U1", "ux10/报告.md:L101", "ux11/报告.md:L81-L83", "UX12-F03"],
+      "members": ["ux01", "ux03", "ux05", "ux07", "ux08", "ux10", "ux11", "ux12"],
+      "member_count": 8,
+      "evidence_supported_members": ["ux01", "ux03", "ux05", "ux07", "ux08", "ux10", "ux11", "ux12"],
+      "evidence": [
+        {
+          "path": "ux01/evidence/12-migration-target-set.png",
+          "checked": "实际查看截图",
+          "supports": "已选现有目标 tag:ux01-keep，页面预览 app→keep，并要求在设备编辑器检查完整集合。"
+        },
+        {
+          "path": "ux01/evidence/13-migration-readonly-detail.png",
+          "checked": "实际查看截图",
+          "supports": "目标设备仍为 app 标签，只显示设备详情，无标签编辑动作。"
+        },
+        {
+          "path": "ux01/evidence/14-migration-target-reset.png",
+          "checked": "实际查看截图",
+          "supports": "重新打开维护后模式变回迁移到新身份，目标为空；仅 ux01 提供了这一额外上下文丢失的前后截图。"
+        },
+        {
+          "path": "ux03/evidence/20-migration-source-and-target.png",
+          "checked": "实际查看截图",
+          "supports": "managed+server→managed 的完整目标预览与进入设备编辑器的说明。"
+        },
+        {
+          "path": "ux03/evidence/21-migration-handoff-details-only.png",
+          "checked": "实际查看截图",
+          "supports": "同一节点仍显示原双标签的只读详情。"
+        },
+        {
+          "path": "ux05/evidence/07-migration-preserves-unrelated-tag.png",
+          "checked": "实际查看截图",
+          "supports": "维护中选择已有新标签目标。"
+        },
+        {
+          "path": "ux05/evidence/08-migration-lands-readonly-details.png",
+          "checked": "实际查看截图",
+          "supports": "设备详情仍显示 keep+old，未进入完整目标集合编辑器。"
+        },
+        {
+          "path": "ux07/evidence/maintenance-detail.json",
+          "checked": "实际读取 URL 和完整可访问性快照",
+          "supports": "/devices?node=1&popup=node&from=access 的详情只有 Close。"
+        },
+        {
+          "path": "ux07/evidence/maintenance-return.json",
+          "checked": "实际读取 URL 和快照",
+          "supports": "关闭后回到 /access。"
+        },
+        {
+          "path": "ux08/evidence/ux08-browser-events.jsonl",
+          "locator": "第72条，2026-10-25T16:48:52.252Z",
+          "checked": "实际核对 Target tag 输入、Review device tags 点击与结果快照",
+          "supports": "填写 retained 后进入节点3只读详情，快照只有 Close，无编辑目标集合的控件。"
+        },
+        {
+          "path": "ux10/evidence/browser-actions.redacted.jsonl",
+          "locator": "第72条，2026-10-25T17:28:48.225Z",
+          "checked": "实际核对点击、URL 和结果快照",
+          "supports": "Review device tags 后同样进入节点2只读详情。"
+        },
+        {
+          "path": "ux11/evidence/ux11-browser.jsonl",
+          "locator": "第62条，2026-10-25T17:33:47.076Z",
+          "checked": "实际核对现有身份选择、secondary 目标、点击和结果快照",
+          "supports": "维护计划后进入原双标签详情，仅有 Close。"
+        },
+        {
+          "path": "ux12/evidence/ux12-tag-migration-preview.png",
+          "checked": "增量实际查看截图",
+          "supports": "维护中选中使用现有身份，目标为 tag:ux12-a-server-v2。",
+          "does_not_support": "下方完整设备变换预览被裁切，不能仅凭本图核对所报 keep+server→keep+server-v2 的全部预览。"
+        },
+        {
+          "path": "ux12/evidence/ux12-tag-migration-detail.png",
+          "checked": "增量实际查看截图",
+          "supports": "结果是节点1的只读设备详情，仍显示 keep+server，只有关闭图标，没有标签编辑动作。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=migration_full_target_keeps_unrelated_tag",
+          "checked": "实际读取完整目标集合、加减差异与确认按钮",
+          "supports": "正常编辑器中的绕行目标为 keep+server-v2，明确添加v2、移除server、保留keep。",
+          "does_not_support": "这是手工编辑恢复阶段，不是维护入口自动带入目标集合的证据。"
+        }
+      ],
+      "summary": "合并所有只读交接、需重新到 Machines 寻找 Edit tags、以及 ux01 的目标重置为一个工作流问题。目标预览并未形成可直接继续审阅的编辑上下文；正常设备标签编辑是已报告的绕行路径。UX12-F03 增量印证同一衔接问题，没有据其 F 编号升级为后台迁移写入失败。",
+      "source_assessments": [
+        {
+          "source_id": "UX03-F01",
+          "decision": "由来源的功能流程缺陷表述降为已证实的体验/交接问题",
+          "reason": "可见证据确实支持入口衔接不一致，但没有自动迁移契约或后端写入失败证据；详情链接本身成功打开了正确设备。"
+        },
+        {
+          "source_id": "UX05-01",
+          "decision": "统一为工作流入口体验问题",
+          "reason": "没有证据支持标签写入 API 失效；来源自身也记录了正常菜单绕行成功。"
+        }
+      ],
+      "limits": [
+        "8为提及并有相关归档证据的模拟成员数，不是8个独立实现根因。",
+        "目标重置的额外症状仅由 ux01 直接截图支持，不扩展到全部8人。",
+        "UX12 所报完整迁移预览的下部未在指定截图中呈现；现存截图足以核验现有目标选择与只读落点，手工编辑目标由状态 JSON 补证。",
+        "不要求自动写入或绕过完整集合确认；问题是编辑衔接、目标保留及明确下一步。"
+      ]
+    },
+    {
+      "id": "G05",
+      "title": "退役观察列表为空且外部依赖已确认后，仍只给泛化阻塞句，缺少具体剩余条件",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "阻塞原因与可执行下一步不明确",
+      "status": "ux03、ux05、ux12 归档证据支持；ux06 补充报告的下部提示被截图裁切",
+      "source_ids": ["UX03-F02", "UX05-02", "ux06/报告.md:L148", "UX12-F02"],
+      "members": ["ux03", "ux05", "ux06", "ux12"],
+      "member_count": 4,
+      "evidence_supported_members": ["ux03", "ux05", "ux12"],
+      "evidence": [
+        {
+          "path": "ux03/evidence/16-empty-tag-retirement-still-blocked.png",
+          "checked": "实际查看截图",
+          "supports": "设备、邀请、策略引用章节无条目，外部核验已勾选，仍显示罗列所有可能原因的 Retirement is blocked；策略读回可见空 tagOwners 定义。"
+        },
+        {
+          "path": "ux05/evidence/22-ui-actions.jsonl",
+          "locator": "第99—102条；对照第95条仍有 acls[0].dst[0] 的早期阶段",
+          "checked": "实际核对刷新前后与重新勾选后的快照",
+          "supports": "后期已不列出具体引用，重新确认外部核验后仍显示相同通用阻塞句；不能用较早仍有 ACL 引用的状态冒充最终空观察状态。"
+        },
+        {
+          "path": "ux05/evidence/11-retirement-empty-but-blocked.png",
+          "checked": "实际查看截图",
+          "supports": "可见空观察章节及已勾选核验框。",
+          "does_not_support": "下部通用阻塞句被视口裁切，其文字与最终确认状态需由第99—102条事件补证。"
+        },
+        {
+          "path": "ux06/evidence/empty-tag-retirement-blocked.png",
+          "checked": "实际查看截图，并与报告第148行对照",
+          "supports": "可见 next 标签的空观察章节及已勾选外部核验。",
+          "does_not_support": "下部具体阻塞提示被裁切，不能独立验证 ux06 对通用句的完整描述。"
+        },
+        {
+          "path": "ux12/evidence/ux12-retirement-no-visible-dependency-blocked.png",
+          "checked": "增量实际查看截图",
+          "supports": "keep 标签的设备、邀请、策略引用章节均未列出依赖，已展开最新策略读回。",
+          "does_not_support": "确认框与通用阻塞句在截图下方被裁切，需由同次状态 JSON 补证。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=retirement_block_without_visible_dependency，2026-10-25T17:57:55.413Z",
+          "checked": "实际核对空观察章节、完整策略、外部确认及提示",
+          "supports": "keep 只剩空 tagOwners 定义，可见 ACL 不引用keep；外部核验已勾选，仍出现并列所有可能原因的通用阻塞句。"
+        },
+        {
+          "path": "ux12/evidence/ux12-final-backend-readback.json",
+          "locator": "backends.control.policy.tagOwners",
+          "checked": "实际读取最终归档策略摘要",
+          "supports": "最终 tagOwners 不含 keep，支持普通策略定义删除已完成；这不是完整退役检查通过的证据。"
+        }
+      ],
+      "summary": "可操作问题是提示没有指出实际剩余条件，而不是退役判定一定错误。普通删除空策略定义可继续，但不等于取得全局退役证明；不能将这两种操作混为同一成功状态。",
+      "limits": [
+        "空标签定义本身是否是预期阻塞条件、是否仍有未被展示的来源，未有源码或完整业务契约证明。",
+        "外部依赖确认是成员在实验中的自述与勾选，不是核验者对外部部署做了独立清查。",
+        "成员数4中，ux06 的最终泛化提示仅有报告支持；ux12 的裁切部分由状态 JSON 补齐，不把4人的报告数称为4张完整截图复证。"
+      ]
+    },
+    {
+      "id": "G06",
+      "title": "策略发布反馈后仍并列保留 Nothing was saved / 未保存任何内容的先前检查结果",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "检查阶段与发布阶段反馈混淆",
+      "status": "三份截图支持同屏反馈冲突",
+      "source_ids": ["UX01-01", "UX06-01", "UX08-U2"],
+      "members": ["ux01", "ux06", "ux08"],
+      "member_count": 3,
+      "evidence_supported_members": ["ux01", "ux06", "ux08"],
+      "evidence": [
+        {
+          "path": "ux01/evidence/03-published-stale-validation.png",
+          "checked": "实际查看截图",
+          "supports": "绿色未保存任何内容、请求已确认、禁用发布按钮同时存在。"
+        },
+        {
+          "path": "ux06/evidence/policy-saved-stale-validation-copy.png",
+          "checked": "实际查看截图",
+          "supports": "Nothing was saved 与 Request confirmed 同屏。"
+        },
+        {
+          "path": "ux08/evidence/policy-saved-stale-nothing-saved.png",
+          "checked": "实际查看截图",
+          "supports": "同样的先前校验文案与发布确认同屏，发布按钮禁用。"
+        }
+      ],
+      "summary": "合并为检查结果生命周期与反馈文案问题；旧结果应更新、清除或明确标识历史阶段。截图支持表达混淆，不支持把 Nothing was saved 当作发布失败。",
+      "limits": ["截图中的成功提示和禁用按钮不单独证明服务端持久保存；来源所述读回/流量成功不能被简化为只看通知就验证写入。", "不声称策略执行失败或丢失。"]
+    },
+    {
+      "id": "G07",
+      "title": "已选完已声明标签后，将没有剩余建议误写成未读取到兼容标签定义",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "标签建议列表的错误空态文案",
+      "status": "组核心事实有直接截图支持；UX03-F03 的指定截图不足以复核该成员核心文案",
+      "source_ids": ["UX01-02", "UX03-F03", "UX06-02", "UX10-02"],
+      "members": ["ux01", "ux03", "ux06", "ux10"],
+      "member_count": 4,
+      "evidence_supported_members": ["ux01", "ux06", "ux10"],
+      "evidence": [
+        {
+          "path": "ux01/evidence/11-selected-tags-false-empty-state.png",
+          "checked": "实际查看截图",
+          "supports": "两个选择均标记策略中已声明，仍提示未读取到兼容定义。"
+        },
+        {
+          "path": "ux10/evidence/10-mobile-tag-empty-suggestions-copy.png",
+          "checked": "实际查看截图",
+          "supports": "Current selection (2)、两项 Declared in the last policy read 与 No compatible tag definitions were read 同时出现。"
+        },
+        {
+          "path": "ux06/evidence/tag-set-preservation-review.png",
+          "checked": "实际查看截图",
+          "supports": "已声明标签、错误空态句与完整集合审阅区同屏。",
+          "does_not_support": "截图上部裁切，不能仅凭本图独立数清全部已选标签。"
+        },
+        {
+          "path": "ux03/evidence/05-tag-identity-transition-review.png",
+          "checked": "实际查看截图",
+          "supports": "显示双标签身份转换审阅。",
+          "does_not_support": "截图停在身份转换提示与确认区域，没有呈现 No compatible tag definitions 文案。"
+        },
+        {
+          "path": "ux03/evidence/10-manual-migration-target-set.png",
+          "checked": "实际查看截图",
+          "supports": "显示迁移目标集合的一部分。",
+          "does_not_support": "本图实际仍有 tag:ux03-server 可添加建议，不显示所报错误空态，不能用它证明所有建议均已选完。"
+        }
+      ],
+      "summary": "保留一个文案空态问题；至少 ux01、ux10 的截图直接证明已声明标签与定义缺失提示矛盾。不是标签读取、兼容性判断或保存失败的证据。",
+      "source_assessments": [
+        {
+          "source_id": "UX03-F03",
+          "decision": "同主题保留，但降为该成员报告支持，指定截图未证实核心文案",
+          "reason": "实际检查的两张图均未出现所报空态，其中一张还有剩余建议。该成员仍保留在报告人数4中，不计为第四份独立归档复证。"
+        }
+      ],
+      "limits": ["不因其他成员证实同主题，就自动认定 ux03 的具体发生状态也已被现有图证实。", "报告中的保存成功不是本项文案错误的必要前提；本组不把写入成功推广到所有标签集合。"]
+    },
+    {
+      "id": "G08",
+      "title": "全部本地资料清除后，另一标签页仍要求输入已不存在资料的密码",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "跨标签页清除后的恢复指引",
+      "status": "截图支持空资料状态与不适用提示并存",
+      "source_ids": ["UX01-04", "UX12-O02"],
+      "members": ["ux01", "ux12"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux01", "ux12"],
+      "source_subtopics": {"UX12-O02": "清除后另一标签页的空资料密码提示；同来源的偏好重置范围另见 G26"},
+      "evidence": [
+        {
+          "path": "ux01/evidence/17-cleared-other-tab-impossible-password-prompt.png",
+          "checked": "实际查看截图",
+          "supports": "没有资料卡或密码输入入口，仅有 Add server，却提示 Enter the profile password to continue。"
+        },
+        {
+          "path": "ux12/evidence/ux12-final-empty-profile-other-tab.png",
+          "checked": "增量实际查看截图",
+          "supports": "另一页同样没有资料卡，却提示 Enter the profile password to continue；唯一建档路径是 Add server。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=all_profiles_cleared",
+          "checked": "实际读取清除发起页的结果快照",
+          "supports": "发起页有 All saved profiles have been cleared 的正确提示，可与另一页不贴合空资料状态的提示区分。"
+        }
+      ],
+      "summary": "下一步应指向重新添加资料，而不是给出当前页面无法完成的解锁指引。保留为清除状态文案问题。",
+      "limits": ["本图不独立证明所有本地存储介质都已清空，只能证实当前界面没有可选资料而提示不匹配。", "不指控凭据泄漏、加密或服务端数据清理错误。"]
+    },
+    {
+      "id": "G09",
+      "title": "限定组和端口的全目标规则，被风险提示概括为 everyone 可达所有设备",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "风险摘要遗漏来源与服务范围",
+      "status": "同屏规则与告警支持范围表达不准确",
+      "source_ids": ["UX02-02"],
+      "members": ["ux02"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux02"],
+      "evidence": [
+        {
+          "path": "ux02/evidence/05-scoped-rule-warning.png",
+          "checked": "实际查看截图",
+          "supports": "告警称 everyone；下方实际广目标规则为 group:ux02-small-team→*·8081，其余可见规则同样受该组及8081限制。",
+          "does_not_support": "通知遮挡了告警句后半部分，但 everyone 与完整规则卡均可见；完整句由报告第99—108行补充。"
+        }
+      ],
+      "summary": "全目标范围可以值得警告，但不应把组限定来源说成 everyone，也不应省略端口限制造成更宽权限的印象。",
+      "limits": ["未核验或否定其整体风险等级算法；本项只针对可见摘要范围。", "没有由告警文案推导 ACL 放宽、越权或后台策略错误。"]
+    },
+    {
+      "id": "G10",
+      "title": "成员 CSV 只有显示名而缺少 Headscale 用户名及稳定用户 ID",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "管理导出的身份可辨识性",
+      "status": "UX04 原始 CSV 支持列结构；UX02 原始下载未归档在报告根目录",
+      "source_ids": ["UX02-03", "ux04-O02"],
+      "members": ["ux02", "ux04"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux04"],
+      "evidence": [
+        {
+          "path": "ux04/evidence/ux04-users-export.csv",
+          "checked": "实际读取表头与两行数据",
+          "supports": "列严格为 name,email,provider,machines,joined；name 为 Alice Member/Bob Member，没有用户名和用户 ID 列。"
+        },
+        {
+          "path": "ux04/evidence/ux04-state-duplicate-email-repro-recovered.json",
+          "locator": "users",
+          "checked": "实际读取用户 ID、name、display_name",
+          "supports": "Headscale 用户名与 CSV 中的显示名确为不同字段。"
+        },
+        {
+          "path": "ux02/报告.md",
+          "locator": "第110—119行 UX02-03",
+          "checked": "读取相关报告段落",
+          "supports": "成员内联记录同样的表头及筛选后一行观察。",
+          "does_not_support": "该成员 CSV 仅指向报告根目录之外的临时文件，本次未越出授权根目录读取；筛选范围和具体导出行不能由现存原件复核。"
+        }
+      ],
+      "summary": "合并为导出身份字段不足的体验需求，而非导出损坏。至少一个归档 CSV 直接证明字段缺失；管理员若需要对应 CLI 用户名或同显示名用户，仍需返回详情交叉核对。",
+      "source_assessments": [
+        {
+          "source_id": "UX02-03",
+          "decision": "保留报告观察，不称该成员的原始下载已独立复核",
+          "reason": "原始 CSV 不在归档根目录；不能用 ux04 的文件代替 ux02 的筛选导出证据。"
+        }
+      ],
+      "limits": ["没有已读到的导出字段业务契约要求，故不升为功能缺陷或数据丢失。", "未验证同显示名导入、恢复或误认事件。"]
+    },
+    {
+      "id": "G11",
+      "title": "新增用户说明称策略按用户名引用，实际 Access 用户选择器使用邮箱 principal",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "身份字段解释不一致",
+      "status": "表单快照与实际策略字段支持",
+      "source_ids": ["ux04-O01", "UX11-O01"],
+      "members": ["ux04", "ux11"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux04", "ux11"],
+      "evidence": [
+        {
+          "path": "ux04/evidence/ux04-browser-redacted.jsonl",
+          "locator": "第6—9条 Add user 表单",
+          "checked": "实际核对相关快照原文",
+          "supports": "Policies and the Headscale CLI refer to this user by the user name；同时显示可选 email 字段。"
+        },
+        {
+          "path": "ux04/evidence/ux04-policy-principal-review.png",
+          "checked": "实际查看截图",
+          "supports": "完整审阅中 group/tagOwners 使用 alice-ux04@example.test。"
+        },
+        {
+          "path": "ux04/evidence/ux04-state-duplicate-email-repro-created.json",
+          "locator": "policy.groups、policy.tagOwners",
+          "checked": "实际读取 JSON",
+          "supports": "真实保存的策略也使用邮箱，而非仅 UI 显示名。"
+        },
+        {
+          "path": "ux11/evidence/ux11-browser.jsonl",
+          "locator": "第8—10条及第105、120条的 Add user 文案",
+          "checked": "实际检索并读取文案所在快照",
+          "supports": "UX11 同样看到按用户名引用的说明。"
+        },
+        {
+          "path": "ux11/evidence/ux11-network.txt",
+          "locator": "email-group-single-principal-positive 的 policy get",
+          "checked": "实际读取组成员字段",
+          "supports": "组成员为 ux11-alice@example.com。"
+        }
+      ],
+      "summary": "应区分 CLI 的用户名与 Access 实际采用的 principal，并解释重复邮箱对已用身份的影响。本组是可单独修正文案的问题，与 G01 关联，但不重复计算另一个断网根因。",
+      "limits": ["不据此要求所有策略必须改用用户名，也不否定使用邮箱 principal 的正常契约。", "严重程度按两来源中较高的中等认知影响保留；不是另一项权限漏洞。"]
+    },
+    {
+      "id": "G12",
+      "title": "用户改名后 users 与 nodes 内嵌用户名称不一致，设备相关页面继续显示旧名",
+      "severity": "低",
+      "kind": "上游/环境",
+      "subkind": "归档控制面返回数据一致性",
+      "status": "JSON 与两页截图支持数据不一致；不归为 UI 改名写入失败",
+      "source_ids": ["UX05-03"],
+      "members": ["ux05"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux05"],
+      "evidence": [
+        {
+          "path": "ux05/evidence/17-independent-readback.json",
+          "checked": "实际读取并按 user.id=2 交叉比较",
+          "supports": "users 中 ID2 为 ux05-operator；nodes 中同一 user.id=2 的内嵌 name 仍为 ux05-worker。"
+        },
+        {
+          "path": "ux05/evidence/15-renamed-user-old-name-on-machines.png",
+          "checked": "实际查看截图",
+          "supports": "Machines 显示 ux05-worker。"
+        },
+        {
+          "path": "ux05/evidence/16-renamed-user-current-name-on-users.png",
+          "checked": "实际查看截图",
+          "supports": "Users 显示 ux05-operator。"
+        }
+      ],
+      "summary": "归档中 UI 展示差异与控制面自身的同 ID 数据差异一致。应先作为上游/数据一致性现象处理，而不是宣布前端缓存、用户名保存或用户归属失败。",
+      "limits": ["独立读回 JSON 是成员归档的提取结果，不是本核验者重新执行 CLI，也不是完整原始 API 响应。", "未定位不同返回路径为何分歧，未验证重新认证是否更新，也不把破坏连接的重认证当作已验证恢复。", "同一稳定 ID 未显示归属换人或权限错配。"]
+    },
+    {
+      "id": "G13",
+      "title": "维护观察与设备详情主名称不同的报告观察，缺少维护侧旧名称的可核验归档",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "设备管理名称与客户端 HostName 的辨识",
+      "status": "报告观察待补证",
+      "source_ids": ["UX07-O02"],
+      "members": ["ux07"],
+      "member_count": 1,
+      "evidence_supported_members": [],
+      "evidence": [
+        {
+          "path": "ux07/报告.txt",
+          "locator": "第168—175行 UX07-O02",
+          "checked": "读取对应报告段落",
+          "supports": "报告引用维护快照的 ux07-client-b·1，并称详情为 ux07-edge-router，承认客户端 HostName 未改。"
+        },
+        {
+          "path": "ux07/evidence/maintenance-detail.json",
+          "checked": "实际读取完整快照",
+          "supports": "节点1详情确实显示 ux07-edge-router。",
+          "does_not_support": "本文件没有维护观察中的旧主名称。"
+        },
+        {
+          "path": "ux07/evidence/maintenance-return.json",
+          "checked": "实际读取完整快照",
+          "does_not_support": "关闭后的 Access 快照不含设备观察条目，无法补齐旧名称这一侧。"
+        },
+        {
+          "path": "ux07/evidence/maintenance-router-to-service.png",
+          "checked": "实际查看截图",
+          "does_not_support": "维护弹窗下部设备观察区域未显示在本图内，不能核验所报旧名称。"
+        }
+      ],
+      "summary": "保留这条低优先级命名可辨识性观察及来源映射，但不宣布名称不一致已由完整前后证据确认。若两处确实刻意分别显示 HostName 与管理名，问题也可能只是字段说明，而非改名失效。",
+      "source_assessments": [
+        {
+          "source_id": "UX07-O02",
+          "decision": "降级为报告支持、核心对照证据不足",
+          "reason": "归档证据只直接展示新管理名；旧维护名称仅见报告转述的当次工具快照，未在所指文件中找到可核验对照。"
+        }
+      ],
+      "limits": ["不能据 name/given_name 或主机名不同这一可能设计差异，推导设备选错、后端改名失败或误操作。", "人数1指报告成员，不是1次独立复现确认。"]
+    },
+    {
+      "id": "G14",
+      "title": "完整策略审阅的原文滚动框不能由已测常规键盘导航进入并滚动，窄屏初始焦点还曾在视口外",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "可访问性：键盘完整审阅与初始焦点可见性",
+      "status": "三个尺寸的状态 JSON 与桌面截图支持",
+      "source_ids": ["UX10-01"],
+      "members": ["ux10"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux10"],
+      "evidence": [
+        {
+          "path": "ux10/evidence/keyboard-375x812.json",
+          "checked": "实际读取全部7个 steps 的焦点、rect、PRE 与 dialog 滚动字段",
+          "supports": "初始 Cancel 的 y=1037，高于812视口下边界；后续 Tab 只在 Cancel/Publish 间切换，外层滚动而两个 PRE 始终 scrollTop=0。"
+        },
+        {
+          "path": "ux10/evidence/keyboard-789x510.json",
+          "checked": "实际读取全部7个 steps",
+          "supports": "焦点同样只在两个按钮切换；PRE tabIndex=-1，无显式 tabindex，内容高度大于容器高度，scrollTop 维持0。"
+        },
+        {
+          "path": "ux10/evidence/keyboard-1365x900.json",
+          "checked": "实际读取全部12个 steps，并比较键盘输入前后值",
+          "supports": "两个 PRE clientHeight=254、scrollHeight=552/568；Tab、Home、两次 PageDown、ArrowDown 后 scrollTop 均为0，焦点未进入 PRE。"
+        },
+        {
+          "path": "ux10/evidence/keyboard-1365x900.png",
+          "checked": "实际查看截图",
+          "supports": "两个独立原文视窗均只显示完整策略开头，取消按钮有焦点轮廓。"
+        }
+      ],
+      "summary": "保留为证据较强的局部键盘可访问性障碍：已测路径无法完整审阅内部溢出的策略原文，但按钮仍可键盘操作，不能概括成整个弹窗或全站不可用。",
+      "limits": ["没有运行本核验者自己的键盘实验。", "归档 JSON 直接记录的是 Tab、Home、PageDown、ArrowDown 等步骤；不把报告提及但未逐步存下的所有辅助技术行为当作已验证。", "未测试屏幕阅读器浏览模式、文本选择复制等其他可能路径；这不是完整 WCAG 审计。"]
+    },
+    {
+      "id": "G15",
+      "title": "capture-key 工具取得列表掩码/短前缀而非新生成完整注册密钥，导致测试接入失败",
+      "severity": "中",
+      "severity_scope": "测试工具阻塞，不是产品修复优先级",
+      "kind": "测试工具问题",
+      "subkind": "秘密捕获范围及等待时序",
+      "status": "捕获长度异常有归档支持；完整错误与选择器根因部分依赖成员诊断",
+      "source_ids": ["UX07-T01", "UX08-T1", "ux06/报告.md:L151"],
+      "members": ["ux06", "ux07", "ux08"],
+      "member_count": 3,
+      "evidence_supported_members": ["ux07", "ux08"],
+      "evidence": [
+        {
+          "path": "ux07/evidence/tool-capture-diagnostic.json",
+          "checked": "实际读取诊断 JSON 及其 provenance 字段",
+          "supports": "记录 wrong_capture_characters=24、correct_scoped_capture_characters=88，以及 key too short 错误与限定 Auth key created 的恢复。",
+          "does_not_support": "错误原文注明为成员从真实 join 输出转录；这不是未加工原始 join 日志，也未独立核验 helper 源码。"
+        },
+        {
+          "path": "ux08/evidence/ux08-browser-events.jsonl",
+          "locator": "第17条 capture-key 结果",
+          "checked": "实际读取工具返回字段",
+          "supports": "共享工具确实返回 characters=24。",
+          "does_not_support": "本 JSONL 未找到 key too short 原始终端输出；88字符及后续恢复细节由报告补充。"
+        },
+        {
+          "path": "ux08/报告.md",
+          "locator": "第109—117行 UX08-T1 及旧身份说明",
+          "checked": "读取相关段落",
+          "supports": "报告区分短前缀、过早捕获旧值与真实完整密钥可用，不把生成密钥失败归给产品。"
+        },
+        {
+          "path": "ux06/报告.md",
+          "locator": "第151行",
+          "checked": "读取补充观察",
+          "supports": "第三名成员也报告首次捕获短片段，并通过私有可见控件读取恢复。"
+        }
+      ],
+      "summary": "合并为同一类捕获范围/时序的测试工具问题。现有材料足以反对把这些 key too short 接入失败计为产品生成凭据失败，但未读 helper 源码，不将“首个正则匹配”当作本核验者已定位的实现事实。",
+      "limits": ["UX07 诊断是带来源说明的转录，UX08 原始归档直接支持的是24字符返回值；UX06 只有相关报告段落。", "UX08 另一次捕获旧值导致的节点歧义不并列为新的产品身份恢复缺陷，见 excluded。", "没有读取完整密钥、私有凭据文件或共享 helper 源码。"]
+    },
+    {
+      "id": "G16",
+      "title": "Access 中的 SSH 服务选项与 Tailscale SSH 会话/check 授权的区别不易发现",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "网络端口与会话授权的解释及配置指引",
+      "status": "既有策略与真实 SSH 输出支持两种授权层不同；未证明产品不存在配置能力",
+      "source_ids": ["UX11-O02"],
+      "members": ["ux11"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux11"],
+      "evidence": [
+        {
+          "path": "ux11/evidence/ux11-network.txt",
+          "locator": "邮箱实验 policy get，dst 包含 :22,8081，尚无 ssh 字段",
+          "checked": "实际读取相关策略原文",
+          "supports": "网络层22端口允许不等于存在 Tailscale SSH action 策略。"
+        },
+        {
+          "path": "ux11/evidence/ux11-ssh.txt",
+          "locator": "第39—98行及第100—103行",
+          "checked": "实际读取原始脱敏输出",
+          "supports": "未配置 SSH action 时客户端报 tailnet policy does not permit；正常设施添加 action=check 后产生真实检查提示。"
+        },
+        {
+          "path": "ux11/报告.md",
+          "locator": "第253—258行 UX11-O02",
+          "checked": "读取观察的原始限定",
+          "supports": "成员只说在可见流程未发现创建/编辑 SSH action 的入口，并明确不推断整个源码不存在该功能。"
+        }
+      ],
+      "summary": "保留为说明与可发现性观察：让管理员知道允许 SSH 端口与允许 Tailscale SSH 登录/check 是两件事，并能找到正常配置指引。网络端口规则未自动创建 SSH 会话授权本身不是实现错误。",
+      "limits": ["未搜索业务源码，不能由一次未找到入口断言产品完全没有 SSH 策略编辑能力。", "action=check 策略是实验设施通过正常 CLI/gRPC 准备，不是 UI 新建策略成功的证据。", "不把 TCP/22 通或检查按钮存在当作真实 SSH 成功。"]
+    },
+    {
+      "id": "G17",
+      "title": "SSH check 审批表单只显示请求链接/ID与批准拒绝按钮，没有来源、目标和登录用户名摘要",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "敏感决策的主体可辨识性",
+      "status": "真实请求已填入时的归档表单快照支持",
+      "source_ids": ["UX11-O03"],
+      "members": ["ux11"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux11"],
+      "evidence": [
+        {
+          "path": "ux11/evidence/ux11-private-browser.txt",
+          "locator": "第26—34行，2026-10-25T17:50:50.524Z 的提交前表单与随后批准结果",
+          "checked": "实际读取完整相关表单快照",
+          "supports": "SSH check 已选，真实请求值已脱敏；表单只有请求类型、链接/ID、Approve/Reject 等，没有来源身份、目标设备、本地用户摘要。"
+        }
+      ],
+      "summary": "保留为批准前信息不足的体验/安全确认观察，而不是已证实的越权漏洞。缺少页面内主体摘要会增加依赖外部可信通道核验的成本。",
+      "limits": ["本次请求由成员自己的可信客户端产生，没有误批、任意目标修改或服务端授权绕过证据。", "未读取后端契约，不断言页面一定能够从当前接口获取这些摘要，也不提出未经验证的接口实现方案。", "严重度在来源低至中区间取中，指决策辨识成本，不代表漏洞等级。"]
+    },
+    {
+      "id": "G18",
+      "title": "真实 SSH check 已授予后，受限容器中的远程命令启动以 operation not permitted 结束",
+      "severity": "中",
+      "severity_scope": "实验运行环境受阻，不是已确认 UI 缺陷优先级",
+      "kind": "上游/环境",
+      "subkind": "受限环境中的命令执行，唯一系统调用根因未定位",
+      "status": "批准已消费与命令失败均有日志支持；不把 capability 缺失当作已定位唯一根因",
+      "source_ids": ["UX11-L01"],
+      "members": ["ux11"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux11"],
+      "evidence": [
+        {
+          "path": "ux11/evidence/ux11-ssh.txt",
+          "locator": "第30—35、100—123行；对照第124—135行拒绝分支",
+          "checked": "实际读取权限字段、目标授予日志、子进程启动和两个终止码",
+          "supports": "CapPrm/CapEff/CapBnd 全0；目标记录 access granted 并尝试非PTY命令；客户端 operation not permitted、exit1。独立拒绝请求为 access denied、exit255。"
+        },
+        {
+          "path": "ux11/evidence/ux11-private-browser.txt",
+          "locator": "第31—40行",
+          "checked": "实际核对 UI 决策结果与日志时序",
+          "supports": "UI 显示 SSH check approved/rejected，与目标和客户端记录对应。"
+        }
+      ],
+      "summary": "这不是批准按钮无效，也不是已证明 userspace 完全不支持 SSH。现有材料支持在受限环境中，批准之后的远程命令启动受阻；未产生成功远程命令输出。",
+      "limits": ["没有定位唯一失败系统调用，不能断言只需添加某一 capability 就能解决。", "仅核对已有材料，没有扩权、修改容器或宿主，也没有重跑 SSH。", "握手、决策消费与实际远程命令必须分层，不能把前两者通过包装成完整 shell 通过。"]
+    },
+    {
+      "id": "G19",
+      "title": "隔离 ClusterIP 目标经已报告选用的出口路径超时，归因未定，不能据此判 UI 出口失效",
+      "severity": "中",
+      "severity_scope": "归因未定的实验路径受阻",
+      "kind": "上游/环境",
+      "subkind": "环境/上游/策略路径待区分，尚未确认属于哪一层",
+      "status": "请求失败事实有归档支持；统一归因未建立",
+      "source_ids": ["UX11-L02"],
+      "members": ["ux01", "ux02", "ux03", "ux04", "ux05", "ux06", "ux07", "ux08", "ux09", "ux10", "ux11"],
+      "member_count": 11,
+      "member_count_basis": "UX11 编号限制，加前10人归档结果的 uncovered 中同类隔离出口目标受阻观察。不是11条已确认 UI 故障，也不表示11次相同根因已定位。",
+      "evidence_supported_members": ["ux04", "ux07", "ux11"],
+      "evidence": [
+        {
+          "path": "已归档成员结果.jsonl",
+          "locator": "前10条成员结果中关于 exit-target/ClusterIP 的 uncovered 说明",
+          "checked": "读取既有结构化限制，未把未测项自动当作缺陷",
+          "supports": "10名成员都报告隔离目标出口路径未建立阳性；ux07 明确区分该路径与后来成功的公共出口验证。"
+        },
+        {
+          "path": "ux11/evidence/ux11-network.txt",
+          "locator": "exit-approved-selected 阶段",
+          "checked": "实际核对同一10.43.253.39:8081的客户端及出口机请求输出",
+          "supports": "A 经代理超时、exit1；B 直接访问 HTTP200、正文 ux11-subnet-target。",
+          "does_not_support": "本段没有完整 A 的 ExitNodeStatus 原始读回；选用出口的动作另由成员报告记述。"
+        },
+        {
+          "path": "ux04/evidence/ux04-network.jsonl",
+          "locator": "第8—12条",
+          "checked": "实际核对退出状态及正文，不采信阶段名称中的 positive 字样",
+          "supports": "名为 exit-selected-http-positive 的记录实际 exit=1 且超时，不能因标签含 positive 就当成功；B 直接访问正常。"
+        },
+        {
+          "path": "ux07/evidence/public-exit-approved.json",
+          "checked": "实际读取响应状态、正文、出口状态及 peer 计数",
+          "supports": "公共 HTTP 目标在选用出口且获批时为 HTTP200，peer 收发计数有增量。"
+        },
+        {
+          "path": "ux07/evidence/public-exit-revoked.json",
+          "checked": "实际读取相同目标、退出状态及计数",
+          "supports": "撤销阶段超时、exit1，peer 计数未增加。"
+        },
+        {
+          "path": "ux07/evidence/public-exit-restored.json",
+          "checked": "实际读取相同目标、响应及计数",
+          "supports": "重新审批后恢复 HTTP200 且计数再次增加，反对把所有真实出口转发概括为失败。"
+        }
+      ],
+      "summary": "将同类隔离目标失败保留为归因未定的路径限制，而非产品缺陷。ux07 的公共目标审批/撤销/恢复对照已经证明至少一条真实出口路径可用；不能把 ClusterIP 特定失败外推为全局出口功能失效。",
+      "limits": ["归类到上游/环境篮子只是排除未经证明的 UI 归因，不表示已经证明是设施唯一责任。", "11为报告了该现象的模拟成员数；仅对列出的关键现存网络证据做了实际检查，其他成员没有再重走完整轨迹。", "不同实验目标和规则不完全相同，不能因症状相似就断言同一根因。", "不承担实验覆盖统计或环境修复、清理。"]
+    },
+    {
+      "id": "G20",
+      "title": "策略操作说明仍写完成/保存，实际动作名称已是保留草稿/发布所有策略更改",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "操作术语一致性",
+      "status": "报告补充观察及现有截图支持",
+      "source_ids": ["ux01/报告.md:L99", "ux10/报告.md:L100"],
+      "members": ["ux01", "ux10"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux01", "ux10"],
+      "evidence": [
+        {
+          "path": "ux01/报告.md",
+          "locator": "第99行",
+          "checked": "读取补充体验观察",
+          "supports": "来源明确记录团队/标签说明与实际按钮术语不一致。"
+        },
+        {
+          "path": "ux01/evidence/03-published-stale-validation.png",
+          "checked": "实际查看截图底部说明与按钮",
+          "supports": "说明仍称点击保存会发布，实际按钮为发布所有策略更改。"
+        },
+        {
+          "path": "ux10/evidence/keyboard-1365x900.png",
+          "checked": "实际查看完整发布审阅说明与底部动作",
+          "supports": "审阅说明使用保存，主要按钮为发布所有策略更改。"
+        }
+      ],
+      "summary": "从未编号的报告观察补充保留这一独立文案一致性问题；与 G06 的历史检查状态冲突相关但不是同一症状。",
+      "limits": ["现有截图直接支持保存/发布不一致；ux01 所报其他弹窗中完成/保留草稿的每个变体未逐一补图。", "不推断草稿或发布实际保存错误。"]
+    },
+    {
+      "id": "G21",
+      "title": "取消最后一个服务会删除访问者行，改为自定义端口需要先添加端口的顺序依赖",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "服务选择的可发现性与恢复成本",
+      "status": "报告观察待补证",
+      "source_ids": ["ux06/报告.md:L150", "ux09/报告.md:L110"],
+      "members": ["ux06", "ux09"],
+      "member_count": 2,
+      "evidence_supported_members": [],
+      "evidence": [
+        {
+          "path": "ux06/报告.md",
+          "locator": "第150行",
+          "checked": "读取对应报告段落",
+          "supports": "报告称取消最后的默认 SSH 会使访问者行消失，恢复需先填自定义端口再取消 SSH。"
+        },
+        {
+          "path": "ux09/报告.md",
+          "locator": "第110、115—116行",
+          "checked": "读取观察及工具错误限定",
+          "supports": "第二名成员报告同样顺序依赖，并说明 setChecked 超时不是产品崩溃。"
+        },
+        {
+          "path": "ux09/evidence/ui-operations-redacted.jsonl",
+          "locator": "第48、76条",
+          "checked": "实际核对成功操作顺序",
+          "supports": "现存成功路径是先填8081，再取消 SSH，并可保留草稿。",
+          "does_not_support": "这些成功记录没有存下取消最后服务导致整行消失的失败前后对照，不能独立证实该核心负例。"
+        }
+      ],
+      "summary": "保留为低优先级交互观察，提醒改变服务类型的顺序可能不易发现。现存原件主要支持可用绕行，不能据两份报告把失败机制或意图定成已确认功能 bug。",
+      "limits": ["自动移除空授权行可能是预期设计，未有业务契约要求必须保留空行。", "未重新执行交互，也不将工具等待超时当作产品崩溃。", "两人为报告人数，没有两份原始失败序列复证。"]
+    },
+    {
+      "id": "G22",
+      "title": "已打开的另一标签页不即时跟随语言和主题变化",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "跨标签页偏好一致性",
+      "status": "ux09 双标签页 DOM 读回支持；ux12 增量为报告观察，无即时同步契约证据",
+      "source_ids": ["ux09/报告.md:L109", "UX12-O04"],
+      "members": ["ux09", "ux12"],
+      "member_count": 2,
+      "evidence_supported_members": ["ux09"],
+      "evidence": [
+        {
+          "path": "ux09/evidence/ui-operations-redacted.jsonl",
+          "locator": "第153、154条，2026-10-25T17:34:14.141Z / 17:34:15.219Z",
+          "checked": "实际读取 tab0/tab1 inspect 结果",
+          "supports": "tab0 theme=dark、lang=zh-Hans；约1秒后 tab1 theme=light、lang=en-US。"
+        },
+        {
+          "path": "ux12/报告.md",
+          "locator": "第185行 UX12-O04",
+          "checked": "增量读取第6节对应观察",
+          "supports": "报告称另一已开页当时仍为浅色，刷新后正确读到深色。",
+          "does_not_support": "该条没有指向独立双页即时状态原件；已读关键状态 JSON 未存下这一前后对照，不能称 UX12 已获第二份原件复证。"
+        }
+      ],
+      "summary": "保留为跨页偏好即时一致性观察，而不是共享解锁、会话隔离或配置保存失败。UX12 报告刷新后恢复正确主题，也不支持将其称为持久化丢失。",
+      "source_assessments": [
+        {
+          "source_id": "UX12-O04",
+          "decision": "同主题合并，增量来源只保留为报告支持",
+          "reason": "不借 UX09 的双页 DOM 对照代替 UX12 的独立归档证据；刷新后正确仅按 UX12 报告记述。"
+        }
+      ],
+      "limits": ["没有明确即时同步承诺，不升为功能故障。", "ux09 原件只证明当时两页不同；ux12 报告明确刷新后正确，均不证明重启后偏好丢失。", "成员数2指报告人数；有直接双页状态对照的成员仍为 ux09。"]
+    },
+    {
+      "id": "G23",
+      "title": "连续完成向导并刷新后，同文 Data updated 通知并列堆叠",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "重复操作反馈的合并与信息密度",
+      "status": "可访问性快照支持两个通知并列；不是单次操作被重复发送的证据",
+      "source_ids": ["ux09/报告.md:L111"],
+      "members": ["ux09"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux09"],
+      "evidence": [
+        {
+          "path": "ux09/evidence/ui-operations-redacted.jsonl",
+          "locator": "第168、169条；第160条作单通知对照",
+          "checked": "实际展开快照的 Notifications 区域，区分正文状态文本与通知对象",
+          "supports": "第168条 Done→Refresh data 后，Notifications 中存在两个独立 dialog Data updated；第169条仍同时存在。第160条则只有一个通知。"
+        }
+      ],
+      "summary": "作为低优先级反馈密度观察保留，可考虑合并相邻同文状态通知；不能据此宣称一次请求生成两个通知、重复写入或全站通知机制失效。",
+      "limits": ["第168条确实包含完成向导和主动刷新两个动作，每个动作各发一个通知可能符合现有设计。", "缺少通知生命周期与单次请求关联记录；只确认视觉/可访问性树中的堆叠，不确认事件去重逻辑错误。"]
+    },
+    {
+      "id": "G24",
+      "title": "策略无法读取或编辑时，用户删除默认绑定不可执行的策略清理，并把未知引用写成存在引用",
+      "severity": "中",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "删除确认的默认选项、能力范围与未知引用表达",
+      "status": "默认禁用与取消勾选后可删除均有状态及请求证据；不是用户删除功能不受支持",
+      "source_ids": ["UX12-F01"],
+      "members": ["ux12"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux12"],
+      "evidence": [
+        {
+          "path": "ux12/evidence/ux12-secondary-delete-blocked-default.png",
+          "checked": "实际查看截图",
+          "supports": "Dave 的设备及有效认证密钥均为0；界面写以下策略条目引用了该用户，列表无条目，显示 file-mode 无path错误，清理复选框默认勾选。",
+          "does_not_support": "底部动作被截图裁切，按钮禁用状态由关键状态 JSON 而非本图核验。"
+        },
+        {
+          "path": "ux12/evidence/ux12-secondary-delete-workaround.png",
+          "checked": "实际查看截图",
+          "supports": "同一对话框取消了同时从策略条目移除的勾选；策略读取错误并未因此消失。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=readonly_delete_default_trap / readonly_delete_user_only_enabled，2026-10-25T17:51:20.114Z / 17:51:29.136Z",
+          "checked": "实际比较完整确认框快照与按钮状态",
+          "supports": "清理已勾选时删除用户按钮 disabled；取消清理后同一按钮不再 disabled，证明不可执行的是默认绑定的策略清理路径。"
+        },
+        {
+          "path": "ux12/evidence/ux12-request-summary.json",
+          "locator": "non_get_requests 中 credential=B、DELETE /api/v1/user/2，2026-10-25T17:51:40.588Z",
+          "checked": "实际读取对应请求及 response outcome",
+          "supports": "B 的纯用户删除收到 HTTP200，而不是服务器拒绝删除用户。"
+        },
+        {
+          "path": "ux12/evidence/ux12-final-backend-readback.json",
+          "locator": "backends.control-secondary.users 与 policy",
+          "checked": "实际读取最终归档用户与策略状态",
+          "supports": "B 最终只剩用户1 Carol，没有 Dave/用户2；policy 仍报无法读取空路径，说明成功用户删除不要求先把策略改成可编辑。"
+        }
+      ],
+      "summary": "确认的是默认删除路径和能力说明不合适：策略不能读写时，默认勾选策略清理会禁用操作，空引用列表却配存在引用的断言。用户本身可以删除，取消清理勾选后已获得200及最终缺席读回。按交互/文案问题保留，不新增一项后台不支持删除或整个服务器只读的功能故障。",
+      "source_assessments": [
+        {
+          "source_id": "UX12-F01",
+          "decision": "保留已证实的默认交互与引用文案问题，限定在体验类别",
+          "reason": "来源也明确记录可绕过；取消策略清理后成功，不能把策略写入不可用等同于用户删除不可用。"
+        }
+      ],
+      "limits": [
+        "设备和有效认证密钥为0不等于已经证明不存在所有策略引用：这里策略本身无法读取，空列表只代表未列出，不能把未知状态升级成无引用的全局事实。",
+        "只核验 file-mode 且 policy.path 为空的具体状态，不外推所有 file-mode 服务器或有真实依赖用户的删除行为。",
+        "本次读取的是归档请求汇总和最终读回，不是新发 DELETE 请求；未检查或要求改动服务器模式。"
+      ]
+    },
+    {
+      "id": "G25",
+      "title": "多服务器共享同一 UI 地址时，常规页头不持续显示当前连接资料名或目标服务器",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "活动服务器上下文可辨识性",
+      "status": "页头截图与菜单快照支持可见性观察；没有误写证据",
+      "source_ids": ["UX12-O01"],
+      "members": ["ux12"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux12"],
+      "evidence": [
+        {
+          "path": "ux12/evidence/ux12-secondary-readonly-1280.png",
+          "checked": "实际查看常规页头截图",
+          "supports": "大屏页头右侧为通用图标，未持续显示 UX12 Secondary B 或其目标 origin。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=initial_empty_dashboard 与 file_policy_readonly",
+          "checked": "实际核对页头按钮及已展开菜单",
+          "supports": "常规按钮称 Profile/服务器；资料名 UX12 Primary A 见于展开后的 Profile 菜单分组，而 B 的普通页面快照也使用通用服务器按钮。"
+        },
+        {
+          "path": "ux12/evidence/ux12-final-backend-readback.json",
+          "locator": "两个 backends 的 nodes",
+          "checked": "实际比较节点 ID 与 IP",
+          "supports": "A、B 都有 Node ID1、100.64.0.1，确实不能只靠相同编号或地址区分目标服务器。"
+        },
+        {
+          "path": "ux12/报告.md",
+          "locator": "第182行 UX12-O01",
+          "checked": "读取第6节相应观察",
+          "supports": "报告说明两份资料在同一 UI 地址下使用，未观察到因此发生错误写入。"
+        }
+      ],
+      "summary": "保留为低优先级多服务器辨识观察：持续显示活动资料名或目标地址有助于减少额外开菜单核对。当前材料不支持跨服务器串写、凭据混用或隔离失效。",
+      "limits": ["没有源码契约要求必须常驻显示连接名，故不升为功能故障。", "存在重复 Node ID/IP 只是环境事实，不等于已发生误操作。", "本次未重新审查双服实验覆盖或重新操作服务器切换。"]
+    },
+    {
+      "id": "G26",
+      "title": "清除所有服务器资料同时重置语言和主题，但确认正文未说明偏好重置",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "本地清除操作的范围说明",
+      "status": "确认文案、前后截图及清除结果快照支持；不认定偏好重置本身错误",
+      "source_ids": ["UX12-O02"],
+      "source_subtopics": {"UX12-O02": "清除操作还重置语言/主题的范围提示；同来源的另一页空资料密码提示并入 G08"},
+      "members": ["ux12"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux12"],
+      "evidence": [
+        {
+          "path": "ux12/evidence/ux12-clear-all-scope.png",
+          "checked": "实际查看截图与确认正文",
+          "supports": "清除前为中文、深色界面；确认正文只说明删除所有服务器配置、锁定共享会话及重新添加服务器/API密钥，没有说明语言和主题重置。"
+        },
+        {
+          "path": "ux12/evidence/ux12-ui-key-transitions.json",
+          "locator": "scenario=clear_all_scope / all_profiles_cleared",
+          "checked": "实际比较确认正文及结果快照",
+          "supports": "清除后明确显示 Language: English、Theme: System，且所有资料已清除。"
+        },
+        {
+          "path": "ux12/evidence/ux12-final-empty-profile-other-tab.png",
+          "checked": "实际查看清除后的另一页截图",
+          "supports": "另一页也为空资料、英文浅色显示；不贴合空资料的密码提示另在 G08 记录，避免把两个症状混成同一修复点。"
+        }
+      ],
+      "summary": "独立保留清除范围文案问题：入口强调清除服务器资料，正文宜让管理员知道语言和主题也会重置。没有依据断言这些偏好不应被清除，也不称配置持久化失败。",
+      "limits": ["没有读取 localStorage 或完整设置契约，不能推测还有哪些未见偏好一并重置。", "清除后的 System 是实际快照字段，不能把它简化成强制设置为 Light；浅色只是当时显示结果。", "UX12-O02 在 G08 与本组各覆盖一个子观察，来源统计只计一次。"]
+    },
+    {
+      "id": "G27",
+      "title": "创建注册密钥后出现已创建但刷新清单失败的暂态提示，完整失败链未归档",
+      "severity": "低",
+      "kind": "体验/文案/可访问性观察",
+      "subkind": "创建后读回暂态的待定位观察",
+      "status": "脱敏文字记录支持提示出现；刷新失败链与根因不足以确认",
+      "source_ids": ["UX12-O03"],
+      "members": ["ux12"],
+      "member_count": 1,
+      "evidence_supported_members": ["ux12"],
+      "evidence": [
+        {
+          "path": "ux12/evidence/ux12-transient-create-refresh-observations.json",
+          "checked": "实际读取两条脱敏文字记录及时间、归属标记",
+          "supports": "A/Alice 与 B/Carol 场景各记录一次已确认创建了密钥，但刷新清单失败，不要仅为刷新列表而再创建密钥的提示；两条记录来自同一模拟成员。",
+          "does_not_support": "没有创建及随后 GET 的完整请求/响应、失败栈或含实体的前后列表，不能从该文字独立核验刷新究竟因何失败或是否误报。"
+        },
+        {
+          "path": "ux12/报告.md",
+          "locator": "第184行 UX12-O03",
+          "checked": "增量读取第6节原始限定",
+          "supports": "报告称实体已在列表、可真实接入，手动刷新可继续，并明确不判为确定的创建故障。"
+        }
+      ],
+      "summary": "保留一个待定位的创建后刷新暂态观察，不把两份服务器资料当两个参与者，也不把提示等同创建失败。反馈本身明确区分创建与读回并劝阻重复创建，现有材料不能证明该文案错误。",
+      "source_assessments": [
+        {
+          "source_id": "UX12-O03",
+          "decision": "限定保留为文字支持的暂态观察，不计入已确认创建故障",
+          "reason": "原件只有脱敏提示，没有完整失败链；实体可接入和手动刷新恢复由报告支持，不能独立定位 UI、上游或环境责任。"
+        }
+      ],
+      "limits": ["无新运行复现、无密钥捕获、无完整创建/刷新链路检查。", "两次发生的实体列表、接入成功细节未在本条指向的原件内独立复核。", "不建议为刷新而重复创建，也不据 HTTP 成功或提示中的已确认字样推断全部持久性边界。"]
+    }
+  ],
+  "excluded": [
+    {
+      "source_id": "UX11-L03",
+      "member": "ux11",
+      "kind": "测试工具/调用方式说明，不计入独立可操作产品问题组",
+      "evidence": [
+        {
+          "path": "ux11/报告.md",
+          "locator": "第394—404行"
+        }
+      ],
+      "reason": "来源列举的是已修正的定位/使用错误：同名控件 strict-mode、猜错搜索框名、弹窗/确认时序、设施脚本不支持 --help、tailscale set 不支持 advertise-tags、文档抓取服务错误、CDP 重连后 viewport 不持续。没有产品行为违反契约的对应证据。viewport 仅约束截图尺寸声明，不构造布局缺陷；也不把这些已纠正调用误归入 G15 的共享 capture-key 问题。"
+    },
+    {
+      "source_id": "ux06/报告.md:L149",
+      "member": "ux06",
+      "kind": "单次保护事件，缺少误报证据",
+      "evidence": [
+        {
+          "path": "ux06/报告.md",
+          "locator": "第149行"
+        }
+      ],
+      "reason": "草稿因服务器策略变化保护被阻止，来源自己明确说变化来源未定；丢弃并重建后发布成功。没有逐次版本/策略对照证明服务器未变，不能把一次正确触发或原因未知的保护事件认定为并发控制误报，也不能与 G02 已存下的连续确认循环混同。"
+    },
+    {
+      "source_id": "ux08/报告.md:L115-L117",
+      "member": "ux08",
+      "kind": "测试历史导致的上游身份歧义，产品缺陷未证实",
+      "related_group": "G15",
+      "evidence": [
+        {
+          "path": "ux08/报告.md",
+          "locator": "第115—117行"
+        },
+        {
+          "path": "ux08/evidence/restore-ambiguous-ownership.png",
+          "checked": "实际查看截图",
+          "supports": "页面明确展示 machine key maps to ambiguous node ownership 与结果未知，并未伪报恢复成功。"
+        }
+      ],
+      "reason": "报告把旧节点历史与过早捕获旧 key 的测试过程联系起来；同一 machine key 留有多用户节点时出现歧义不能单凭该告警定成 UI 身份恢复 bug。截图证实的是错误被展示及要求核查，不证明产品制造了重复记录。保留来源与 G15 的关联，但不新增产品故障组，也不与 UX09 的基线循环合并。"
+    }
+  ],
+  "notes": [
+    "原始来源 ID 保持大小写不变，包括 ux04-F01/ux04-O01/ux04-O02；全部28条归档 findings 均在 groups 中有映射。UX11 的7个编号问题/边界项中6个入组，L03明确剔除；增量 UX12 第6节的7项均已映射，没有新增剔除项。",
+    "形如 ux09/报告.md:L109 的 source_id 是为报告中未编号的相关观察增加的段落定位符，不是假称成员原本分配了新 UX 编号。补充12项中10项入组、2项明确剔除；连同42个原编号来源，共54个唯一索引来源项，其中51项入组、3项明确剔除，无静默上限或遗漏。UX12-O02 的两个子观察分别映射 G08/G26，因此来源-组链接为52，而不是把该来源计两次。",
+    "members/member_count 统计报告提及该组现象的不同模拟成员，绝不是市场发生率、真实受访者样本比例或独立运行复现次数。核验助手没有加入参与人数。G19 额外合并前10人 uncovered 中实际受阻的同类路径观察，而不是把未测覆盖项当缺陷。",
+    "evidence_supported_members 表示至少有已实际查看的非报告归档证据支持该成员的组核心观察；它不保证唯一根因，也不是核验者进行了新的独立实验。转录、裁切、脱敏和缺失原件均在相应组单列。",
+    "证据引用全部相对于报告根目录。没有读取 UX02 报告所指的根目录外临时 CSV；没有读取任何完整密钥、密码文件或业务源码。",
+    "UX03-F03 的两张指定图没有显示所报错误空态，不能把四人报告数当成四份截图证实；UX07-O02 缺少维护侧旧名称归档；G21 缺少取消最后服务的失败对照。这些项均保留映射并明确降级，没有借其他成员的证据替代其自身证据。",
+    "截图中的按钮禁用、Request confirmed、已确认标签等措辞不自动等于真实后端提交、持久保存或连通性。只有所列 JSON/原始输出真正包含的事实才被用作对应证据。",
+    "功能故障只保留 G01 的实际跨功能断连/策略歧义与 G02 的连续向导阻断；迁移入口、退役泛化提示、导出字段、偏好同步及 SSH 信息不足没有因为来源自称已确认而升级为后端 bug 或安全漏洞。G14 的局部键盘障碍单列在可访问性观察类别，不因此降低其实际键盘用户影响。",
+    "G01 的两个成员实验可相互补强，但本次仍只是离线核验既有证据；策略哈希相同是对归档文本的实际重算结果，不是新控制面读回。",
+    "实验环境/上游归类不等于已定位环境唯一责任。特别是隔离 ClusterIP 出口失败不能覆盖 UX07 已归档的公共出口 HTTP200→撤销超时→恢复HTTP200对照；SSH check 批准已消费也不能被远程命令启动失败抹除。",
+    "UX12 为首轮后的定向增量：只读第6节和对应证据，其他组及已有来源核验保持原结论，未重新审查前11人。F02并入G05，F03并入G04，O02的空资料提示并入G08，O04并入G22；新增G24—G27共4组。",
+    "UX12-F01 的事实边界是策略清理无法执行、默认勾选与引用文案误导，不是用户本身不能删除：取消勾选后按钮启用，B DELETE /user/2为200且最终Dave不存在。策略无法读回时，空引用列表也不能反向证明没有任何真实引用。",
+    "UX12-O03没有完整刷新失败链，保留文字支持的暂态观察；UX12-O04只有第6节报告描述，不把既有UX09双页对照当成UX12的独立证据。清除后Theme: System与当时浅色显示分开，不称其被强制设为Light。",
+    "本文件只做问题证据核验与去重，不评价各成员实验覆盖是否达标，也不确认环境资源是否已经清理。"
+  ]
+}

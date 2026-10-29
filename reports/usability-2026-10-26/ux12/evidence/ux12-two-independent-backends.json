@@ -1,0 +1,93 @@
+{
+  "at": "2026-10-26T01:46:30.495550",
+  "records": {
+    "control": {
+      "users": [
+        {
+          "id": 1,
+          "name": "ux12-a-alice",
+          "display_name": "A 主服 Alice",
+          "email": "ux12-alice@example.test"
+        },
+        {
+          "id": 2,
+          "name": "ux12-a-bob-renamed",
+          "display_name": "A 主服 Bob",
+          "email": "ux12-bob@example.test"
+        }
+      ],
+      "nodes": [
+        {
+          "id": 1,
+          "name": "ux12-client-b",
+          "given_name": "ux12-client-b",
+          "ip_addresses": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "tags": null,
+          "approved_routes": null,
+          "available_routes": [
+            "0.0.0.0/0",
+            "::/0",
+            "10.42.0.46/32"
+          ],
+          "online": true,
+          "expiry": null,
+          "username": "ux12-a-bob-renamed"
+        },
+        {
+          "id": 2,
+          "name": "ux12-client-a",
+          "given_name": "ux12-a-laptop",
+          "ip_addresses": [
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2"
+          ],
+          "tags": null,
+          "approved_routes": null,
+          "available_routes": null,
+          "online": null,
+          "expiry": {
+            "seconds": 1792950171,
+            "nanos": 942010285
+          },
+          "username": "ux12-a-alice"
+        }
+      ]
+    },
+    "control-secondary": {
+      "users": [
+        {
+          "id": 1,
+          "name": "ux12-b-carol",
+          "display_name": "B 独立服 Carol",
+          "email": "ux12-carol@example.test"
+        },
+        {
+          "id": 2,
+          "name": "ux12-b-dave",
+          "display_name": "B 独立服 Dave",
+          "email": null
+        }
+      ],
+      "nodes": [
+        {
+          "id": 1,
+          "name": "ux12-b-traveler",
+          "given_name": "ux12-b-server-only",
+          "ip_addresses": [
+            "100.64.0.1",
+            "fd7a:115c:a1e0::1"
+          ],
+          "tags": null,
+          "approved_routes": null,
+          "available_routes": null,
+          "online": true,
+          "expiry": null,
+          "username": "ux12-b-carol"
+        }
+      ]
+    }
+  }
+}

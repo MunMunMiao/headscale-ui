@@ -1,0 +1,37 @@
+{
+  "version": "v1.102.5",
+  "mode": "read-only source inspection; no downloaded code executed",
+  "files": [
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/wgengine/netstack/netstack.go",
+      "sha256": "cc641b067f7b44fa59a38468b9d91c447b82143c561ac86190a85e304a6ab5fb"
+    },
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/cmd/tailscaled/tailscaled.go",
+      "sha256": "3ce8b29d6a7bb7bbad5c96890fcfeb7d978f39d2aba9eaefab492d7bbd20ef3b"
+    },
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/cmd/tailscaled/netstack.go",
+      "sha256": "f03a8ae937f711ed8ab8e206bd001e20b88f2fd1a2f6ae3ffd9d96b595e2cf36"
+    },
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/net/tstun/wrap.go",
+      "sha256": "34c7c36df6dc5c52773e56342b5d5339428e60920580a2debb5052127d63cbfd"
+    },
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/wgengine/filter/filter.go",
+      "sha256": "8317a25c3ba91e06613d19fd646b42491ae7d3d923445b64c0174e01cf78ff21"
+    },
+    {
+      "url": "https://github.com/tailscale/tailscale/blob/v1.102.5/ipn/ipnlocal/local.go",
+      "sha256": "e3f29a92e870ee23fdbecf8d1c0a0ccc1f3b7e0858785d9121224dc290ee403d"
+    }
+  ],
+  "verifiedSemantics": [
+    "userspace enables ProcessSubnets",
+    "default-route localNets removes RFC1918 including 10/8",
+    "incoming destination must be allowed by localNets independently of control-plane PacketFilter",
+    "FromPeer capture occurs before main inbound filtering"
+  ],
+  "runtimeProof": "Default-only negative evidence retained. Independent explicit /32 control 0feb8335414f exited 0: both targets failed before approval, returned HTTP 200 with the marker after approval, failed after revocation, and recovered with HTTP 200 after restoration. Positive target logs show router source; no exit selection or default advertisements were present."
+}

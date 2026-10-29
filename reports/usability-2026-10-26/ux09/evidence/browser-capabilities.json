@@ -1,0 +1,10 @@
+{
+  "time": "2026-10-26T01:34:31.149832",
+  "browser": "Chrome/155.0.8059.85",
+  "targets": [
+    {
+      "type": "shared_worker",
+      "url": "https://10.0.0.17:32375/shared-session-worker.js"
+    }
+  ]
+}

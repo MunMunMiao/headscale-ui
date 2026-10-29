@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-26T01:07:46.355191+08:00",
+  "users": [
+    {
+      "id": 1,
+      "name": "ux05-owner"
+    },
+    {
+      "id": 2,
+      "name": "ux05-operator"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "name": "ux05-client-a-migrating",
+      "tags": null,
+      "user": {
+        "id": 1,
+        "name": "ux05-owner"
+      },
+      "approved_routes": [],
+      "available_routes": []
+    },
+    {
+      "id": 2,
+      "name": "ux05-client-b",
+      "tags": null,
+      "user": {
+        "id": 2,
+        "name": "ux05-worker"
+      },
+      "approved_routes": [],
+      "available_routes": [
+        "0.0.0.0/0",
+        "::/0",
+        "10.42.0.5/32"
+      ]
+    }
+  ]
+}

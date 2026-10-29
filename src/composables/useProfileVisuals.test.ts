@@ -1,79 +1,93 @@
-import { beforeEach, describe, expect, test } from "bun:test";
-import { createRenderer, defineComponent } from "vue";
-import { i18n } from "@/i18n";
-import type { ConnectionProfile } from "@/lib/profile-storage";
-import { masterPasswordTestingHandle, useMasterPassword } from "./useMasterPassword";
-import { useProfileVisuals } from "./useProfileVisuals";
+import { expect, test } from "vitest";
+import type { ProfileSummary } from "@/lib/profile-storage";
+import type { PublicSessionSnapshot } from "@/session/types";
+import { createProfileVisuals } from "./useProfileVisuals";
 
-function mountComposable<T>(setup: () => T): T {
-  let result: T | undefined;
-  const renderer = createRenderer({
-    patchProp() {},
-    insert() {},
-    remove() {},
-    createElement: () => ({}),
-    createText: () => ({}),
-    createComment: () => ({}),
-    setText() {},
-    setElementText() {},
-    parentNode: () => null,
-    nextSibling: () => null,
-  });
-  const app = renderer.createApp(
-    defineComponent({
-      setup() {
-        result = setup();
-        return () => null;
-      },
-    }),
-  );
-  app.use(i18n);
-  app.mount({});
-  if (result === undefined) throw new Error("Composable setup did not run");
-  return result;
-}
-
-function profile(overrides: Partial<ConnectionProfile> = {}): ConnectionProfile {
+function profile(overrides: Partial<ProfileSummary> = {}): ProfileSummary {
   return {
     id: "profile-1",
+    keyEpoch: "visual-fixture",
     name: "Alpha",
     baseUrl: "https://headscale.example",
-    apiKey: { v: 1, scheme: "device", iv: "iv", ct: "ct" },
+    credentialVersion: "credential-1",
+    credentialKind: "password",
     updatedAt: "2026-01-01T00:00:00.000Z",
     scope: "persistent",
     ...overrides,
   };
 }
 
-beforeEach(() => {
-  masterPasswordTestingHandle.reset();
-  (i18n.global.locale as unknown as { value: string }).value = "en-US";
+test("shows legacy migration and unreadable data before temporary-profile styling", () => {
+  const visuals = createProfileVisuals(() => null);
+  expect(
+    visuals.profileVisualState(
+      profile({ credentialKind: "unreadable", scope: "session" }),
+    ),
+  ).toBe("corrupted");
+  for (const credentialKind of [
+    "legacy-device",
+    "legacy-password",
+    "legacy-plaintext",
+  ] as const) {
+    expect(
+      visuals.profileVisualState(profile({ credentialKind, scope: "session" })),
+    ).toBe("migration");
+  }
+  expect(visuals.profileVisualState(profile({ scope: "session" }))).toBe(
+    "session",
+  );
+  expect(visuals.profileVisualState(profile())).toBe("locked");
 });
 
-describe("useProfileVisuals", () => {
-  test("classifies profile encryption state in priority order", () => {
-    const visuals = mountComposable(useProfileVisuals);
-    const passwordProfile = profile({
-      apiKey: { v: 1, scheme: "password", iv: "iv", ct: "ct" },
-    });
+test("only the currently unlocked server is shown as unlocked and reads fresh snapshots", () => {
+  let snapshot: PublicSessionSnapshot | null = null;
+  const visuals = createProfileVisuals(() => snapshot);
+  expect(visuals.profileVisualState(profile())).toBe("locked");
+  snapshot = {
+    status: "unlocked",
+    identity: { workerId: "w", sessionId: "s" },
+    profile: {
+      id: "profile-1",
+      name: "Alpha",
+      baseUrl: "https://headscale.example",
+    },
+    expiresAt: 1800000,
+    pendingProfileId: null,
+    reason: null,
+    revision: 1,
+    apiKeyPrefix: null,
+  };
+  expect(visuals.profileVisualState(profile())).toBe("password");
+  expect(visuals.profileVisualState(profile({ id: "another" }))).toBe("locked");
+  snapshot = {
+    ...snapshot,
+    status: "locked",
+    identity: null,
+    profile: null,
+    expiresAt: null,
+    reason: "expired",
+    revision: 2,
+    apiKeyPrefix: null,
+  };
+  expect(visuals.profileVisualState(profile())).toBe("locked");
+});
 
-    expect(visuals.profileVisualState(profile({ corrupted: true, scope: "session" }))).toBe(
-      "corrupted",
-    );
-    expect(visuals.profileVisualState(profile({ scope: "session" }))).toBe("session");
-    expect(visuals.profileVisualState(passwordProfile)).toBe("locked");
-    useMasterPassword().isUnlocked.value = true;
-    expect(visuals.profileVisualState(passwordProfile)).toBe("password");
-    expect(visuals.profileVisualState(profile())).toBe("device");
-  });
+test("builds avatar initials from name, URL or fallback without reading credentials", () => {
+  const visuals = createProfileVisuals(() => null);
+  expect(visuals.profileAvatarLabel(profile({ name: " ab " }))).toBe("AB");
+  expect(
+    visuals.profileAvatarLabel(
+      profile({ name: "", baseUrl: "https://example" }),
+    ),
+  ).toBe("HT");
+  expect(visuals.profileAvatarLabel(profile({ name: "  ", baseUrl: "" }))).toBe(
+    "HS",
+  );
+});
 
-  test("builds avatar initials from the name or server URL", () => {
-    const visuals = mountComposable(useProfileVisuals);
-
-    expect(visuals.profileAvatarLabel(profile({ name: " ab " }))).toBe("AB");
-    expect(visuals.profileAvatarLabel(profile({ name: "", baseUrl: "https://example" }))).toBe(
-      "HT",
-    );
-    expect(visuals.profileAvatarLabel(profile({ name: "  ", baseUrl: "" }))).toBe("HS");
-  });
+test("avatar initials keep whole characters, including emoji and supplementary ideographs", () => {
+  const visuals = createProfileVisuals(() => null);
+  expect(visuals.profileAvatarLabel(profile({ name: "A🚀 prod" }))).toBe("A🚀");
+  expect(visuals.profileAvatarLabel(profile({ name: "𠮷野家" }))).toBe("𠮷野");
+  expect(visuals.profileAvatarLabel(profile({ name: "👩‍💻ops" }))).toBe("👩‍💻O");
 });

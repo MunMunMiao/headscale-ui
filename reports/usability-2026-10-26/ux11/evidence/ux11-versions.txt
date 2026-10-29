@@ -1,0 +1,24 @@
+control headscale version
+exit=0
+headscale version v0.29.4
+commit: 8106636c7f8d0cf8c9d4fb0beae94415069b768b
+build time: 2026-09-23T19:19:22Z
+built with: go1.26.5 linux/amd64
+
+
+
+
+client-a tailscale version
+exit=0
+1.102.5
+  tailscale commit: 5fb2a81b065b0a0bbbfc67ab20a0d9c6a1108115
+  long version: 1.102.5-1-t5fb2a81b0
+  go version: go1.26.6 (tailscale/go 7275f792d4)
+
+
+
+client-a ssh -V
+exit=0
+
+OpenSSH_10.0p2, OpenSSL 3.5.8 25 Aug 2026
+

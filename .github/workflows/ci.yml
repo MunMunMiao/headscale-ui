@@ -1,20 +1,31 @@
 name: CI
-
-on:
-  pull_request:
-  push:
-
+"on":
+  pull_request: null
+  push: null
+  workflow_call: null
 permissions:
   contents: read
-
 jobs:
-  verify:
-    runs-on: ubuntu-latest
+  test:
     timeout-minutes: 20
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.4
       - run: bun install --frozen-lockfile
-      - run: bun run check
+      - run: bun run browser:install
+      - run: bun run --parallel lint format:check typecheck
+      - run: bun run i18n:check
+      - run: bun run test
+      - run: bun run build
+      - name: Preserve failed browser test screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-failure-screenshots
+          path: .vitest/attachments/failure-screenshots
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 3
