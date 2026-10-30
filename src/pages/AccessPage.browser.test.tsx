@@ -152,7 +152,199 @@ async function setup(
     },
   };
 }
+const issue12Policy = {
+  groups: { "group:ops": ["alice@"] },
+  tagOwners: { "tag:app": ["group:ops"], "tag:db": [] },
+  acls: [],
+};
+
+async function addIssue12Access() {
+  const context = await setup(issue12Policy);
+  await page.getByTestId("tag-open-tag:db").click();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .toBeVisible();
+  await page.getByTestId("tag-add-accessor-option-tag:app").click();
+  return context;
+}
+
 afterEach(() => vi.restoreAllMocks());
+
+test("issue12: selects a declared label as a directed network source", async () => {
+  const { session, writes } = await addIssue12Access();
+  expect(session.policy.policyPayload).toEqual({
+    groups: { "group:ops": ["alice@"] },
+    tagOwners: { "tag:app": ["group:ops"], "tag:db": [] },
+    acls: [{ action: "accept", src: ["tag:app"], dst: ["tag:db:22"] }],
+  });
+  expect(writes).toEqual([]);
+});
+test.each(["tag:app", "tag:db"])(
+  "issue12: offers declared zero-device source %s",
+  async (source) => {
+    const { session } = await setup(issue12Policy);
+    expect(session.snapshot.getSnapshot().snapshot.nodes).toEqual([]);
+    await page.getByTestId("tag-open-tag:db").click();
+    await page.getByTestId("tag-add-accessor-trigger").click();
+    await expect
+      .element(page.getByTestId("tag-add-accessor-list"))
+      .toMatchTextContent(getProductCopy("en-US").optionGroupLabels);
+    await page.getByTestId("tag-add-accessor-search").fill(source);
+    await page.getByTestId(`tag-add-accessor-option-${source}`).click();
+    expect(session.policy.policyPayload?.acls).toEqual([
+      { action: "accept", src: [source], dst: ["tag:db:22"] },
+    ]);
+  },
+);
+
+test("issue12: keeps equal display names as distinct identities", async () => {
+  const initial = {
+    ...issue12Policy,
+    groups: { "group:ops": ["alice@"], "group:app": [] },
+  };
+  const users = defaultUsers.map((user) =>
+    user.id === "2" ? { ...user, displayName: "app" } : user,
+  );
+  const { session } = await setup(initial, users);
+  await page.getByTestId("tag-open-tag:db").click();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await page.getByTestId("tag-add-accessor-search").fill("app");
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-bob@"))
+    .toBeVisible();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-group:app"))
+    .toBeVisible();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .toBeVisible();
+  await page.getByTestId("tag-add-accessor-option-tag:app").click();
+  expect(session.policy.policyPayload?.acls).toEqual([
+    { action: "accept", src: ["tag:app"], dst: ["tag:db:22"] },
+  ]);
+});
+
+test("issue12: excludes selected labels and allows reselecting after removal", async () => {
+  const { session } = await addIssue12Access();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .not.toBeInTheDocument();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:db"))
+    .toBeVisible();
+  await userEvent.keyboard("{Escape}");
+  await page.getByTestId("tag-accessor-remove-tag:app").click();
+  await nextFrame();
+  expect(session.policy.policyPayload?.acls).toEqual([]);
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .toBeVisible();
+});
+
+test("issue12: keeps label candidates out of managers and team members", async () => {
+  const { session } = await addIssue12Access();
+  await page.getByTestId("tag-add-owner-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-owner-option-bob@"))
+    .toBeVisible();
+  expect(
+    document.querySelector('[data-testid^="tag-add-owner-option-tag:"]'),
+  ).toBeNull();
+  await userEvent.keyboard("{Escape}");
+  await page.getByTestId("tag-detail-close").click();
+  await page.getByTestId("team-card-group:ops").click();
+  await page.getByTestId("team-add-member-trigger").click();
+  await expect
+    .element(page.getByTestId("team-add-member-option-bob@"))
+    .toBeVisible();
+  expect(
+    document.querySelector('[data-testid^="team-add-member-option-tag:"]'),
+  ).toBeNull();
+  expect(session.policy.policyPayload?.groups).toEqual({
+    "group:ops": ["alice@"],
+  });
+  expect(session.policy.policyPayload?.tagOwners).toEqual({
+    "tag:app": ["group:ops"],
+    "tag:db": [],
+  });
+});
+
+test("issue12: confirms custom ports before clearing the default service", async () => {
+  const { session, writes } = await addIssue12Access();
+  await page.getByTestId("tag-accessor-custom-tag:app").fill("70000");
+  await userEvent.keyboard("{Enter}");
+  expect(session.policy.policyPayload?.acls).toEqual([
+    { action: "accept", src: ["tag:app"], dst: ["tag:db:22"] },
+  ]);
+  await expect
+    .element(page.getByTestId("tag-accessor-custom-tag:app-error"))
+    .toBeVisible();
+  await page.getByTestId("tag-accessor-custom-tag:app").fill("5432");
+  await userEvent.keyboard("{Enter}");
+  await page.getByTestId("tag-accessor-svc-tag:app-ssh").click();
+  expect(session.policy.policyPayload?.acls).toEqual([
+    { action: "accept", src: ["tag:app"], dst: ["tag:db:5432"] },
+  ]);
+  expect(writes).toEqual([]);
+});
+
+test("issue12: clearing the last service removes the access row", async () => {
+  const { session } = await addIssue12Access();
+  await page.getByTestId("tag-accessor-svc-tag:app-ssh").click();
+  await expect
+    .element(page.getByTestId("tag-accessor-row-tag:app"))
+    .not.toBeInTheDocument();
+  expect(session.policy.policyPayload?.acls).toEqual([]);
+});
+
+test("issue12: does not re-add an advanced label source to bypass restrictions", async () => {
+  const initial = {
+    ...issue12Policy,
+    acls: [
+      { action: "accept", src: ["tag:app"], dst: ["tag:db:22"], proto: "tcp" },
+    ],
+  };
+  const { session, writes } = await setup(initial);
+  await page.getByTestId("tag-open-tag:db").click();
+  await expect
+    .element(page.getByTestId("tag-accessor-svc-tag:app-ssh"))
+    .toBeDisabled();
+  await expect
+    .element(page.getByTestId("tag-accessor-custom-tag:app"))
+    .toBeDisabled();
+  await expect
+    .element(page.getByTestId("tag-accessor-remove-tag:app"))
+    .toBeEnabled();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .not.toBeInTheDocument();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:db"))
+    .toBeVisible();
+  expect(session.policy.policyPayload?.acls).toEqual(initial.acls);
+  expect(writes).toEqual([]);
+});
+
+test("issue12: a rejected check preserves the label draft without a write", async () => {
+  const { session, writes, checks, failCheck } = await addIssue12Access();
+  await page.getByTestId("tag-detail-close").click();
+  failCheck("tag access check rejected");
+  await page.getByTestId("check-policy").click();
+  await expect
+    .element(page.getByTestId("check-policy-error"))
+    .toHaveTextContent("tag access check rejected");
+  expect(checks).toHaveLength(1);
+  expect(writes).toEqual([]);
+  expect(session.policy.isPolicyDirty).toBe(true);
+  expect(session.policy.policyPayload?.acls).toEqual([
+    { action: "accept", src: ["tag:app"], dst: ["tag:db:22"] },
+  ]);
+});
+
 // A click that runs inside the current task, so no re-render or timer can slip in between.
 function domClick(element: Element) {
   element.dispatchEvent(
@@ -1044,40 +1236,58 @@ test("tag deletion previews affected rules and tests and drops a grant whose las
   expect(JSON.parse(writes[0].policy).grants).toEqual([]);
 });
 
-test("save-and-close retains an uncertain draft and closes after a new reviewed write without acknowledgement", async () => {
-  const { session, fail, writes } = await setup();
-  await page.getByTestId("team-card-group:ops").click();
-  await page.getByTestId("team-member-remove-alice@").click();
-  await userEvent.keyboard("{Escape}");
-  fail("Policy rejected");
-  await page.getByTestId("unsaved-changes-save").click();
-  await page.getByTestId("policy-publication-confirm").click();
-  await expect
-    .element(page.getByTestId("dialog-save-policy-error"))
-    .toHaveTextContent("Policy rejected");
-  await expect
-    .element(page.getByTestId("dialog-policy-save-uncertain"))
-    .toBeVisible();
-  await expect
-    .element(page.getByTestId("policy-pending-release"))
-    .not.toBeInTheDocument();
-  await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
-  expect(session.policy.isPolicyDirty).toBe(true);
-  fail("");
-  expect(writes).toHaveLength(1);
-  await userEvent.keyboard("{Escape}");
-  await page.getByTestId("unsaved-changes-save").click();
-  await expect
-    .element(page.getByTestId("policy-publication-review"))
-    .toBeVisible();
-  expect(writes).toHaveLength(1);
-  await page.getByTestId("policy-publication-confirm").click();
-  await expect
-    .element(page.getByTestId("team-detail-dialog"))
-    .not.toBeInTheDocument();
-  expect(session.policy.isPolicyDirty).toBe(false);
-  expect(writes).toHaveLength(2);
-});
+test.each(["team", "tag"] as const)(
+  "issue12: save-and-close preserves an uncertain %s draft until reviewed retry",
+  async (kind) => {
+    const context = kind === "tag" ? await addIssue12Access() : await setup();
+    const { session, fail, writes } = context;
+    if (kind === "team") {
+      await page.getByTestId("team-card-group:ops").click();
+      await page.getByTestId("team-member-remove-alice@").click();
+    }
+    await userEvent.keyboard("{Escape}");
+    fail("Policy rejected");
+    await page.getByTestId("unsaved-changes-save").click();
+    await page.getByTestId("policy-publication-confirm").click();
+    await expect
+      .element(page.getByTestId("dialog-save-policy-error"))
+      .toHaveTextContent("Policy rejected");
+    await expect
+      .element(page.getByTestId("dialog-policy-save-uncertain"))
+      .toBeVisible();
+    await expect
+      .element(page.getByTestId("policy-pending-release"))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByTestId(`${kind}-detail-dialog`))
+      .toBeVisible();
+    expect(session.policy.isPolicyDirty).toBe(true);
+    expect(writes).toHaveLength(1);
+    if (kind === "tag") {
+      expect(session.policy.policyPayload?.acls).toEqual([
+        { action: "accept", src: ["tag:app"], dst: ["tag:db:22"] },
+      ]);
+      expect(session.policy.policyPayload?.tagOwners).toEqual({
+        "tag:app": ["group:ops"],
+        "tag:db": [],
+      });
+    }
+    fail("");
+    expect(writes).toHaveLength(1);
+    await userEvent.keyboard("{Escape}");
+    await page.getByTestId("unsaved-changes-save").click();
+    await expect
+      .element(page.getByTestId("policy-publication-review"))
+      .toBeVisible();
+    expect(writes).toHaveLength(1);
+    await page.getByTestId("policy-publication-confirm").click();
+    await expect
+      .element(page.getByTestId(`${kind}-detail-dialog`))
+      .not.toBeInTheDocument();
+    expect(session.policy.isPolicyDirty).toBe(false);
+    expect(writes).toHaveLength(2);
+  },
+);
 
 test("tag service changes require the existing all-ports confirmation and preserve managers", async () => {
   const { session } = await setup();

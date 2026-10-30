@@ -759,9 +759,22 @@ export default function AccessPage() {
   const tagOwnerValues = tagValues.owners;
   const teamMembers = teamValues.members;
   const teamAccessRows = currentTeamMeta?.accessRows ?? [];
-  const accessorOptionsForCurrentTag = buildAccessOptions(
-    tagValues.accessors.map((a) => a.who),
-  );
+  const accessorOptionsForCurrentTag: MemberOption[] = [
+    ...buildAccessOptions(tagValues.accessors.map((accessor) => accessor.who)),
+    ...tagsWithMeta
+      .filter(
+        (tag) =>
+          tag.declaredInDraft &&
+          isPolicyIdentityName(tag.tagName, "tag") &&
+          !tagValues.accessors.some((accessor) => accessor.who === tag.tagName),
+      )
+      .map((tag) => ({
+        value: tag.tagName,
+        label: tag.displayName,
+        group: copy.optionGroupLabels,
+        groupOrder: 3,
+      })),
+  ];
   const ownerOptionsForCurrentTag = buildAccessOptions(tagOwnerValues);
   const memberOptionsForCurrentTeam = userPickerOptions(teamMembers, 1);
 

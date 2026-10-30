@@ -220,6 +220,70 @@ afterEach(async () => {
   await page.viewport(1280, 720);
 });
 
+test("issue12: observed names do not become undeclared access sources", async () => {
+  const fixture = await setup({
+    groups: { "group:ops": ["alice@"] },
+    tagOwners: {
+      "tag:server": ["group:ops"],
+      "tag:app": [],
+      "tag:legacy,name": [],
+    },
+    acls: [],
+  });
+  await page.getByTestId("tag-open-tag:server").click();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .toBeVisible();
+  for (const tag of [
+    "tag:observed",
+    "tag:extra",
+    "tag:key-only",
+    "tag:1abc",
+    "tag:legacy,name",
+  ]) {
+    await expect
+      .element(page.getByTestId(`tag-add-accessor-option-${tag}`))
+      .not.toBeInTheDocument();
+  }
+  await page.getByTestId("tag-add-accessor-option-tag:app").click();
+  expect(fixture.session.policy.policyPayload?.tagOwners).toEqual({
+    "tag:server": ["group:ops"],
+    "tag:app": [],
+    "tag:legacy,name": [],
+  });
+  expect(fixture.writes).toEqual([]);
+});
+
+test("issue12: source declarations follow the draft rather than the saved inventory", async () => {
+  const fixture = await setup({
+    groups: { "group:ops": ["alice@"] },
+    tagOwners: { "tag:server": ["group:ops"], "tag:app": [] },
+    acls: [],
+  });
+  const saved = fixture.session.snapshot.getSnapshot().snapshot.policy?.policy;
+  expect(saved).toBeDefined();
+  expect(JSON.parse(saved ?? "{}").tagOwners).toHaveProperty("tag:app");
+  fixture.session.policy.commitState(
+    parsePolicy(
+      JSON.stringify({
+        groups: { "group:ops": ["alice@"] },
+        tagOwners: { "tag:server": ["group:ops"], "tag:fresh": [] },
+        acls: [],
+      }),
+    ),
+  );
+  await page.getByTestId("tag-open-tag:server").click();
+  await page.getByTestId("tag-add-accessor-trigger").click();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:fresh"))
+    .toBeVisible();
+  await expect
+    .element(page.getByTestId("tag-add-accessor-option-tag:app"))
+    .not.toBeInTheDocument();
+  expect(fixture.writes).toEqual([]);
+});
+
 test.each(["", "   "])(
   "review M3: a blank maintenance query %j cannot create an invisible active draft",
   async (maintenance) => {
