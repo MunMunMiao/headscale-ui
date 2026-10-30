@@ -29,7 +29,6 @@ test("CI checks pull requests without duplicate feature-branch push runs", async
   expect(ci.on).toEqual({
     pull_request: null,
     push: { branches: ["main"] },
-    workflow_call: null,
   });
 });
 
@@ -42,23 +41,20 @@ test("CI supersedes only runs from the same pull request", async () => {
   });
 });
 
-test("CI is reusable and both publishing workflows are gated by it", async () => {
-  expect(Object.keys((await workflow("ci")).on)).toContain("workflow_call");
+test("publishing workflows build directly instead of re-running CI", async () => {
+  // Merged commits already passed CI, so releases must not gate on a second test run.
+  expect(Object.keys((await workflow("ci")).on)).not.toContain("workflow_call");
   const docker = await workflow("docker");
   const pages = await workflow("pages");
-  for (const [config, job] of [
-    [docker, "build"],
-    [pages, "deploy"],
-  ] as const) {
-    expect(config.jobs.verify.uses).toBe("./.github/workflows/ci.yml");
-    expect(config.jobs.verify.permissions).toEqual({ contents: "read" });
-    expect([config.jobs[job].needs].flat()).toContain("verify");
+  for (const config of [docker, pages]) {
+    expect(config.jobs.verify).toBeUndefined();
+    expect(Object.values(config.jobs).some((job) => job.uses)).toBe(false);
   }
-  expect(docker.jobs.verify.if).toBe("github.event_name != 'pull_request'");
-  // Fail closed: a skipped or failed verify must not publish, but PR builds still run.
-  expect(docker.jobs.build.if).toContain("needs.verify.result == 'success'");
-  expect(docker.jobs.build.if).toContain("github.event_name == 'pull_request'");
-  expect(pages.jobs.verify.if).toBe(pages.jobs.deploy.if);
+  expect(docker.jobs.build.needs).toBeUndefined();
+  expect(pages.jobs.deploy.needs).toBeUndefined();
+  expect(pages.jobs.deploy.if).toBe(
+    "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}",
+  );
 });
 
 test("failed CI jobs preserve only existing browser screenshots as short-lived artifacts", async () => {
