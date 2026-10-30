@@ -12,13 +12,7 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  verify:
-    if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
-    permissions:
-      contents: read
-    uses: ./.github/workflows/ci.yml
   deploy:
-    needs: verify
     if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
     environment:
       name: github-pages

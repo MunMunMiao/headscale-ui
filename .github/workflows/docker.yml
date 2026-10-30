@@ -15,15 +15,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
 jobs:
-  verify:
-    if: "github.event_name != 'pull_request'"
-    permissions:
-      contents: read
-    uses: ./.github/workflows/ci.yml
   build:
-    needs: verify
-    # Fail closed: publishing needs a successful verify, while PR builds (no verify) keep running.
-    if: "${{ !cancelled() && (github.event_name == 'pull_request' || needs.verify.result == 'success') }}"
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:

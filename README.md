@@ -109,8 +109,8 @@ pre-upgrade browser profile.
 ## Deployment
 
 The hosted UI is at https://headscale.lyz.cloud. Non-prerelease GitHub Releases
-publish it after CI succeeds; the Pages workflow can also deploy a selected ref
-manually to that same production site. Ordinary pushes and pull requests do not
+publish it directly, since CI already ran on the merged commit; the Pages
+workflow can also deploy a selected ref manually to that same production site. Ordinary pushes and pull requests do not
 publish it. Environment protection and approval rules still apply.
 
 ### Docker

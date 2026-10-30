@@ -4,7 +4,6 @@ name: CI
   push:
     branches:
       - main
-  workflow_call: null
 permissions:
   contents: read
 concurrency:
