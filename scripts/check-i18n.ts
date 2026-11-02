@@ -15,8 +15,8 @@ async function checkI18n(): Promise<void> {
   const config = getConfig({ configPath: resolve("lingui.config.ts") });
   if (
     config.sourceLocale !== DEFAULT_LOCALE ||
-    JSON.stringify([...config.locales].sort()) !==
-      JSON.stringify([...SUPPORTED_LOCALES].sort())
+    JSON.stringify([...config.locales].toSorted()) !==
+      JSON.stringify([...SUPPORTED_LOCALES].toSorted())
   )
     throw new Error(
       "Lingui must contain all 11 supported locales with en-US as source",
@@ -35,12 +35,12 @@ async function checkI18n(): Promise<void> {
           `${DEFAULT_LOCALE}: translation does not match source message ${id}`,
         );
     }
-    const sourceIds = Object.keys(source).sort();
+    const sourceIds = Object.keys(source).toSorted();
     for (const locale of SUPPORTED_LOCALES) {
       const messages = await catalog.read(locale);
       if (!messages) throw new Error(`${locale}: catalog is missing`);
       if (
-        JSON.stringify(Object.keys(messages).sort()) !==
+        JSON.stringify(Object.keys(messages).toSorted()) !==
         JSON.stringify(sourceIds)
       ) {
         throw new Error(

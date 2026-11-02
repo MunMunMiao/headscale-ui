@@ -136,7 +136,7 @@ test.each([
           .join("\n");
       } else {
         const item = current.resources.find(
-          (item) => item.kind === kind && item.name === args.at(-1),
+          (resource) => resource.kind === kind && resource.name === args.at(-1),
         );
         if (!item) throw new Error(`Unknown test resource: ${args.join(" ")}`);
         if (args[1] === "inspect") stdout = item.owner;

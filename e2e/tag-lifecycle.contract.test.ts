@@ -44,7 +44,9 @@ async function joined(
   });
   const client = await fixture.client(name);
   await fixture.register(client, key.key, { routes: options.routes });
-  const node = (await fixture.nodes()).find((node) => node.name === name);
+  const node = (await fixture.nodes()).find(
+    (candidate) => candidate.name === name,
+  );
   expect(node, "the official client must register a node").toBeDefined();
   return { client, key, node: requireValue(node) };
 }

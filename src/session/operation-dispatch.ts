@@ -1,6 +1,5 @@
 import type { Client, FaultCode, FaultOf, Infer } from "@defjs/core";
 import type { rpcStatus } from "@/api/contracts";
-import { definitionOf } from "@/api/definitions";
 import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
 import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import * as endpoints from "@/api/requests";
@@ -44,21 +43,17 @@ type Outcome<E extends AnyEndpoint> =
   | { readonly fault: null; readonly value: SuccessOf<E> }
   | { readonly fault: HeadscaleFault; readonly value: undefined };
 
-/** The library's error-first tuple; the success slot is narrowed by `SuccessOf` above. */
-type RawOutcome<E extends AnyEndpoint> =
-  readonly [null, SuccessOf<E>] | readonly [HeadscaleFault, undefined];
-
 /**
  * Defjs types each operation's callable by its own input. The Worker dispatches by name, so the
  * argument tuple is built at runtime and the operation validates it. `Reflect.apply` keeps the
- * callable boundary free of a type assertion; the declared `Outcome` supplies the decoded value.
+ * callable boundary free of a type assertion; the callable's own return type supplies the tuple.
  */
 async function invoke<E extends AnyEndpoint>(
   endpoint: E,
   client: Client,
   input: unknown,
 ): Promise<Outcome<E>> {
-  const result: RawOutcome<E> = await Reflect.apply(
+  const result: Awaited<ReturnType<E>> = await Reflect.apply(
     endpoint,
     undefined,
     input === undefined ? [client] : [client, input],
@@ -77,13 +72,9 @@ export async function executeOperation<K extends EndpointName>(
     return { ok: false, error: { kind: "invalid-request" } };
   try {
     const endpoint = endpoints[command.endpoint];
-    const definition = definitionOf(command.endpoint);
-    const client = (
-      http ??
-      createWorkerHeadscaleHttp(context, {
-        readUnreadBody: definition.output === undefined,
-      })
-    )({ signal: context.signal });
+    const client = (http ?? createWorkerHeadscaleHttp(context))({
+      signal: context.signal,
+    });
     const outcome = await invoke(
       endpoint,
       client,

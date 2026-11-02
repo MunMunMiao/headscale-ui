@@ -227,11 +227,11 @@ export function createSessionNetwork(options: { upstream: string }) {
       operationCalls.length = 0;
       if (!closed) lifetime = new AbortController();
     },
-    intercept(options: NetworkGateOptions) {
+    intercept(gateOptions: NetworkGateOptions) {
       if (closed) throw new Error("Session network fixture is closed");
       const gate: Gate = {
-        options,
-        pattern: new RegExp(options.pathPattern),
+        options: gateOptions,
+        pattern: new RegExp(gateOptions.pathPattern),
         state: {
           id: ++gateSequence,
           hits: 0,

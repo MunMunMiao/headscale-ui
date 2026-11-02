@@ -27,7 +27,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 async function fixture(activate = true) {
   const host = await profilesFixture(cleanup);

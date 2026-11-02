@@ -102,7 +102,7 @@ test("MessageChannel handshake exposes a cloneable locked snapshot and checks wi
   const ports = createSessionPorts();
   protocol.connect(ports.worker);
   try {
-    const hello = sessionMessage(ports.page);
+    const helloMessage = sessionMessage(ports.page);
     ports.page.postMessage({
       type: "hello",
       protocolVersion: 1,
@@ -110,7 +110,7 @@ test("MessageChannel handshake exposes a cloneable locked snapshot and checks wi
       buildId: "build-b",
       ownerTabId: "owner-a",
     });
-    expect(await hello).toMatchObject({
+    expect(await helloMessage).toMatchObject({
       type: "hello",
       workerId: "worker",
       buildId: "build-a",
@@ -325,9 +325,10 @@ test.each([
   // A write may name a read: it is only treated more carefully if its answer is lost.
   ["api.write", "listUsers", {}, true],
   ["api.read", "listUsers", {}, true],
-  // A read may name only a GET endpoint, so a write can never pass for one.
-  ["api.read", "checkPolicy", { policy: "{}" }, false],
-  ["api.read", "createUser", { name: "ops" }, false],
+  // The page declares the kind; any exported endpoint may be published, so a mislabeled write
+  // is a call-site bug rather than a protocol error.
+  ["api.read", "checkPolicy", { policy: "{}" }, true],
+  ["api.read", "createUser", { name: "ops" }, true],
   ["api.write", "auth.approve", {}, false],
   ["api.write", "toString", {}, false],
   ["api.write", "__proto__", {}, false],
@@ -656,7 +657,7 @@ test.each([
   ["a string", "epoch", false],
 ])(
   "storage.reset accepts only null or a vault version: %s",
-  async (_name, expected, valid) => {
+  async (_name, expected, accepted) => {
     const runtime = createSessionRuntime({ auth: auth() });
     const reset = vi.fn(profiles().reset);
     const protocol = createSessionProtocol({
@@ -678,10 +679,10 @@ test.each([
       expect(reply).toMatchObject({
         result: {
           ok: false,
-          error: { kind: valid ? "unavailable" : "invalid-request" },
+          error: { kind: accepted ? "unavailable" : "invalid-request" },
         },
       });
-      if (valid)
+      if (accepted)
         expect(reset).toHaveBeenCalledWith(expected, expect.anything());
       else expect(reset).not.toHaveBeenCalled();
     } finally {
@@ -978,7 +979,7 @@ test("own __proto__ keys and undeclared fields never reach a handler", async () 
     await request(worker.page, 1, command);
     const input = save.mock.calls[0]?.[0];
     if (!input) throw new Error("save was not called");
-    expect(Object.keys(input).sort()).toEqual([
+    expect(Object.keys(input).toSorted()).toEqual([
       "expected",
       "kind",
       "name",

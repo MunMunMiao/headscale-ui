@@ -1566,7 +1566,7 @@ test("one real user refresh notifies once while repeated background failures and
   expect(add).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(add.mock.calls)).not.toContain(raw);
   const persistentErrors = { ...session.snapshot.getSnapshot().refreshErrors };
-  expect(Object.keys(persistentErrors).sort()).toEqual([
+  expect(Object.keys(persistentErrors).toSorted()).toEqual([
     "fabric",
     "identity",
     "policy",

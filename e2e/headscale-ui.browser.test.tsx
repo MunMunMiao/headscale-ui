@@ -1064,7 +1064,7 @@ async function approvedRoutesOf(nodeId: string) {
         })
       ).node,
     ).approvedRoutes,
-  ].sort();
+  ].toSorted();
 }
 
 async function operationCount(id: string) {
@@ -1088,9 +1088,9 @@ async function expectUiOperationDelta(
 async function observeApiContract<T>(
   operationId: OperationId,
   observedOperationIds: Set<OperationId>,
-  request: () => Promise<T>,
+  call: () => Promise<T>,
 ) {
-  const response = await request();
+  const response = await call();
   observedOperationIds.add(operationId);
   return response;
 }
@@ -1142,9 +1142,9 @@ async function waitForActionFinished(key: ActionFeedbackKey) {
 async function latestSavedPolicy() {
   await waitForActionFinished("save-policy");
   const policyCall = requireValue(
-    (await commands.headscaleOperationCalls())
-      ?.filter((call) => call.id === "policy.set")
-      .at(-1),
+    (await commands.headscaleOperationCalls())?.findLast(
+      (call) => call.id === "policy.set",
+    ),
   );
   const payload = policyCall.payload;
   if (!payload || typeof payload !== "object")
@@ -2905,7 +2905,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="route-available-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
   await expect
@@ -2969,7 +2969,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
           input: { nodeId: "2" },
         })
       ).node,
-    ).approvedRoutes.sort(),
+    ).approvedRoutes.toSorted(),
   ).toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
 
   // Exit routes are revoked as a pair: the dialog names both prefixes and the write removes both.
@@ -2983,7 +2983,9 @@ test("supports consumer-friendly route approval and revocation", async () => {
     document.querySelector('[data-testid="revoke-route-target-2"]'),
   ).toBeNull();
   expect(
-    [0, 1].map((index) => visibleText(`revoke-route-target-${index}`)).sort(),
+    [0, 1]
+      .map((index) => visibleText(`revoke-route-target-${index}`))
+      .toSorted(),
   ).toEqual(["0.0.0.0/0", "::/0"]);
   await page.getByTestId("revoke-route-confirm").click();
   await waitForActionFinished("revoke-route");
@@ -2996,7 +2998,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="pending-route-value-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "::/0"]);
 
@@ -3083,7 +3085,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
     )
       .map((element) => element.dataset.testid ?? "")
       .filter((testId) => /^device-\d+$/.test(testId))
-      .sort();
+      .toSorted();
   let filteredDeviceCount = 0;
   for (const [filter, expected] of [
     ["online", ["device-1"]],
@@ -4597,9 +4599,9 @@ test("covers auth-key filters, expiration and deletion", async () => {
       ),
     )
     .toBe(true);
-  const createdPayload = (await commands.headscaleOperationCalls())
-    ?.filter((call) => call.id === "preauthkey.create")
-    .at(-1)?.payload;
+  const createdPayload = (await commands.headscaleOperationCalls())?.findLast(
+    (call) => call.id === "preauthkey.create",
+  )?.payload;
   const expiration =
     createdPayload && typeof createdPayload === "object"
       ? Reflect.get(createdPayload, "expiration")
@@ -4612,7 +4614,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
       const key = (
         (await request(adopted().read, { endpoint: "listPreAuthKeys" }))
           .preAuthKeys ?? []
-      ).find((key) => key.aclTags?.includes("tag:mobile"));
+      ).find((candidate) => candidate.aclTags?.includes("tag:mobile"));
       return Date.parse(key?.expiration ?? "");
     })
     .toBe(new Date(`${expirationYear}-06-01T00:00`).getTime());
@@ -4830,7 +4832,7 @@ test("clean up orphan refs banner: cancel keeps them, confirm strips them", asyn
   const saved = await latestSavedPolicy();
   expect(saved.groups?.["group:ops"]).toEqual(["alice@"]);
   expect(saved.tagOwners?.["tag:server"]).toEqual(["alice@"]);
-  expect(saved.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
+  expect(saved.acls?.flatMap((rule) => rule.dst).toSorted()).toEqual([
     "tag:server:443",
     "tag:server:80",
   ]);
@@ -5685,9 +5687,9 @@ test("covers server settings API keys and maintenance actions", async () => {
     await expect
       .poll(
         async () =>
-          (await commands.headscaleOperationCalls())
-            ?.filter((call) => call.id === "node.backfillIps")
-            .at(-1)?.payload,
+          (await commands.headscaleOperationCalls())?.findLast(
+            (call) => call.id === "node.backfillIps",
+          )?.payload,
       )
       .toEqual({ confirmed: true });
     await expect
@@ -6196,7 +6198,7 @@ test("keeps every core function usable on mobile", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="route-approved-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
   expectNoHorizontalOverflow();
@@ -7165,7 +7167,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     ).node,
   );
   expect(routeNode.givenName).toBe("edge-router");
-  expect([...routeNode.availableRoutes].sort()).toEqual([
+  expect([...routeNode.availableRoutes].toSorted()).toEqual([
     "0.0.0.0/0",
     "10.42.0.0/16",
     "::/0",
@@ -7213,7 +7215,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
           `[data-testid^="route-approved-${routeNode.id}-"]`,
         ),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "172.16.0.0/12", "::/0"]);
   const routeWritesBeforeRevoke = await operationCount(
@@ -7403,9 +7405,9 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expect
     .poll(
       async () =>
-        (await commands.headscaleOperationCalls())
-          ?.filter((call) => call.id === "node.backfillIps")
-          .at(-1)?.payload,
+        (await commands.headscaleOperationCalls())?.findLast(
+          (call) => call.id === "node.backfillIps",
+        )?.payload,
     )
     .toEqual({ confirmed: true });
   await closeLayerWithEscape("server-settings-dialog");
@@ -7589,7 +7591,7 @@ test("cleans only true orphan references against Headscale v0.29.4", async () =>
   const submitted = await latestSavedPolicy();
   expect(submitted.groups?.["group:test-01"]).toEqual(["admin-test@"]);
   expect(submitted.tagOwners?.["tag:test-01"]).toEqual(["admin-test@"]);
-  expect(submitted.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
+  expect(submitted.acls?.flatMap((rule) => rule.dst).toSorted()).toEqual([
     "tag:test-01:80",
     "tag:test-02:22",
   ]);

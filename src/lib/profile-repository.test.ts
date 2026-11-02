@@ -96,7 +96,7 @@ test("worker repository lists only owner-visible summaries and never exposes sto
   vi.stubGlobal("sessionStorage", undefined);
   try {
     const result = await listProfileSummaries("owner-a");
-    expect(result.profiles.map((item) => item.id).sort()).toEqual([
+    expect(result.profiles.map((item) => item.id).toSorted()).toEqual([
       "own",
       "public",
       "unreadable",
@@ -507,10 +507,10 @@ test.each(["create", "change-password", "reset"])(
     const gate = vi
       .spyOn(crypto.subtle, "encrypt")
       .mockImplementationOnce(async (...args) => {
-        const encrypted = await nativeEncrypt(...args);
+        const ciphertext = await nativeEncrypt(...args);
         started.resolve();
         await release.promise;
-        return encrypted;
+        return ciphertext;
       });
     const task = migrateProfile({ expected, password: "migration password" });
     await started.promise;

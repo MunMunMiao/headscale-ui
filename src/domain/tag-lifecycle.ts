@@ -63,7 +63,7 @@ export function assignableTagsFromPolicy(
   return parsePolicy(policy?.policy ?? "")
     .tagOwners.map((entry) => entry.tag)
     .filter(isNodeTag)
-    .sort();
+    .toSorted();
 }
 
 function referencePaths(state: PolicyDesignerState, raw: string) {
@@ -178,7 +178,7 @@ export function observeTags(input: TagObservationInput): TagInventory {
       unknownSources.push(source);
   if (referenceIssues.length) unknownSources.push("references");
   return {
-    tags: [...names].sort().map((tag) => {
+    tags: [...names].toSorted().map((tag) => {
       const declared = policy.tagOwners.some((entry) => entry.tag === tag);
       const nodeIds = input.nodes
         .filter((node) => node.tags.includes(tag))

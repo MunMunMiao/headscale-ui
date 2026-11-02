@@ -272,11 +272,11 @@ export function createSessionBridge(options: SessionBridgeOptions) {
     return <K extends EndpointName>(
       expected: SessionIdentity,
       command: ApiCommand<K>,
-      options?: SessionRequestOptions,
+      requestOptions?: SessionRequestOptions,
     ): Promise<SessionResult<ApiOutput<K>>> =>
       matches(expected)
         ? // The Worker decodes with this build's contracts and the handshake refused any other build.
-          request<ApiOutput<K>>({ ...command, type, expected }, options)
+          request<ApiOutput<K>>({ ...command, type, expected }, requestOptions)
         : Promise.resolve({ ok: false, error: { kind: "stale" } });
   }
   function disconnect() {
@@ -399,17 +399,17 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           // Record evidence before the accompanying snapshot can retire this request in flush().
           // A request without output (deleteUser) answers with no value, which reads as undefined.
           const raw = message.result;
-          const result: SessionResult<unknown> = raw.ok
+          const replyResult: SessionResult<unknown> = raw.ok
             ? { ok: true, value: raw.value }
             : raw;
           const waiting = pending.get(message.requestId);
-          if (waiting) waiting.received = result;
+          if (waiting) waiting.received = replyResult;
           update(message.snapshot);
           const entry = pending.get(message.requestId);
           if (entry) {
             entry.cancelTimer();
             if (entry.expected) flush();
-            else finish(message.requestId, entry, result);
+            else finish(message.requestId, entry, replyResult);
           }
         } else if (message.type === "error") {
           hello?.resolve({ ok: false, error: message.error });
@@ -467,53 +467,59 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       return bridge.connect();
     },
     check,
-    unlock: (input: PageUnlockInput, options?: SessionRequestOptions) =>
+    unlock: (input: PageUnlockInput, requestOptions?: SessionRequestOptions) =>
       request<PublicSessionSnapshot>(
         { type: "session.unlock", input },
-        options,
+        requestOptions,
       ),
     touch: (expected: SessionIdentity) =>
       request<PublicSessionSnapshot>({ type: "session.touch", expected }),
     lock: (expected: SessionIdentity | null) =>
       request<PublicSessionSnapshot>({ type: "session.lock", expected }),
-    /** Publish a request that leaves the server untouched; the Worker accepts only GET endpoints. */
+    /** Publish a request that leaves the server untouched. */
     read: api("api.read"),
     /** Publish a request that may change the server: if its answer is lost, its outcome is unknown. */
     write: api("api.write"),
     listProfiles: () => request<ProfileList>({ type: "profiles.list" }),
-    saveProfile: (input: ProfileSaveInput, options?: SessionRequestOptions) =>
-      request<ProfileSaveOutcome>({ type: "profiles.save", input }, options),
+    saveProfile: (
+      input: ProfileSaveInput,
+      requestOptions?: SessionRequestOptions,
+    ) =>
+      request<ProfileSaveOutcome>(
+        { type: "profiles.save", input },
+        requestOptions,
+      ),
     migrateProfile: (
       input: MigrateProfileInput,
-      options?: SessionRequestOptions,
+      requestOptions?: SessionRequestOptions,
     ) =>
       request<StoredProfileCommit>(
         { type: "profiles.migrate", input },
-        options,
+        requestOptions,
       ),
     changeProfilePassword: (
       input: ChangeProfilePasswordInput,
-      options?: SessionRequestOptions,
+      requestOptions?: SessionRequestOptions,
     ) =>
       request<StoredProfileCommit>(
         { type: "profiles.change-password", input },
-        options,
+        requestOptions,
       ),
     deleteProfile: (
       expected: ProfileWriteExpected,
-      options?: SessionRequestOptions,
+      requestOptions?: SessionRequestOptions,
     ) =>
       request<{ version: VaultVersion }>(
         { type: "profiles.delete", expected },
-        options,
+        requestOptions,
       ),
     resetStorage: (
       expected: VaultVersion | null,
-      options?: SessionRequestOptions,
+      requestOptions?: SessionRequestOptions,
     ) =>
       request<ProfileResetOutcome>(
         { type: "storage.reset", expected },
-        options,
+        requestOptions,
       ),
     suspend() {
       suspended = true;

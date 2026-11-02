@@ -538,13 +538,13 @@ test("a rejected malformed key creation does not fabricate a successful creation
       message: "expiration is required",
     },
   });
-  const command = testDouble<ApiCommand<"createPreAuthKey">>({
+  const invalidCommand = testDouble<ApiCommand<"createPreAuthKey">>({
     endpoint: "createPreAuthKey",
     input: {},
   });
   const result = await createMutation(session).mutateDetailed(
     "create-invite",
-    command,
+    invalidCommand,
   );
   expect(result.ok).toBe(false);
   expect(result.outcome.status).toBe("not-dispatched");

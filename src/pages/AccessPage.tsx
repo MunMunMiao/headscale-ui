@@ -349,7 +349,7 @@ export default function AccessPage() {
       ...inventory.tags.map((entry) => entry.tag),
       ...(returnTo?.managedTag ? [returnTo.managedTag] : []),
     ]),
-  ).sort();
+  ).toSorted();
 
   interface TagMeta {
     tagName: string;
@@ -547,11 +547,11 @@ export default function AccessPage() {
         return Object.keys(fields).length ? { fields } : undefined;
       },
     },
-    onSubmit: async ({ value, formApi, meta }) => {
+    onSubmit: async ({ value, formApi, meta: submitMeta }) => {
       if (value.name !== value.name.trim())
         formApi.setFieldValue("name", value.name.trim());
       if (!(await commitTagName(value.name))) return;
-      if (meta === "done") {
+      if (submitMeta === "done") {
         const valid = formApi.state.values.accessors.every((accessor) =>
           commitCustomPorts(accessor),
         );
@@ -571,10 +571,11 @@ export default function AccessPage() {
           : undefined;
       },
     },
-    onSubmit: ({ value, formApi, meta }) => {
+    onSubmit: ({ value, formApi, meta: submitMeta }) => {
       if (value.name !== value.name.trim())
         formApi.setFieldValue("name", value.name.trim());
-      if (commitTeamName(value.name) && meta === "done") closeDialog("team");
+      if (commitTeamName(value.name) && submitMeta === "done")
+        closeDialog("team");
     },
   });
   const tagValues = useFormStore(tagForm.store, (state) => state.values);
@@ -592,12 +593,12 @@ export default function AccessPage() {
   }, [teamForm, teamDefaults]);
   // rules 引用订阅策略变化，聚合 state getter 每次读取都会创建新对象。
   useEffect(() => {
-    const drafts = tagForm.state.values.accessors;
+    const formAccessors = tagForm.state.values.accessors;
     tagForm.setFieldValue(
       "accessors",
       getTagAccessors(policyStore.policyDesignerState, tagDetailCurrent).map(
         (accessor) => {
-          const draft = drafts.find(
+          const draft = formAccessors.find(
             (candidate) => candidate.who === accessor.who,
           );
           return draft && pendingPortDrafts.current.has(accessor.who)
@@ -631,16 +632,16 @@ export default function AccessPage() {
   ) {
     const error = identityErrorText(issue, kind);
     if (kind === "tag") {
-      tagForm.setFieldMeta("name", (meta) => ({
-        ...meta,
+      tagForm.setFieldMeta("name", (fieldMeta) => ({
+        ...fieldMeta,
         isTouched: true,
-        errorMap: { ...meta.errorMap, onDynamic: error },
+        errorMap: { ...fieldMeta.errorMap, onDynamic: error },
       }));
     } else {
-      teamForm.setFieldMeta("name", (meta) => ({
-        ...meta,
+      teamForm.setFieldMeta("name", (fieldMeta) => ({
+        ...fieldMeta,
         isTouched: true,
-        errorMap: { ...meta.errorMap, onDynamic: error },
+        errorMap: { ...fieldMeta.errorMap, onDynamic: error },
       }));
     }
   }
@@ -832,7 +833,8 @@ export default function AccessPage() {
   function changeTeamMembers(members: string[]) {
     const state = policyStore.policyDesignerState;
     const group = state.groups.find(
-      (group) => group.name === policyStore.getSnapshot().teamDetailCurrent,
+      (candidate) =>
+        candidate.name === policyStore.getSnapshot().teamDetailCurrent,
     );
     const next = group
       ? upsertGroup(state, { ...group, members: members.map(toMemberRef) })
@@ -863,10 +865,10 @@ export default function AccessPage() {
   }
 
   function tagNameMessage(message: string) {
-    tagForm.setFieldMeta("name", (meta) => ({
-      ...meta,
+    tagForm.setFieldMeta("name", (fieldMeta) => ({
+      ...fieldMeta,
       isTouched: true,
-      errorMap: { ...meta.errorMap, onDynamic: message },
+      errorMap: { ...fieldMeta.errorMap, onDynamic: message },
     }));
   }
 
@@ -1070,11 +1072,11 @@ export default function AccessPage() {
       (entry) => entry.who === who,
     );
     if (index < 0) return false;
-    tagForm.setFieldMeta(`accessors[${index}].customPorts`, (meta) => ({
-      ...meta,
+    tagForm.setFieldMeta(`accessors[${index}].customPorts`, (fieldMeta) => ({
+      ...fieldMeta,
       isTouched: true,
       errorMap: {
-        ...meta.errorMap,
+        ...fieldMeta.errorMap,
         onDynamic: valid ? undefined : copy.policyBufferedInvalid,
       },
     }));
@@ -2749,9 +2751,12 @@ export default function AccessPage() {
                     listeners={{
                       onChange: ({ fieldApi }) => {
                         ++closeGeneration.current;
-                        fieldApi.setMeta((meta) => ({
-                          ...meta,
-                          errorMap: { ...meta.errorMap, onDynamic: undefined },
+                        fieldApi.setMeta((fieldMeta) => ({
+                          ...fieldMeta,
+                          errorMap: {
+                            ...fieldMeta.errorMap,
+                            onDynamic: undefined,
+                          },
                         }));
                       },
                       onBlur: () => {
@@ -3299,9 +3304,12 @@ export default function AccessPage() {
                     listeners={{
                       onChange: ({ fieldApi }) => {
                         ++closeGeneration.current;
-                        fieldApi.setMeta((meta) => ({
-                          ...meta,
-                          errorMap: { ...meta.errorMap, onDynamic: undefined },
+                        fieldApi.setMeta((fieldMeta) => ({
+                          ...fieldMeta,
+                          errorMap: {
+                            ...fieldMeta.errorMap,
+                            onDynamic: undefined,
+                          },
                         }));
                       },
                       onBlur: () => {

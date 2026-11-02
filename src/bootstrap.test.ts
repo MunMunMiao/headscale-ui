@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   vi.unstubAllGlobals();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 async function installHost(storageVersion = DB_VERSION) {

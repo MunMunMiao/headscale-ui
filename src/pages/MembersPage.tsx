@@ -859,9 +859,9 @@ export default function MembersPage() {
   }) {
     const user = selectedRenameUser;
     if (!user || renameConfirmDisabled) return;
-    const renameName = value.name.trim();
-    renameMemberForm.setFieldValue("name", renameName);
-    const renameUpdatesPolicy =
+    const nextRenameName = value.name.trim();
+    renameMemberForm.setFieldValue("name", nextRenameName);
+    const renameIncludesPolicy =
       value.updateReferences &&
       renameImpact.hasReferences &&
       !renameImpact.blockedText;
@@ -871,18 +871,18 @@ export default function MembersPage() {
     let target = renamedUser ?? user;
     // A directory update can arrive before React disables the button. Check the live store too.
     if (
-      renameUpdatesPolicy &&
+      renameIncludesPolicy &&
       !renamePolicyPrincipal(
         target,
         snapshotStore.getSnapshot().snapshot.users,
-        renamedUser ? undefined : renameName,
+        renamedUser ? undefined : nextRenameName,
       )
     )
       return;
     if (renamedUser === null) {
       const renamed = await mutateWith("rename-member", {
         endpoint: "renameUser",
-        input: { id: user.id, newName: renameName },
+        input: { id: user.id, newName: nextRenameName },
       });
       if (
         !renamed.ok ||
@@ -894,7 +894,7 @@ export default function MembersPage() {
       setRenamedUser(target);
     }
     if (!session.tagLifecycle.isCurrent(scope)) return;
-    if (renameUpdatesPolicy) {
+    if (renameIncludesPolicy) {
       // The response and refreshed directory, not the requested spelling, own the migration target.
       const to = renamePolicyPrincipal(
         target,
@@ -1118,7 +1118,9 @@ export default function MembersPage() {
       );
     };
     const users = snapshotStore.getSnapshot().snapshot.users;
-    const user = users.find((user) => user.id === reviewed.context.targetId);
+    const user = users.find(
+      (candidate) => candidate.id === reviewed.context.targetId,
+    );
     const index = PrincipalIndex.fromUsers(users);
     const sameUser =
       reviewed.kind === "delete"
@@ -1304,20 +1306,23 @@ export default function MembersPage() {
   function openNodeDetailsFromTable(node: HeadscaleNode) {
     // From the member table row's device-tag chip: jump to devices, open dialog,
     // and on close bounce the user back to /members.
-    const query: Record<string, string> = {
+    const searchParams: Record<string, string> = {
       node: node.id,
       from: "members",
       popup: "node",
     };
-    void navigate({ to: "/devices", search: query });
+    void navigate({ to: "/devices", search: searchParams });
   }
 
   function openNodeDetailsFromDialog(node: HeadscaleNode) {
     // From inside the user-detail-dialog: jump to devices, open dialog, and on
     // close keep the user on /devices (so they can keep exploring machines).
     dismissUserDetails();
-    const query: Record<string, string> = { node: node.id, popup: "node" };
-    void navigate({ to: "/devices", search: query });
+    const searchParams: Record<string, string> = {
+      node: node.id,
+      popup: "node",
+    };
+    void navigate({ to: "/devices", search: searchParams });
   }
 
   return (

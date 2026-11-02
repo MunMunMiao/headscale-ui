@@ -408,7 +408,7 @@ export function listTagsFromState(state: PolicyDesignerState): string[] {
     }
   }
 
-  return Array.from(seen).sort();
+  return Array.from(seen).toSorted();
 }
 
 export function stripTagPrefix(tag: string): string {

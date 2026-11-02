@@ -56,18 +56,18 @@ function fixture() {
       if (!read?.profile.credentialVersion)
         throw new SessionFault("storage-conflict");
       const credentialVersion = read.profile.credentialVersion;
-      const profile = read.profile;
+      const storedProfile = read.profile;
       const apiKey = await decryptProfileKey({
-        profileId: profile.id,
-        canonicalBaseUrl: profile.baseUrl,
+        profileId: storedProfile.id,
+        canonicalBaseUrl: storedProfile.baseUrl,
         credentialVersion,
-        secret: profile.apiKey,
+        secret: storedProfile.apiKey,
         password: input.password,
       });
       return {
-        profile,
+        profile: storedProfile,
         apiKey,
-        keyEpoch: profile.keyEpoch,
+        keyEpoch: storedProfile.keyEpoch,
         credentialVersion,
       };
     },

@@ -235,10 +235,10 @@ export async function createTagLifecycleFixture(
   async function close() {
     if (disposed) return;
     disposed = true;
-    for (const login of logins) login.kill();
-    await Promise.all([...logins].map((login) => login.exited));
+    for (const loginProcess of logins) loginProcess.kill();
+    await Promise.all([...logins].map((loginProcess) => loginProcess.exited));
     const errors: unknown[] = [];
-    for (const container of [...containers].reverse()) {
+    for (const container of [...containers].toReversed()) {
       try {
         own(container);
         docker("rm", "-fv", container);
@@ -317,7 +317,7 @@ export async function createTagLifecycleFixture(
   }
   async function key(
     tags: string[],
-    options: {
+    keyOptions: {
       user?: string;
       reusable?: boolean;
       ephemeral?: boolean;
@@ -330,7 +330,7 @@ export async function createTagLifecycleFixture(
       {
         aclTags: tags,
         expiration: new Date(Date.now() + 3_600_000).toISOString(),
-        ...options,
+        ...keyOptions,
       },
     );
     secrets.push(preAuthKey.key);
@@ -433,28 +433,28 @@ export async function createTagLifecycleFixture(
     });
     return item;
   }
-  function status(client: TagClient): {
+  function status(tagClient: TagClient): {
     BackendState: string;
     Self?: { PublicKey: string; TailscaleIPs: string[]; DNSName: string };
     Health?: string[];
     AuthURL?: string;
   } {
-    own(client.container);
+    own(tagClient.container);
     const result = Bun.spawnSync(
-      ["docker", "exec", client.container, "tailscale", "status", "--json"],
+      ["docker", "exec", tagClient.container, "tailscale", "status", "--json"],
       { stdout: "pipe", stderr: "pipe" },
     );
     return JSON.parse(result.stdout.toString());
   }
-  function serveHttp(client: TagClient) {
-    own(client.container);
+  function serveHttp(tagClient: TagClient) {
+    own(tagClient.container);
     // Serve is inside the official client's userspace netstack; no host port or extra image is used.
     for (const port of [18081, 18082, 18083]) {
       const result = Bun.spawnSync(
         [
           "docker",
           "exec",
-          client.container,
+          tagClient.container,
           "timeout",
           "8",
           "tailscale",
@@ -536,30 +536,30 @@ export async function createTagLifecycleFixture(
     }
   }
   async function register(
-    client: TagClient,
+    tagClient: TagClient,
     authKey: string,
-    options: {
+    registerOptions: {
       tags?: string[];
       routes?: string[];
       rotate?: boolean;
       succeeds?: boolean;
     } = {},
   ) {
-    own(client.container);
+    own(tagClient.container);
     const result = Bun.spawn(
       [
         "docker",
         "exec",
         "-i",
-        client.container,
+        tagClient.container,
         "sh",
         "-c",
         'read -r key; exec tailscale up --reset --auth-key="$key" --login-server=http://headscale:8080 --hostname="$1" --advertise-tags="$2" --advertise-routes="$3" --accept-dns=false --timeout=15s "$4"',
         "sh",
-        client.name,
-        (options.tags ?? []).join(","),
-        (options.routes ?? []).join(","),
-        options.rotate ? "--force-reauth" : "--accept-routes=false",
+        tagClient.name,
+        (registerOptions.tags ?? []).join(","),
+        (registerOptions.routes ?? []).join(","),
+        registerOptions.rotate ? "--force-reauth" : "--accept-routes=false",
       ],
       {
         cwd: root,
@@ -573,7 +573,7 @@ export async function createTagLifecycleFixture(
       new Response(result.stderr).text(),
       result.exited,
     ]);
-    if (options.succeeds !== false)
+    if (registerOptions.succeeds !== false)
       assert.equal(
         code,
         0,
@@ -585,15 +585,15 @@ export async function createTagLifecycleFixture(
       diagnostic: tagLifecycleDiagnostics(`${output}\n${errors}`, secrets),
     };
   }
-  function reregister(client: TagClient, authKey: string) {
-    own(client.container);
+  function reregister(tagClient: TagClient, authKey: string) {
+    own(tagClient.container);
     // Start replaces the official daemon's control client without LoginInteractive, preserving NodeKey.
     const result = Bun.spawnSync(
       [
         "docker",
         "exec",
         "-i",
-        client.container,
+        tagClient.container,
         "tailscale",
         "debug",
         "localapi",
@@ -616,23 +616,23 @@ export async function createTagLifecycleFixture(
     );
   }
   async function login(
-    client: TagClient,
+    tagClient: TagClient,
     tags: string[] = [],
     routes: string[] = [],
   ) {
-    own(client.container);
+    own(tagClient.container);
     const child = Bun.spawn(
       [
         "docker",
         "exec",
-        client.container,
+        tagClient.container,
         "tailscale",
         "up",
         "--reset",
         "--force-reauth",
         "--auth-key=",
         "--login-server=http://headscale:8080",
-        `--hostname=${client.name}`,
+        `--hostname=${tagClient.name}`,
         `--advertise-tags=${tags.join(",")}`,
         `--advertise-routes=${routes.join(",")}`,
         "--accept-dns=false",
@@ -668,11 +668,14 @@ export async function createTagLifecycleFixture(
       const authId = output.match(/hskey-authreq-[\w-]+/)?.[0];
       assert.ok(
         authId,
-        "Official client must expose a one-time registration request",
+        "Official tagClient must expose a one-time registration request",
       );
       secrets.push(authId);
       const url = output.match(/https?:\/\/[^\s]*hskey-authreq-[\w-]+/)?.[0];
-      assert.ok(url, "Official client must retain the public registration URL");
+      assert.ok(
+        url,
+        "Official tagClient must retain the public registration URL",
+      );
       return {
         authId,
         url,
@@ -686,21 +689,24 @@ export async function createTagLifecycleFixture(
       throw error;
     }
   }
-  function registrationNodeKeys(client: TagClient, since?: string): string[] {
-    own(client.container);
+  function registrationNodeKeys(
+    tagClient: TagClient,
+    since?: string,
+  ): string[] {
+    own(tagClient.container);
     // Extract only public request-key fingerprints, never authentication material from client logs.
     const log = docker(
       "logs",
       ...(since ? ["--since", since] : []),
-      client.container,
+      tagClient.container,
     );
     return [...log.matchAll(/RegisterReq: onode=\S* node=(\S+) fup=/g)].map(
       (match) => match[1],
     );
   }
-  function stop(client: TagClient) {
-    own(client.container);
-    docker("stop", "--time", "2", client.container);
+  function stop(tagClient: TagClient) {
+    own(tagClient.container);
+    docker("stop", "--time", "2", tagClient.container);
   }
   function events(since: string): Record<string, unknown>[] {
     own(headscale);
@@ -715,8 +721,8 @@ export async function createTagLifecycleFixture(
       });
   }
   async function reset() {
-    for (const login of logins) login.kill();
-    await Promise.all([...logins].map((login) => login.exited));
+    for (const loginProcess of logins) loginProcess.kill();
+    await Promise.all([...logins].map((loginProcess) => loginProcess.exited));
     for (const item of clients.values()) {
       own(item.container);
       docker("rm", "-fv", item.container);

@@ -1,10 +1,31 @@
 {
+  "ignorePatterns": ["reports/**"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
   "rules": {
     "typescript/consistent-type-assertions": [
       "error",
       { "assertionStyle": "never" }
     ],
     "typescript/no-explicit-any": "error",
+    "no-await-in-loop": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/require-post-message-target-origin": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    // The rule suggests Object.assign, which this project bans; object spread is the chosen form.
+    "oxc/no-map-spread": "off",
+    "no-underscore-dangle": [
+      "error",
+      { "allow": ["_getBlockers", "_option", "__resetForTest"] }
+    ],
+    // These stubs must be constructible but only throw; they are not static-only utility classes.
+    "typescript/no-extraneous-class": [
+      "error",
+      { "allowConstructorOnly": true }
+    ],
     "no-restricted-properties": [
       "error",
       {
@@ -53,5 +74,15 @@
         "message": "Use a typed fixture or vi.stubGlobal instead of reading a property descriptor."
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/components/ui/**"],
+      "rules": { "no-shadow": "off" }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": { "no-underscore-dangle": "off" }
+    }
+  ]
 }

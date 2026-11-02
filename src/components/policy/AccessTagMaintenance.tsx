@@ -440,7 +440,9 @@ export default function AccessTagMaintenance({
           <h3 className="font-medium">{copy.policyObservedKeys}</h3>
           {relevantKeys.map((entry) => {
             const { id } = entry;
-            const key = snapshot.preAuthKeys.find((key) => key.id === id);
+            const key = snapshot.preAuthKeys.find(
+              (candidate) => candidate.id === id,
+            );
             return (
               <div
                 key={id}

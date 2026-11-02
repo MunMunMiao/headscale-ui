@@ -35,14 +35,14 @@ function normalizeForCompare(input: Record<string, unknown>) {
   for (const key of Object.keys(clone)) {
     const value = clone[key];
     if (Array.isArray(value)) {
-      clone[key] = [...value].sort((a, b) =>
+      clone[key] = [...value].toSorted((a, b) =>
         JSON.stringify(a).localeCompare(JSON.stringify(b)),
       );
     } else if (value && typeof value === "object") {
       clone[key] = Object.fromEntries(
         Object.entries(value).map(([k, v]) => [
           k,
-          Array.isArray(v) ? [...v].sort() : v,
+          Array.isArray(v) ? [...v].toSorted() : v,
         ]),
       );
     }

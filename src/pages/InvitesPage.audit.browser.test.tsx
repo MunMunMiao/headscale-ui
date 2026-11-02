@@ -46,13 +46,13 @@ async function setup(
   const writes: Array<{ path: string; body: unknown }> = [];
   const transport: FetchHandle = async (input, init) => {
     const request = input instanceof Request ? input : new Request(input, init);
-    const path = new URL(request.url).pathname;
+    const requestPath = new URL(request.url).pathname;
     if (request.method === "POST") {
-      writes.push({ path, body: await request.json() });
+      writes.push({ path: requestPath, body: await request.json() });
       return Response.json({ message: "Creation refused" }, { status: 400 });
     }
-    if (readHold && path === "/api/v1/preauthkey") await readHold;
-    if (readFailure && path === "/api/v1/preauthkey") {
+    if (readHold && requestPath === "/api/v1/preauthkey") await readHold;
+    if (readFailure && requestPath === "/api/v1/preauthkey") {
       return Response.json(
         { message: "Identity read failed" },
         { status: 500 },
@@ -67,7 +67,7 @@ async function setup(
       "/api/v1/apikey": { apiKeys: [] },
       "/api/v1/policy": backend.policy,
     };
-    return Response.json(reads[path]);
+    return Response.json(reads[requestPath]);
   };
   const session = await prepareTestSession(transport);
   await setLocale("en-US");

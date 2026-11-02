@@ -14,8 +14,8 @@ import DevicesPage from "./DevicesPage";
 // Base UI caches platform detection on import. Emulate Android before importing the UI,
 // including UA client hints used by development builds, not only a narrow desktop viewport.
 await vi.hoisted(async () => {
-  const { cdp } = await import("vitest/browser");
-  await cdp().send("Emulation.setUserAgentOverride", {
+  const { cdp: hoistedCdp } = await import("vitest/browser");
+  await hoistedCdp().send("Emulation.setUserAgentOverride", {
     userAgent:
       "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36",
     platform: "Android",
@@ -29,14 +29,16 @@ await vi.hoisted(async () => {
       mobile: true,
     },
   });
-  await cdp().send("Emulation.setTouchEmulationEnabled", {
+  await hoistedCdp().send("Emulation.setTouchEmulationEnabled", {
     enabled: true,
     maxTouchPoints: 5,
   });
 });
 
 afterAll(async () => {
-  await cdp().send("Emulation.setTouchEmulationEnabled", { enabled: false });
+  await cdp().send("Emulation.setTouchEmulationEnabled", {
+    enabled: false,
+  });
   await cdp().send("Emulation.setUserAgentOverride", { userAgent: "" });
   await cdp().send("Emulation.clearDeviceMetricsOverride");
   await page.viewport(1366, 900);
@@ -109,7 +111,11 @@ async function press(testId: string, input: "virtual" | "pointer" | "touch") {
       touchPoints: [],
     });
   } else {
-    await cdp().send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await cdp().send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x,
+      y,
+    });
     await cdp().send("Input.dispatchMouseEvent", {
       type: "mousePressed",
       x,

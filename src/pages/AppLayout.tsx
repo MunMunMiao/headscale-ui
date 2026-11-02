@@ -905,26 +905,26 @@ function AppLayoutContent() {
                 data-testid="header-navigation"
                 dir={meta.dir}
               >
-                {productSections.map((section) => (
+                {productSections.map((navSection) => (
                   <Link
-                    key={section}
-                    to={`/${section}`}
-                    data-testid={`section-${section}`}
+                    key={navSection}
+                    to={`/${navSection}`}
+                    data-testid={`section-${navSection}`}
                     aria-current={
-                      activeSection === section ? "page" : undefined
+                      activeSection === navSection ? "page" : undefined
                     }
                     className={cn(
                       "inline-flex h-9 flex-none items-center gap-1.5 whitespace-nowrap px-3 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                      activeSection === section
+                      activeSection === navSection
                         ? "font-semibold text-primary"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {createElement(sectionIcons[section], {
+                    {createElement(sectionIcons[navSection], {
                       className: "h-4 w-4",
                       "aria-hidden": true,
                     })}
-                    {copy.nav[section]}
+                    {copy.nav[navSection]}
                   </Link>
                 ))}
               </nav>

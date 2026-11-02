@@ -62,21 +62,22 @@ async function setup({
   const session = await prepareTestSession(transport);
   await setLocale("en-US");
   const keyEpoch = session.profiles.getSnapshot().version?.keyEpoch;
-  for (const profile of profiles) {
-    const credentialVersion = profile.credentialVersion ?? "fixture-credential";
+  for (const storedProfile of profiles) {
+    const credentialVersion =
+      storedProfile.credentialVersion ?? "fixture-credential";
     const apiKey =
-      profile.credentialKind === "unreadable"
+      storedProfile.credentialKind === "unreadable"
         ? { v: 99 }
-        : profile.credentialKind === "legacy-plaintext"
+        : storedProfile.credentialKind === "legacy-plaintext"
           ? "isolated-legacy-key"
           : await encryptProfileKey({
-              profileId: profile.id,
-              canonicalBaseUrl: profile.baseUrl,
+              profileId: storedProfile.id,
+              canonicalBaseUrl: storedProfile.baseUrl,
               credentialVersion,
               apiKey: "isolated-key",
               password: "server password",
             });
-    const { credentialKind: _kind, ...fields } = profile;
+    const { credentialKind: _kind, ...fields } = storedProfile;
     await idbPut("profiles", {
       ...fields,
       keyEpoch,

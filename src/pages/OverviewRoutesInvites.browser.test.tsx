@@ -155,7 +155,9 @@ async function setup(path = "/", tweak?: (backend: HeadscaleSnapshot) => void) {
       request.method === "POST" &&
       url.pathname === "/api/v1/preauthkey/expire"
     ) {
-      const key = backend.preAuthKeys.find((key) => key.id === body.id);
+      const key = backend.preAuthKeys.find(
+        (candidate) => candidate.id === body.id,
+      );
       if (!key) throw new Error("Unknown fixture key");
       key.expiration = "2000-01-01T00:00:00Z";
       return Response.json({});

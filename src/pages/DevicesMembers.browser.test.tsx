@@ -334,7 +334,7 @@ function sectionRows(testid: string) {
   return Array.from(
     document.querySelectorAll(`[data-testid="${testid}"]`),
     (row) => String(row.textContent),
-  ).sort();
+  ).toSorted();
 }
 async function deviceAction(action: string, id = "1") {
   await page.getByTestId(`machine-actions-trigger-${id}`).click();
@@ -2122,7 +2122,7 @@ test("nodes owned by nobody or by the hidden tagged-devices user stay out of mem
     Array.from(
       document.querySelectorAll('[data-testid^="member-device-tag-"]'),
       (button) => button.getAttribute("data-testid"),
-    ).sort(),
+    ).toSorted(),
   ).toEqual(["member-device-tag-alice-1", "member-device-tag-bob-2"]);
 });
 

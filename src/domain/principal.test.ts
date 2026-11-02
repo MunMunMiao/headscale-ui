@@ -143,7 +143,7 @@ describe("Headscale 0.29.4 identity resolution", () => {
     expect(userMatchesPolicyValue(trailingAt, "alice@@")).toBe(true);
     expect(userMatchesPolicyValue(alice, "alice@@")).toBe(false);
     expect(
-      userPickerOptionValues([alice, trailingAt], ["alice@"]).sort(),
+      userPickerOptionValues([alice, trailingAt], ["alice@"]).toSorted(),
     ).toEqual(["alice@@"]);
   });
 

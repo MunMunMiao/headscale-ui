@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 async function saved() {
   const f = await profilesFixture(cleanup);

@@ -31,7 +31,10 @@ function assertSingleCurrentServer(
 
 async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
   return page.evaluate(
-    ({ workerUrl, protocolVersion }) =>
+    ({
+      workerUrl: targetWorkerUrl,
+      protocolVersion: expectedProtocolVersion,
+    }) =>
       new Promise<{
         type: string;
         workerId?: string;
@@ -39,7 +42,7 @@ async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
         snapshot?: PublicSessionSnapshot;
         error?: { kind: string };
       }>((resolve, reject) => {
-        const worker = new SharedWorker(workerUrl, {
+        const worker = new SharedWorker(targetWorkerUrl, {
           type: "module",
           name: "headscale-ui-session",
         });
@@ -55,7 +58,7 @@ async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
         };
         worker.port.postMessage({
           type: "hello",
-          protocolVersion,
+          protocolVersion: expectedProtocolVersion,
           storageVersion: 3,
           buildId: "deployment-compatible-page",
           ownerTabId: "deployment-protocol-probe",

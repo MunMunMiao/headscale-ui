@@ -46,7 +46,7 @@ test("starts exactly seven reads with one cancellation signal and assembles norm
   const started = [...f.calls];
   f.release.resolve();
   const snapshot = await result;
-  expect(started.map(({ endpoint }) => endpoint).sort()).toEqual([
+  expect(started.map(({ endpoint }) => endpoint).toSorted()).toEqual([
     "getPolicy",
     "health",
     "listApiKeys",
@@ -76,7 +76,7 @@ test("reads only the resources of the selected segment", async () => {
   expect(await fetchSegment(f.gateway, "policy")).toEqual({
     policy: f.snapshot.policy,
   });
-  expect(f.calls.map(({ endpoint }) => endpoint).sort()).toEqual([
+  expect(f.calls.map(({ endpoint }) => endpoint).toSorted()).toEqual([
     "getPolicy",
     "listApiKeys",
     "listPreAuthKeys",
@@ -227,7 +227,7 @@ test("the Worker dispatcher reads all seven resources through declared Defjs con
     expect(
       await fetchSnapshot(gateway, { signal: controller.signal }),
     ).toMatchObject(server.snapshot);
-    expect(server.requests.sort()).toEqual([
+    expect(server.requests.toSorted()).toEqual([
       "GET /api/v1/apikey",
       "GET /api/v1/health",
       "GET /api/v1/node",

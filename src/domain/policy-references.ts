@@ -238,9 +238,9 @@ function transform(
         break;
       }
       case "ssh":
-        extras[section] = entries(value, section, (value, path) => {
+        extras[section] = entries(value, section, (sectionValue, path) => {
           const entry = object(
-            value,
+            sectionValue,
             ["action", "src", "dst", "users", "checkPeriod", "acceptEnv"],
             path,
           );
@@ -258,8 +258,12 @@ function transform(
         });
         break;
       case "grants":
-        extras[section] = entries(value, section, (value, path) => {
-          const entry = object(value, ["src", "dst", "ip", "app", "via"], path);
+        extras[section] = entries(value, section, (sectionValue, path) => {
+          const entry = object(
+            sectionValue,
+            ["src", "dst", "ip", "app", "via"],
+            path,
+          );
           if (!entry) return null;
           optionalStrings(entry, ["ip"], path);
           if (
@@ -281,8 +285,12 @@ function transform(
         });
         break;
       case "nodeAttrs":
-        extras[section] = entries(value, section, (value, path) => {
-          const entry = object(value, ["target", "attr", "ipPool"], path);
+        extras[section] = entries(value, section, (sectionValue, path) => {
+          const entry = object(
+            sectionValue,
+            ["target", "attr", "ipPool"],
+            path,
+          );
           if (!entry) return null;
           optionalStrings(entry, ["attr", "ipPool"], path);
           const target = list(entry.target, `${path}.target`, "any", true);
@@ -290,8 +298,12 @@ function transform(
         });
         break;
       case "tests":
-        extras[section] = entries(value, section, (value, path) => {
-          const entry = object(value, ["src", "proto", "accept", "deny"], path);
+        extras[section] = entries(value, section, (sectionValue, path) => {
+          const entry = object(
+            sectionValue,
+            ["src", "proto", "accept", "deny"],
+            path,
+          );
           if (!entry) return null;
           if ("proto" in entry && typeof entry.proto !== "string")
             paths.push(`${path}.proto`);
@@ -321,9 +333,9 @@ function transform(
         });
         break;
       case "sshTests":
-        extras[section] = entries(value, section, (value, path) => {
+        extras[section] = entries(value, section, (sectionValue, path) => {
           const entry = object(
-            value,
+            sectionValue,
             ["src", "dst", "accept", "deny", "check"],
             path,
           );

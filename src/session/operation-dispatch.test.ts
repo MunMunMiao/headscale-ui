@@ -608,6 +608,8 @@ async function truncated() {
 test.each(writes)(
   "%s: a write that may have been applied is marked unknown",
   async (_id, make) => {
+    // A no-output endpoint never reads its success body, so only faults before the headers are observed.
+    if (make().endpoint === "deleteUser") return;
     const uncertain: [string, FaultCode, () => Promise<Upstream>][] = [
       ["truncated body", "NET_BODY_INCOMPLETE", truncated],
       [
@@ -617,10 +619,6 @@ test.each(writes)(
       ],
     ];
     for (const [name, code, respond] of uncertain) {
-      const noOutput = make().endpoint === "deleteUser";
-      // A no-output endpoint drains its success body without decoding it: a truncated body is a
-      // transport failure, while an unexpected but complete shape has no contract to violate.
-      if (noOutput && name !== "truncated body") continue;
       const { server, seen } = await respond();
       try {
         const result = await executeOperation(
@@ -631,7 +629,7 @@ test.each(writes)(
           ok: false,
           error: {
             kind: "api",
-            code: noOutput ? "NET_UNREACHABLE" : code,
+            code,
             outcome: "unknown",
           },
         });
@@ -642,6 +640,20 @@ test.each(writes)(
     }
   },
 );
+
+test("a no-output write never reads its success body", async () => {
+  const { server } = await truncated();
+  try {
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "deleteUser", input: { id: "1" } },
+        context(server.url.origin),
+      ),
+    ).toEqual({ ok: true, value: undefined });
+  } finally {
+    server.stop();
+  }
+});
 
 test.each([
   [

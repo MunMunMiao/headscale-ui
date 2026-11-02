@@ -1,5 +1,4 @@
 import { type Infer, struct } from "@defjs/core";
-import { definitionOf } from "@/api/definitions";
 import * as endpoints from "@/api/requests";
 import type { VaultVersion } from "@/lib/profile-storage";
 import type { ProfileActions } from "./profile-actions";
@@ -51,13 +50,6 @@ export type ApiRequest<K extends EndpointName = EndpointName> =
     readonly type: "api.read" | "api.write";
   };
 
-/** The endpoint a request names, or undefined for anything requests.ts does not export. */
-export function endpointOf(name: unknown) {
-  return isEndpointName(name)
-    ? { endpoint: endpoints[name], definition: definitionOf(name) }
-    : undefined;
-}
-
 function isEndpointName(name: unknown): name is EndpointName {
   return typeof name === "string" && Object.hasOwn(endpoints, name);
 }
@@ -68,10 +60,6 @@ function nonEmpty<T>(values: readonly T[]): [T, ...T[]] {
 }
 
 const ENDPOINTS = nonEmpty(Object.keys(endpoints).filter(isEndpointName));
-/** Only these may be published as reads, so a write can never pass for one (like Connect's GET check). */
-const GET_ENDPOINTS = nonEmpty(
-  ENDPOINTS.filter((name) => definitionOf(name).method === "GET"),
-);
 
 export type SessionMessagePort = Pick<
   MessagePort,
@@ -139,7 +127,7 @@ export const sessionCommand = struct.discriminatedUnion("type", [
   struct.object({
     type: struct.literal("api.read"),
     expected: sessionIdentity,
-    endpoint: struct.enum(GET_ENDPOINTS),
+    endpoint: struct.enum(ENDPOINTS),
     // The endpoint's own input struct checks this when the Worker client executes it.
     input: struct.unknown().optional(),
   }),

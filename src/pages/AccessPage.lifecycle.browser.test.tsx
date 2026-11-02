@@ -1109,8 +1109,8 @@ function deviceReturn(session: Session, managedTag: string) {
 }
 
 test("device-origin declaration rejects a policy-only compatible name without silently lowercasing it", async () => {
-  const { session, writes } = await setup(baseline, (session) =>
-    deviceReturn(session, "tag:Web1"),
+  const { session, writes } = await setup(baseline, (activeSession) =>
+    deviceReturn(activeSession, "tag:Web1"),
   );
   await expect.element(page.getByTestId("tag-name-input")).toHaveValue("Web1");
   await expect.element(page.getByTestId("tag-declare")).toBeDisabled();

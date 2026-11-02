@@ -20,7 +20,7 @@ beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 function value<T>(result: SessionResult<T>): T {

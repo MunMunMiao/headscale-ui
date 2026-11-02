@@ -213,7 +213,7 @@ export default mergeConfig(
             clients.set(name, client);
             await fixture.register(client, key.key, { routes });
             const node = (await fixture.nodes()).find(
-              (node) => node.name === name,
+              (candidate) => candidate.name === name,
             );
             if (!node)
               throw new Error(
@@ -234,7 +234,7 @@ export default mergeConfig(
             clients.set(name, client);
             await fixture.register(client, key);
             const node = (await fixture.nodes()).find(
-              (node) => node.name === name,
+              (candidate) => candidate.name === name,
             );
             if (!node)
               throw new Error(

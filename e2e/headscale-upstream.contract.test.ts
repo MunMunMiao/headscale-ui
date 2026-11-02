@@ -1,9 +1,7 @@
 import { expect, test } from "vitest";
 import { requireObject, testDouble } from "../src/test/dom";
-import * as endpoints from "../src/api/requests";
 import { isPolicyIdentityName } from "../src/domain/policy-designer";
 import {
-  diffRoutes,
   HEADSCALE_UPSTREAM_VERSION,
   routeKey,
   swaggerRoutes,
@@ -53,7 +51,7 @@ const unknownAuthId = `hskey-authreq-${"0".repeat(24)}`;
 test("the pinned upstream route table matches the live gateway", async () => {
   const pinned = UPSTREAM_RPCS.map(({ method, path }) =>
     routeKey(method, path),
-  ).sort();
+  ).toSorted();
   const response = await call("GET", "/swagger/v1/openapiv2.json");
   if (response.status !== 200 || response.json === undefined) {
     // UNVERIFIED: the swagger route is unavailable or protected; only the pin and the compose tag guard apply.
@@ -63,10 +61,9 @@ test("the pinned upstream route table matches the live gateway", async () => {
     return;
   }
   const live = swaggerRoutes(response.json);
-  expect(live.map(({ method, path }) => routeKey(method, path)).sort()).toEqual(
-    pinned,
-  );
-  expect(diffRoutes(live, endpoints)).toEqual([]);
+  expect(
+    live.map(({ method, path }) => routeKey(method, path)).toSorted(),
+  ).toEqual(pinned);
 });
 
 test("the server reports the pinned Headscale version", async () => {

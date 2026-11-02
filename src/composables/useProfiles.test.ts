@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 const fixture = () => profilesFixture(cleanup);
 
@@ -1075,8 +1075,8 @@ test.each(["decline", "throw"] as const)(
               f.profile,
               f.form.password,
               "replacement-password",
-              (result) => {
-                nextResults.push(result);
+              (nextResult) => {
+                nextResults.push(nextResult);
                 return true;
               },
             );
@@ -1224,14 +1224,14 @@ test("a delete reply older than a synchronized newer vault version never moves t
     .toBe(newest);
   release.resolve();
   await confirming;
-  expect(revisions).toEqual([...revisions].sort((a, b) => a - b));
+  expect(revisions).toEqual([...revisions].toSorted((a, b) => a - b));
   expect(f.profiles.getSnapshot().version?.profilesRevision).toBe(newest);
   expect(
     f.profiles
       .getSnapshot()
       .profiles.map((profile) => profile.name)
-      .sort(),
-  ).toEqual([kept.name, "Third"].sort());
+      .toSorted(),
+  ).toEqual([kept.name, "Third"].toSorted());
   expect(f.profiles.getSnapshot().pendingDeleteProfile).toBeNull();
 });
 

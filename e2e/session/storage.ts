@@ -191,8 +191,8 @@ async function releaseCrypto(page: Page, origin: string, index: number) {
   await workerCall(
     page,
     origin,
-    (index: number) => {
-      globalThis.deploymentStorageProbe?.crypto?.release(index);
+    (slot: number) => {
+      globalThis.deploymentStorageProbe?.crypto?.release(slot);
       return true;
     },
     index,
@@ -398,7 +398,11 @@ async function credentialMatches(
   secret: string,
 ) {
   return page.evaluate(
-    async ({ expected, name, password }) => {
+    async ({
+      expected,
+      name: credentialName,
+      password: credentialPassword,
+    }) => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open("headscale-ui");
         request.onsuccess = () => resolve(request.result);
@@ -413,7 +417,7 @@ async function credentialMatches(
         tx.onabort = () => reject(tx.error);
       });
       db.close();
-      const row = request.result.find((item) => item.name === name);
+      const row = request.result.find((item) => item.name === credentialName);
       if (!row || ![1, 2].includes(row.apiKey?.v)) return false;
       const bytes = (value: string) =>
         Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
@@ -433,7 +437,7 @@ async function credentialMatches(
       const kdf = legacy ? canary.result : row.apiKey.kdf;
       const imported = await crypto.subtle.importKey(
         "raw",
-        new TextEncoder().encode(password),
+        new TextEncoder().encode(credentialPassword),
         "PBKDF2",
         false,
         ["deriveKey"],
@@ -870,7 +874,7 @@ async function checkWriteRaces(
       await b.getByTestId("connect-submit").click();
       await b.getByTestId("profile-option-Second").waitFor();
       assert.deepEqual(
-        (await vaultSnapshot(b)).profiles.map((row) => row.name).sort(),
+        (await vaultSnapshot(b)).profiles.map((row) => row.name).toSorted(),
         ["First", "Second"],
       );
       assert.ok(await credentialMatches(b, connection, "First", password));
@@ -1056,7 +1060,7 @@ async function seedLegacy(
   );
   await page.goto(`${origin}/__legacy_probe__`);
   await page.evaluate(
-    async ({ baseUrl, apiKey, schema }) => {
+    async ({ baseUrl, apiKey, schema: schemaVersion }) => {
       const base64 = (value: Uint8Array) => btoa(String.fromCharCode(...value));
       const deviceKey = await crypto.subtle.generateKey(
         { name: "AES-GCM", length: 256 },
@@ -1134,7 +1138,7 @@ async function seedLegacy(
           future: { untouched: true },
         },
       ];
-      if (schema === 1)
+      if (schemaVersion === 1)
         for (const profile of profiles)
           Reflect.deleteProperty(profile, "keyEpoch");
       const canary = {
@@ -1143,7 +1147,7 @@ async function seedLegacy(
         iterations: 310000,
       };
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("headscale-ui", schema);
+        const request = indexedDB.open("headscale-ui", schemaVersion);
         request.onupgradeneeded = () => {
           request.result.createObjectStore("profiles", { keyPath: "id" });
           request.result.createObjectStore("keys");
@@ -1156,7 +1160,7 @@ async function seedLegacy(
       for (const profile of profiles) tx.objectStore("profiles").put(profile);
       tx.objectStore("keys").put(deviceKey, "device-key");
       tx.objectStore("meta").put(canary, "password-canary");
-      if (schema === 2)
+      if (schemaVersion === 2)
         tx.objectStore("meta").put(
           { v: 1, keyEpoch, profilesRevision: 4 },
           "vault-state",
@@ -1167,7 +1171,7 @@ async function seedLegacy(
       );
       tx.objectStore("meta").put({ future: ["preserve"] }, "legacy-extra");
       tx.objectStore("meta").put(
-        schema === 1
+        schemaVersion === 1
           ? "legacy-persistent"
           : { profileId: "legacy-persistent", operationId: "old-reference" },
         "active-profile-id",
@@ -1340,12 +1344,12 @@ async function checkDatabaseUpgrade(
       await current.addInitScript(() => {
         if (sessionStorage.getItem("deployment-aborted-migration")) return;
         sessionStorage.setItem("deployment-aborted-migration", "1");
-        const original = IDBObjectStore.prototype.put;
+        const nativePut = IDBObjectStore.prototype.put;
         IDBObjectStore.prototype.put = function (
           this: IDBObjectStore,
           ...args: Parameters<IDBObjectStore["put"]>
         ) {
-          const request: IDBRequest = Reflect.apply(original, this, args);
+          const request: IDBRequest = Reflect.apply(nativePut, this, args);
           const value: unknown = args[0];
           if (
             this.name === "profiles" &&
@@ -1353,7 +1357,7 @@ async function checkDatabaseUpgrade(
             typeof value === "object" &&
             "keyEpoch" in value
           ) {
-            IDBObjectStore.prototype.put = original;
+            IDBObjectStore.prototype.put = nativePut;
             request.addEventListener(
               "success",
               () => {
@@ -1407,7 +1411,7 @@ async function checkDatabaseUpgrade(
       );
       const activeReference = upgraded.active["active-profile-id"];
       assert.ok(activeReference && typeof activeReference === "object");
-      assert.deepEqual(Object.keys(activeReference).sort(), [
+      assert.deepEqual(Object.keys(activeReference).toSorted(), [
         "operationId",
         "profileId",
       ]);

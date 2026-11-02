@@ -1026,10 +1026,8 @@ const interrupted = [
 test.each(interrupted)(
   "a write ended by $name is unconfirmed, a read is not",
   async (scenario) => {
-    for (const [command, outcome] of [
-      ...writeCommands.map(
-        (command) => [command, { outcome: "unknown" }] as const,
-      ),
+    for (const [apiCommand, outcome] of [
+      ...writeCommands.map((entry) => [entry, { outcome: "unknown" }] as const),
       [readCommand, {}] as const,
     ]) {
       const f = fixture();
@@ -1041,10 +1039,10 @@ test.each(interrupted)(
         release: () => void;
       }>(await scenario.run(f, identity));
       const { interrupt, release } = scenarioResult;
-      const pending = f.session.execute(identity, command);
+      const pending = f.session.execute(identity, apiCommand);
       await interrupt?.();
       release();
-      expect(await pending, command.endpoint).toEqual({
+      expect(await pending, apiCommand.endpoint).toEqual({
         ok: false,
         error: { kind: scenario.kind, ...outcome },
       });

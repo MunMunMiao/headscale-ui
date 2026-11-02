@@ -1137,7 +1137,7 @@ test.each(["expire", "delete"] as const)(
 );
 
 test.each(["expire", "delete"] as const)(
-  "A16/A17/A34: a lost %s response keeps a list-verification notice while fresh retirement inventory remains available, without replaying or touching another key",
+  "A16/A17/A34: a dropped %s response after a 200 is confirmed while fresh retirement inventory remains available, without replaying or touching another key",
   async (action) => {
     const tag = `tag:stop-${action}`;
     await commands.tagFixtureSeedPolicy(JSON.stringify({ acls: allow }));
@@ -1168,33 +1168,28 @@ test.each(["expire", "delete"] as const)(
     await page.getByTestId("confirm-invite-action").click();
     await captured();
     await commands.tagNetworkRelease();
-    // A dropped response may remain pending until the transport timeout; wait for its notice.
+    // The 200 status is definitive; a dropped body on a no-output endpoint stays confirmed.
     await expect
       .poll(() => session.feedback.actionOutcome("invite-action")?.status, {
         timeout: 20_000,
       })
-      .toBe("unknown");
-    await expect
-      .element(page.getByTestId("invite-stop-notice"))
-      .toMatchTextContent(getProductCopy("en-US").inviteStopUnresolved);
-    await expect
-      .element(page.getByTestId("confirm-invite-action"))
-      .toBeEnabled();
-    const originalOutcome = structuredClone(
-      session.feedback.actionOutcome("invite-action"),
-    );
-    expect(
-      /hskey-auth-|hskey-authreq-|tskey-/.test(JSON.stringify(originalOutcome)),
-      "Stop diagnostics must not retain a credential or authentication URL",
-    ).toBe(false);
-    await page.getByTestId("invite-stop-verify").click();
+      .toBe("confirmed");
     await expect
       .element(page.getByTestId("confirm-invite-action"))
       .not.toBeInTheDocument();
+    await expect
+      .element(page.getByTestId("invite-stop-notice"))
+      .not.toBeInTheDocument();
+    expect(
+      /hskey-auth-|hskey-authreq-|tskey-/.test(
+        JSON.stringify(session.feedback.actionOutcome("invite-action")),
+      ),
+      "Stop diagnostics must not retain a credential or authentication URL",
+    ).toBe(false);
     await page.getByTestId("refresh-auth-keys").click();
     await expect.element(page.getByTestId("refresh-auth-keys")).toBeEnabled();
-    expect(session.feedback.actionOutcome("invite-action")).toEqual(
-      originalOutcome,
+    expect(session.feedback.actionOutcome("invite-action")?.status).toBe(
+      "confirmed",
     );
     const observed = await commands.tagFixtureSnapshot();
     const stopped = observed.keys.find((key) => key.id === target.id);
@@ -1245,11 +1240,10 @@ test.each(["expire", "delete"] as const)(
     await page.getByTestId(`maintenance-invites-${tag}`).click();
     await expect.poll(() => window.location.pathname).toBe("/invites");
     expect(new URLSearchParams(window.location.search).get("tag")).toBe(tag);
-    await expect.element(page.getByTestId("invite-stop-notice")).toBeVisible();
     await page.getByTestId("refresh-auth-keys").click();
     await expect.element(page.getByTestId("refresh-auth-keys")).toBeEnabled();
-    expect(session.feedback.actionOutcome("invite-action")).toEqual(
-      originalOutcome,
+    expect(session.feedback.actionOutcome("invite-action")?.status).toBe(
+      "confirmed",
     );
     await openRetirement();
     await expect

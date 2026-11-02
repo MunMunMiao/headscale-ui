@@ -261,11 +261,11 @@ test("a password change that fails after settings closed leaves its error for th
   const { session, profile } = await setup();
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
-  const decrypt = crypto.subtle.decrypt.bind(crypto.subtle);
+  const nativeDecrypt = crypto.subtle.decrypt.bind(crypto.subtle);
   vi.spyOn(crypto.subtle, "decrypt").mockImplementation(async (...args) => {
     started.resolve();
     await release.promise;
-    return decrypt(...args);
+    return nativeDecrypt(...args);
   });
   const screen = await renderSessionPage(
     session,
@@ -678,11 +678,11 @@ test("a busy password operation does not make the current form consume unrelated
   const { session, profile } = await setup();
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
-  const decrypt = crypto.subtle.decrypt.bind(crypto.subtle);
+  const nativeDecrypt = crypto.subtle.decrypt.bind(crypto.subtle);
   vi.spyOn(crypto.subtle, "decrypt").mockImplementationOnce(async (...args) => {
     started.resolve();
     await release.promise;
-    return decrypt(...args);
+    return nativeDecrypt(...args);
   });
   await renderSessionPage(
     session,

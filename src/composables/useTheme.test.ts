@@ -233,7 +233,7 @@ describe("useTheme", () => {
         await writeSetting("theme", mode, settings.captureSettingsWriteEpoch());
         const classes = stubDocument(osDark);
         applyStoredTheme();
-        expect([...classes].sort()).toEqual(expected);
+        expect([...classes].toSorted()).toEqual(expected);
       },
     );
 

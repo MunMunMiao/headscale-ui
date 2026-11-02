@@ -2260,7 +2260,7 @@ test("removing an accessor from a rule with several sources and destinations rea
     (acl: { src: string[]; dst: string[] }) =>
       acl.src.flatMap((src) => acl.dst.map((dst) => `${src} -> ${dst}`)),
   );
-  expect(pairs.sort()).toEqual([
+  expect(pairs.toSorted()).toEqual([
     "group:dev -> 10.0.0.0/8:22",
     "group:dev -> tag:server:22",
     "group:ops -> 10.0.0.0/8:22",
@@ -2565,7 +2565,7 @@ test("the member picker skips users without a principal and labels the rest by t
       .querySelectorAll("[data-testid]"),
     (option) => option.getAttribute("data-testid"),
   );
-  expect(options.sort()).toEqual([
+  expect(options.toSorted()).toEqual([
     "team-add-member-option-bob@",
     "team-add-member-option-carol@",
     "team-add-member-option-dave@example.com",
