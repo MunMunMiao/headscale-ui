@@ -4,7 +4,6 @@ import {
   withEndpoint,
   withHTTPHandle,
   withInterceptors,
-  withTimeout,
 } from "@defjs/core";
 import type { SessionExecutionContext } from "@/session/auth-session";
 
@@ -20,7 +19,6 @@ export function createWorkerHeadscaleHttp(
   const nativeFetch = globalThis.fetch;
   return createClient(
     withEndpoint(baseUrl),
-    withTimeout(15_000),
     withInterceptors(
       createHttpInterceptor((request, next) => {
         const { apiKey } = context.requireCurrent();

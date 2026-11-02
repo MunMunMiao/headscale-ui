@@ -1,6 +1,12 @@
 import type { AddressInfo } from "node:net";
 import { createServer } from "node:net";
-import type { FaultCode } from "@defjs/core";
+import {
+  createClient,
+  createHttpInterceptor,
+  type FaultCode,
+  withEndpoint,
+  withInterceptors,
+} from "@defjs/core";
 import { expect, test, vi } from "vitest";
 import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { SessionExecutionContext } from "./auth-session";
@@ -401,10 +407,26 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
   try {
     // The context points nowhere: only the injected client may serve the request.
     const current = context("http://127.0.0.1:1");
-    const http = createFixtureHttp({
-      baseUrl: server.url.origin,
-      apiKey: "fixture-connection-secret",
-    });
+    // A client is callable in Defjs 0.5, so an apply trap injects the same rejection a spy did.
+    let failure: unknown;
+    let calls = 0;
+    const http = new Proxy(
+      createFixtureHttp({
+        baseUrl: server.url.origin,
+        apiKey: "fixture-connection-secret",
+      }),
+      {
+        apply(target, thisArg, args) {
+          calls++;
+          if (failure !== undefined) {
+            const injected = failure;
+            failure = undefined;
+            throw injected;
+          }
+          return Reflect.apply(target, thisArg, args);
+        },
+      },
+    );
     const result = await executeOperation(
       { type: "api.read", endpoint: "listUsers", input: {} },
       current,
@@ -416,9 +438,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
 
-    const execute = vi
-      .spyOn(http, "execute")
-      .mockRejectedValueOnce(new Error("boom"));
+    failure = new Error("boom");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -429,7 +449,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "unavailable" },
     });
-    execute.mockRejectedValueOnce(new SessionFault("expired"));
+    failure = new SessionFault("expired");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -440,7 +460,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "expired" },
     });
-    execute.mockClear();
+    calls = 0;
     expect(
       await executeOperation(
         { type: "api.write", endpoint: "toString" } as never,
@@ -451,10 +471,28 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "invalid-request" },
     });
-    expect(execute).not.toHaveBeenCalled();
+    expect(calls).toBe(0);
   } finally {
     server.stop(true);
   }
+});
+
+test("a SessionFault thrown inside the client keeps its session kind", async () => {
+  const http = createClient(
+    withEndpoint("https://headscale.test"),
+    withInterceptors(
+      createHttpInterceptor(() => {
+        throw new SessionFault("expired");
+      }),
+    ),
+  );
+  expect(
+    await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context("https://headscale.test"),
+      http,
+    ),
+  ).toEqual({ ok: false, error: { kind: "expired" } });
 });
 
 const writes = [

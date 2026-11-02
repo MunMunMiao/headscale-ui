@@ -2,6 +2,12 @@ import { playwright } from "@vitest/browser-playwright";
 import { defineConfig, mergeConfig } from "vitest/config";
 import viteConfig from "./vite.config.ts";
 
+const toolchainTests = [
+  "scripts/check-i18n.test.ts",
+  "scripts/session-worker-build.test.ts",
+  "scripts/harness/test-resources.test.ts",
+];
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
@@ -30,6 +36,7 @@ export default mergeConfig(
           lines: 100,
         },
       },
+      // 按运行时分组，避免浏览器、密码派生和嵌套 CLI 同时争用资源。
       projects: [
         {
           extends: true,
@@ -37,7 +44,11 @@ export default mergeConfig(
             name: "unit",
             pool: "forks",
             include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
-            exclude: ["src/**/*.browser.test.ts", "src/test-utils/**"],
+            exclude: [
+              "src/**/*.browser.test.ts",
+              "src/test-utils/**",
+              ...toolchainTests,
+            ],
           },
         },
         {
@@ -53,6 +64,7 @@ export default mergeConfig(
           },
           test: {
             name: "browser",
+            sequence: { groupOrder: 1 },
             // The browser default is 15s, and a click only gets the time left in that budget.
             // A loaded CI runner then fails a scenario that finishes locally.
             testTimeout: 60_000,
@@ -67,6 +79,18 @@ export default mergeConfig(
               provider: playwright(),
               instances: [{ browser: "chromium" }],
             },
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: "toolchain",
+            pool: "forks",
+            include: toolchainTests,
+            sequence: { groupOrder: 2 },
+            maxWorkers: 1,
+            // 仅为工具链资源收尾预留预算；用例自身仍保留原有期限。
+            hookTimeout: 60_000,
           },
         },
       ],

@@ -92,6 +92,13 @@ export default mergeConfig(
           target: "http://127.0.0.1:1",
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/__headscale-tag-lifecycle/, ""),
+          configure(proxy) {
+            // A body dropped upstream must reach the browser as a broken response. Without this,
+            // the dev proxy logs the stream error but leaves the client connection half-open.
+            proxy.on("error", (_error, _request, response) => {
+              response.destroy();
+            });
+          },
         },
       },
     },

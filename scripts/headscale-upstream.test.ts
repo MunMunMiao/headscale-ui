@@ -39,7 +39,8 @@ test("reports an upstream route whose operation was removed", () => {
 test("reports an operation pointed at a path upstream does not serve", () => {
   const wrong = {
     ...endpoints,
-    checkPolicy: () => ({
+    // Defjs 0.5 keeps the HTTP definition on the operation, not on its return value.
+    checkPolicy: Object.assign(() => undefined, {
       definition: {
         operation: "policy.check",
         method: "POST",
@@ -104,7 +105,20 @@ test("rejects two operations that share one route", () => {
 
 test("rejects a registry entry that is not a request", () => {
   expect(() => diffRoutes([], { "version.get": 1 })).toThrow("not a function");
+  // Defjs 0.5 reads the attached definition, so each malformed shape must be attached to a function.
+  expect(() => diffRoutes([], { "version.get": () => undefined })).toThrow(
+    "no HTTP definition",
+  );
   expect(() =>
-    diffRoutes([], { "version.get": () => ({ definition: null }) }),
+    diffRoutes([], {
+      "version.get": Object.assign(() => undefined, { definition: null }),
+    }),
+  ).toThrow("no HTTP definition");
+  expect(() =>
+    diffRoutes([], {
+      "version.get": Object.assign(() => undefined, {
+        definition: { method: "GET" },
+      }),
+    }),
   ).toThrow("no HTTP definition");
 });

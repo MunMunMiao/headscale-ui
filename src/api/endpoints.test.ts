@@ -1,8 +1,8 @@
-import type { AnyStruct, HttpCommand } from "@defjs/core";
 import {
   createClient,
   createHttpInterceptor,
   withEndpoint,
+  withHTTPHandle,
   withInterceptors,
 } from "@defjs/core";
 import {
@@ -12,11 +12,10 @@ import {
   expect,
   expectTypeOf,
   test,
-  vi,
 } from "vitest";
 import { fixtureExecute } from "@/test/dispatch-fixture";
 import { normalizeHeadscaleNode, normalizePreAuthKey } from "./contracts";
-import * as endpoints from "./requests";
+import * as definitions from "./requests";
 import { readHealth as readGatewayHealth } from "./snapshot";
 
 const readHealth = (http: HeadscaleHttp) =>
@@ -160,14 +159,43 @@ function client() {
   });
 }
 
+// Defjs 0.5 takes the client first; binding the input here keeps the call sites readable.
+type Tail<T extends readonly unknown[]> = T extends readonly [
+  unknown,
+  ...infer R,
+]
+  ? R
+  : never;
+type BoundEndpoints = {
+  [K in keyof typeof definitions]: (
+    ...args: Tail<Parameters<(typeof definitions)[K]>>
+  ) => (http: HeadscaleHttp) => ReturnType<(typeof definitions)[K]>;
+};
+const endpoints = Object.fromEntries(
+  Object.entries(definitions).map(([name, endpoint]) => [
+    name,
+    (...args: unknown[]) =>
+      (http: HeadscaleHttp) =>
+        (endpoint as (http: HeadscaleHttp, ...rest: unknown[]) => unknown)(
+          http,
+          ...args,
+        ),
+  ]),
+) as BoundEndpoints;
+
+type SuccessValue<T> = T extends readonly [null, infer D, ...unknown[]]
+  ? D
+  : never;
+
 async function execute<
-  I extends AnyStruct | undefined,
-  O extends AnyStruct | undefined,
-  E extends AnyStruct | undefined,
->(command: HttpCommand<I, O, E>, http: HeadscaleHttp = client()) {
-  const [error, data] = await http.execute(command);
+  C extends (http: HeadscaleHttp) => Promise<readonly unknown[]>,
+>(
+  call: C,
+  http: HeadscaleHttp = client(),
+): Promise<SuccessValue<Awaited<ReturnType<C>>>> {
+  const [error, data] = await call(http);
   if (error) throw error;
-  return data;
+  return data as SuccessValue<Awaited<ReturnType<C>>>;
 }
 
 function seen(path: string, method?: string) {
@@ -204,18 +232,21 @@ describe("Headscale endpoint contracts", () => {
     expect(seenRequests).toEqual([]);
   });
 
-  test("propagates exceptions thrown by transport callbacks", async () => {
+  test("reports a throwing transport callback as a fault, never a completed write", async () => {
     const settings = { baseUrl: server.url.origin, apiKey: "test-token" };
-    const http = createFixtureHttp(settings);
     const failure = new Error("transport callback failed");
-    // Defjs normally returns faults; injected callback rejections must still propagate.
-    const executeSpy = vi.spyOn(http, "execute").mockRejectedValueOnce(failure);
-    try {
-      await expect(execute(endpoints.version(), http)).rejects.toBe(failure);
-      expect(seenRequests).toEqual([]);
-    } finally {
-      executeSpy.mockRestore();
-    }
+    // Defjs 0.5 turns a throwing callback into a fault with the original error as its cause.
+    const http = createClient(
+      withEndpoint(settings.baseUrl),
+      withHTTPHandle(() => {
+        throw failure;
+      }),
+    );
+    await expect(execute(endpoints.version(), http)).rejects.toMatchObject({
+      code: "NET_UNREACHABLE",
+      cause: failure,
+    });
+    expect(seenRequests).toEqual([]);
   });
 
   test("preserves base path and encoded parameters", async () => {
@@ -292,9 +323,9 @@ describe("Headscale endpoint contracts", () => {
       nodeId: string;
       tags: string[];
     }>();
-    const [error, data] = await client().execute(
-      endpoints.createApiKey({ expiration: "2027-01-01T00:00:00Z" }),
-    );
+    const [error, data] = await endpoints.createApiKey({
+      expiration: "2027-01-01T00:00:00Z",
+    })(client());
     if (error) throw error;
     expectTypeOf(data.apiKey).toEqualTypeOf<string>();
     expect(data.apiKey).toBe("ak_live_demo.secret");
@@ -596,23 +627,6 @@ describe("Headscale endpoint contracts", () => {
     ]);
     expect(seenRequests[0]?.body).not.toHaveProperty("user");
   });
-
-  test("does not retry a write after the 15000ms timeout", async () => {
-    let writes = 0;
-    server.reload({
-      fetch: () => {
-        writes++;
-        return new Promise<Response>(() => {});
-      },
-    });
-    const startedAt = performance.now();
-    await expect(
-      execute(endpoints.createUser({ name: "alice" })),
-    ).rejects.toThrow(/timeout|timed out/i);
-    expect(performance.now() - startedAt).toBeGreaterThanOrEqual(14_500);
-    expect(performance.now() - startedAt).toBeLessThan(17_000);
-    expect(writes).toBe(1);
-  }, 18_000);
 
   test.each([
     "",

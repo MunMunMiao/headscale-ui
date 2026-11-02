@@ -1,4 +1,5 @@
-import type { FaultCode } from "@defjs/core";
+import type { FaultCode, FaultOf, Infer } from "@defjs/core";
+import type { rpcStatus } from "@/api/contracts";
 import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
 import { redactDiagnosticData } from "@/api/operation-log";
 import { type SessionExecutionContext, SessionFault } from "./auth-session";
@@ -9,6 +10,18 @@ import {
   endpointOf,
 } from "./protocol";
 import type { SessionResult } from "./types";
+
+type HeadscaleFault = FaultOf<Infer<typeof rpcStatus>>;
+
+/**
+ * Defjs reports a throwing interceptor or transport as a fault whose cause is the original error.
+ * A `SessionFault` on that chain still means the session failed, not that the server did.
+ */
+function sessionFaultOf(error: unknown): SessionFault | undefined {
+  for (let cause = error; cause instanceof Error; cause = cause.cause)
+    if (cause instanceof SessionFault) return cause;
+  return undefined;
+}
 
 // Faults after which a write may have been applied without a usable answer.
 const UNCERTAIN: ReadonlySet<FaultCode> = new Set<FaultCode>([
@@ -31,20 +44,22 @@ export async function executeOperation<K extends EndpointName>(
   const endpoint = endpointOf(command.endpoint);
   if (!endpoint) return { ok: false, error: { kind: "invalid-request" } };
   try {
-    const client =
+    const client = (
       http ??
       createWorkerHeadscaleHttp(context, {
-        readUnreadBody:
-          endpoint("input" in command ? command.input : undefined).definition
-            .output === undefined,
-      });
-    const [fault, value] = await client.execute(
-      endpoint("input" in command ? command.input : undefined),
-      { signal: context.signal },
-    );
+        readUnreadBody: endpoint.definition.output === undefined,
+      })
+    )({ signal: context.signal });
+    const [fault, value] = (await endpoint(
+      client,
+      "input" in command ? command.input : undefined,
+    )) as [HeadscaleFault, undefined] | [null, unknown];
     const { apiKey } = context.requireCurrent();
     // defjs decoded the body against this endpoint's output contract.
     if (!fault) return { ok: true, value: value as ApiOutput<K> };
+    // A throwing interceptor or transport arrives as a fault; a session failure is still one.
+    const sessionFault = sessionFaultOf(fault);
+    if (sessionFault) return { ok: false, error: { kind: sessionFault.kind } };
     const status = "status" in fault ? fault.status : undefined;
     const uncertain =
       GATEWAY_STATUS.has(status ?? 0) ||
@@ -68,7 +83,7 @@ export async function executeOperation<K extends EndpointName>(
     return {
       ok: false,
       error: {
-        kind: error instanceof SessionFault ? error.kind : "unavailable",
+        kind: sessionFaultOf(error)?.kind ?? "unavailable",
       },
     };
   }

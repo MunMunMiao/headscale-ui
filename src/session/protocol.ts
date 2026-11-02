@@ -1,11 +1,4 @@
-import {
-  type AnyStruct,
-  type HttpCommand,
-  type Infer,
-  type RequestSuccessData,
-  struct,
-} from "@defjs/core";
-import type { rpcStatus } from "@/api/contracts";
+import { type AnyStruct, type Client, type Infer, struct } from "@defjs/core";
 import * as endpoints from "@/api/requests";
 import type { VaultVersion } from "@/lib/profile-storage";
 import type { ProfileActions } from "./profile-actions";
@@ -23,19 +16,30 @@ import {
 type Endpoints = typeof endpoints;
 /** An export of src/api/requests.ts; the Worker runs that endpoint with its own client. */
 export type EndpointName = keyof Endpoints;
+
+/** An operation's parameters are `[client]` or `[client, input?]`; only the input crosses the port. */
+type EndpointInput<T extends readonly unknown[]> = T extends {
+  readonly length: 1;
+}
+  ? never
+  : T[1];
+
 export type ApiCommand<K extends EndpointName = EndpointName> = {
-  [N in K]: Parameters<Endpoints[N]> extends []
+  [N in K]: EndpointInput<Parameters<Endpoints[N]>> extends never
     ? { readonly endpoint: N }
-    : { readonly endpoint: N; readonly input: Parameters<Endpoints[N]>[0] };
+    : {
+        readonly endpoint: N;
+        readonly input: EndpointInput<Parameters<Endpoints[N]>>;
+      };
 }[K];
-export type ApiOutput<K extends EndpointName> =
-  ReturnType<Endpoints[K]> extends HttpCommand<
-    infer _Input,
-    infer Output,
-    infer _Error
-  >
-    ? RequestSuccessData<Output>
-    : never;
+
+/** The success member of an operation's error-first tuple. */
+type SuccessData<T> = T extends readonly [null, infer Data, ...unknown[]]
+  ? Data
+  : never;
+export type ApiOutput<K extends EndpointName> = SuccessData<
+  Awaited<ReturnType<Endpoints[K]>>
+>;
 
 /**
  * A request as the Worker runs it. The page declares which kind it publishes, as tRPC's query and
@@ -46,26 +50,26 @@ export type ApiRequest<K extends EndpointName = EndpointName> =
     readonly type: "api.read" | "api.write";
   };
 
-type AnyEndpoint = (
-  input?: unknown,
-) => HttpCommand<
-  AnyStruct | undefined,
-  AnyStruct | undefined,
-  typeof rpcStatus
->;
+type AnyEndpoint = ((client: Client, input?: unknown) => Promise<unknown>) & {
+  readonly definition: {
+    readonly method: string;
+    readonly operation?: string;
+    readonly output?: AnyStruct | undefined;
+  };
+};
 
 /** The endpoint a request names, or undefined for anything requests.ts does not export. */
 export function endpointOf(name: unknown) {
   return typeof name === "string" && Object.hasOwn(endpoints, name)
     ? // the Worker serves every endpoint, so none can be shaken.
-      (endpoints[name as EndpointName] as AnyEndpoint)
+      (endpoints[name as EndpointName] as unknown as AnyEndpoint)
     : undefined;
 }
 
 const ENDPOINTS = Object.keys(endpoints) as [EndpointName, ...EndpointName[]];
 /** Only these may be published as reads, so a write can never pass for one (like Connect's GET check). */
 const GET_ENDPOINTS = ENDPOINTS.filter(
-  (name) => (endpointOf(name) as AnyEndpoint)().definition.method === "GET",
+  (name) => endpointOf(name)?.definition.method === "GET",
 ) as [EndpointName, ...EndpointName[]];
 
 export type SessionMessagePort = Pick<

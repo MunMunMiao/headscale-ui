@@ -72,7 +72,8 @@ export function definitionOf(
 ): RouteRef & { operation: string } {
   if (typeof request !== "function")
     throw new Error("Request registry entry is not a function");
-  const definition: unknown = request({}).definition;
+  const definition: unknown = (request as unknown as { definition?: unknown })
+    .definition;
   if (
     definition === null ||
     typeof definition !== "object" ||

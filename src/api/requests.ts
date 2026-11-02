@@ -1,4 +1,4 @@
-import { defineRequest, struct } from "@defjs/core";
+import { type AnyStruct, defineRequest, struct } from "@defjs/core";
 import {
   apiKeysResponse,
   changesResponse,
@@ -15,8 +15,22 @@ import {
   versionResponse,
 } from "./contracts";
 
+/**
+ * Defjs 0.5 executes an operation directly, so the HTTP metadata the Worker routes on stays on the
+ * operation itself. `endpointOf` reads it without running a request.
+ */
+function define<
+  const M extends string,
+  const P extends string,
+  TI extends AnyStruct | undefined = undefined,
+  TO extends AnyStruct | undefined = undefined,
+  TE extends AnyStruct | undefined = undefined,
+>(definition: Parameters<typeof defineRequest<M, P, TI, TO, TE>>[0]) {
+  return Object.assign(defineRequest(definition), { definition });
+}
+
 // A builder only places its input. Checks belong before a command is built (defjs struct.mdx).
-export const health = defineRequest({
+export const health = define({
   operation: "health.check",
   method: "GET",
   path: "/api/v1/health",
@@ -24,7 +38,7 @@ export const health = defineRequest({
   error: rpcStatus,
 });
 
-export const version = defineRequest({
+export const version = define({
   operation: "version.get",
   method: "GET",
   path: "/version",
@@ -32,7 +46,7 @@ export const version = defineRequest({
   error: rpcStatus,
 });
 
-export const listUsers = defineRequest({
+export const listUsers = define({
   operation: "user.list",
   method: "GET",
   path: "/api/v1/user",
@@ -46,7 +60,7 @@ export const listUsers = defineRequest({
   error: rpcStatus,
 });
 
-export const createUser = defineRequest({
+export const createUser = define({
   operation: "user.create",
   method: "POST",
   path: "/api/v1/user",
@@ -61,7 +75,7 @@ export const createUser = defineRequest({
   error: rpcStatus,
 });
 
-export const renameUser = defineRequest({
+export const renameUser = define({
   operation: "user.rename",
   method: "POST",
   path: "/api/v1/user/:id/rename/:newName",
@@ -71,7 +85,7 @@ export const renameUser = defineRequest({
   error: rpcStatus,
 });
 
-export const deleteUser = defineRequest({
+export const deleteUser = define({
   operation: "user.delete",
   method: "DELETE",
   path: "/api/v1/user/:id",
@@ -80,7 +94,7 @@ export const deleteUser = defineRequest({
   error: rpcStatus,
 });
 
-export const listPreAuthKeys = defineRequest({
+export const listPreAuthKeys = define({
   operation: "preauthkey.list",
   method: "GET",
   path: "/api/v1/preauthkey",
@@ -88,7 +102,7 @@ export const listPreAuthKeys = defineRequest({
   error: rpcStatus,
 });
 
-export const createPreAuthKey = defineRequest({
+export const createPreAuthKey = define({
   operation: "preauthkey.create",
   method: "POST",
   path: "/api/v1/preauthkey",
@@ -104,7 +118,7 @@ export const createPreAuthKey = defineRequest({
   error: rpcStatus,
 });
 
-export const expirePreAuthKey = defineRequest({
+export const expirePreAuthKey = define({
   operation: "preauthkey.expire",
   method: "POST",
   path: "/api/v1/preauthkey/expire",
@@ -113,7 +127,7 @@ export const expirePreAuthKey = defineRequest({
   error: rpcStatus,
 });
 
-export const deletePreAuthKey = defineRequest({
+export const deletePreAuthKey = define({
   operation: "preauthkey.delete",
   method: "DELETE",
   path: "/api/v1/preauthkey",
@@ -122,7 +136,7 @@ export const deletePreAuthKey = defineRequest({
   error: rpcStatus,
 });
 
-export const listNodes = defineRequest({
+export const listNodes = define({
   operation: "node.list",
   method: "GET",
   path: "/api/v1/node",
@@ -132,7 +146,7 @@ export const listNodes = defineRequest({
   error: rpcStatus,
 });
 
-export const getNode = defineRequest({
+export const getNode = define({
   operation: "node.get",
   method: "GET",
   path: "/api/v1/node/:nodeId",
@@ -142,7 +156,7 @@ export const getNode = defineRequest({
   error: rpcStatus,
 });
 
-export const registerNode = defineRequest({
+export const registerNode = define({
   operation: "node.register",
   method: "POST",
   path: "/api/v1/node/register",
@@ -152,7 +166,7 @@ export const registerNode = defineRequest({
   error: rpcStatus,
 });
 
-export const authRegister = defineRequest({
+export const authRegister = define({
   operation: "auth.register",
   method: "POST",
   path: "/api/v1/auth/register",
@@ -163,7 +177,7 @@ export const authRegister = defineRequest({
   error: rpcStatus,
 });
 
-export const authApprove = defineRequest({
+export const authApprove = define({
   operation: "auth.approve",
   method: "POST",
   path: "/api/v1/auth/approve",
@@ -172,7 +186,7 @@ export const authApprove = defineRequest({
   error: rpcStatus,
 });
 
-export const authReject = defineRequest({
+export const authReject = define({
   operation: "auth.reject",
   method: "POST",
   path: "/api/v1/auth/reject",
@@ -181,7 +195,7 @@ export const authReject = defineRequest({
   error: rpcStatus,
 });
 
-export const debugCreateNode = defineRequest({
+export const debugCreateNode = define({
   operation: "node.debugCreate",
   method: "POST",
   path: "/api/v1/debug/node",
@@ -196,7 +210,7 @@ export const debugCreateNode = defineRequest({
   error: rpcStatus,
 });
 
-export const renameNode = defineRequest({
+export const renameNode = define({
   operation: "node.rename",
   method: "POST",
   path: "/api/v1/node/:nodeId/rename/:newName",
@@ -206,7 +220,7 @@ export const renameNode = defineRequest({
   error: rpcStatus,
 });
 
-export const expireNode = defineRequest({
+export const expireNode = define({
   operation: "node.expire",
   method: "POST",
   path: "/api/v1/node/:nodeId/expire",
@@ -223,7 +237,7 @@ export const expireNode = defineRequest({
   error: rpcStatus,
 });
 
-export const deleteNode = defineRequest({
+export const deleteNode = define({
   operation: "node.delete",
   method: "DELETE",
   path: "/api/v1/node/:nodeId",
@@ -232,7 +246,7 @@ export const deleteNode = defineRequest({
   error: rpcStatus,
 });
 
-export const setTags = defineRequest({
+export const setTags = define({
   operation: "node.setTags",
   method: "POST",
   path: "/api/v1/node/:nodeId/tags",
@@ -248,7 +262,7 @@ export const setTags = defineRequest({
   error: rpcStatus,
 });
 
-export const setApprovedRoutes = defineRequest({
+export const setApprovedRoutes = define({
   operation: "node.setApprovedRoutes",
   method: "POST",
   path: "/api/v1/node/:nodeId/approve_routes",
@@ -264,7 +278,7 @@ export const setApprovedRoutes = defineRequest({
   error: rpcStatus,
 });
 
-export const backfillNodeIps = defineRequest({
+export const backfillNodeIps = define({
   operation: "node.backfillIps",
   method: "POST",
   path: "/api/v1/node/backfillips",
@@ -274,7 +288,7 @@ export const backfillNodeIps = defineRequest({
   error: rpcStatus,
 });
 
-export const listApiKeys = defineRequest({
+export const listApiKeys = define({
   operation: "apikey.list",
   method: "GET",
   path: "/api/v1/apikey",
@@ -282,7 +296,7 @@ export const listApiKeys = defineRequest({
   error: rpcStatus,
 });
 
-export const createApiKey = defineRequest({
+export const createApiKey = define({
   operation: "apikey.create",
   method: "POST",
   path: "/api/v1/apikey",
@@ -292,7 +306,7 @@ export const createApiKey = defineRequest({
   error: rpcStatus,
 });
 
-export const expireApiKey = defineRequest({
+export const expireApiKey = define({
   operation: "apikey.expire",
   method: "POST",
   path: "/api/v1/apikey/expire",
@@ -304,7 +318,7 @@ export const expireApiKey = defineRequest({
   error: rpcStatus,
 });
 
-export const deleteApiKey = defineRequest({
+export const deleteApiKey = define({
   operation: "apikey.delete",
   method: "DELETE",
   path: "/api/v1/apikey/:prefix",
@@ -313,7 +327,7 @@ export const deleteApiKey = defineRequest({
   error: rpcStatus,
 });
 
-export const getPolicy = defineRequest({
+export const getPolicy = define({
   operation: "policy.get",
   method: "GET",
   path: "/api/v1/policy",
@@ -321,7 +335,7 @@ export const getPolicy = defineRequest({
   error: rpcStatus,
 });
 
-export const setPolicy = defineRequest({
+export const setPolicy = define({
   operation: "policy.set",
   method: "PUT",
   path: "/api/v1/policy",
@@ -331,7 +345,7 @@ export const setPolicy = defineRequest({
   error: rpcStatus,
 });
 
-export const checkPolicy = defineRequest({
+export const checkPolicy = define({
   operation: "policy.check",
   method: "POST",
   path: "/api/v1/policy/check",

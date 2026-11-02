@@ -29,7 +29,7 @@ test("Worker authentication replaces a builder header with the bound session cre
         headers: { Authorization: "Bearer untrusted-builder-key" },
       }),
     });
-    expect((await client.execute(request()))[0]).toBeNull();
+    expect((await request(client))[0]).toBeNull();
     expect(seen).toHaveLength(1);
     expect(seen[0]?.get("authorization")).toBe("Bearer fixture-private-key");
     expect(
@@ -80,7 +80,7 @@ test.each(["expired", "stale"] as const)(
         input: struct.string(),
         builder: (body) => ({ body }),
       });
-      expect((await client.execute(request("payload")))[0]).not.toBeNull();
+      expect((await request(client, "payload"))[0]).not.toBeNull();
       expect(nativeCalls).toBe(0);
       expect(sent).toBe(0);
     } finally {
@@ -122,7 +122,7 @@ test("a broken successful body is not a completed write when the endpoint declar
       input: struct.object({ id: struct.string() }),
       builder: (input) => ({ body: input }),
     });
-    const [fault, value] = await client.execute(request({ id: "1" }));
+    const [fault, value] = await request(client, { id: "1" });
     expect(value).toBeUndefined();
     expect(fault).toMatchObject({ code: "NET_UNREACHABLE" });
   } finally {
@@ -160,7 +160,7 @@ test("a broken error body keeps the HTTP status of an unread endpoint", async ()
       method: "GET",
       path: "/api/v1/user",
     });
-    const [fault] = await client.execute(request());
+    const [fault] = await request(client);
     expect(fault).toMatchObject({ code: "HTTP_STATUS", status: 401 });
   } finally {
     vi.unstubAllGlobals();

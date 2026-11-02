@@ -6,7 +6,7 @@ test("requests.ts exports only request endpoints, each with its own operation id
   const operations = Object.keys(endpoints).map((name) => {
     const endpoint = endpointOf(name);
     expect(endpoint, name).toBeTypeOf("function");
-    return endpoint?.().definition.operation;
+    return endpoint?.definition.operation;
   });
   expect(new Set(operations).size).toBe(operations.length);
 });
