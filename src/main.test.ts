@@ -2,15 +2,18 @@ import { afterEach, expect, test, vi } from "vitest";
 import App from "./App";
 import ErrorScreen from "./components/ErrorScreen";
 
-const boundary = vi.hoisted(() => ({
-  render: vi.fn(),
-  prepare: vi.fn(),
-  reset: vi.fn(),
-  classToggles: [] as string[],
-  createRoot: vi.fn(),
-  status: "opening",
-  listener: () => {},
-}));
+const boundary = vi.hoisted(() => {
+  const classToggles: string[] = [];
+  return {
+    render: vi.fn(),
+    prepare: vi.fn(),
+    reset: vi.fn(),
+    classToggles,
+    createRoot: vi.fn(),
+    status: "opening",
+    listener: () => {},
+  };
+});
 vi.mock("react-dom/client", () => ({ createRoot: boundary.createRoot }));
 vi.mock("./bootstrap", () => ({
   prepareApplication: boundary.prepare,

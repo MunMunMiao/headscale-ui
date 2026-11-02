@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { requireObject, testDouble } from "../src/test/dom";
 import * as endpoints from "../src/api/requests";
 import { isPolicyIdentityName } from "../src/domain/policy-designer";
 import {
@@ -8,6 +9,10 @@ import {
   swaggerRoutes,
   UPSTREAM_RPCS,
 } from "./headscale-upstream";
+
+function jsonObject<T>(value: unknown): T {
+  return testDouble<T>(requireObject(value));
+}
 
 const baseUrl = process.env.HEADSCALE_E2E_URL?.replace(/\/$/, "");
 const apiKey =
@@ -77,8 +82,10 @@ test.each(["a", "1ops", "ops!", "a@@b"])(
     let userId: string | undefined;
     try {
       const created = await call("POST", "/api/v1/user", { name });
-      const user = (created.json as { user?: { id: string; name: string } })
-        ?.user;
+      const createdBody = jsonObject<{
+        user?: { id: string; name: string };
+      }>(created.json);
+      const user = createdBody.user;
       userId = user?.id;
       expect(created.status).toBe(200);
       expect(user?.name).toBe(name);
@@ -93,9 +100,8 @@ test.each(["a", "1ops", "ops!", "a@@b"])(
         `/api/v1/user/${userId}/rename/${encodeURIComponent(name)}`,
       );
       expect(renamed.status).toBe(200);
-      expect((renamed.json as { user?: { name: string } })?.user?.name).toBe(
-        name,
-      );
+      const renamedBody = jsonObject<{ user?: { name: string } }>(renamed.json);
+      expect(renamedBody.user?.name).toBe(name);
     } finally {
       if (userId)
         expect((await call("DELETE", `/api/v1/user/${userId}`)).status).toBe(
@@ -249,7 +255,8 @@ test("node.expire?disableExpiry=true clears the expiry and rejects a simultaneou
   const expiry = async () => {
     const node = await call("GET", `/api/v1/node/${nodeId}`);
     expect(node.status).toBe(200);
-    return (node.json as { node?: { expiry?: string } }).node?.expiry;
+    const body = jsonObject<{ node?: { expiry?: string } }>(node.json);
+    return body.node?.expiry;
   };
   // Zero-value timestamps count as "no expiry" for the UI; Date.parse(0001-01-01) is a large negative number.
   const isUnset = (value?: string) => !value || value.startsWith("0001-");
@@ -290,16 +297,17 @@ test("preauthkey.create accepts an owner-less tagged key and rejects one with ne
   });
   try {
     expect(created.status).toBe(200);
-    const key = (
-      created.json as {
-        preAuthKey?: { id?: string; user?: unknown; aclTags?: string[] };
-      }
-    ).preAuthKey;
+    const createdBody = jsonObject<{
+      preAuthKey?: { id?: string; user?: unknown; aclTags?: string[] };
+    }>(created.json);
+    const key = createdBody.preAuthKey;
     expect(key?.aclTags).toEqual(["tag:server"]);
     expect(key?.user ?? null).toBeNull();
   } finally {
-    const id = (created.json as { preAuthKey?: { id?: string } } | undefined)
-      ?.preAuthKey?.id;
+    const cleanupBody = jsonObject<{ preAuthKey?: { id?: string } }>(
+      created.json,
+    );
+    const id = cleanupBody.preAuthKey?.id;
     if (id)
       expect((await call("DELETE", `/api/v1/preauthkey?id=${id}`)).status).toBe(
         200,

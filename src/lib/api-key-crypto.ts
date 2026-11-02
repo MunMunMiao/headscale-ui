@@ -88,23 +88,43 @@ export function parsePasswordApiKeySecret(
 ): PasswordApiKeySecretV2 {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new VaultDataError();
-  const secret = value as Partial<PasswordApiKeySecretV2>;
+  const v = Reflect.get(value, "v");
+  const scheme = Reflect.get(value, "scheme");
+  const algorithm = Reflect.get(value, "algorithm");
+  const kdf = Reflect.get(value, "kdf");
+  const iv = Reflect.get(value, "iv");
+  const ct = Reflect.get(value, "ct");
+  const iterations =
+    kdf && typeof kdf === "object" ? Reflect.get(kdf, "iterations") : undefined;
   if (
-    secret.v !== 2 ||
-    secret.scheme !== "password" ||
-    secret.algorithm !== "AES-GCM-256" ||
-    !secret.kdf ||
-    secret.kdf.name !== "PBKDF2" ||
-    secret.kdf.hash !== "SHA-256" ||
-    !Number.isSafeInteger(secret.kdf.iterations) ||
-    secret.kdf.iterations < PROFILE_PBKDF2_ITERATIONS ||
-    secret.kdf.iterations > MAX_PBKDF2_ITERATIONS ||
-    profileBytes(secret.kdf.salt).length !== 32 ||
-    profileBytes(secret.iv).length !== 12 ||
-    profileBytes(secret.ct).length < 16
+    v !== 2 ||
+    scheme !== "password" ||
+    algorithm !== "AES-GCM-256" ||
+    !kdf ||
+    typeof kdf !== "object" ||
+    Reflect.get(kdf, "name") !== "PBKDF2" ||
+    Reflect.get(kdf, "hash") !== "SHA-256" ||
+    !Number.isSafeInteger(iterations) ||
+    iterations < PROFILE_PBKDF2_ITERATIONS ||
+    iterations > MAX_PBKDF2_ITERATIONS ||
+    profileBytes(Reflect.get(kdf, "salt")).length !== 32 ||
+    profileBytes(iv).length !== 12 ||
+    profileBytes(ct).length < 16
   )
     throw new VaultDataError();
-  return secret as PasswordApiKeySecretV2;
+  return {
+    v: 2,
+    scheme: "password",
+    algorithm: "AES-GCM-256",
+    kdf: {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      iterations,
+      salt: Reflect.get(kdf, "salt"),
+    },
+    iv,
+    ct,
+  };
 }
 
 function profileAdditionalData(
@@ -234,12 +254,12 @@ export async function openProfileKey(
 
 export function isEncryptedApiKey(value: unknown): value is ApiKeySecret {
   if (value === null || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const scheme = Reflect.get(value, "scheme");
   return (
-    v.v === 1 &&
-    (v.scheme === "device" || v.scheme === "password") &&
-    typeof v.iv === "string" &&
-    typeof v.ct === "string"
+    Reflect.get(value, "v") === 1 &&
+    (scheme === "device" || scheme === "password") &&
+    typeof Reflect.get(value, "iv") === "string" &&
+    typeof Reflect.get(value, "ct") === "string"
   );
 }
 
@@ -336,20 +356,24 @@ export async function verifyCanaryRecord(
 export function parseCanaryRecord(raw: unknown): CanaryRecord | null {
   if (raw === undefined || raw === null) return null;
   if (typeof raw !== "object") throw new VaultDataError();
-  const value = raw as Partial<CanaryRecord>;
+  const v = Reflect.get(raw, "v");
+  const iv = Reflect.get(raw, "iv");
+  const ct = Reflect.get(raw, "ct");
+  const salt = Reflect.get(raw, "salt");
+  const iterations = Reflect.get(raw, "iterations");
   if (
-    value.v !== 1 ||
-    typeof value.iv !== "string" ||
-    typeof value.ct !== "string" ||
-    typeof value.salt !== "string" ||
-    typeof value.iterations !== "number" ||
-    !Number.isSafeInteger(value.iterations) ||
-    value.iterations < 1 ||
-    value.iterations > MAX_PBKDF2_ITERATIONS
+    v !== 1 ||
+    typeof iv !== "string" ||
+    typeof ct !== "string" ||
+    typeof salt !== "string" ||
+    typeof iterations !== "number" ||
+    !Number.isSafeInteger(iterations) ||
+    iterations < 1 ||
+    iterations > MAX_PBKDF2_ITERATIONS
   ) {
     throw new VaultDataError();
   }
-  return value as CanaryRecord;
+  return { v: 1, iv, ct, salt, iterations };
 }
 
 export function canaryKeyParameters(record: CanaryRecord): {

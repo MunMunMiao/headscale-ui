@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { redactDiagnosticData } from "@/api/operation-log";
+import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import { ALL_SEGMENTS } from "@/api/snapshot";
 import type { SessionRequestOptions } from "@/session/auth-session";
 import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
@@ -103,7 +103,23 @@ function failureOutcome(
   };
 }
 
-function safeReplyError(command: ApiCommand, error: WorkerErrorDto): ApiError {
+function redactReplyError(
+  error: WorkerErrorDto,
+  secret: string,
+): WorkerErrorDto {
+  if (error.kind !== "api") return error;
+  const data = redactStatusData(error.data, secret);
+  return {
+    ...error,
+    message: redactDiagnosticData(error.message, secret),
+    ...(data === undefined ? {} : { data }),
+  };
+}
+
+function safeReplyError<K extends EndpointName>(
+  command: ApiCommand<K>,
+  error: WorkerErrorDto,
+): ApiError {
   const input = "input" in command ? command.input : undefined;
   const secret =
     input && "authId" in input
@@ -111,7 +127,7 @@ function safeReplyError(command: ApiCommand, error: WorkerErrorDto): ApiError {
       : input && "key" in input
         ? input.key
         : "";
-  const clean = redactDiagnosticData(
+  const clean = redactReplyError(
     error,
     typeof secret === "string" ? secret : "",
   );
@@ -185,7 +201,7 @@ export function createMutation(
             options?.signal ? { signal: options.signal } : undefined,
           );
           if (!reply.ok) {
-            const error = safeReplyError(command as ApiCommand, reply.error);
+            const error = safeReplyError(command, reply.error);
             outcome = failureOutcome(command.endpoint, error, dispatched);
             // Refresh once after a server answer or a lost response; never replay the write.
             if (

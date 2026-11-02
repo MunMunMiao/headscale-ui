@@ -6,14 +6,16 @@ export async function idbGet<T = unknown>(
   key: IDBValidKey,
 ): Promise<T | undefined> {
   const db = await openHeadscaleDb();
-  return (await db.get(store, key as string)) as T | undefined;
+  const get: Function = db.get;
+  return Reflect.apply(get, db, [store, key]);
 }
 
 export async function idbGetAll<T = unknown>(
   store: StoreNames<HeadscaleDb>,
 ): Promise<T[]> {
   const db = await openHeadscaleDb();
-  return (await db.getAll(store)) as T[];
+  const getAll: Function = db.getAll;
+  return Reflect.apply(getAll, db, [store]);
 }
 
 export async function idbPut(
@@ -23,10 +25,8 @@ export async function idbPut(
 ): Promise<void> {
   const db = await openHeadscaleDb();
   const tx = db.transaction(store, "readwrite");
-  if (store === "keys")
-    await tx.objectStore("keys").put(value as CryptoKey, key);
-  else if (store === "meta") await tx.objectStore("meta").put(value, key);
-  else await tx.objectStore("profiles").put(value);
+  const target = tx.objectStore(store);
+  Reflect.apply(target.put, target, [value, key]);
   await tx.done;
 }
 

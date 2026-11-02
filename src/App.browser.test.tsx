@@ -4,6 +4,7 @@ import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import { cleanup, render } from "vitest-browser-react";
+import { testDouble } from "@/test/dom";
 import { authenticateTestSession, prepareTestSession } from "@/test/session";
 import { createSessionHarness } from "@/test/session-host";
 import App from "./App";
@@ -512,7 +513,7 @@ test("an error thrown above the router is caught by the root boundary and logged
 test("the application router uses the shared recovery screen for every route error", () => {
   const router = createApplicationRouter(
     // Only the options object is inspected, so no session behaviour is needed.
-    {} as Session,
+    testDouble<Session>({}),
     createMemoryHistory({ initialEntries: ["/login"] }),
   );
   expect(router.options.defaultErrorComponent).toBe(ErrorScreen);

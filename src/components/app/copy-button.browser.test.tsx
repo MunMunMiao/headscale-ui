@@ -7,10 +7,10 @@ import { prepareTestSession, SessionTestProviders } from "@/test/session";
 import { CopyButton } from "./copy-button";
 
 const FAILED = "Copy failed. Select the text and copy it manually.";
-const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+const original = Reflect.getOwnPropertyDescriptor(navigator, "clipboard");
 afterEach(async () => {
   vi.useRealTimers();
-  if (original) Object.defineProperty(navigator, "clipboard", original);
+  if (original) Reflect.defineProperty(navigator, "clipboard", original);
   else Reflect.deleteProperty(navigator, "clipboard");
   await setLocale("en-US");
 });
@@ -18,7 +18,7 @@ afterEach(async () => {
 function stubClipboard(
   writeText: ((value: string) => Promise<void>) | undefined,
 ) {
-  Object.defineProperty(navigator, "clipboard", {
+  Reflect.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: writeText ? { writeText } : undefined,
   });

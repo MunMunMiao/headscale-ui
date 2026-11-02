@@ -56,13 +56,10 @@ await import(${JSON.stringify(join(root, "scripts/run-e2e.ts"))});
       .split("\n")
       .find((line) => line.startsWith("RUNNER_TRACE="));
     expect(traceLine, stdout + stderr).toBeDefined();
-    return {
-      code,
-      output: stdout + stderr,
-      trace: JSON.parse(
-        traceLine!.slice("RUNNER_TRACE=".length),
-      ) as RunnerTrace,
-    };
+    const trace: RunnerTrace = JSON.parse(
+      traceLine!.slice("RUNNER_TRACE=".length),
+    );
+    return { code, output: stdout + stderr, trace };
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

@@ -7,6 +7,7 @@ import { createMutation } from "@/composables/useMutation";
 import { i18n, setLocale, t } from "@/i18n";
 import { commonDescriptors, productDescriptors } from "@/i18n/descriptors";
 import { getProductCopy } from "@/i18n/product-copy";
+import { requireInstance } from "@/test/dom";
 import {
   authenticateTestSession,
   prepareTestSession,
@@ -15,6 +16,13 @@ import {
 import DevicesPage from "./DevicesPage";
 
 const copy = getProductCopy("en-US");
+
+function requestTags(body: unknown): string[] {
+  const value =
+    body && typeof body === "object" ? Reflect.get(body, "tags") : undefined;
+  if (!Array.isArray(value)) throw new Error("fixture request is missing tags");
+  return value.filter((tag): tag is string => typeof tag === "string");
+}
 const alice = {
   id: "1",
   name: "alice",
@@ -144,7 +152,7 @@ async function setup(
         tags: [],
         user: backend.users.find((user) => user.name === body.user),
       };
-      backend.nodes.push(node as (typeof backend.nodes)[number]);
+      backend.nodes.push(node);
       return Response.json({ node });
     }
     if (request.method === "POST" && url.pathname.startsWith("/api/v1/auth/"))
@@ -159,7 +167,7 @@ async function setup(
           url.pathname.split("/").at(-1) ?? "",
         );
       if (url.pathname.endsWith("/tags")) {
-        const tags = body.tags as string[];
+        const tags = requestTags(body);
         const owners =
           JSON.parse(backend.policy?.policy || "{}").tagOwners ?? {};
         if (
@@ -657,7 +665,7 @@ test.each(["rename", "expire", "remove"] as const)(
     const details = error.element().querySelector("details");
     expect(details?.open).toBe(false);
     const summary = error.getByText("Details", { exact: true });
-    (summary.element() as HTMLElement).focus();
+    requireInstance(summary.element(), HTMLElement).focus();
     await userEvent.keyboard("{Enter}");
     await expect
       .element(
@@ -897,8 +905,9 @@ test("a blocked native tags submission still adopts the opening refresh without 
     const input = page.getByTestId("node-tags-search");
     await expect.element(input).toBeDisabled();
     await expect.element(page.getByTestId("node-tags-confirm")).toBeDisabled();
-    (
-      page.getByTestId("node-tags-form").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("node-tags-form").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await userEvent.tab();
     expect(ctx.writes()).toEqual([]);
@@ -930,8 +939,9 @@ test("native submission of an unchanged machine name cannot send a redundant wri
     .element(page.getByTestId("rename-node-dialog-input"))
     .toHaveValue("laptop");
   await expect.element(page.getByTestId("rename-node-confirm")).toBeDisabled();
-  (
-    page.getByTestId("rename-node-form").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("rename-node-form").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await userEvent.tab();
   expect(ctx.writes()).toEqual([]);
@@ -983,8 +993,9 @@ test.each(["rename", "tags"] as const)(
         .element(page.getByTestId(`${prefix}-confirm`))
         .toHaveAttribute("aria-busy", "true");
       await expect.element(page.getByTestId(`${prefix}-cancel`)).toBeDisabled();
-      (
-        page.getByTestId(`${prefix}-form`).element() as HTMLFormElement
+      requireInstance(
+        page.getByTestId(`${prefix}-form`).element(),
+        HTMLFormElement,
       ).requestSubmit();
       await userEvent.tab();
       await userEvent.keyboard("{Escape}");
@@ -1033,9 +1044,10 @@ test.each(["rename", "tags"] as const)(
       await chooseTags("node-tags", ["tag:once"]);
       await page.getByTestId("node-tags-confirm").click();
     }
-    const form = page
-      .getByTestId(`${prefix}-form`)
-      .element() as HTMLFormElement;
+    const form = requireInstance(
+      page.getByTestId(`${prefix}-form`).element(),
+      HTMLFormElement,
+    );
     const release = ctx.holdWrites();
     try {
       if (kind === "rename") await userEvent.keyboard("{Enter}");
@@ -1107,8 +1119,9 @@ test.each(["type", "preferences"] as const)(
         await expect
           .element(page.getByTestId("add-device-next"))
           .toBeDisabled();
-        (
-          page.getByTestId("setup-device-step").element() as HTMLFormElement
+        requireInstance(
+          page.getByTestId("setup-device-step").element(),
+          HTMLFormElement,
         ).requestSubmit();
         await userEvent.tab();
         await expect
@@ -1149,8 +1162,9 @@ test("a pending external SSH decision blocks native approval without consuming t
     await expect
       .element(page.getByTestId("pending-node-key"))
       .toHaveAttribute("readonly");
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await userEvent.tab();
     await expect
@@ -1191,8 +1205,9 @@ test("registration without an eligible owner fails native validation while SSH r
   await expect
     .element(page.getByTestId("register-pending-node"))
     .toBeDisabled();
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect
     .element(page.getByTestId("pending-registration-user-error"))
@@ -1249,7 +1264,7 @@ test("an external login-server change updates the touched field and generated co
   const ctx = await setup();
   await generateKey();
   const input = page.getByTestId("setup-login-server");
-  const defaultUrl = (input.element() as HTMLInputElement).value;
+  const defaultUrl = requireInstance(input.element(), HTMLInputElement).value;
   await input.fill("https://draft.example.com/");
   await userEvent.tab();
   ctx.session.deviceSetup.setState({
@@ -1318,8 +1333,9 @@ test("after a failed SSH decision the wrong-domain link is reported by the field
     .not.toBeInTheDocument();
   await expect.element(page.getByTestId("approve-ssh-check")).toBeDisabled();
   await expect.element(page.getByTestId("reject-ssh-check")).toBeDisabled();
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await userEvent.tab();
   expect(ctx.writes()).toEqual([
@@ -1403,10 +1419,9 @@ test.each(["rename", "tags", "pending", "setup"] as const)(
       await expect
         .element(page.getByTestId("register-pending-node"))
         .toBeDisabled();
-      (
-        page
-          .getByTestId("pending-registration-flow")
-          .element() as HTMLFormElement
+      requireInstance(
+        page.getByTestId("pending-registration-flow").element(),
+        HTMLFormElement,
       ).requestSubmit();
       await expect
         .element(page.getByTestId("pending-node-key-error"))
@@ -1427,7 +1442,10 @@ test.each(["rename", "tags", "pending", "setup"] as const)(
     }
     if (kind === "setup") {
       await expect.element(page.getByTestId(action)).toBeDisabled();
-      (page.getByTestId(action).element() as HTMLButtonElement).click();
+      requireInstance(
+        page.getByTestId(action).element(),
+        HTMLButtonElement,
+      ).click();
     } else await page.getByTestId(action).click();
     const error = {
       rename: "rename-node-error",
@@ -1535,8 +1553,9 @@ test("the wizard requires tags for an owner-less key and rejects malformed tags"
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("setup-owner").selectOptions("");
   await expect.element(page.getByTestId("add-device-next")).toBeDisabled();
-  (
-    page.getByTestId("setup-auth-key-step").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("setup-auth-key-step").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect
     .element(page.getByTestId("setup-owner-error"))
@@ -1597,13 +1616,14 @@ test("a held Generate locks historical steps for mouse and keyboard and preserve
     for (const id of ["preferences", "authKey"]) {
       const step = page.getByTestId(`add-device-step-${id}`);
       await expect.element(step).toBeDisabled();
-      (step.element() as HTMLButtonElement).click();
-      (step.element() as HTMLButtonElement).focus();
+      requireInstance(step.element(), HTMLButtonElement).click();
+      requireInstance(step.element(), HTMLButtonElement).focus();
       await userEvent.keyboard("{Enter}");
     }
     // A delayed activation of the page opener must not reset an in-flight wizard either.
-    (
-      page.getByTestId("add-device-toggle").element() as HTMLButtonElement
+    requireInstance(
+      page.getByTestId("add-device-toggle").element(),
+      HTMLButtonElement,
     ).click();
     await expect.element(page.getByTestId("setup-generate-step")).toBeVisible();
     await expect.element(page.getByTestId("add-device-prev")).toBeDisabled();
@@ -1657,9 +1677,10 @@ test("a second discard confirmation in the same turn does not open the wizard tw
   ctx.session.deviceSetup.setState({ lastCreatedInvite: "previous-key" });
   await page.getByTestId("add-device-toggle").click();
   await expect.element(page.getByTestId("discard-key-dialog")).toBeVisible();
-  const confirm = page
-    .getByTestId("discard-key-confirm")
-    .element() as HTMLButtonElement;
+  const confirm = requireInstance(
+    page.getByTestId("discard-key-confirm").element(),
+    HTMLButtonElement,
+  );
   confirm.click();
   confirm.click();
   await expect.element(page.getByTestId("add-device-options")).toBeVisible();
@@ -1671,9 +1692,10 @@ test("a late confirm activation during discard-dialog dismissal keeps the saved 
   const ctx = await setup();
   ctx.session.deviceSetup.setState({ lastCreatedInvite: "previous-key" });
   await page.getByTestId("add-device-toggle").click();
-  const confirm = page
-    .getByTestId("discard-key-confirm")
-    .element() as HTMLButtonElement;
+  const confirm = requireInstance(
+    page.getByTestId("discard-key-confirm").element(),
+    HTMLButtonElement,
+  );
   await page.getByTestId("discard-key-cancel").click();
   confirm.click();
   await expect
@@ -1706,8 +1728,9 @@ test("SetTags never accepts malformed free text or an empty collection through n
   await openMenu("2", "edit-node-tags");
   for (const query of ["", "  ", ", ,\t", "tag:Server"]) {
     await page.getByTestId("node-tags-search").fill(query);
-    (
-      page.getByTestId("node-tags-form").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("node-tags-form").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect.element(page.getByTestId("node-tags-confirm")).toBeDisabled();
     await expect
@@ -1976,7 +1999,7 @@ test.each(["click", "keyboard"] as const)(
     const generate = page.getByTestId("generate-install-script");
     if (activation === "click") await generate.click();
     else {
-      (generate.element() as HTMLButtonElement).focus();
+      requireInstance(generate.element(), HTMLButtonElement).focus();
       await userEvent.keyboard("{Enter}");
     }
     await expect.element(page.getByTestId("discard-key-dialog")).toBeVisible();
@@ -2256,8 +2279,9 @@ test("rename trims, refuses blank or unchanged names and validates the DNS label
   await userEvent.keyboard("{Enter}");
   for (const bad of ["Bad Name!", "-edge", "edge-", "a".repeat(64)]) {
     await input.fill(bad);
-    (
-      page.getByTestId("rename-node-form").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("rename-node-form").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect
       .element(page.getByTestId("rename-node-invalid"))
@@ -2562,7 +2586,7 @@ test("the wizard keeps its footer in view and its stepper on one row at 800x510"
 test("the machine export lists advertised and approved routes separately", async () => {
   let text = async (): Promise<string | undefined> => undefined;
   vi.spyOn(URL, "createObjectURL").mockImplementation((value) => {
-    text = () => (value as Blob).text();
+    text = () => requireInstance(value, Blob).text();
     return "blob:fixture";
   });
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});

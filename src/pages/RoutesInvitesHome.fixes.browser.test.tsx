@@ -156,7 +156,11 @@ async function setup(
         (candidate) => candidate.id === body.user,
       );
       const created = { id: "4", key: SECRET, ...body, user, used: false };
-      backend.preAuthKeys.push({ ...created, key: LISTED } as never);
+      const preAuthKey: HeadscaleSnapshot["preAuthKeys"][number] = {
+        ...created,
+        key: LISTED,
+      };
+      backend.preAuthKeys.push(preAuthKey);
       return Response.json({ preAuthKey: created });
     }
     if (url.pathname === "/api/v1/preauthkey/expire") {

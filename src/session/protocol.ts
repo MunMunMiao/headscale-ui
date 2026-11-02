@@ -1,4 +1,5 @@
-import { type AnyStruct, type Client, type Infer, struct } from "@defjs/core";
+import { type Infer, struct } from "@defjs/core";
+import { definitionOf } from "@/api/definitions";
 import * as endpoints from "@/api/requests";
 import type { VaultVersion } from "@/lib/profile-storage";
 import type { ProfileActions } from "./profile-actions";
@@ -50,27 +51,27 @@ export type ApiRequest<K extends EndpointName = EndpointName> =
     readonly type: "api.read" | "api.write";
   };
 
-type AnyEndpoint = ((client: Client, input?: unknown) => Promise<unknown>) & {
-  readonly definition: {
-    readonly method: string;
-    readonly operation?: string;
-    readonly output?: AnyStruct | undefined;
-  };
-};
-
 /** The endpoint a request names, or undefined for anything requests.ts does not export. */
 export function endpointOf(name: unknown) {
-  return typeof name === "string" && Object.hasOwn(endpoints, name)
-    ? // the Worker serves every endpoint, so none can be shaken.
-      (endpoints[name as EndpointName] as unknown as AnyEndpoint)
+  return isEndpointName(name)
+    ? { endpoint: endpoints[name], definition: definitionOf(name) }
     : undefined;
 }
 
-const ENDPOINTS = Object.keys(endpoints) as [EndpointName, ...EndpointName[]];
+function isEndpointName(name: unknown): name is EndpointName {
+  return typeof name === "string" && Object.hasOwn(endpoints, name);
+}
+
+/** A non-empty tuple keeps `struct.enum`'s literal union. */
+function nonEmpty<T>(values: readonly T[]): [T, ...T[]] {
+  return [values[0], ...values.slice(1)];
+}
+
+const ENDPOINTS = nonEmpty(Object.keys(endpoints).filter(isEndpointName));
 /** Only these may be published as reads, so a write can never pass for one (like Connect's GET check). */
-const GET_ENDPOINTS = ENDPOINTS.filter(
-  (name) => endpointOf(name)?.definition.method === "GET",
-) as [EndpointName, ...EndpointName[]];
+const GET_ENDPOINTS = nonEmpty(
+  ENDPOINTS.filter((name) => definitionOf(name).method === "GET"),
+);
 
 export type SessionMessagePort = Pick<
   MessagePort,
@@ -262,7 +263,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         if (closed) return;
         const [invalid, message] = struct.parse(
           pageMessage,
-          (event as MessageEvent).data,
+          Reflect.get(event, "data"),
         );
         if (invalid) return reject({ kind: "invalid-request" });
         if (ownerTabId === null) {
@@ -351,13 +352,12 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
               case "api.read":
               case "api.write":
                 // The endpoint is one requests.ts exports; its input struct runs inside client.execute.
-                return deps.runtime.auth.execute(
+                const run: Function = deps.runtime.auth.execute;
+                return Reflect.apply(run, deps.runtime.auth, [
                   command.expected,
-                  command as ApiRequest,
-                  {
-                    signal,
-                  },
-                );
+                  command,
+                  { signal },
+                ]);
               case "profiles.list":
                 return deps.profiles.list(context);
               case "profiles.save":

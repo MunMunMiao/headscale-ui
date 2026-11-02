@@ -1,3 +1,5 @@
+import { definitionOf as registeredDefinition } from "../src/api/definitions";
+
 // Route table reviewed against the Headscale v0.29.4 gRPC gateway.
 // The runtime image and /version check use this patch.
 export const HEADSCALE_UPSTREAM_VERSION = "0.29.6";
@@ -67,13 +69,13 @@ export interface RouteRef {
 export const routeKey = (method: string, path: string) =>
   `${method.toUpperCase()} ${path.replace(/\{[^}]+\}|:[A-Za-z]+/g, "{}")}`;
 
+export type DefinitionResolver = (name: string) => unknown;
+
 export function definitionOf(
-  request: unknown,
+  name: string,
+  resolve: DefinitionResolver = registeredDefinition,
 ): RouteRef & { operation: string } {
-  if (typeof request !== "function")
-    throw new Error("Request registry entry is not a function");
-  const definition: unknown = (request as unknown as { definition?: unknown })
-    .definition;
+  const definition = resolve(name);
   if (
     definition === null ||
     typeof definition !== "object" ||
@@ -93,10 +95,13 @@ export function definitionOf(
 }
 
 /** Route of every request in a module of endpoints, keyed by its defjs operation id. */
-export function registryRoutes(registry: Readonly<Record<string, unknown>>) {
+export function registryRoutes(
+  registry: Readonly<Record<string, unknown>>,
+  resolve: DefinitionResolver = registeredDefinition,
+) {
   const routes = new Map<string, string>();
-  for (const request of Object.values(registry)) {
-    const { method, path, operation: id } = definitionOf(request);
+  for (const name of Object.keys(registry)) {
+    const { method, path, operation: id } = definitionOf(name, resolve);
     const key = routeKey(method, path);
     const other = routes.get(key);
     if (other)
@@ -111,6 +116,7 @@ export function diffRoutes(
   expected: readonly RouteRef[],
   registry: Readonly<Record<string, unknown>>,
   nonRpc: readonly string[] = NON_RPC_OPERATIONS,
+  resolve: DefinitionResolver = registeredDefinition,
 ): string[] {
   const lines: string[] = [];
   const seen = new Set<string>();
@@ -119,7 +125,7 @@ export function diffRoutes(
     if (seen.has(key)) lines.push(`Duplicate upstream route: ${key}`);
     seen.add(key);
   }
-  const actual = registryRoutes(registry);
+  const actual = registryRoutes(registry, resolve);
   for (const key of seen)
     if (!actual.has(key))
       lines.push(`Missing operation for upstream route: ${key}`);

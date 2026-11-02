@@ -133,8 +133,8 @@ describe("policy templates", () => {
 
     const emptyTemplate: PolicyTemplate = {
       id: "self-only",
-      titleKey: "unusedTitle",
-      descriptionKey: "unusedDescription",
+      titleKey: "templateSelfOnlyTitle",
+      descriptionKey: "templateSelfOnlyDescription",
       build: () => ({}),
     };
     expect(applyTemplate(state, emptyTemplate)).toEqual(state);

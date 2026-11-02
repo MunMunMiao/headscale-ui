@@ -381,7 +381,9 @@ export async function checkSession(
       b.network.clearOperationCalls();
       // The modal blocks pointer clicks; a submit event still reaches the form.
       await pageA.getByTestId("member-form").evaluate((form) => {
-        (form as HTMLFormElement).requestSubmit();
+        if (!(form instanceof HTMLFormElement))
+          throw new Error("Expected an HTML form");
+        form.requestSubmit();
       });
       await hello(pageA, workerUrl);
       for (const [label, connection] of [
@@ -747,17 +749,22 @@ export async function checkSession(
     // Observe actual BFCache use; a reload is not evidence of a persisted restore.
     const bfcache = () =>
       pageA.evaluate(() => {
-        const entry = performance.getEntriesByType(
-          "navigation",
-        )[0] as PerformanceNavigationTiming & {
-          notRestoredReasons?: { reasons?: { reason: string }[] };
-        };
+        const [entry] = performance.getEntriesByType("navigation");
+        const navigationEntry =
+          entry instanceof PerformanceNavigationTiming ? entry : undefined;
+        const notRestored = navigationEntry
+          ? Reflect.get(navigationEntry, "notRestoredReasons")
+          : undefined;
+        const reasons =
+          notRestored && typeof notRestored === "object"
+            ? Reflect.get(notRestored, "reasons")
+            : undefined;
         return {
           persisted: sessionStorage.getItem("deployment-bfcache"),
-          reasons: (entry.notRestoredReasons?.reasons ?? []).map(
-            (item) => item.reason,
-          ),
-          raw: JSON.stringify(entry.notRestoredReasons ?? null),
+          reasons: Array.isArray(reasons)
+            ? reasons.map((item) => Reflect.get(item, "reason"))
+            : [],
+          raw: JSON.stringify(notRestored ?? null),
         };
       });
     await pageA.bringToFront();

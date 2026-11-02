@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { expect } from "vitest";
+import { requireValue } from "@/test/dom";
 import { computeBuildId } from "./build-id.ts";
 import {
   runTestCommand,
@@ -108,7 +109,7 @@ for (const base of ["/", "/nested/ui/"]) {
     expect(main).toBeDefined();
     expect(main?.startsWith(base)).toBe(true);
     const javascript = await Bun.file(
-      join(output, (main as string).slice(base.length)),
+      join(output, requireValue(main).slice(base.length)),
     ).text();
     expect(javascript).toContain(`${base}shared-session-worker.js`);
     // The page reaches the Worker through bridge.ts only: requests.ts and defjs's HTTP pipeline stay out.

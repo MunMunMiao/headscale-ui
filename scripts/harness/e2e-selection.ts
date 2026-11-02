@@ -16,9 +16,15 @@ export function selectE2eSuites(argv: readonly string[]): {
       if (suite !== undefined) throw new Error("Specify --suite only once");
       const value =
         arg === "--suite" ? args[++index] : arg.slice("--suite=".length);
-      if (value !== "all" && !allSuites.includes(value as E2eSuite))
-        throw new Error("--suite must be main, tag-lifecycle, contract or all");
-      suite = value as E2eSuite | "all";
+      if (value === "all") suite = "all";
+      else {
+        const selected = allSuites.find((candidate) => candidate === value);
+        if (!selected)
+          throw new Error(
+            "--suite must be main, tag-lifecycle, contract or all",
+          );
+        suite = selected;
+      }
     } else vitestArgs.push(arg);
   }
   if (suite === "all" && vitestArgs.length)

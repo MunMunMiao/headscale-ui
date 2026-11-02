@@ -69,6 +69,12 @@ async function hello(port: MessagePort, ownerTabId = "owner-a") {
   return result;
 }
 
+function fieldOf(value: unknown, key: string): unknown {
+  return value !== null && typeof value === "object"
+    ? Reflect.get(value, key)
+    : undefined;
+}
+
 async function request(
   port: MessagePort,
   requestId: number,
@@ -77,8 +83,8 @@ async function request(
   const result = sessionMessage(
     port,
     (value) =>
-      (value as { type: string; requestId: number }).type === "reply" &&
-      (value as { requestId: number }).requestId === requestId,
+      fieldOf(value, "type") === "reply" &&
+      fieldOf(value, "requestId") === requestId,
   );
   port.postMessage({ type: "request", requestId, command });
   return result;
@@ -213,23 +219,29 @@ test("all peers share one unlock and API session, while owner context remains bo
   try {
     await hello(a.page, "owner-a");
     await hello(b.page, "owner-b");
-    const peerUnlock = sessionMessage(
-      b.page,
-      (value) =>
-        (value as { snapshot?: { status: string } }).snapshot?.status ===
-        "unlocked",
-    );
-    const unlocked = await request(a.page, 1, {
-      type: "session.unlock",
-      input: {
-        profileId: "profile",
-        password: "profile-password",
-        expectedWorkerId: "worker",
-        expectedIdentity: null,
-        expectedCredentialVersion: "credential",
-        ownerTabId: "forged-owner",
+    const peerUnlock = sessionMessage(b.page, (value) => {
+      const snapshot = fieldOf(value, "snapshot");
+      return (
+        !!snapshot &&
+        typeof snapshot === "object" &&
+        fieldOf(snapshot, "status") === "unlocked"
+      );
+    });
+    const unlocked = await Reflect.apply(request, undefined, [
+      a.page,
+      1,
+      {
+        type: "session.unlock",
+        input: {
+          profileId: "profile",
+          password: "profile-password",
+          expectedWorkerId: "worker",
+          expectedIdentity: null,
+          expectedCredentialVersion: "credential",
+          ownerTabId: "forged-owner",
+        },
       },
-    } as never);
+    ]);
     expect(unlocked).toMatchObject({
       result: {
         ok: true,
@@ -349,12 +361,16 @@ test.each([
           expectedCredentialVersion: "credential",
         },
       });
-      const reply = await request(pair.page, 2, {
-        type,
-        expected: { workerId: "worker", sessionId: "session" },
-        endpoint,
-        input,
-      } as never);
+      const reply = await Reflect.apply(request, undefined, [
+        pair.page,
+        2,
+        {
+          type,
+          expected: { workerId: "worker", sessionId: "session" },
+          endpoint,
+          input,
+        },
+      ]);
       expect(reply).toMatchObject({
         result: accepted
           ? { ok: true, value: { users: [] } }
@@ -407,13 +423,17 @@ test("finite profile commands preserve inputs and completed request ids cannot r
       result: { ok: false, error: { kind: "invalid-request" } },
     });
     expect(
-      await request(ports.page, 2, {
-        type: "profiles.delete",
-        expected: {
-          ...expected,
-          version: { keyEpoch: "epoch", profilesRevision: "0" },
+      await Reflect.apply(request, undefined, [
+        ports.page,
+        2,
+        {
+          type: "profiles.delete",
+          expected: {
+            ...expected,
+            version: { keyEpoch: "epoch", profilesRevision: "0" },
+          },
         },
-      } as never),
+      ]),
     ).toMatchObject({
       result: { ok: false, error: { kind: "invalid-request" } },
     });
@@ -615,7 +635,9 @@ test.each([
     protocol.connect(pair.worker);
     try {
       await hello(pair.page);
-      expect(await request(pair.page, 1, command as never)).toMatchObject({
+      expect(
+        await Reflect.apply(request, undefined, [pair.page, 1, command]),
+      ).toMatchObject({
         result: { ok: false, error: { kind: "invalid-request" } },
       });
     } finally {
@@ -648,10 +670,11 @@ test.each([
     protocol.connect(pair.worker);
     try {
       await hello(pair.page);
-      const reply = await request(pair.page, 1, {
-        type: "storage.reset",
-        expected,
-      } as never);
+      const reply = await Reflect.apply(request, undefined, [
+        pair.page,
+        1,
+        { type: "storage.reset", expected },
+      ]);
       expect(reply).toMatchObject({
         result: {
           ok: false,
@@ -858,7 +881,13 @@ test("a connection stays silent before its handshake and ignores everything once
     addEventListener: (
       type: string,
       listener: EventListenerOrEventListenerObject,
-    ) => void listeners.set(type, listener as EventListener),
+    ) => {
+      if (typeof listener === "function")
+        listeners.set(type, (event) =>
+          Reflect.apply(listener, undefined, [event]),
+        );
+      else listeners.set(type, (event) => listener.handleEvent(event));
+    },
     removeEventListener() {},
   };
   const attach = vi.spyOn(runtime, "attachPort");
@@ -947,15 +976,17 @@ test("own __proto__ keys and undeclared fields never reach a handler", async () 
       `{"type":"profiles.save","__proto__":{"polluted":1},"input":{"kind":"metadata","name":"n","scope":"session","expected":${JSON.stringify(writeExpected)},"__proto__":{"admin":true},"extra":"x"}}`,
     );
     await request(worker.page, 1, command);
-    const input = save.mock.calls[0]?.[0] as Record<string, unknown>;
+    const input = save.mock.calls[0]?.[0];
+    if (!input) throw new Error("save was not called");
     expect(Object.keys(input).sort()).toEqual([
       "expected",
       "kind",
       "name",
       "scope",
     ]);
-    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
-    expect(({} as Record<string, unknown>).admin).toBeUndefined();
+    const probe: Record<string, unknown> = {};
+    expect(probe.polluted).toBeUndefined();
+    expect(probe.admin).toBeUndefined();
   } finally {
     await worker.close();
   }
@@ -964,16 +995,20 @@ test("own __proto__ keys and undeclared fields never reach a handler", async () 
 test("a malformed unlock is answered with a bare invalid-request that echoes nothing", async () => {
   const worker = await connected();
   try {
-    const reply = await request(worker.page, 1, {
-      type: "session.unlock",
-      input: {
-        profileId: "profile",
-        password: "hunter2-profile-password",
-        expectedWorkerId: "worker",
-        expectedCredentialVersion: 7,
-        expectedIdentity: null,
+    const reply = await Reflect.apply(request, undefined, [
+      worker.page,
+      1,
+      {
+        type: "session.unlock",
+        input: {
+          profileId: "profile",
+          password: "hunter2-profile-password",
+          expectedWorkerId: "worker",
+          expectedCredentialVersion: 7,
+          expectedIdentity: null,
+        },
       },
-    } as never);
+    ]);
     expect(reply).toMatchObject({
       result: { ok: false, error: { kind: "invalid-request" } },
     });

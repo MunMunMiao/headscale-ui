@@ -2,14 +2,14 @@ import "fake-indexeddb/auto";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { i18n, setLocale } from "@/i18n";
 import { loadLocale } from "@/i18n/runtime";
 import { hydrateSettings } from "@/lib/settings-storage";
 import { useProductCopy } from "./useProductCopy";
 
 beforeEach(async () => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   await hydrateSettings();
   await setLocale("en-US");
 });

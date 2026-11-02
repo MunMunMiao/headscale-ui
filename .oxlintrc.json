@@ -1,0 +1,57 @@
+{
+  "rules": {
+    "typescript/consistent-type-assertions": [
+      "error",
+      { "assertionStyle": "never" }
+    ],
+    "typescript/no-explicit-any": "error",
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "Object",
+        "property": "assign",
+        "message": "Use object spread instead of Object.assign."
+      },
+      {
+        "object": "Object",
+        "property": "defineProperty",
+        "message": "Define the value where it is created, or use vi.stubGlobal in tests."
+      },
+      {
+        "object": "Object",
+        "property": "defineProperties",
+        "message": "Define the values where they are created, or use vi.stubGlobal in tests."
+      },
+      {
+        "object": "Object",
+        "property": "create",
+        "message": "Use an object literal or a Map instead of Object.create."
+      },
+      {
+        "object": "Object",
+        "property": "setPrototypeOf",
+        "message": "Do not change an object's prototype."
+      },
+      {
+        "object": "Object",
+        "property": "freeze",
+        "message": "Keep immutability in types instead of freezing at runtime."
+      },
+      {
+        "object": "Object",
+        "property": "seal",
+        "message": "Do not lock objects at runtime."
+      },
+      {
+        "object": "Object",
+        "property": "preventExtensions",
+        "message": "Do not lock objects at runtime."
+      },
+      {
+        "object": "Object",
+        "property": "getOwnPropertyDescriptor",
+        "message": "Use a typed fixture or vi.stubGlobal instead of reading a property descriptor."
+      }
+    ]
+  }
+}

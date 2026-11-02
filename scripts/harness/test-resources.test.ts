@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
+import { fieldOf } from "@/test/dom";
 import { root } from "./docker";
 import { runTestCommand } from "./test-resources";
 
@@ -17,7 +18,7 @@ function alive(pid: number) {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+    if (fieldOf(error, "code") !== "ESRCH") throw error;
     return false;
   }
 }
@@ -26,7 +27,7 @@ function stop(pid: number) {
   try {
     process.kill(pid, "SIGKILL");
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+    if (fieldOf(error, "code") !== "ESRCH") throw error;
   }
 }
 

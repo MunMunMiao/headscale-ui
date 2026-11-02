@@ -14,6 +14,7 @@ import {
   settingsStorageTestingHandle,
 } from "@/lib/settings-storage";
 import { createSessionBridge } from "@/session/bridge";
+import { testDouble } from "@/test/dom";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { idbGetAll, idbPut } from "@/test-utils/storage";
 import {
@@ -159,7 +160,7 @@ test("editing only metadata never decrypts or refills credentials", async () => 
   await profiles.addProfile();
   const profile = profiles.getSnapshot().profiles[0];
   if (!profile) throw new Error("Profile save failed");
-  const stored = await idbGetAll("profiles");
+  const stored = await idbGetAll<{ apiKey: unknown }>("profiles");
   const calls = server.requests.length;
   await profiles.loadProfile(profile.id);
   expect(profiles.getSnapshot().connectionForm).toMatchObject({
@@ -171,7 +172,7 @@ test("editing only metadata never decrypts or refills credentials", async () => 
   expect(profiles.getSnapshot().profiles[0]?.name).toBe("Renamed");
   expect(server.requests).toHaveLength(calls);
   expect((await idbGetAll<{ apiKey: unknown }>("profiles"))[0]?.apiKey).toEqual(
-    (stored[0] as { apiKey: unknown }).apiKey,
+    stored[0]?.apiKey,
   );
 });
 
@@ -754,8 +755,9 @@ test.each(["consume", "decline", "truthy", "throw", "absent"] as const)(
             });
             if (presentation === "throw")
               throw new Error("Presentation failed");
+            // A consumer can return a truthy non-boolean at runtime; only `true` counts.
             if (presentation === "truthy")
-              return "claimed" as unknown as boolean;
+              return testDouble<boolean>("claimed");
             return presentation === "consume";
           };
     expect(

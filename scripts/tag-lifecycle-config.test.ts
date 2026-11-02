@@ -1,5 +1,6 @@
 import type { ViteDevServer } from "vite";
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createSessionNetwork } from "./harness/session-network.ts";
 import {
   createTagLifecycleFixture,
@@ -15,8 +16,11 @@ vi.mock("./harness/session-network.ts", () => ({
 vi.mock("../vite.config.ts", () => ({ default: {} }));
 vi.mock("@vitest/browser-playwright", () => ({ playwright: () => ({}) }));
 
+const originalExit = process.exit;
+
 afterEach(() => {
   vi.restoreAllMocks();
+  Reflect.set(process, "exit", originalExit);
   vi.resetModules();
   process.exitCode = 0;
 });
@@ -46,28 +50,28 @@ test.each(["primary", "alternate"] as const)(
     vi.mocked(createTagLifecycleFixture).mockReset();
     if (phase === "alternate")
       vi.mocked(createTagLifecycleFixture).mockResolvedValueOnce(
-        primary as unknown as TagLifecycleFixture,
+        testDouble<TagLifecycleFixture>(primary),
       );
     vi.mocked(createTagLifecycleFixture).mockReturnValueOnce(pending.promise);
     const networkClose = vi.fn(async () => {});
     vi.mocked(createSessionNetwork)
       .mockReset()
-      .mockReturnValue({
-        url: "http://127.0.0.1:49153",
-        close: networkClose,
-      } as unknown as ReturnType<typeof createSessionNetwork>);
+      .mockReturnValue(
+        testDouble<ReturnType<typeof createSessionNetwork>>({
+          url: "http://127.0.0.1:49153",
+          close: networkClose,
+        }),
+      );
     let terminate: (() => Promise<void>) | undefined;
     vi.spyOn(process, "on").mockImplementation((event, listener) => {
       if (String(event) === "SIGTERM")
-        terminate = listener as () => Promise<void>;
+        terminate = () => Reflect.apply(listener, process, []);
       return process;
     });
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined as never);
+    const exit = vi.fn();
+    Reflect.set(process, "exit", exit);
     vi.spyOn(console, "error").mockImplementation(() => {});
-    const config = (await import("../vitest.tag-lifecycle.config.ts"))
-      .default as unknown as {
+    const config = testDouble<{
       plugins: { configureServer(server: ViteDevServer): Promise<void> }[];
       test: {
         browser: {
@@ -79,8 +83,10 @@ test.each(["primary", "alternate"] as const)(
           };
         };
       };
-    };
-    const server = { config: { server: { proxy: {} } } } as ViteDevServer;
+    }>((await import("../vitest.tag-lifecycle.config.ts")).default);
+    const server = testDouble<ViteDevServer>({
+      config: { server: { proxy: {} } },
+    });
     let starting = config.plugins[0].configureServer(server);
     if (phase === "alternate") {
       await starting;
@@ -99,7 +105,7 @@ test.each(["primary", "alternate"] as const)(
         exit,
         "pending fixture resources must be owned before process exit",
       ).not.toHaveBeenCalled();
-      pending.resolve(owned as unknown as TagLifecycleFixture);
+      pending.resolve(testDouble<TagLifecycleFixture>(owned));
       await Promise.all([settled, stopping]);
       expect(owned.close).toHaveBeenCalledTimes(1);
       expect(owned.policy).not.toHaveBeenCalled();
@@ -113,7 +119,7 @@ test.each(["primary", "alternate"] as const)(
       }
       expect(exit).toHaveBeenCalledWith(143);
     } finally {
-      pending.resolve(owned as unknown as TagLifecycleFixture);
+      pending.resolve(testDouble<TagLifecycleFixture>(owned));
       await Promise.all([settled, stopping]);
     }
   },

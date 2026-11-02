@@ -84,12 +84,21 @@ const faultCodes = {
   RES_STRUCT_MISMATCH: 0,
 } satisfies Record<FaultCode, 0>;
 
+const faultCodeSet = new Set<string>(Object.keys(faultCodes));
+function isFaultCode(value: string): value is FaultCode {
+  return faultCodeSet.has(value);
+}
+function nonEmpty<T>(values: readonly T[]): [T, ...T[]] {
+  return [values[0], ...values.slice(1)];
+}
+const FAULT_CODES = nonEmpty(Object.keys(faultCodes).filter(isFaultCode));
+
 // A write may have reached the server, but its result is unknown.
 const outcome = struct.literal("unknown").optional();
 export const workerError = struct.or(
   struct.object({
     kind: struct.literal("api"),
-    code: struct.enum(Object.keys(faultCodes) as [FaultCode, ...FaultCode[]]),
+    code: struct.enum(FAULT_CODES),
     message: struct.string(),
     status: struct.number().optional(),
     data: rpcStatus.optional(),

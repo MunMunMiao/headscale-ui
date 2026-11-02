@@ -92,6 +92,23 @@ export function mutationNotification(
   }
 }
 
+function hasDescriptor<T extends object>(
+  descriptors: T,
+  name: string,
+): name is Extract<keyof T, string> {
+  return Object.hasOwn(descriptors, name);
+}
+
+const PRODUCT_MESSAGES = new Set(
+  Object.keys(productDescriptors).filter((key) => key !== "nav"),
+);
+
+function isProductMessage(
+  name: string,
+): name is Exclude<keyof typeof productDescriptors, "nav"> {
+  return PRODUCT_MESSAGES.has(name);
+}
+
 function notificationText(key: unknown): string | undefined {
   if (typeof key !== "string") return;
   const [namespace, name, child, ...rest] = key.split(".");
@@ -99,23 +116,17 @@ function notificationText(key: unknown): string | undefined {
   if (
     namespace === "common" &&
     child === undefined &&
-    Object.hasOwn(commonDescriptors, name)
+    hasDescriptor(commonDescriptors, name)
   )
-    return i18n._(commonDescriptors[name as keyof typeof commonDescriptors]);
+    return i18n._(commonDescriptors[name]);
   if (namespace !== "product") return;
   if (name === "nav") {
-    if (child && Object.hasOwn(productDescriptors.nav, child))
-      return i18n._(
-        productDescriptors.nav[child as keyof typeof productDescriptors.nav],
-      );
+    if (child && hasDescriptor(productDescriptors.nav, child))
+      return i18n._(productDescriptors.nav[child]);
     return;
   }
-  if (child === undefined && Object.hasOwn(productDescriptors, name))
-    return i18n._(
-      productDescriptors[
-        name as Exclude<keyof typeof productDescriptors, "nav">
-      ],
-    );
+  if (child === undefined && isProductMessage(name))
+    return i18n._(productDescriptors[name]);
 }
 
 interface FeedbackState {

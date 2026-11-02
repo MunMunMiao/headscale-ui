@@ -1,4 +1,3 @@
-import type { AddressInfo } from "node:net";
 import { createServer } from "node:net";
 import {
   createClient,
@@ -171,20 +170,20 @@ test("rejects unknown operations, invalid input and expired sessions without a n
   });
   try {
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         context(server.url.origin),
-      ),
+      ]),
     ).toEqual({ ok: false, error: { kind: "invalid-request" } });
     expect(
-      await executeOperation(
+      await Reflect.apply(executeOperation, undefined, [
         {
           type: "api.write",
           endpoint: "setTags",
           input: { nodeId: "1", tags: 9 },
-        } as never,
+        },
         context(server.url.origin),
-      ),
+      ]),
     ).toMatchObject({
       ok: false,
       error: { kind: "api", code: "REQ_INPUT_INVALID" },
@@ -462,11 +461,11 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     });
     calls = 0;
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         current,
         http,
-      ),
+      ]),
     ).toEqual({
       ok: false,
       error: { kind: "invalid-request" },
@@ -593,7 +592,10 @@ async function truncated() {
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const { port } = server.address() as AddressInfo;
+  const address = server.address();
+  if (!address || typeof address === "string")
+    throw new Error("server address is missing");
+  const { port } = address;
   return {
     server: {
       url: { origin: `http://127.0.0.1:${port}` },

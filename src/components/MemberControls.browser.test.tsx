@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { I18nProvider } from "@lingui/react";
 import { useState } from "react";
@@ -309,7 +310,7 @@ test.each([
   "assignment options sort with the %s collation",
   async (locale, names, expected) => {
     await hydrateSettings();
-    await setLocale(locale as "es-ES" | "zh-Hans");
+    await setLocale(locale === "zh-Hans" ? "zh-Hans" : "es-ES");
     try {
       await render(
         <I18nProvider i18n={i18n}>
@@ -376,7 +377,7 @@ test("assignment rows are checkboxes whose state flips on click and Space and wh
   await view.rerender(<Rows isSubmitting />);
   await expect.element(beta).toBeDisabled();
   // A disabled row ignores activation, so the selection cannot change during submission.
-  (beta.element() as HTMLButtonElement).click();
+  requireInstance(beta.element(), HTMLButtonElement).click();
   await expect.element(beta).toHaveAttribute("aria-checked", "false");
 });
 

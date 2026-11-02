@@ -29,7 +29,7 @@ vi.mock("@/lib/settings-storage", { spy: true });
 vi.mock("./runtime", { spy: true });
 
 beforeEach(async () => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   globalThis.indexedDB = new IDBFactory();
   __resetForTest();
   settingsStorageTestingHandle.reset();

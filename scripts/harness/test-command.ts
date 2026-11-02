@@ -1,5 +1,11 @@
 /// <reference lib="esnext.disposable" />
 
+function errorCode(error: unknown): unknown {
+  return error !== null && typeof error === "object"
+    ? Reflect.get(error, "code")
+    : undefined;
+}
+
 export async function runTestCommand(
   command: string[],
   options: {
@@ -39,7 +45,7 @@ export async function runTestCommand(
           // ponytail: 仅管理命令进程组；自行守护化的工具由调用者登记独立清理。
           process.kill(-child.pid, "SIGKILL");
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+          if (errorCode(error) !== "ESRCH") throw error;
         }
       }
     } finally {

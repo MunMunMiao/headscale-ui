@@ -289,7 +289,7 @@ export async function createTagLifecycleFixture(
     const text = await response.text();
     let json: T | undefined;
     try {
-      json = JSON.parse(text) as T;
+      json = JSON.parse(text);
     } catch {
       /* A dropped or invalid response is evidence, not success. */
     }
@@ -374,7 +374,7 @@ export async function createTagLifecycleFixture(
       0,
       `Fixture SQL failed: ${tagLifecycleDiagnostics(result.stderr.toString(), secrets)}`,
     );
-    return JSON.parse(result.stdout.toString()) as T[];
+    return JSON.parse(result.stdout.toString());
   }
   function removeFaults() {
     for (const trigger of sql<{ name: string }>(
@@ -708,7 +708,7 @@ export async function createTagLifecycleFixture(
       .split("\n")
       .flatMap((line) => {
         try {
-          return [JSON.parse(line) as Record<string, unknown>];
+          return [JSON.parse(line)];
         } catch {
           return [];
         }

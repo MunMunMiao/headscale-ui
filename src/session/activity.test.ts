@@ -5,12 +5,23 @@ import {
   type SessionActivityBridge,
   type SessionActivitySource,
 } from "./activity";
+import { requireValue, testDouble } from "@/test/dom";
 import type { PublicSessionSnapshot, SessionResult } from "./types";
+
+const documentVisibilityState: DocumentVisibilityState = "visible";
+
+function unlockedSnapshot(
+  value: PublicSessionSnapshot | null,
+): Extract<PublicSessionSnapshot, { status: "unlocked" }> {
+  if (!value || value.status !== "unlocked")
+    throw new Error("expected an unlocked session");
+  return value;
+}
 
 function sourceTarget() {
   const listeners = new Map<string, Set<EventListenerOrEventListenerObject>>();
   return {
-    visibilityState: "visible" as DocumentVisibilityState,
+    visibilityState: documentVisibilityState,
     addEventListener(
       type: string,
       listener: EventListenerOrEventListenerObject | null,
@@ -31,7 +42,7 @@ function sourceTarget() {
       isTrusted = false,
       fields: Record<string, unknown> = {},
     ) {
-      const event = { ...fields, type, isTrusted } as Event;
+      const event = testDouble<Event>({ ...fields, type, isTrusted });
       for (const listener of listeners.get(type) ?? []) {
         if (typeof listener === "function") listener(event);
         else listener.handleEvent(event);
@@ -134,7 +145,7 @@ test("hidden and frozen pages suspend delivery and ignore activity until validat
   expect(bridge.touch).not.toHaveBeenCalled();
   resumed.resolve({
     ok: true,
-    value: bridge.getSessionSnapshot() as PublicSessionSnapshot,
+    value: requireValue(bridge.getSessionSnapshot()),
   });
   await resumed.promise;
   document.fire("keydown", true);
@@ -190,10 +201,7 @@ test("each new identity gets its first activity immediately and dispose releases
   const dispose = attachSessionActivity(source, bridge);
   document.fire("pointerdown", true);
   replace({
-    ...(bridge.getSessionSnapshot() as Extract<
-      PublicSessionSnapshot,
-      { status: "unlocked" }
-    >),
+    ...unlockedSnapshot(bridge.getSessionSnapshot()),
     identity: { workerId: "worker-a", sessionId: "session-b" },
   });
   document.fire("pointerdown", true);
@@ -262,7 +270,7 @@ test("a stale resume result cannot undo a newer suspension or another resume fai
   await second.promise;
   first.resolve({
     ok: true,
-    value: bridge.getSessionSnapshot() as PublicSessionSnapshot,
+    value: requireValue(bridge.getSessionSnapshot()),
   });
   await first.promise;
   document.fire("pointerdown", true);
@@ -279,7 +287,7 @@ test("a pending resume can finish after disposal without reinstalling or enablin
   dispose();
   resumed.resolve({
     ok: true,
-    value: bridge.getSessionSnapshot() as PublicSessionSnapshot,
+    value: requireValue(bridge.getSessionSnapshot()),
   });
   await resumed.promise;
   document.fire("keydown", true);

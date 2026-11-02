@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { requireObject } from "@/test/dom";
 
 const modules = import.meta.glob("./*.tsx");
 
@@ -20,6 +21,6 @@ test.each([
     ).toBeTypeOf("function");
     const module = await load();
     for (const name of exports)
-      expect(Reflect.get(module as object, name)).toBeTypeOf("function");
+      expect(Reflect.get(requireObject(module), name)).toBeTypeOf("function");
   },
 );

@@ -81,7 +81,7 @@ export function attachSessionActivity(
 
   function pagehide(event: Event) {
     suspend();
-    if (!(event as PageTransitionEvent).persisted) {
+    if (!Reflect.get(event, "persisted")) {
       cleanup();
       bridge.dispose();
     }

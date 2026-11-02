@@ -1,14 +1,11 @@
-import type { FaultCode, FaultOf, Infer } from "@defjs/core";
+import type { Client, FaultCode, FaultOf, Infer } from "@defjs/core";
 import type { rpcStatus } from "@/api/contracts";
+import { definitionOf } from "@/api/definitions";
 import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
-import { redactDiagnosticData } from "@/api/operation-log";
+import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
+import * as endpoints from "@/api/requests";
 import { type SessionExecutionContext, SessionFault } from "./auth-session";
-import {
-  type ApiOutput,
-  type ApiRequest,
-  type EndpointName,
-  endpointOf,
-} from "./protocol";
+import { type ApiOutput, type ApiRequest, type EndpointName } from "./protocol";
 import type { SessionResult } from "./types";
 
 type HeadscaleFault = FaultOf<Infer<typeof rpcStatus>>;
@@ -36,27 +33,66 @@ const UNCERTAIN: ReadonlySet<FaultCode> = new Set<FaultCode>([
 // A proxy answered for an upstream that may already have applied the write.
 const GATEWAY_STATUS: ReadonlySet<number> = new Set([502, 503, 504]);
 
+type AnyEndpoint = (client: Client, ...input: never[]) => Promise<unknown>;
+
+type SuccessData<T> = T extends readonly [null, infer Data, ...unknown[]]
+  ? Data
+  : never;
+type SuccessOf<E extends AnyEndpoint> = SuccessData<Awaited<ReturnType<E>>>;
+
+type Outcome<E extends AnyEndpoint> =
+  | { readonly fault: null; readonly value: SuccessOf<E> }
+  | { readonly fault: HeadscaleFault; readonly value: undefined };
+
+/** The library's error-first tuple; the success slot is narrowed by `SuccessOf` above. */
+type RawOutcome<E extends AnyEndpoint> =
+  readonly [null, SuccessOf<E>] | readonly [HeadscaleFault, undefined];
+
+/**
+ * Defjs types each operation's callable by its own input. The Worker dispatches by name, so the
+ * argument tuple is built at runtime and the operation validates it. `Reflect.apply` keeps the
+ * callable boundary free of a type assertion; the declared `Outcome` supplies the decoded value.
+ */
+async function invoke<E extends AnyEndpoint>(
+  endpoint: E,
+  client: Client,
+  input: unknown,
+): Promise<Outcome<E>> {
+  const result: RawOutcome<E> = await Reflect.apply(
+    endpoint,
+    undefined,
+    input === undefined ? [client] : [client, input],
+  );
+  return result[0] === null
+    ? { fault: null, value: result[1] }
+    : { fault: result[0], value: undefined };
+}
+
 export async function executeOperation<K extends EndpointName>(
   command: ApiRequest<K>,
   context: SessionExecutionContext,
   http?: HeadscaleHttp, // only tests inject a client; production always builds the Worker client
 ): Promise<SessionResult<ApiOutput<K>>> {
-  const endpoint = endpointOf(command.endpoint);
-  if (!endpoint) return { ok: false, error: { kind: "invalid-request" } };
+  if (!Object.hasOwn(endpoints, command.endpoint))
+    return { ok: false, error: { kind: "invalid-request" } };
   try {
+    const endpoint = endpoints[command.endpoint];
+    const definition = definitionOf(command.endpoint);
     const client = (
       http ??
       createWorkerHeadscaleHttp(context, {
-        readUnreadBody: endpoint.definition.output === undefined,
+        readUnreadBody: definition.output === undefined,
       })
     )({ signal: context.signal });
-    const [fault, value] = (await endpoint(
+    const outcome = await invoke(
+      endpoint,
       client,
       "input" in command ? command.input : undefined,
-    )) as [HeadscaleFault, undefined] | [null, unknown];
+    );
     const { apiKey } = context.requireCurrent();
     // defjs decoded the body against this endpoint's output contract.
-    if (!fault) return { ok: true, value: value as ApiOutput<K> };
+    if (outcome.fault === null) return { ok: true, value: outcome.value };
+    const fault = outcome.fault;
     // A throwing interceptor or transport arrives as a fault; a session failure is still one.
     const sessionFault = sessionFaultOf(fault);
     if (sessionFault) return { ok: false, error: { kind: sessionFault.kind } };
@@ -72,7 +108,7 @@ export async function executeOperation<K extends EndpointName>(
         message: redactDiagnosticData(fault.message, apiKey),
         ...(status === undefined ? {} : { status }),
         ...(fault.code === "HTTP_STATUS"
-          ? { data: redactDiagnosticData(fault.data, apiKey) }
+          ? { data: redactStatusData(fault.data, apiKey) }
           : {}),
         ...(uncertain && command.type === "api.write"
           ? { outcome: "unknown" as const }

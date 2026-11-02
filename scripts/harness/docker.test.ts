@@ -9,17 +9,20 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createChildRunner } from "./child-runner";
 import { createCleanup, root } from "./docker";
 import { createTagLifecycleRunner } from "./tag-lifecycle";
 
 const signals = ["SIGINT", "SIGTERM"] as const;
+const originalExit = process.exit;
 const signalListeners = new Map(
   signals.map((signal) => [signal, process.listeners(signal)]),
 );
 
 afterEach(() => {
   vi.restoreAllMocks();
+  Reflect.set(process, "exit", originalExit);
   for (const [signal, original] of signalListeners) {
     for (const listener of process.listeners(signal)) {
       if (!original.includes(listener))
@@ -33,9 +36,8 @@ test.each(["repeat", ...signals] as const)(
   async (trigger) => {
     const held = Promise.withResolvers<void>();
     const steps: string[] = [];
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined as never);
+    const exit = vi.fn();
+    Reflect.set(process, "exit", exit);
     const cleanup = createCleanup("fixture", [
       async () => {
         steps.push("start");
@@ -48,11 +50,7 @@ test.each(["repeat", ...signals] as const)(
     const listener =
       trigger === "repeat" ? undefined : process.listeners(trigger).at(-1);
     const repeated = Promise.resolve(
-      listener
-        ? (listener as (signal: NodeJS.Signals) => void)(
-            trigger as NodeJS.Signals,
-          )
-        : cleanup(),
+      listener ? Reflect.apply(listener, process, [trigger]) : cleanup(),
     ).then(() => {
       settled = true;
     });
@@ -79,6 +77,10 @@ type Resource = {
   owner: string;
 };
 type ResourceState = { resources: Resource[]; directories: string[] };
+const RESOURCE_KINDS = new Set<string>(["container", "network", "volume"]);
+function isResourceKind(value: string): value is Resource["kind"] {
+  return RESOURCE_KINDS.has(value);
+}
 
 test.each([
   { phase: "primary", exit: "SIGTERM" },
@@ -96,19 +98,18 @@ test.each([
     const foreignDirectory = join(evidence, "independent-preview");
     mkdirSync(foreignDirectory);
     writeFileSync(join(foreignDirectory, "config.yaml"), "independent preview");
-    const foreign: Resource[] = ["container", "volume", "network"].map(
-      (kind) => ({
-        kind: kind as Resource["kind"],
-        name: `independent-preview-${kind}`,
-        owner: "headscale-tag-lifecycle-independent-preview",
-      }),
-    );
+    const kinds: Resource["kind"][] = ["container", "volume", "network"];
+    const foreign: Resource[] = kinds.map((kind) => ({
+      kind,
+      name: `independent-preview-${kind}`,
+      owner: "headscale-tag-lifecycle-independent-preview",
+    }));
     writeFileSync(
       statePath,
       JSON.stringify({ resources: foreign, directories: [] }),
     );
-    const state = () =>
-      JSON.parse(readFileSync(statePath, "utf8")) as ResourceState;
+    const state = (): ResourceState =>
+      JSON.parse(readFileSync(statePath, "utf8"));
     const originalExitCode = process.exitCode;
     const runner = createChildRunner(root);
     const lifecycle = createTagLifecycleRunner(runner);
@@ -117,8 +118,10 @@ test.each([
     vi.spyOn(Bun, "spawnSync").mockImplementation((command) => {
       if (!Array.isArray(command) || command[0] !== "docker")
         throw new Error("Unexpected parent subprocess");
-      const args = command.slice(1) as string[];
-      const kind = args[0] as Resource["kind"];
+      const args: string[] = command.slice(1);
+      const kind = args[0];
+      if (!isResourceKind(kind))
+        throw new Error(`Unexpected resource kind: ${kind}`);
       const current = state();
       let stdout = "";
       if (args[1] === "ls") {
@@ -156,11 +159,11 @@ test.each([
         } else
           throw new Error(`Unexpected test Docker call: ${args.join(" ")}`);
       }
-      return {
+      return testDouble<ReturnType<typeof Bun.spawnSync>>({
         exitCode: 0,
         stdout: Buffer.from(stdout),
         stderr: Buffer.alloc(0),
-      } as ReturnType<typeof Bun.spawnSync>;
+      });
     });
     const child = `
 import { dirname, join } from "node:path";
@@ -238,11 +241,11 @@ clearInterval(keepAlive);
     let ownedDirectory: string | undefined;
     try {
       await expect.poll(() => existsSync(readyPath)).toBe(true);
-      const ready = JSON.parse(readFileSync(readyPath, "utf8")) as {
+      const ready: {
         pid: number;
         owner: string;
         directory: string;
-      };
+      } = JSON.parse(readFileSync(readyPath, "utf8"));
       ownedDirectory = ready.directory;
       expect(ready.owner).toMatch(/^headscale-tag-lifecycle-run-/);
       expect(state().directories).toHaveLength(phase === "primary" ? 1 : 2);

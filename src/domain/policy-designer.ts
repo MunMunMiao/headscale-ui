@@ -265,23 +265,19 @@ export function parsePolicy(raw: string): PolicyDesignerState {
   }
 
   const groupsList: PolicyGroup[] = isPlainObject(groups)
-    ? Object.entries(groups as Record<string, unknown>).map(
-        ([name, members]) => ({
-          id: createPolicyId(),
-          name,
-          members: parseMemberList(members),
-        }),
-      )
+    ? Object.entries(groups).map(([name, members]) => ({
+        id: createPolicyId(),
+        name,
+        members: parseMemberList(members),
+      }))
     : [];
 
   const tagOwnersList: PolicyTagOwner[] = isPlainObject(tagOwners)
-    ? Object.entries(tagOwners as Record<string, unknown>).map(
-        ([tag, owners]) => ({
-          id: createPolicyId(),
-          tag,
-          owners: parseMemberList(owners),
-        }),
-      )
+    ? Object.entries(tagOwners).map(([tag, owners]) => ({
+        id: createPolicyId(),
+        tag,
+        owners: parseMemberList(owners),
+      }))
     : [];
 
   return {

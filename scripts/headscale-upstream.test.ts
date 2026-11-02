@@ -7,6 +7,7 @@ import {
   swaggerRoutes,
   UPSTREAM_RPCS,
 } from "../e2e/headscale-upstream";
+import { definitionOf as appDefinitionOf } from "../src/api/definitions";
 import * as endpoints from "../src/api/requests";
 
 test("every pinned upstream RPC has exactly one operation and no operation lacks an upstream route", () => {
@@ -37,18 +38,17 @@ test("reports an upstream route whose operation was removed", () => {
 });
 
 test("reports an operation pointed at a path upstream does not serve", () => {
-  const wrong = {
-    ...endpoints,
-    // Defjs 0.5 keeps the HTTP definition on the operation, not on its return value.
-    checkPolicy: Object.assign(() => undefined, {
-      definition: {
-        operation: "policy.check",
-        method: "POST",
-        path: "/api/v1/policy/validate",
-      },
-    }),
-  };
-  expect(diffRoutes(UPSTREAM_RPCS, wrong).sort()).toEqual([
+  const resolve = (name: string) =>
+    name === "checkPolicy"
+      ? {
+          operation: "policy.check",
+          method: "POST",
+          path: "/api/v1/policy/validate",
+        }
+      : appDefinitionOf(name);
+  expect(
+    diffRoutes(UPSTREAM_RPCS, endpoints, NON_RPC_OPERATIONS, resolve).sort(),
+  ).toEqual([
     "Missing operation for upstream route: POST /api/v1/policy/check",
     "Operation without upstream route: policy.check",
   ]);
@@ -98,27 +98,30 @@ test.each([
 });
 
 test("rejects two operations that share one route", () => {
-  expect(() =>
-    diffRoutes([], { ...endpoints, checkPolicy: endpoints.getPolicy }),
-  ).toThrow("share the route GET /api/v1/policy");
+  const resolve = (name: string) =>
+    name === "checkPolicy"
+      ? appDefinitionOf("getPolicy")
+      : appDefinitionOf(name);
+  expect(() => diffRoutes([], endpoints, NON_RPC_OPERATIONS, resolve)).toThrow(
+    "share the route GET /api/v1/policy",
+  );
 });
 
-test("rejects a registry entry that is not a request", () => {
-  expect(() => diffRoutes([], { "version.get": 1 })).toThrow("not a function");
-  // Defjs 0.5 reads the attached definition, so each malformed shape must be attached to a function.
-  expect(() => diffRoutes([], { "version.get": () => undefined })).toThrow(
-    "no HTTP definition",
-  );
+test("rejects a registry entry without a usable definition", () => {
   expect(() =>
-    diffRoutes([], {
-      "version.get": Object.assign(() => undefined, { definition: null }),
-    }),
+    diffRoutes(
+      [],
+      { "version.get": true },
+      NON_RPC_OPERATIONS,
+      () => undefined,
+    ),
   ).toThrow("no HTTP definition");
   expect(() =>
-    diffRoutes([], {
-      "version.get": Object.assign(() => undefined, {
-        definition: { method: "GET" },
-      }),
-    }),
+    diffRoutes([], { "version.get": true }, NON_RPC_OPERATIONS, () => null),
+  ).toThrow("no HTTP definition");
+  expect(() =>
+    diffRoutes([], { "version.get": true }, NON_RPC_OPERATIONS, () => ({
+      method: "GET",
+    })),
   ).toThrow("no HTTP definition");
 });

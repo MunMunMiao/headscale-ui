@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { I18nProvider } from "@lingui/react";
 import { afterEach, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -189,10 +190,9 @@ test("a tall application dialog scrolls within a short viewport without hiding i
   expect(dialog.element().scrollHeight).toBeGreaterThan(
     dialog.element().clientHeight,
   );
-  (
-    page
-      .getByRole("button", { name: "Save", exact: true })
-      .element() as HTMLButtonElement
+  requireInstance(
+    page.getByRole("button", { name: "Save", exact: true }).element(),
+    HTMLButtonElement,
   ).focus();
   await expect
     .element(page.getByRole("button", { name: "Save", exact: true }))

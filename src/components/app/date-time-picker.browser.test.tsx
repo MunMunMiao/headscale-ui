@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -102,7 +103,10 @@ test("date field blur reports leaving the closed trigger and dismissing the popu
       <button type="button">Next field</button>
     </>,
   );
-  (page.getByTestId("expiry").element() as HTMLButtonElement).focus();
+  requireInstance(
+    page.getByTestId("expiry").element(),
+    HTMLButtonElement,
+  ).focus();
   await userEvent.keyboard("{Tab}");
   expect(blurred).toEqual(["blur"]);
   await page.getByTestId("expiry").click();

@@ -134,7 +134,7 @@ export default function LoginPage({
   const { openConnectionDialogWithBaseline, editProfileWithBaseline } =
     connectionDialog;
   const navigate = useNavigate();
-  const query = useSearch({ strict: false }) as Record<string, unknown>;
+  const query: Record<string, unknown> = useSearch({ strict: false });
   const { formatDate } = useDisplayHelpers();
   function requestDeleteProfile(profile: ProfileSummary) {
     setFeedbackState({ lastError: "" });

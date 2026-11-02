@@ -20,9 +20,9 @@ beforeAll(async () => {
   const response = await fetch(`${baseUrl}/api/v1/node`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
-  const { nodes } = (await response.json()) as {
-    nodes: { name: string; ipAddresses: string[] }[];
-  };
+  const body: { nodes: { name: string; ipAddresses: string[] }[] } =
+    await response.json();
+  const { nodes } = body;
   const ip = nodes
     .find((node) => node.name === "alice-laptop")
     ?.ipAddresses.find((a) => !a.includes(":"));
@@ -98,8 +98,8 @@ test("a template replaces the open default, appending it after the default stays
   await expectAccessMismatch("template appended after the open default", {
     ...templated,
     acls: [
-      ...(defaultPolicy.acls as unknown[]),
-      ...(templated.acls as unknown[]),
+      ...(Array.isArray(defaultPolicy.acls) ? defaultPolicy.acls : []),
+      ...(Array.isArray(templated.acls) ? templated.acls : []),
     ],
     tests,
   });

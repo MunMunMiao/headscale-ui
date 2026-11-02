@@ -3,6 +3,7 @@ import type { FaultCode } from "@defjs/core";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { setLocale, t } from "@/i18n";
+import { testDouble } from "@/test/dom";
 import { getProductCopy } from "@/i18n/product-copy";
 import { hydrateSettings } from "@/lib/settings-storage";
 import type { SessionExecutionContext } from "@/session/auth-session";
@@ -54,7 +55,9 @@ test.each([
     await hydrateSettings();
     await setLocale(locale);
     for (const [kind, expected] of Object.entries(messages)) {
-      const error = new ApiError({ kind: kind as SessionFailureKind });
+      const error = new ApiError({
+        kind: testDouble<SessionFailureKind>(kind),
+      });
       expect.soft(getErrorMessage(error)).toBe(expected);
       expect.soft(storageErrorMessage(error)).toBe(expected);
     }

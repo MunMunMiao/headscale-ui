@@ -13,6 +13,7 @@ import {
   expectTypeOf,
   test,
 } from "vitest";
+import { testDouble } from "@/test/dom";
 import { fixtureExecute } from "@/test/dispatch-fixture";
 import { normalizeHeadscaleNode, normalizePreAuthKey } from "./contracts";
 import * as definitions from "./requests";
@@ -171,17 +172,16 @@ type BoundEndpoints = {
     ...args: Tail<Parameters<(typeof definitions)[K]>>
   ) => (http: HeadscaleHttp) => ReturnType<(typeof definitions)[K]>;
 };
-const endpoints = Object.fromEntries(
-  Object.entries(definitions).map(([name, endpoint]) => [
-    name,
-    (...args: unknown[]) =>
-      (http: HeadscaleHttp) =>
-        (endpoint as (http: HeadscaleHttp, ...rest: unknown[]) => unknown)(
-          http,
-          ...args,
-        ),
-  ]),
-) as BoundEndpoints;
+const endpoints = testDouble<BoundEndpoints>(
+  Object.fromEntries(
+    Object.entries(definitions).map(([name, endpoint]) => [
+      name,
+      (...args: unknown[]) =>
+        (http: HeadscaleHttp) =>
+          Reflect.apply(endpoint, undefined, [http, ...args]),
+    ]),
+  ),
+);
 
 type SuccessValue<T> = T extends readonly [null, infer D, ...unknown[]]
   ? D
@@ -195,7 +195,7 @@ async function execute<
 ): Promise<SuccessValue<Awaited<ReturnType<C>>>> {
   const [error, data] = await call(http);
   if (error) throw error;
-  return data as SuccessValue<Awaited<ReturnType<C>>>;
+  return testDouble<SuccessValue<Awaited<ReturnType<C>>>>(data);
 }
 
 function seen(path: string, method?: string) {

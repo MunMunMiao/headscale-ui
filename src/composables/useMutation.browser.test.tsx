@@ -5,6 +5,7 @@ import { render } from "vitest-browser-react";
 import { t } from "@/i18n";
 import type { PublicSessionSnapshot } from "@/session/types";
 import { fakeAuth } from "@/test/dispatch-fixture";
+import { testDouble } from "@/test/dom";
 import { type Session, SessionContext } from "./session-context";
 import { createSessionDrafts } from "./session-drafts";
 import { createTagLifecycleStore } from "./tag-lifecycle-state";
@@ -128,7 +129,7 @@ test("React mutation and policy hooks use the subscribed safe gateway after a se
   const policy = createPolicyDesignerStore();
   snapshot.setAuthorized(true);
   policy.load('{"acls":[]}');
-  const session = {
+  const session = testDouble<Session>({
     auth,
     client,
     feedback,
@@ -136,7 +137,7 @@ test("React mutation and policy hooks use the subscribed safe gateway after a se
     policy,
     drafts: createSessionDrafts(),
     tagLifecycle: createTagLifecycleStore(),
-  } as unknown as Session;
+  });
   await render(
     <SessionContext.Provider value={session}>
       <Controls policy={policy} />
@@ -174,7 +175,7 @@ test("locked React controls render and reject mutation and policy clicks without
   const snapshot = createSnapshotStore(auth, client, feedback);
   const policy = createPolicyDesignerStore();
   policy.load('{"acls":[]}');
-  const session = {
+  const session = testDouble<Session>({
     auth,
     client,
     feedback,
@@ -182,7 +183,7 @@ test("locked React controls render and reject mutation and policy clicks without
     policy,
     drafts: createSessionDrafts(),
     tagLifecycle: createTagLifecycleStore(),
-  } as unknown as Session;
+  });
   await render(
     <SessionContext.Provider value={session}>
       <LockedControls feedback={feedback} policy={policy} />

@@ -113,6 +113,13 @@ export function useCreatePreAuthKey() {
 type InviteSource = "invite" | "member-invite";
 type InviteReturn = Extract<TagReturnRecord, { source: InviteSource }>;
 
+function isInviteReturn(
+  record: TagReturnRecord,
+  source: InviteSource,
+): record is InviteReturn {
+  return record.source === source;
+}
+
 /** Only the two invitation dialogs use this adapter; the single return slot belongs to the session. */
 export function useInviteTagReturn(
   source: InviteSource,
@@ -214,7 +221,7 @@ export function useInviteTagReturn(
           return;
         }
         const record = lifecycle.consumeReturn(id);
-        if (record?.source === source) restore.current(record as InviteReturn);
+        if (record && isInviteReturn(record, source)) restore.current(record);
       });
     return () => {
       cancelled = true;

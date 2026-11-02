@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+import { requireObject } from "@/test/dom";
 import { addRule } from "@/test/policy-state";
 import {
   addMemberToGroup,
@@ -562,10 +563,7 @@ describe("parsePolicy / serializePolicy round-trip", () => {
 
   test("allocates deterministic fallback IDs when Web Crypto is unavailable", () => {
     const originalCrypto = globalThis.crypto;
-    Object.defineProperty(globalThis, "crypto", {
-      configurable: true,
-      value: undefined,
-    });
+    vi.stubGlobal("crypto", undefined);
     try {
       const first = createGroup("group:first").id;
       const second = createTagOwner("tag:second").id;
@@ -573,10 +571,7 @@ describe("parsePolicy / serializePolicy round-trip", () => {
       expect(second).toMatch(/^policy-/);
       expect(second).not.toBe(first);
     } finally {
-      Object.defineProperty(globalThis, "crypto", {
-        configurable: true,
-        value: originalCrypto,
-      });
+      vi.stubGlobal("crypto", originalCrypto);
     }
   });
 });
@@ -1399,7 +1394,7 @@ describe("upsert keeps position", () => {
       "group:b",
       "group:c",
     ]);
-    expect(Object.keys(serializePolicy(next).groups as object)).toEqual([
+    expect(Object.keys(requireObject(serializePolicy(next).groups))).toEqual([
       "group:a",
       "group:b",
       "group:c",
@@ -1424,11 +1419,9 @@ describe("upsert keeps position", () => {
       "tag:b",
       "tag:c",
     ]);
-    expect(Object.keys(serializePolicy(next).tagOwners as object)).toEqual([
-      "tag:a",
-      "tag:b",
-      "tag:c",
-    ]);
+    expect(Object.keys(requireObject(serializePolicy(next).tagOwners))).toEqual(
+      ["tag:a", "tag:b", "tag:c"],
+    );
   });
 
   test("a new id appends and a same-id rename keeps the index", () => {

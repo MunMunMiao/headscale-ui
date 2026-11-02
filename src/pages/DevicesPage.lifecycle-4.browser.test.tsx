@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -250,8 +251,9 @@ test.each([
     await expect
       .element(page.getByTestId("restore-server-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect
       .element(page.getByTestId("restore-personal-confirm"))

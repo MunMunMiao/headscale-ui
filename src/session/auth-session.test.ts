@@ -1,4 +1,5 @@
 import { expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createManualClock } from "@/test/session-clock";
 import {
   type AuthSessionDependencies,
@@ -118,9 +119,6 @@ test("unlock starts a 30 minute session with a stable, public-only snapshot", as
   expect(JSON.stringify(unlocked)).not.toMatch(
     /worker-only-key|profile password|credential-1/,
   );
-  expect(Object.isFrozen(unlocked)).toBe(true);
-  expect(Object.isFrozen(unlocked.identity)).toBe(true);
-  expect(Object.isFrozen(unlocked.profile)).toBe(true);
 });
 
 const newFormatKey = "hskey-api-abcdefghijkl-secretSECRETsecretSECRETsecret";
@@ -890,7 +888,6 @@ test("committed display-name changes update metadata without renewing or replaci
   });
   expect(renamed.identity).toBe(original.identity);
   expect(renamed.expiresAt).toBe(original.expiresAt);
-  expect(Object.isFrozen(renamed.profile)).toBe(true);
   expect(f.session.updateProfileName("profile-a", "Renamed")).toBe(renamed);
   expect(
     (
@@ -1039,10 +1036,11 @@ test.each(interrupted)(
       const identity = identityOf(
         successful(await f.session.unlock(f.input())),
       );
-      const { interrupt, release } = (await scenario.run(f, identity)) as {
+      const scenarioResult = testDouble<{
         interrupt?: () => unknown;
         release: () => void;
-      };
+      }>(await scenario.run(f, identity));
+      const { interrupt, release } = scenarioResult;
       const pending = f.session.execute(identity, command);
       await interrupt?.();
       release();

@@ -1,3 +1,4 @@
+import type { ProductCopy } from "@/i18n/product-copy";
 import {
   createGroup,
   createRule,
@@ -9,13 +10,14 @@ import {
 import { hasOnlyDefaultAccess } from "./policy-views";
 
 export type PolicyTemplateId = "self-only" | "small-team" | "split-env";
+type TemplateCopyKey = Exclude<keyof ProductCopy, "nav">;
 
 export interface PolicyTemplate {
   id: PolicyTemplateId;
   /** i18n key for the human-friendly title shown on the template card. */
-  titleKey: string;
+  titleKey: TemplateCopyKey;
   /** i18n key for the one-line description shown under the title. */
-  descriptionKey: string;
+  descriptionKey: TemplateCopyKey;
   build(): Partial<PolicyDesignerState>;
 }
 

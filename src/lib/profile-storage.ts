@@ -276,13 +276,39 @@ function storedCredentialVersion(
 
 function storedProfile(raw: unknown, version: VaultVersion): StoredProfile {
   const summary = profileSummary(raw, version);
-  if (summary.credentialKind === "unreadable") throw new VaultDataError();
-  const { credentialKind: _kind, credentialVersion, ...fields } = summary;
-  return {
-    ...recordObject(raw),
-    ...fields,
-    ...(credentialVersion === null ? {} : { credentialVersion }),
-  } as StoredProfile;
+  const { credentialKind, credentialVersion, ...fields } = summary;
+  const apiKey = recordObject(raw).apiKey;
+  if (credentialKind === "password") {
+    /* istanbul ignore next -- profileSummary only reports password after validating a version */
+    if (credentialVersion === null) throw new VaultDataError();
+    return {
+      ...fields,
+      apiKey: parsePasswordApiKeySecret(apiKey),
+      credentialVersion,
+    };
+  }
+  if (credentialKind === "legacy-plaintext") {
+    /* istanbul ignore next -- profileSummary only reports this kind for a string key */
+    if (typeof apiKey !== "string") throw new VaultDataError();
+    return {
+      ...fields,
+      apiKey,
+      ...(credentialVersion === null ? {} : { credentialVersion }),
+    };
+  }
+  if (
+    credentialKind === "legacy-device" ||
+    credentialKind === "legacy-password"
+  ) {
+    /* istanbul ignore next -- profileSummary only reports these kinds for encrypted keys */
+    if (!isEncryptedApiKey(apiKey)) throw new VaultDataError();
+    return {
+      ...fields,
+      apiKey,
+      ...(credentialVersion === null ? {} : { credentialVersion }),
+    };
+  }
+  throw new VaultDataError();
 }
 
 export async function listProfileSummaries(
@@ -490,15 +516,15 @@ const ACTIVE_PROFILE_PREFIX = "active-profile:";
 function recordObject(raw: unknown): Record<string, unknown> {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw))
     throw new VaultDataError();
-  return raw as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(raw));
 }
 function activeRef(
   raw: unknown,
 ): { profileId: string; operationId: string } | null {
   if (raw === null || typeof raw !== "object") return null;
-  const value = raw as { profileId?: unknown; operationId?: unknown };
-  return typeof value.profileId === "string" &&
-    typeof value.operationId === "string"
-    ? { profileId: value.profileId, operationId: value.operationId }
+  const profileId = Reflect.get(raw, "profileId");
+  const operationId = Reflect.get(raw, "operationId");
+  return typeof profileId === "string" && typeof operationId === "string"
+    ? { profileId, operationId }
     : null;
 }

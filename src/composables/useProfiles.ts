@@ -112,7 +112,7 @@ export function createProfilesStore(
     const current = store.getSnapshot().connectionForm;
     if (
       Object.entries(patch).every(
-        ([key, value]) => current[key as keyof ConnectionForm] === value,
+        ([key, value]) => Reflect.get(current, key) === value,
       )
     )
       return;
@@ -265,12 +265,12 @@ export function createProfilesStore(
       const error = connectionSettingsError(form);
       if (error) throw new Error(t(error));
       if (!form.password) throw new Error(t("serverPasswordRequired"));
-      if (!profile) draftId ??= crypto.randomUUID();
+      const profileId = profile?.id ?? (draftId ??= crypto.randomUUID());
       input = {
         kind: "credentials",
         expected: expected(profile, draftExpected),
         profile: {
-          id: profile?.id ?? (draftId as string),
+          id: profileId,
           name: form.profileName,
           baseUrl: form.baseUrl,
           scope,

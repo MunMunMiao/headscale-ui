@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import {
@@ -47,7 +48,7 @@ async function setup(
     const request = input instanceof Request ? input : new Request(input, init);
     const path = new URL(request.url).pathname;
     if (request.method === "PUT" && path === "/api/v1/policy") {
-      const body = (await request.json()) as { policy: string };
+      const body: { policy: string } = await request.json();
       writes.push(JSON.parse(body.policy));
       if (saveRejected)
         return Response.json({ message: "policy rejected" }, { status: 400 });
@@ -640,9 +641,10 @@ test("IP fields retain visible labels after typing", async () => {
   const first = session.policy.policyDesignerState.rules[0];
   await page.getByTestId(`ip-rule-edit-${first.id}`).click();
   for (const field of ["source", "destination", "ports"]) {
-    const input = page
-      .getByTestId(`ip-rule-${field}-${first.id}`)
-      .element() as HTMLInputElement;
+    const input = requireInstance(
+      page.getByTestId(`ip-rule-${field}-${first.id}`).element(),
+      HTMLInputElement,
+    );
     expect(input.labels?.length).toBe(1);
     expect(input.labels?.[0].textContent?.trim()).not.toBe("");
   }

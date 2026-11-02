@@ -4,6 +4,7 @@ import { t } from "@/i18n";
 import type { ApiCommand } from "@/session/protocol";
 import type { SessionResult } from "@/session/types";
 import { fakeAuth } from "@/test/dispatch-fixture";
+import { testDouble } from "@/test/dom";
 import { snapshotFixture } from "@/test-utils/headscale.test";
 import { createSessionDrafts } from "./session-drafts";
 import { createTagLifecycleStore } from "./tag-lifecycle-state";
@@ -537,10 +538,14 @@ test("a rejected malformed key creation does not fabricate a successful creation
       message: "expiration is required",
     },
   });
-  const result = await createMutation(session).mutateDetailed("create-invite", {
+  const command = testDouble<ApiCommand<"createPreAuthKey">>({
     endpoint: "createPreAuthKey",
     input: {},
-  } as ApiCommand<"createPreAuthKey">);
+  });
+  const result = await createMutation(session).mutateDetailed(
+    "create-invite",
+    command,
+  );
   expect(result.ok).toBe(false);
   expect(result.outcome.status).toBe("not-dispatched");
 });
@@ -577,7 +582,7 @@ test("commands without inputs and malformed secret inputs preserve a structured 
   ]) {
     const result = await createMutation(session).mutateDetailed(
       "register-auth-request",
-      input as ApiCommand,
+      testDouble<ApiCommand>(input),
     );
     expect(result.outcome).toMatchObject({
       status: "not-dispatched",

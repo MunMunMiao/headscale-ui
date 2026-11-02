@@ -149,9 +149,11 @@ test("required interactive help remains touch-operable in a Popover and never su
     .getByRole("button", { name: "Connection help", exact: true })
     .element();
   const rect = button.getBoundingClientRect();
-  const frame = (
-    window.frameElement as HTMLElement | null
-  )?.getBoundingClientRect();
+  const frameElement = window.frameElement;
+  const frame =
+    frameElement instanceof HTMLElement
+      ? frameElement.getBoundingClientRect()
+      : undefined;
   await cdp().send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [

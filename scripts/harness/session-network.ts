@@ -167,7 +167,10 @@ export function createSessionNetwork(options: { upstream: string }) {
             // The upstream write committed; the client read breaks inside the body. Breaking before
             // the first byte would let Chromium silently resend the request on a reused connection.
             observed.errorText = "RESPONSE_DROPPED";
-            const partial = new Uint8Array(body as ArrayBuffer).subarray(0, 1);
+            const partial =
+              body instanceof ArrayBuffer
+                ? new Uint8Array(body).subarray(0, 1)
+                : new Uint8Array();
             return new Response(
               new ReadableStream({
                 async start(controller) {

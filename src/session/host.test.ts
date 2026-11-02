@@ -226,9 +226,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   const identity = first.getSessionSnapshot()?.identity;
   expect.assert(identity);
   const window = new EventTarget();
-  const document = Object.assign(new EventTarget(), {
-    visibilityState: "visible" as const,
-  });
+  class VisibleDocument extends EventTarget {
+    readonly visibilityState: DocumentVisibilityState = "visible";
+  }
+  const document = new VisibleDocument();
   cleanup.push(
     attachSessionActivity({ window, document, now: Date.now }, first),
   );
@@ -249,9 +250,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   });
   const pending = first.read(identity, { endpoint: "listUsers", input: {} });
   await expect.poll(() => gate.getSnapshot().captured).toBe(true);
-  window.dispatchEvent(
-    Object.assign(new Event("pagehide"), { persisted: false }),
-  );
+  class PageHideEvent extends Event {
+    readonly persisted = false;
+  }
+  window.dispatchEvent(new PageHideEvent("pagehide"));
   expect(await pending).toMatchObject({
     ok: false,
     error: { kind: "unavailable" },

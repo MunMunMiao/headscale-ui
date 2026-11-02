@@ -25,6 +25,21 @@ import {
 } from "@/test/session";
 import DevicesPage from "@/pages/DevicesPage";
 
+function requestField(body: unknown, name: string): string {
+  if (body && typeof body === "object") {
+    const value = Reflect.get(body, name);
+    if (typeof value === "string") return value;
+  }
+  throw new Error(`fixture request is missing ${name}`);
+}
+
+function requestTags(body: unknown): string[] {
+  const value =
+    body && typeof body === "object" ? Reflect.get(body, "tags") : undefined;
+  if (!Array.isArray(value)) throw new Error("fixture request is missing tags");
+  return value.filter((tag): tag is string => typeof tag === "string");
+}
+
 export { authenticateTestSession, createMutation };
 
 export const alice = { id: "1", name: "alice", displayName: "Alice" };
@@ -117,7 +132,7 @@ export async function setup(
     if (writeFailure && !applyBeforeFailure)
       return Response.json({ message: writeFailure }, { status: 400 });
     if (url.pathname === "/api/v1/policy") {
-      backend.policy = { policy: body.policy as string };
+      backend.policy = { policy: requestField(body, "policy") };
       if (policyResponseHold) await policyResponseHold;
       if (writeFailure)
         return Response.json({ message: writeFailure }, { status: 400 });
@@ -130,7 +145,7 @@ export async function setup(
       );
       if (!node)
         return Response.json({ message: "node not found" }, { status: 404 });
-      const tags = body.tags as string[];
+      const tags = requestTags(body);
       const declarations =
         JSON.parse(backend.policy?.policy || "{}").tagOwners ?? {};
       if (
@@ -296,9 +311,10 @@ export async function openTags(id = "1") {
   await expect.element(page.getByTestId("node-tags-dialog")).toBeVisible();
 }
 export function submitTags() {
-  (
-    page.getByTestId("node-tags-form").element() as HTMLFormElement
-  ).requestSubmit();
+  const form = page.getByTestId("node-tags-form").element();
+  if (!(form instanceof HTMLFormElement))
+    throw new Error("node tags form is not an HTMLFormElement");
+  form.requestSubmit();
 }
 export function fixtureNode(backend: HeadscaleSnapshot, id = "1") {
   const node = backend.nodes.find((item) => item.id === id);

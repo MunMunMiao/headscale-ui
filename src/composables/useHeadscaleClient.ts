@@ -30,10 +30,10 @@ export function createHeadscaleClientStore() {
         return;
       state.setState({
         settings: { baseUrl: snapshot.profile.baseUrl },
-        identity: Object.freeze({
+        identity: {
           workerId: identity.workerId,
           sessionId: identity.sessionId,
-        }),
+        },
       });
     },
   };

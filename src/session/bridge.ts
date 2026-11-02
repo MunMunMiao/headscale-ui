@@ -61,12 +61,12 @@ export interface SessionBridgeOptions {
 }
 
 export function createSessionBridge(options: SessionBridgeOptions) {
-  let snapshot: SessionBridgeSnapshot = Object.freeze({
+  let snapshot: SessionBridgeSnapshot = {
     status: "connecting",
     workerId: null,
     buildId: null,
     session: null,
-  });
+  };
   const listeners = new Set<() => void>();
   interface Pending {
     resolve(value: SessionResult<unknown>): void;
@@ -108,7 +108,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       next.session === snapshot.session
     )
       return;
-    snapshot = Object.freeze(next);
+    snapshot = next;
     for (const listener of listeners) listener();
   }
   /** Everything subscribers render; a renewal changes only the expiry and revision. */
@@ -122,17 +122,14 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       return;
     if (snapshot.session && session.revision <= snapshot.session.revision)
       return;
-    // struct.parse built these objects for this message alone, so they can be frozen in place.
-    if (session.identity) Object.freeze(session.identity);
-    if (session.profile) Object.freeze(session.profile);
     const next: SessionBridgeSnapshot = {
       ...snapshot,
       status: session.status === "locked" ? "ready-locked" : "ready-unlocked",
-      session: Object.freeze(session),
+      session,
     };
     // Activity renews the session about once a second; reads see the new expiry without re-rendering every page.
     if (snapshot.session && visible(snapshot.session) === visible(session))
-      snapshot = Object.freeze(next);
+      snapshot = next;
     else publish(next);
     flush();
   }
@@ -194,8 +191,8 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       if (!entry.received || suspended) continue;
       // The unlocked snapshot struct requires an identity together with an expiry.
       if (
-        (snapshot.session as PublicSessionSnapshot & { expiresAt: number })
-          .expiresAt <= now()
+        snapshot.session?.status === "unlocked" &&
+        snapshot.session.expiresAt <= now()
       ) {
         void check();
         continue;
@@ -247,7 +244,10 @@ export function createSessionBridge(options: SessionBridgeOptions) {
         (command.type.startsWith("profiles.") &&
           command.type !== "profiles.list");
       const entry: Pending = {
-        resolve: (result) => resolve(result as SessionResult<T>),
+        resolve: (result) => {
+          const settle: Function = resolve;
+          Reflect.apply(settle, undefined, [result]);
+        },
         expected: headscale ? command.expected : null,
         modifies,
         sent: false,
@@ -276,10 +276,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
     ): Promise<SessionResult<ApiOutput<K>>> =>
       matches(expected)
         ? // The Worker decodes with this build's contracts and the handshake refused any other build.
-          request<ApiOutput<K>>(
-            { ...(command as ApiCommand), type, expected },
-            options,
-          )
+          request<ApiOutput<K>>({ ...command, type, expected }, options)
         : Promise.resolve({ ok: false, error: { kind: "stale" } });
   }
   function disconnect() {
@@ -357,7 +354,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
       nextId = 0;
       function receive(event: Event) {
         if (port !== current) return;
-        const data: unknown = (event as MessageEvent).data;
+        const data: unknown = Reflect.get(event, "data");
         // Another build may shape the rest of its messages differently: compare the build first.
         const [, stamp] = struct.parse(helloStamp, data);
         if (
@@ -389,22 +386,22 @@ export function createSessionBridge(options: SessionBridgeOptions) {
             return unavailable();
           cancelHello?.();
           cancelHello = null;
-          snapshot = Object.freeze({
+          snapshot = {
             ...snapshot,
             workerId: message.workerId,
             buildId: message.buildId,
-          });
+          };
           update(message.snapshot);
-          hello?.resolve({
-            ok: true,
-            value: snapshot.session as PublicSessionSnapshot,
-          });
+          hello?.resolve({ ok: true, value: message.snapshot });
           hello = null;
         } else if (message.type === "snapshot") update(message.snapshot);
         else if (message.type === "reply") {
           // Record evidence before the accompanying snapshot can retire this request in flush().
           // A request without output (deleteUser) answers with no value, which reads as undefined.
-          const result = message.result as SessionResult<unknown>;
+          const raw = message.result;
+          const result: SessionResult<unknown> = raw.ok
+            ? { ok: true, value: raw.value }
+            : raw;
           const waiting = pending.get(message.requestId);
           if (waiting) waiting.received = result;
           update(message.snapshot);

@@ -821,7 +821,7 @@ test.each(["commit", "delete"] as const)(
         this: IDBObjectStore,
         ...args: Parameters<typeof original>
       ) {
-        const request = Reflect.apply(original, this, args) as IDBRequest;
+        const request: IDBRequest = Reflect.apply(original, this, args);
         if (this.name === "profiles")
           request.addEventListener("success", () => controller.abort(), {
             once: true,
@@ -934,7 +934,9 @@ test("a metadata update needs an existing profile reference and drops obsolete l
 });
 
 test("a row that is not a plain record is unreadable", async () => {
-  await idbPut("profiles", Object.assign([], { id: "array-row" }));
+  const row: unknown[] = [];
+  Reflect.set(row, "id", "array-row");
+  await idbPut("profiles", row);
   await expect(
     readProfileForOwner("array-row", "owner-a"),
   ).rejects.toBeInstanceOf(VaultDataError);

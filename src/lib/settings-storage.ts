@@ -7,7 +7,11 @@ import {
 
 const SETTINGS_META_KEY = "ui-settings";
 type SettingsRecord = Record<string, string>;
-const cache = { values: {} as SettingsRecord, hydrated: false, keyEpoch: "" };
+const cache: {
+  values: SettingsRecord;
+  hydrated: boolean;
+  keyEpoch: string;
+} = { values: {}, hydrated: false, keyEpoch: "" };
 type PreferenceKey = "locale" | "theme";
 const preferenceListeners = new Set<(key: PreferenceKey) => void>();
 let preferenceChannel: BroadcastChannel | null = null;

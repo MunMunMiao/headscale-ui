@@ -246,7 +246,7 @@ try {
     } finally {
       database.close();
     }
-    Object.assign(process.env, {
+    for (const [key, value] of Object.entries({
       HEADSCALE_E2E_ONLINE_CONTAINER: `${project}-online-device-1`,
       HEADSCALE_E2E_CONTAINER: container,
       HEADSCALE_E2E_SNAPSHOT: temporary,
@@ -256,7 +256,8 @@ try {
       HEADSCALE_E2E_COMPOSE_FILE: composeFile,
       HEADSCALE_E2E_FILE_MODE_URL: fileModeUrl,
       HEADSCALE_E2E_FILE_MODE_API_KEY: fileModeApiKey,
-    });
+    }))
+      process.env[key] = value;
     e2eEnv = {
       ...process.env,
       VITE_HEADSCALE_E2E_API_KEY: apiKey,

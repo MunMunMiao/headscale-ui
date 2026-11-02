@@ -18,6 +18,7 @@ import {
   serializePolicy,
 } from "../src/domain/policy-designer";
 import { removePolicyTag } from "../src/domain/policy-references";
+import { requireValue } from "../src/test/dom";
 
 let fixture: TagLifecycleFixture;
 beforeAll(async () => {
@@ -45,7 +46,7 @@ async function joined(
   await fixture.register(client, key.key, { routes: options.routes });
   const node = (await fixture.nodes()).find((node) => node.name === name);
   expect(node, "the official client must register a node").toBeDefined();
-  return { client, key, node: node as TagNode };
+  return { client, key, node: requireValue(node) };
 }
 async function authenticate(
   client: TagClient,

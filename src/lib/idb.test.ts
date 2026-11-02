@@ -118,9 +118,8 @@ test("reopens after an unexpectedly terminated connection", async () => {
     db.addEventListener("close", () => resolve(), { once: true }),
   );
   // fake-indexeddb's declaration incorrectly accepts the constructor, not an instance.
-  (forceCloseDatabase as unknown as (database: IDBDatabase) => void)(
-    unwrap(db),
-  );
+  const closeDatabase: Function = forceCloseDatabase;
+  Reflect.apply(closeDatabase, undefined, [unwrap(db)]);
   await closed;
   expect(await openHeadscaleDb()).not.toBe(db);
 });

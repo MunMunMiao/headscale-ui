@@ -321,9 +321,10 @@ export default function AccessPage() {
   const checkResult = checked?.text === draftText ? checked : null;
 
   const [tagSearchQuery, setTagSearchQuery] = useState("");
-  const rawMaintenance = (
-    useSearch({ strict: false }) as Record<string, unknown>
-  ).maintenance;
+  const searchParams: Record<string, unknown> = useSearch({
+    strict: false,
+  });
+  const rawMaintenance = searchParams.maintenance;
   const queryMaintenance =
     typeof rawMaintenance === "string" && rawMaintenance.trim()
       ? rawMaintenance
@@ -523,7 +524,7 @@ export default function AccessPage() {
   );
   const tagForm = useAppForm({
     defaultValues: tagDefaults,
-    onSubmitMeta: "done" as "name" | "done",
+    onSubmitMeta: "done" satisfies "name" | "done",
     validators: {
       onDynamic: ({ value }) => {
         const issue = nameIssue("tag", value.name, tagDetailCurrent);
@@ -561,7 +562,7 @@ export default function AccessPage() {
   });
   const teamForm = useAppForm({
     defaultValues: teamDefaults,
-    onSubmitMeta: "done" as "name" | "done",
+    onSubmitMeta: "done" satisfies "name" | "done",
     validators: {
       onDynamic: ({ value }) => {
         const issue = nameIssue("group", value.name, teamDetailCurrent);
@@ -2234,11 +2235,9 @@ export default function AccessPage() {
                 className="p-3 flex flex-col gap-2"
                 data-testid={`template-card-${template.id}`}
               >
-                <p className="font-medium">
-                  {copy[template.titleKey as keyof typeof copy] as string}
-                </p>
+                <p className="font-medium">{copy[template.titleKey]}</p>
                 <p className="text-xs text-muted-foreground flex-1">
-                  {copy[template.descriptionKey as keyof typeof copy] as string}
+                  {copy[template.descriptionKey]}
                 </p>
                 <Button
                   size="sm"

@@ -2,8 +2,9 @@ import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { SessionFault } from "@/session/auth-session";
 import { executeOperation } from "@/session/operation-dispatch";
-import type { EndpointName } from "@/session/protocol";
+import type { ApiRequest, EndpointName } from "@/session/protocol";
 import { ApiError } from "@/session/types";
+import { testDouble } from "@/test/dom";
 import {
   snapshotFixture,
   startSnapshotServer,
@@ -28,11 +29,13 @@ function fixture() {
   ]);
   const calls: { endpoint: EndpointName; signal?: AbortSignal }[] = [];
   const release = Promise.withResolvers<void>();
-  const gateway = (async (command, options) => {
-    calls.push({ endpoint: command.endpoint, signal: options?.signal });
-    await release.promise;
-    return { ok: true, value: values.get(command.endpoint) };
-  }) as Execute;
+  const gateway = testDouble<Execute>(
+    async (command: ApiRequest, options?: { signal?: AbortSignal }) => {
+      calls.push({ endpoint: command.endpoint, signal: options?.signal });
+      await release.promise;
+      return { ok: true, value: values.get(command.endpoint) };
+    },
+  );
   return { snapshot, values, calls, release, gateway };
 }
 
@@ -108,7 +111,7 @@ test("keeps optional lists empty and normalizes missing node and key arrays", as
 });
 
 test("treats only Headscale's missing ACL policy error as an empty policy", async () => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -120,12 +123,12 @@ test("treats only Headscale's missing ACL policy error as an empty policy", asyn
         message: "loading ACL from database: acl policy not found",
       },
     },
-  })) as Execute;
+  }));
   expect(await readPolicy(gateway)).toEqual({ policy: "" });
 });
 
 test("reports file mode without a policy path as an empty annotated policy", async () => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -138,7 +141,7 @@ test("reports file mode without a policy path as an empty annotated policy", asy
           'reading policy from path "": open : no such file or directory',
       },
     },
-  })) as Execute;
+  }));
   expect(await readPolicy(gateway)).toEqual({
     policy: "",
     fileModeWithoutPath: true,
@@ -164,7 +167,7 @@ test.each([
   { status: 403, data: { message: "acl policy not found" } },
   { status: 500, data: undefined },
 ])("preserves policy failure $status $data", async ({ status, data }) => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -173,7 +176,7 @@ test.each([
       status,
       data,
     },
-  })) as Execute;
+  }));
   await expect(readPolicy(gateway)).rejects.toMatchObject({
     code: "HTTP_STATUS",
     status,
@@ -182,7 +185,10 @@ test.each([
 
 test("keeps policy nullable timestamp and extension fields", async () => {
   const policy = { policy: '{"acls":[]}', updatedAt: null, revision: "17" };
-  const gateway = (async () => ({ ok: true, value: policy })) as Execute;
+  const gateway = testDouble<Execute>(async () => ({
+    ok: true,
+    value: policy,
+  }));
   expect(await readPolicy(gateway)).toEqual(policy);
 });
 
@@ -190,10 +196,11 @@ test.each(["listUsers", "listNodes", "getPolicy"] as const)(
   "does not hide cancellation during %s",
   async (operation) => {
     const f = fixture();
-    const gateway = (async (command) =>
+    const gateway = testDouble<Execute>(async (command: ApiRequest) =>
       command.endpoint === operation
         ? { ok: false, error: { kind: "cancelled" } }
-        : { ok: true, value: f.values.get(command.endpoint) }) as Execute;
+        : { ok: true, value: f.values.get(command.endpoint) },
+    );
     await expect(fetchSnapshot(gateway)).rejects.toMatchObject({
       kind: "cancelled",
     });
@@ -203,17 +210,19 @@ test.each(["listUsers", "listNodes", "getPolicy"] as const)(
 test("the Worker dispatcher reads all seven resources through declared Defjs contracts", async () => {
   const server = startSnapshotServer();
   const controller = new AbortController();
-  const gateway = ((command, options) =>
-    executeOperation(
-      { ...command, type: "api.read" },
-      {
-        signal: options?.signal ?? controller.signal,
-        requireCurrent: () => ({
-          baseUrl: server.baseUrl,
-          apiKey: "fixture-connection-key",
-        }),
-      },
-    )) as Execute;
+  const gateway = testDouble<Execute>(
+    (command: ApiRequest, options?: { signal?: AbortSignal }) =>
+      executeOperation(
+        { ...command, type: "api.read" },
+        {
+          signal: options?.signal ?? controller.signal,
+          requireCurrent: () => ({
+            baseUrl: server.baseUrl,
+            apiKey: "fixture-connection-key",
+          }),
+        },
+      ),
+  );
   try {
     expect(
       await fetchSnapshot(gateway, { signal: controller.signal }),
@@ -246,20 +255,22 @@ test("snapshot cancellation reaches all seven in-flight Defjs requests", async (
     },
   });
   const controller = new AbortController();
-  const gateway = ((command, options) =>
-    executeOperation(
-      { ...command, type: "api.read" },
-      {
-        signal: options?.signal ?? controller.signal,
-        requireCurrent() {
-          if (controller.signal.aborted) throw new SessionFault("cancelled");
-          return {
-            baseUrl: server.url.origin,
-            apiKey: "fixture-connection-key",
-          };
+  const gateway = testDouble<Execute>(
+    (command: ApiRequest, options?: { signal?: AbortSignal }) =>
+      executeOperation(
+        { ...command, type: "api.read" },
+        {
+          signal: options?.signal ?? controller.signal,
+          requireCurrent() {
+            if (controller.signal.aborted) throw new SessionFault("cancelled");
+            return {
+              baseUrl: server.url.origin,
+              apiKey: "fixture-connection-key",
+            };
+          },
         },
-      },
-    )) as Execute;
+      ),
+  );
   const pending = fetchSnapshot(gateway, { signal: controller.signal });
   const outcome = pending.catch((error: unknown) => error);
   try {
@@ -280,7 +291,7 @@ function fabricGateway(
   failures: Partial<Record<EndpointName, Failure>>,
 ) {
   f.release.resolve();
-  return (async (command) => {
+  return testDouble<Execute>(async (command: ApiRequest) => {
     const failure = failures[command.endpoint];
     if (failure)
       return {
@@ -291,9 +302,9 @@ function fabricGateway(
           message: failure.code,
           status: failure.status,
         },
-      } as never;
+      };
     return { ok: true, value: f.values.get(command.endpoint) };
-  }) as Execute;
+  });
 }
 
 test.each([

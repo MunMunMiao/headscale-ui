@@ -34,7 +34,7 @@ export default function UnlockOverlay() {
 
 function ProfileUnlockDialog({ profile }: { profile: ProfileSummary }) {
   const router = useRouter();
-  const query = useSearch({ strict: false }) as Record<string, unknown>;
+  const query: Record<string, unknown> = useSearch({ strict: false });
   const profiles = useProfiles();
   const feedback = useActionFeedback();
   const { t } = useHeadscaleI18n();

@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 import type { HeadscaleUser } from "../src/api/contracts";
+import { requireValue, testDouble } from "../src/test/dom";
 import {
   createGroup,
   createTagOwner,
@@ -55,7 +56,7 @@ function cli(args: string[]) {
       "docker",
       "compose",
       "-p",
-      composeProject as string,
+      requireValue(composeProject),
       "-f",
       composeFile,
       "exec",
@@ -93,7 +94,7 @@ function alreadyExists(text: string): boolean {
 async function listUsers(): Promise<HeadscaleUser[]> {
   const response = await request("GET", "/api/v1/user");
   log("users", `GET /api/v1/user ${response.status}`, response.text);
-  const payload = JSON.parse(response.text) as { users?: HeadscaleUser[] };
+  const payload: { users?: HeadscaleUser[] } = JSON.parse(response.text);
   return payload.users ?? [];
 }
 
@@ -147,16 +148,22 @@ async function putPolicy(story: string, policy: unknown) {
   return response;
 }
 
+function policyDoc(value: unknown): PolicyDoc {
+  return value !== null && typeof value === "object"
+    ? testDouble<PolicyDoc>(value)
+    : testDouble<PolicyDoc>({});
+}
+
 async function getPolicy(
   story: string,
 ): Promise<{ status: number; text: string; parsed: PolicyDoc }> {
   const response = await request("GET", "/api/v1/policy");
   log(story, `GET /api/v1/policy ${response.status}`, response.text);
-  const envelope = JSON.parse(response.text) as { policy?: unknown };
+  const envelope: { policy?: unknown } = JSON.parse(response.text);
   const parsed =
     typeof envelope.policy === "string"
-      ? (JSON.parse(envelope.policy) as PolicyDoc)
-      : ((envelope.policy ?? {}) as PolicyDoc);
+      ? policyDoc(JSON.parse(envelope.policy))
+      : policyDoc(envelope.policy ?? {});
   return { status: response.status, text: response.text, parsed };
 }
 

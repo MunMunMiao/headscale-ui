@@ -25,7 +25,12 @@ const files: Record<string, string> = {
 function tree(order: string[] = Object.keys(files)) {
   const root = mkdtempSync(join(tmpdir(), "headscale-build-id-"));
   temporary.push(root);
-  for (const name of order) put(root, name, files[name] as string);
+  for (const name of order) {
+    const content = Reflect.get(files, name);
+    if (typeof content !== "string")
+      throw new Error(`Missing fixture file: ${name}`);
+    put(root, name, content);
+  }
   return root;
 }
 

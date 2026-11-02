@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { describe, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import {
   getIpv6InitializationState,
   waitForDockerIpv6,
@@ -96,32 +97,32 @@ function observeOwnedNetwork(initialFlags: string) {
     .mockImplementation(
       (path) => path === portsPath || path === "/proc/net/if_inet6",
     );
-  const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(((
-    path: fs.PathLike,
-  ) => {
-    if (path !== portsPath)
-      throw new Error(`Unexpected interface directory: ${path}`);
-    return ["veth-owned"];
-  }) as typeof fs.readdirSync);
-  const readFile = vi.spyOn(fs, "readFileSync").mockImplementation(((
-    path: fs.PathOrFileDescriptor,
-  ) => {
-    if (path === "/proc/net/if_inet6") {
-      return [
-        "fe800000000000000000000000000001 02 40 20 80 br-0123456789ab",
-        `fe800000000000000000000000000002 03 40 20 ${state.flags} veth-owned`,
-        "fe800000000000000000000000000003 04 40 20 c0 veth-unrelated",
-      ].join("\n");
-    }
-    if (
-      /^\/proc\/sys\/net\/ipv6\/conf\/(br-0123456789ab|veth-owned)\/(disable_ipv6|addr_gen_mode)$/.test(
-        String(path),
-      )
-    ) {
-      return "0\n";
-    }
-    throw new Error(`Unexpected interface file: ${path}`);
-  }) as unknown as typeof fs.readFileSync);
+  const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(
+    testDouble<typeof fs.readdirSync>((path: fs.PathLike) => {
+      if (path !== portsPath)
+        throw new Error(`Unexpected interface directory: ${path}`);
+      return ["veth-owned"];
+    }),
+  );
+  const readFile = vi.spyOn(fs, "readFileSync").mockImplementation(
+    testDouble<typeof fs.readFileSync>((path: fs.PathOrFileDescriptor) => {
+      if (path === "/proc/net/if_inet6") {
+        return [
+          "fe800000000000000000000000000001 02 40 20 80 br-0123456789ab",
+          `fe800000000000000000000000000002 03 40 20 ${state.flags} veth-owned`,
+          "fe800000000000000000000000000003 04 40 20 c0 veth-unrelated",
+        ].join("\n");
+      }
+      if (
+        /^\/proc\/sys\/net\/ipv6\/conf\/(br-0123456789ab|veth-owned)\/(disable_ipv6|addr_gen_mode)$/.test(
+          String(path),
+        )
+      ) {
+        return "0\n";
+      }
+      throw new Error(`Unexpected interface file: ${path}`);
+    }),
+  );
   return {
     state,
     restore() {

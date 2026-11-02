@@ -32,7 +32,7 @@ function makeUser(over: Partial<HeadscaleUser>): HeadscaleUser {
     createdAt: "",
     profilePicUrl: "",
     ...over,
-  } as HeadscaleUser;
+  };
 }
 
 function userPickerOptionValues(
@@ -573,15 +573,13 @@ describe("userCreationPrincipalConflict", () => {
   });
 
   test("does not modify either the candidate or the existing users", () => {
-    const candidate = Object.freeze({
+    const candidate = {
       name: "  carol  ",
       email: "  alice@example.test  ",
-    });
-    const users = Object.freeze([
-      Object.freeze(
-        makeUser({ id: "1", name: " alice ", email: " alice@example.test " }),
-      ),
-    ]);
+    };
+    const users = [
+      makeUser({ id: "1", name: " alice ", email: " alice@example.test " }),
+    ];
     expect(userCreationPrincipalConflict(candidate, users)).toEqual({
       field: "email",
       principal: "alice@example.test",

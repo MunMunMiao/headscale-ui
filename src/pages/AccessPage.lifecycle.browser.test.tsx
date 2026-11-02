@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import {
@@ -97,7 +98,7 @@ async function setup(
     const request = new Request(input, init);
     const path = new URL(request.url).pathname;
     if (request.method === "PUT" && path === "/api/v1/policy") {
-      const body = (await request.json()) as { policy: string };
+      const body: { policy: string } = await request.json();
       writes.push(body.policy);
       if (writeDelay) await writeDelay;
       if (writeFailure)
@@ -106,7 +107,8 @@ async function setup(
       return Response.json({ policy });
     }
     if (request.method === "POST" && path === "/api/v1/policy/check") {
-      checks.push(((await request.json()) as { policy: string }).policy);
+      const checkBody: { policy: string } = await request.json();
+      checks.push(checkBody.policy);
       return Response.json({});
     }
     if (
@@ -114,10 +116,13 @@ async function setup(
       (request.method === "DELETE" && path === "/api/v1/preauthkey")
     ) {
       const action = request.method === "POST" ? "expire" : "delete";
-      const id =
-        action === "expire"
-          ? ((await request.json()) as { id: string }).id
-          : new URL(request.url).searchParams.get("id");
+      let id: string | null;
+      if (action === "expire") {
+        const body: { id: string } = await request.json();
+        id = body.id;
+      } else {
+        id = new URL(request.url).searchParams.get("id");
+      }
       if (!id) throw new Error("Missing key id");
       stoppedKeys.push({ action, id });
       preAuthKeys =
@@ -1965,9 +1970,10 @@ test.each([
         .element(page.getByTestId("tag-migration-prepare"))
         .toBeEnabled();
     }
-    const dialog = page
-      .getByTestId("tag-maintenance-dialog")
-      .element() as HTMLElement;
+    const dialog = requireInstance(
+      page.getByTestId("tag-maintenance-dialog").element(),
+      HTMLElement,
+    );
     expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth);
   },
 );
@@ -2729,7 +2735,7 @@ test("a publication click already in flight cannot open a review while another s
   );
   const publish = page.getByTestId("save-policy");
   await expect.element(publish).toBeEnabled();
-  const button = publish.element() as HTMLButtonElement;
+  const button = requireInstance(publish.element(), HTMLButtonElement);
   const ticket = fixture.session.policy.beginSave(
     fixture.session.policy.policyDesignerState,
   );

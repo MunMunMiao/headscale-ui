@@ -8,11 +8,12 @@ import {
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest } from "@/lib/idb";
+import { fieldOf, requireObject, testDouble } from "@/test/dom";
 import {
   hydrateSettings,
   settingsStorageTestingHandle,
 } from "@/lib/settings-storage";
-import type { PublicSessionSnapshot, WorkerMessage } from "@/session/types";
+import type { WorkerMessage } from "@/session/types";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { createSession } from "./session-context";
 import { createSessionRestoration } from "./useSessionRestore";
@@ -76,15 +77,15 @@ test("a delayed locked authority reply cannot redirect a newer authenticated ses
   let hold = true;
   vi.spyOn(f.ports.worker, "postMessage").mockImplementation(
     (value: unknown) => {
-      const message = value as WorkerMessage;
+      const result = fieldOf(value, "result");
       if (
         hold &&
-        message.type === "reply" &&
-        message.result.ok &&
-        (message.result.value as PublicSessionSnapshot)?.status === "locked"
+        fieldOf(value, "type") === "reply" &&
+        fieldOf(result, "ok") === true &&
+        fieldOf(fieldOf(result, "value"), "status") === "locked"
       ) {
         hold = false;
-        held.resolve(message);
+        held.resolve(testDouble<WorkerMessage>(requireObject(value)));
       } else send(value);
     },
   );

@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -103,8 +104,9 @@ test("explicit recovery reread retains the dialog while busy and reopening canno
 test("same-server recovery remains blocked until trusted device source is explicitly confirmed", async () => {
   const ctx = await setup();
   await openRestore(ctx);
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect
     .element(page.getByTestId("restore-personal-confirm"))
@@ -122,8 +124,9 @@ test("same-server recovery remains blocked until trusted device source is explic
   await expect
     .element(page.getByTestId("restore-personal-confirm"))
     .toBeDisabled();
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect.element(page.getByTestId("auth-source-required")).toBeVisible();
   expect(ctx.writes()).toEqual([]);
@@ -253,9 +256,10 @@ test("a stale session arriving in the same turn as setup generation sends no req
   await page.getByTestId("add-linux-device").click();
   await page.getByTestId("add-device-next").click();
   await page.getByTestId("add-device-next").click();
-  const generate = page
-    .getByTestId("generate-install-script")
-    .element() as HTMLButtonElement;
+  const generate = requireInstance(
+    page.getByTestId("generate-install-script").element(),
+    HTMLButtonElement,
+  );
   const scope = ctx.session.tagLifecycle.captureScope();
   expect.assert(scope);
   ctx.session.drafts.hold({ id: scope.profileId, name: "Fixture" });

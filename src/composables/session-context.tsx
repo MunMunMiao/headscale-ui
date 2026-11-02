@@ -231,16 +231,19 @@ export function useSession(): Session {
   return session;
 }
 
-type ObservableStore = {
-  getSnapshot(): object;
+type ObservableStore<State extends object> = {
+  getSnapshot(): State;
   subscribe(listener: () => void): () => void;
 };
 
-export function useStore<Model extends ObservableStore>(store: Model) {
+export function useStore<
+  State extends object,
+  Model extends ObservableStore<State>,
+>(store: Model & { getSnapshot(): State }): State & Model {
   const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
     store.getSnapshot,
   );
-  return { ...state, ...store } as ReturnType<Model["getSnapshot"]> & Model;
+  return { ...state, ...store };
 }

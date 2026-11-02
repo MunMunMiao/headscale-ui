@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { SAVED_LOCKED_ERROR } from "@/composables/useProfiles";
 import { __resetForTest, STORE_META, STORE_PROFILES } from "@/lib/idb";
 import { VAULT_STATE_KEY } from "@/lib/vault-state";
+import { fieldOf, requireObject, testDouble } from "@/test/dom";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { idbGet, idbGetAll } from "@/test-utils/storage";
 
@@ -582,7 +583,7 @@ function failProfileReadsAfterWrite(operation: "put" | "delete") {
           },
           { once: true },
         );
-      return (nativeWrite as IDBObjectStore["put"]).apply(this, args);
+      return Reflect.apply(nativeWrite, this, args);
     });
   } else {
     vi.spyOn(IDBObjectStore.prototype, "delete").mockImplementation(function (
@@ -597,7 +598,7 @@ function failProfileReadsAfterWrite(operation: "put" | "delete") {
           },
           { once: true },
         );
-      return (nativeWrite as IDBObjectStore["delete"]).apply(this, args);
+      return Reflect.apply(nativeWrite, this, args);
     });
   }
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
@@ -726,7 +727,7 @@ test("a migrated record stays visible as password encrypted when the following l
 });
 
 import { t } from "@/i18n";
-import type { PublicSessionSnapshot, WorkerMessage } from "@/session/types";
+import type { WorkerMessage } from "@/session/types";
 
 test("a successful unlock reply delayed behind a peer switch cannot report the old identity as current", async () => {
   const f = await saved();
@@ -735,13 +736,13 @@ test("a successful unlock reply delayed behind a peer switch cannot report the o
   const held = Promise.withResolvers<WorkerMessage>();
   vi.spyOn(f.ports.worker, "postMessage").mockImplementation(
     (value: unknown) => {
-      const message = value as WorkerMessage;
+      const result = fieldOf(value, "result");
       if (
-        message.type === "reply" &&
-        message.result.ok &&
-        (message.result.value as PublicSessionSnapshot)?.status === "unlocked"
+        fieldOf(value, "type") === "reply" &&
+        fieldOf(result, "ok") === true &&
+        fieldOf(fieldOf(result, "value"), "status") === "unlocked"
       )
-        held.resolve(message);
+        held.resolve(testDouble<WorkerMessage>(requireObject(value)));
       else send(value);
     },
   );

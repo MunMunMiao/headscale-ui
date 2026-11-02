@@ -159,6 +159,11 @@ const actionLabels = {
   { id: string; message?: string }
 >;
 
+const ACTION_FEEDBACK_KEYS = new Set<string>(Object.keys(actionLabels));
+function isActionFeedbackKey(value: string): value is ActionFeedbackKey {
+  return ACTION_FEEDBACK_KEYS.has(value);
+}
+
 function SnapshotFeedbackStatus({
   refreshErrors,
   refreshing,
@@ -174,13 +179,13 @@ function SnapshotFeedbackStatus({
   const failedSegments = refreshSegmentOrder.filter(
     (segment) => refreshErrors[segment],
   );
-  const recent = (Object.keys(actionLabels) as ActionFeedbackKey[]).flatMap(
-    (key) => {
+  const recent = Object.keys(actionLabels)
+    .filter(isActionFeedbackKey)
+    .flatMap((key) => {
       const outcome = outcomes[key];
       const presentation = outcome ? mutationNotification(outcome) : null;
       return presentation ? [{ key, presentation }] : [];
-    },
-  );
+    });
   if (failedSegments.length === 0 && recent.length === 0) return null;
   const statusLabel = i18n._(productDescriptors.feedbackStatus);
   return (
@@ -274,6 +279,11 @@ const productSections: ProductSection[] = [
   "routes",
   "access",
 ];
+
+const PRODUCT_SECTIONS = new Set<string>(productSections);
+function isProductSection(value: string): value is ProductSection {
+  return PRODUCT_SECTIONS.has(value);
+}
 
 const sectionIcons: Record<ProductSection, typeof Activity> = {
   home: Activity,
@@ -449,10 +459,8 @@ function AppLayoutContent() {
   }, [authorization?.identity?.workerId, authorization?.identity?.sessionId]);
 
   const section = location.pathname.replace(/\/+$/, "").slice(1).toLowerCase();
-  const activeSection: ProductSection = (
-    productSections as readonly string[]
-  ).includes(section)
-    ? (section as ProductSection)
+  const activeSection: ProductSection = isProductSection(section)
+    ? section
     : "home";
 
   const pageTitle = `${copy.nav[activeSection]} · ${currentProfileLabel} · Headscale UI`;
@@ -505,6 +513,8 @@ function AppLayoutContent() {
   // Close-only: the dialog has no trigger, so Base UI only ever reports closing.
   function closeServerSettings() {
     if (
+      // A held draft keeps the previous view on screen; the stale alert owns dismissal.
+      stale !== null ||
       apiKeyForm.state.isSubmitting ||
       apiKeyActionForm.state.isSubmitting ||
       backfillForm.state.isSubmitting ||
@@ -1331,7 +1341,7 @@ function AppLayoutContent() {
             <AlertDialog
               open={Boolean(pendingApiKeyAction)}
               onOpenChange={() => {
-                if (!apiKeyActionForm.state.isSubmitting)
+                if (stale === null && !apiKeyActionForm.state.isSubmitting)
                   closeApiKeyActionDialog();
               }}
             >
@@ -1449,7 +1459,7 @@ function AppLayoutContent() {
             <AlertDialog
               open={backfillNodeIpsDialogOpen}
               onOpenChange={() => {
-                if (!backfillForm.state.isSubmitting)
+                if (stale === null && !backfillForm.state.isSubmitting)
                   closeBackfillNodeIpsDialog();
               }}
             >

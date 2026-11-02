@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
+import { fieldOf, requireObject } from "@/test/dom";
 import { definitionOf } from "../../e2e/headscale-upstream";
 import * as endpoints from "../../src/api/requests";
 import { createSessionNetwork } from "./session-network";
@@ -180,9 +181,9 @@ test("a dropped response commits upstream once, breaks the body after the header
     // byte, so the drop must happen after the headers: the client sees 200 and a broken body.
     const outcome = await pending;
     expect(outcome).not.toBeInstanceOf(Error);
-    const result = outcome as { status: number; body: unknown };
-    expect(result.status).toBe(200);
-    expect(result.body).toBeInstanceOf(Error);
+    const object = requireObject(outcome);
+    expect(fieldOf(object, "status")).toBe(200);
+    expect(fieldOf(object, "body")).toBeInstanceOf(Error);
     expect(gate.getSnapshot()).toMatchObject({ hits: 1, upstreamRequests: 1 });
     const next = await directFetch(`${network.url}/api/v1/apikey`, {
       method: "POST",
@@ -312,8 +313,8 @@ test("identifies all 30 Headscale operations from actual HTTP methods and paths"
   ] as const;
   // The observation table must never lag the operation registry.
   expect(cases.map(([id]) => id).sort()).toEqual(
-    Object.values(endpoints)
-      .map((endpoint) => definitionOf(endpoint).operation)
+    Object.keys(endpoints)
+      .map((name) => definitionOf(name).operation)
       .sort(),
   );
   for (const [, method, path] of cases)

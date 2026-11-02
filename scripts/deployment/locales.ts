@@ -47,8 +47,10 @@ async function persistedLocale(page: Page): Promise<string | undefined> {
         .objectStore("meta")
         .get("ui-settings");
       return await new Promise<string | undefined>((resolve, reject) => {
-        request.onsuccess = () =>
-          resolve((request.result as { locale?: string })?.locale);
+        request.onsuccess = () => {
+          const result: { locale?: string } = request.result;
+          resolve(result.locale);
+        };
         request.onerror = () => reject(request.error);
       });
     } finally {

@@ -38,6 +38,25 @@ import { ApiError } from "./types";
 
 export type ProfileSaveInput = Infer<typeof profileSaveInput>;
 
+/** An `api` kind without a code is not a session failure; keep the result inside the closed set. */
+const NON_API_KIND: Record<
+  ApiError["kind"],
+  Exclude<ApiError["kind"], "api">
+> = {
+  api: "storage-failed",
+  locked: "locked",
+  expired: "expired",
+  stale: "stale",
+  busy: "busy",
+  "unlock-failed": "unlock-failed",
+  "storage-conflict": "storage-conflict",
+  "storage-failed": "storage-failed",
+  unavailable: "unavailable",
+  cancelled: "cancelled",
+  "invalid-request": "invalid-request",
+  "reload-required": "reload-required",
+};
+
 export interface ProfileSaveOutcome {
   saved: true;
   commit: StoredProfileCommit;
@@ -122,7 +141,7 @@ export function createProfileActions(
           }
         : {
             ok: false,
-            error: { kind: error.kind as Exclude<typeof error.kind, "api"> },
+            error: { kind: NON_API_KIND[error.kind] },
           };
     return { ok: false, error: { kind: "storage-failed" } };
   }
