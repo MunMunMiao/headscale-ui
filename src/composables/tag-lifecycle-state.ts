@@ -169,6 +169,7 @@ function sameScope(
     left?.versionFresh === right?.versionFresh
   );
 }
+// eslint-disable-next-line @typescript-eslint/consistent-return -- exhaustive switch over the return source
 function copyReturn(draft: TagReturnDraft): TagReturnDraft | null {
   const common = {
     managedTag: draft.managedTag,

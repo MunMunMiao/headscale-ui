@@ -167,7 +167,10 @@ export function createSessionNetwork(options: { upstream: string }) {
             // The upstream write committed; the client read breaks inside the body. Breaking before
             // the first byte would let Chromium silently resend the request on a reused connection.
             observed.errorText = "RESPONSE_DROPPED";
-            const partial = new Uint8Array(body as ArrayBuffer).subarray(0, 1);
+            const partial =
+              body instanceof ArrayBuffer
+                ? new Uint8Array(body).subarray(0, 1)
+                : new Uint8Array();
             return new Response(
               new ReadableStream({
                 async start(controller) {
@@ -224,11 +227,11 @@ export function createSessionNetwork(options: { upstream: string }) {
       operationCalls.length = 0;
       if (!closed) lifetime = new AbortController();
     },
-    intercept(options: NetworkGateOptions) {
+    intercept(gateOptions: NetworkGateOptions) {
       if (closed) throw new Error("Session network fixture is closed");
       const gate: Gate = {
-        options,
-        pattern: new RegExp(options.pathPattern),
+        options: gateOptions,
+        pattern: new RegExp(gateOptions.pathPattern),
         state: {
           id: ++gateSequence,
           hits: 0,

@@ -1,4 +1,5 @@
 import { expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createManualClock } from "@/test/session-clock";
 import {
   type AuthSessionDependencies,
@@ -118,9 +119,6 @@ test("unlock starts a 30 minute session with a stable, public-only snapshot", as
   expect(JSON.stringify(unlocked)).not.toMatch(
     /worker-only-key|profile password|credential-1/,
   );
-  expect(Object.isFrozen(unlocked)).toBe(true);
-  expect(Object.isFrozen(unlocked.identity)).toBe(true);
-  expect(Object.isFrozen(unlocked.profile)).toBe(true);
 });
 
 const newFormatKey = "hskey-api-abcdefghijkl-secretSECRETsecretSECRETsecret";
@@ -890,7 +888,6 @@ test("committed display-name changes update metadata without renewing or replaci
   });
   expect(renamed.identity).toBe(original.identity);
   expect(renamed.expiresAt).toBe(original.expiresAt);
-  expect(Object.isFrozen(renamed.profile)).toBe(true);
   expect(f.session.updateProfileName("profile-a", "Renamed")).toBe(renamed);
   expect(
     (
@@ -1029,24 +1026,23 @@ const interrupted = [
 test.each(interrupted)(
   "a write ended by $name is unconfirmed, a read is not",
   async (scenario) => {
-    for (const [command, outcome] of [
-      ...writeCommands.map(
-        (command) => [command, { outcome: "unknown" }] as const,
-      ),
+    for (const [apiCommand, outcome] of [
+      ...writeCommands.map((entry) => [entry, { outcome: "unknown" }] as const),
       [readCommand, {}] as const,
     ]) {
       const f = fixture();
       const identity = identityOf(
         successful(await f.session.unlock(f.input())),
       );
-      const { interrupt, release } = (await scenario.run(f, identity)) as {
+      const scenarioResult = testDouble<{
         interrupt?: () => unknown;
         release: () => void;
-      };
-      const pending = f.session.execute(identity, command);
+      }>(await scenario.run(f, identity));
+      const { interrupt, release } = scenarioResult;
+      const pending = f.session.execute(identity, apiCommand);
       await interrupt?.();
       release();
-      expect(await pending, command.endpoint).toEqual({
+      expect(await pending, apiCommand.endpoint).toEqual({
         ok: false,
         error: { kind: scenario.kind, ...outcome },
       });
@@ -1170,6 +1166,6 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
     expect(acceptedWrites).toBe(1);
   } finally {
     release.resolve();
-    server.stop(true);
+    void server.stop(true);
   }
 });

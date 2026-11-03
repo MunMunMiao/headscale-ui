@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { createBrowserHistory, RouterProvider } from "@tanstack/react-router";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
@@ -346,9 +347,10 @@ test.each(["control", "changed-tags", "external-person"])(
     await expect
       .element(page.getByTestId("restore-personal-dialog"))
       .toBeVisible();
-    const input = page
-      .getByTestId("restore-auth-id")
-      .element() as HTMLInputElement;
+    const input = requireInstance(
+      page.getByTestId("restore-auth-id").element(),
+      HTMLInputElement,
+    );
     expect(input.id).toBe("pending-node-key");
     expect(getComputedStyle(input).webkitTextFillColor).toBe(
       "rgba(0, 0, 0, 0)",
@@ -410,10 +412,9 @@ test.each(["control", "changed-tags", "external-person"])(
       await expect
         .element(page.getByTestId("restore-personal-confirm"))
         .toBeDisabled();
-      (
-        page
-          .getByTestId("pending-registration-flow")
-          .element() as HTMLFormElement
+      requireInstance(
+        page.getByTestId("pending-registration-flow").element(),
+        HTMLFormElement,
       ).requestSubmit();
       expect(await writeCount("auth.register")).toBe(1);
       expect((await liveNode(target.nodeId))?.user?.name).toBe("alice");
@@ -486,7 +487,10 @@ test.each(["control", "changed-tags", "external-person"])(
       })
       .toEqual({ sameMachine: true, user: "bob", tags: [] });
     await expectAuthInputCleared(
-      page.getByTestId("restore-auth-id").element() as HTMLInputElement,
+      requireInstance(
+        page.getByTestId("restore-auth-id").element(),
+        HTMLInputElement,
+      ),
     );
     await expect
       .element(page.getByTestId("restore-result"))
@@ -926,8 +930,10 @@ test.each(["slow-success", "failed-read"] as const)(
         session.deviceSetup.getSnapshot().lastCreatedInvite === secret,
       ).toBe(true);
       expect(
-        (page.getByTestId("copy-created-invite").element() as HTMLButtonElement)
-          .disabled,
+        requireInstance(
+          page.getByTestId("copy-created-invite").element(),
+          HTMLButtonElement,
+        ).disabled,
       ).toBe(false);
       expect(await writeCount("preauthkey.create")).toBe(1);
       await commands.tagNetworkRelease();
@@ -950,14 +956,15 @@ test.each(["slow-success", "failed-read"] as const)(
           .element(page.getByTestId("created-invite-status"))
           .toMatchTextContent("not verified");
         expect(
-          (page.getByTestId("refresh-auth-keys").element() as HTMLButtonElement)
-            .disabled,
+          requireInstance(
+            page.getByTestId("refresh-auth-keys").element(),
+            HTMLButtonElement,
+          ).disabled,
         ).toBe(true);
         expect(
-          (
-            page
-              .getByTestId("copy-created-invite")
-              .element() as HTMLButtonElement
+          requireInstance(
+            page.getByTestId("copy-created-invite").element(),
+            HTMLButtonElement,
           ).disabled,
         ).toBe(false);
         expect(
@@ -1130,7 +1137,7 @@ test.each(["expire", "delete"] as const)(
 );
 
 test.each(["expire", "delete"] as const)(
-  "A16/A17/A34: a lost %s response keeps a list-verification notice while fresh retirement inventory remains available, without replaying or touching another key",
+  "A16/A17/A34: a dropped %s response after a 200 is confirmed while fresh retirement inventory remains available, without replaying or touching another key",
   async (action) => {
     const tag = `tag:stop-${action}`;
     await commands.tagFixtureSeedPolicy(JSON.stringify({ acls: allow }));
@@ -1161,33 +1168,28 @@ test.each(["expire", "delete"] as const)(
     await page.getByTestId("confirm-invite-action").click();
     await captured();
     await commands.tagNetworkRelease();
-    // A dropped response may remain pending until the transport timeout; wait for its notice.
+    // The 200 status is definitive; a dropped body on a no-output endpoint stays confirmed.
     await expect
       .poll(() => session.feedback.actionOutcome("invite-action")?.status, {
         timeout: 20_000,
       })
-      .toBe("unknown");
-    await expect
-      .element(page.getByTestId("invite-stop-notice"))
-      .toMatchTextContent(getProductCopy("en-US").inviteStopUnresolved);
-    await expect
-      .element(page.getByTestId("confirm-invite-action"))
-      .toBeEnabled();
-    const originalOutcome = structuredClone(
-      session.feedback.actionOutcome("invite-action"),
-    );
-    expect(
-      /hskey-auth-|hskey-authreq-|tskey-/.test(JSON.stringify(originalOutcome)),
-      "Stop diagnostics must not retain a credential or authentication URL",
-    ).toBe(false);
-    await page.getByTestId("invite-stop-verify").click();
+      .toBe("confirmed");
     await expect
       .element(page.getByTestId("confirm-invite-action"))
       .not.toBeInTheDocument();
+    await expect
+      .element(page.getByTestId("invite-stop-notice"))
+      .not.toBeInTheDocument();
+    expect(
+      /hskey-auth-|hskey-authreq-|tskey-/.test(
+        JSON.stringify(session.feedback.actionOutcome("invite-action")),
+      ),
+      "Stop diagnostics must not retain a credential or authentication URL",
+    ).toBe(false);
     await page.getByTestId("refresh-auth-keys").click();
     await expect.element(page.getByTestId("refresh-auth-keys")).toBeEnabled();
-    expect(session.feedback.actionOutcome("invite-action")).toEqual(
-      originalOutcome,
+    expect(session.feedback.actionOutcome("invite-action")?.status).toBe(
+      "confirmed",
     );
     const observed = await commands.tagFixtureSnapshot();
     const stopped = observed.keys.find((key) => key.id === target.id);
@@ -1238,11 +1240,10 @@ test.each(["expire", "delete"] as const)(
     await page.getByTestId(`maintenance-invites-${tag}`).click();
     await expect.poll(() => window.location.pathname).toBe("/invites");
     expect(new URLSearchParams(window.location.search).get("tag")).toBe(tag);
-    await expect.element(page.getByTestId("invite-stop-notice")).toBeVisible();
     await page.getByTestId("refresh-auth-keys").click();
     await expect.element(page.getByTestId("refresh-auth-keys")).toBeEnabled();
-    expect(session.feedback.actionOutcome("invite-action")).toEqual(
-      originalOutcome,
+    expect(session.feedback.actionOutcome("invite-action")?.status).toBe(
+      "confirmed",
     );
     await openRetirement();
     await expect

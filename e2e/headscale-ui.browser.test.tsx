@@ -33,6 +33,7 @@ import { createApplicationRouter } from "@/router";
 import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
 import { ApiError } from "@/session/types";
 import { expectNetworkTokensLtr } from "@/test/bidi";
+import { requireInstance, requireValue } from "@/test/dom";
 import {
   encryptLegacyKey,
   legacySalt,
@@ -508,11 +509,10 @@ function expectNoHorizontalOverflow() {
 }
 
 function expectDialogFitsViewport(testId: string) {
-  const dialog = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const dialog = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(dialog).toBeTruthy();
-  const rect = (dialog as HTMLElement).getBoundingClientRect();
+  const rect = dialog.getBoundingClientRect();
   expect(rect.top).toBeGreaterThanOrEqual(0);
   expect(rect.left).toBeGreaterThanOrEqual(0);
   expect(rect.height).toBeLessThanOrEqual(window.innerHeight);
@@ -520,30 +520,21 @@ function expectDialogFitsViewport(testId: string) {
 }
 
 function expectDialogUsableInViewport(testId: string) {
-  const dialog = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const dialog = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(dialog).toBeTruthy();
   expectDialogFitsViewport(testId);
-  const overflowX = getComputedStyle(dialog as HTMLElement).overflowX;
-  if (
-    (dialog as HTMLElement).scrollWidth >
-    (dialog as HTMLElement).clientWidth + 1
-  ) {
+  const overflowX = getComputedStyle(dialog).overflowX;
+  if (dialog.scrollWidth > dialog.clientWidth + 1) {
     expect(overflowX).toMatch(/^(clip|hidden)$/);
   }
 
-  const overflowY = getComputedStyle(dialog as HTMLElement).overflowY;
-  if (
-    (dialog as HTMLElement).scrollHeight >
-    (dialog as HTMLElement).clientHeight + 1
-  ) {
+  const overflowY = getComputedStyle(dialog).overflowY;
+  if (dialog.scrollHeight > dialog.clientHeight + 1) {
     expect(overflowY).toMatch(/^(auto|scroll)$/);
   }
 
-  const close = (dialog as HTMLElement).querySelector<HTMLElement>(
-    '[data-slot="dialog-close"]',
-  );
+  const close = dialog.querySelector<HTMLElement>('[data-slot="dialog-close"]');
   if (close) {
     const closeRect = close.getBoundingClientRect();
     expect(closeRect.top).toBeGreaterThanOrEqual(0);
@@ -552,9 +543,8 @@ function expectDialogUsableInViewport(testId: string) {
 }
 
 function expectLayerFitsViewport(selector: string) {
-  const layer = document.querySelector<HTMLElement>(selector);
-  expect(layer).toBeTruthy();
-  const rect = (layer as HTMLElement).getBoundingClientRect();
+  const layer = requireValue(document.querySelector<HTMLElement>(selector));
+  const rect = layer.getBoundingClientRect();
   expect(rect.top).toBeGreaterThanOrEqual(0);
   expect(rect.left).toBeGreaterThanOrEqual(0);
   expect(rect.height).toBeLessThanOrEqual(window.innerHeight);
@@ -562,11 +552,10 @@ function expectLayerFitsViewport(selector: string) {
 }
 
 function expectTestIdFitsViewport(testId: string) {
-  const element = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const element = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(element).toBeTruthy();
-  const rect = (element as HTMLElement).getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
   expect(rect.top).toBeGreaterThanOrEqual(0);
   expect(rect.left).toBeGreaterThanOrEqual(0);
   expect(rect.bottom).toBeLessThanOrEqual(window.innerHeight);
@@ -574,55 +563,48 @@ function expectTestIdFitsViewport(testId: string) {
 }
 
 function expectTestIdAboveTestId(testId: string, boundaryTestId: string) {
-  const element = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const element = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  const boundary = document.querySelector<HTMLElement>(
-    `[data-testid="${boundaryTestId}"]`,
+  const boundary = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${boundaryTestId}"]`),
   );
-  expect(element).toBeTruthy();
-  expect(boundary).toBeTruthy();
-  const rect = (element as HTMLElement).getBoundingClientRect();
-  const boundaryRect = (boundary as HTMLElement).getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
+  const boundaryRect = boundary.getBoundingClientRect();
   expect(rect.bottom).toBeLessThanOrEqual(boundaryRect.top);
 }
 
 function expectTestIdNetworkTokensLtr(testId: string, minimum = 1) {
-  const root = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
-  expect(root).toBeTruthy();
-  if (root) expectNetworkTokensLtr(root, minimum);
+  const root = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
+  );
+  expectNetworkTokensLtr(root, minimum);
 }
 
 function expectOverviewStatsCompactGrid() {
-  const stats = document.querySelector<HTMLElement>(
-    '[data-testid="overview-stats"]',
+  const stats = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="overview-stats"]'),
   );
-  expect(stats).toBeTruthy();
   const cards = Array.from(
     document.querySelectorAll<HTMLElement>('[data-testid^="overview-stat-"]'),
   );
   expect(cards).toHaveLength(5);
 
-  const statsRect = (stats as HTMLElement).getBoundingClientRect();
-  const firstRect = cards[0]?.getBoundingClientRect();
-  const secondRect = cards[1]?.getBoundingClientRect();
-  expect(firstRect).toBeTruthy();
-  expect(secondRect).toBeTruthy();
-  expect(
-    Math.abs((firstRect as DOMRect).top - (secondRect as DOMRect).top),
-  ).toBeLessThan(2);
-  expect((secondRect as DOMRect).left).toBeGreaterThan(
-    (firstRect as DOMRect).left,
-  );
+  const statsRect = stats.getBoundingClientRect();
+  const firstRect = requireValue(cards[0]?.getBoundingClientRect());
+  const secondRect = requireValue(cards[1]?.getBoundingClientRect());
+  expect(Math.abs(firstRect.top - secondRect.top)).toBeLessThan(2);
+  expect(secondRect.left).toBeGreaterThan(firstRect.left);
   expect(statsRect.height).toBeLessThanOrEqual(170);
 
-  const recentHeading = document.querySelector<HTMLElement>(
-    '[data-testid="recent-devices-heading"]',
+  const recentHeading = requireValue(
+    document.querySelector<HTMLElement>(
+      '[data-testid="recent-devices-heading"]',
+    ),
   );
-  expect(recentHeading).toBeTruthy();
-  expect(
-    (recentHeading as HTMLElement).getBoundingClientRect().top,
-  ).toBeLessThan(window.innerHeight);
+  expect(recentHeading.getBoundingClientRect().top).toBeLessThan(
+    window.innerHeight,
+  );
 }
 
 async function captureResponsiveScreenshot(name: string) {
@@ -637,12 +619,11 @@ function expectConnectionFormGridLayout() {
     "connect-server-url",
     "connect-api-key",
   ].map((testId) =>
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
+    requireValue(
+      document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
+    ),
   );
-  expect(fields.every(Boolean)).toBe(true);
-  const [name, url, key] = fields.map((field) =>
-    (field as HTMLElement).getBoundingClientRect(),
-  );
+  const [name, url, key] = fields.map((field) => field.getBoundingClientRect());
   expect(Math.abs(name.width - url.width)).toBeLessThan(2);
   expect(Math.abs(key.width - url.width)).toBeLessThan(2);
   expect(Math.abs(name.left - url.left)).toBeLessThan(2);
@@ -650,13 +631,10 @@ function expectConnectionFormGridLayout() {
 }
 
 function expectDialogHasNoInternalScrollbar(testId: string) {
-  const dialog = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const dialog = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(dialog).toBeTruthy();
-  expect((dialog as HTMLElement).scrollHeight).toBeLessThanOrEqual(
-    (dialog as HTMLElement).clientHeight + 1,
-  );
+  expect(dialog.scrollHeight).toBeLessThanOrEqual(dialog.clientHeight + 1);
 }
 
 function expectTextAlignsToStart(element: HTMLElement) {
@@ -668,11 +646,10 @@ function expectTextAlignsToStart(element: HTMLElement) {
 }
 
 function expectPointerCursor(testId: string) {
-  const element = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const element = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(element).toBeTruthy();
-  expect(getComputedStyle(element as HTMLElement).cursor).toBe("pointer");
+  expect(getComputedStyle(element).cursor).toBe("pointer");
 }
 
 function preventNextClickDefault(testId: string) {
@@ -752,22 +729,19 @@ function expectVisibleInteractiveElementsUsePointer() {
 }
 
 function expectDialogMirrorsInlineEnd(testId: string) {
-  const dialog = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const dialog = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  const close = dialog?.querySelector<HTMLElement>(
-    '[data-slot="dialog-close"]',
+  const close = requireValue(
+    dialog.querySelector<HTMLElement>('[data-slot="dialog-close"]'),
   );
-  const header = dialog?.querySelector<HTMLElement>(
-    '[data-slot="dialog-header"]',
+  const header = requireValue(
+    dialog.querySelector<HTMLElement>('[data-slot="dialog-header"]'),
   );
-  expect(dialog).toBeTruthy();
-  expect(close).toBeTruthy();
-  expect(header).toBeTruthy();
-  expectTextAlignsToStart(header as HTMLElement);
+  expectTextAlignsToStart(header);
 
-  const dialogRect = (dialog as HTMLElement).getBoundingClientRect();
-  const closeRect = (close as HTMLElement).getBoundingClientRect();
+  const dialogRect = dialog.getBoundingClientRect();
+  const closeRect = close.getBoundingClientRect();
   const distanceToLeft = Math.abs(closeRect.left - dialogRect.left);
   const distanceToRight = Math.abs(dialogRect.right - closeRect.right);
   if (document.documentElement.dir === "rtl") {
@@ -778,20 +752,18 @@ function expectDialogMirrorsInlineEnd(testId: string) {
 }
 
 function expectNativeSelectIconMirrorsInlineEnd(testId: string) {
-  const select = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const select = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  const wrapper = select?.closest<HTMLElement>(
-    '[data-slot="native-select-wrapper"]',
+  const wrapper = requireValue(
+    select.closest<HTMLElement>('[data-slot="native-select-wrapper"]'),
   );
-  const icon = wrapper?.querySelector<HTMLElement>(
-    '[data-slot="native-select-icon"]',
+  const icon = requireValue(
+    wrapper.querySelector<HTMLElement>('[data-slot="native-select-icon"]'),
   );
-  expect(wrapper).toBeTruthy();
-  expect(icon).toBeTruthy();
 
-  const wrapperRect = (wrapper as HTMLElement).getBoundingClientRect();
-  const iconRect = (icon as HTMLElement).getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const iconRect = icon.getBoundingClientRect();
   const distanceToLeft = Math.abs(iconRect.left - wrapperRect.left);
   const distanceToRight = Math.abs(wrapperRect.right - iconRect.right);
   if (document.documentElement.dir === "rtl") {
@@ -802,21 +774,18 @@ function expectNativeSelectIconMirrorsInlineEnd(testId: string) {
 }
 
 function expectSwitchThumbMirrorsCurrentState(testId: string) {
-  const switchRoot = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const switchRoot = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  const thumb = switchRoot?.querySelector<HTMLElement>(
-    '[data-slot="switch-thumb"]',
+  const thumb = requireValue(
+    switchRoot.querySelector<HTMLElement>('[data-slot="switch-thumb"]'),
   );
-  expect(switchRoot).toBeTruthy();
-  expect(thumb).toBeTruthy();
 
-  const rootRect = (switchRoot as HTMLElement).getBoundingClientRect();
-  const thumbRect = (thumb as HTMLElement).getBoundingClientRect();
+  const rootRect = switchRoot.getBoundingClientRect();
+  const thumbRect = thumb.getBoundingClientRect();
   const thumbCenter = thumbRect.left + thumbRect.width / 2;
   const rootCenter = rootRect.left + rootRect.width / 2;
-  const checked =
-    (switchRoot as HTMLElement).getAttribute("aria-checked") === "true";
+  const checked = switchRoot.getAttribute("aria-checked") === "true";
   if (document.documentElement.dir === "rtl" && checked) {
     expect(thumbCenter).toBeLessThan(rootCenter);
   } else if (document.documentElement.dir === "rtl") {
@@ -845,21 +814,19 @@ function expectResponsiveTabMenu() {
 }
 
 function testIdRect(testId: string) {
-  const element = document.querySelector<HTMLElement>(
-    `[data-testid="${testId}"]`,
+  const element = requireValue(
+    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
   );
-  expect(element).toBeTruthy();
-  return (element as HTMLElement).getBoundingClientRect();
+  return element.getBoundingClientRect();
 }
 
 function expectAuthKeyDateTimePickerClosed() {
-  const picker = document.querySelector<HTMLElement>(
-    '[data-slot="date-time-picker"]',
+  const picker = requireValue(
+    document.querySelector<HTMLElement>('[data-slot="date-time-picker"]'),
   );
-  expect(picker).toBeTruthy();
   expectNoHorizontalOverflow();
 
-  expect(getComputedStyle(picker as HTMLElement).display).toBe("grid");
+  expect(getComputedStyle(picker).display).toBe("grid");
   expect(testIdRect("invite-expiration").width).toBeGreaterThan(0);
   expect(
     document.querySelector('[data-testid="invite-expiration-hour"]'),
@@ -870,28 +837,22 @@ function expectAuthKeyDateTimePickerClosed() {
 }
 
 function expectAuthKeyTimePickerPopover() {
-  const timePicker = document.querySelector<HTMLElement>(
-    '[data-slot="time-picker"]',
+  const timePicker = requireValue(
+    document.querySelector<HTMLElement>('[data-slot="time-picker"]'),
   );
-  const calendar = document.querySelector<HTMLElement>(
-    '[data-slot="calendar"]',
+  const popover = requireValue(
+    document.querySelector<HTMLElement>('[data-slot="popover-content"]'),
   );
-  const popover = document.querySelector<HTMLElement>(
-    '[data-slot="popover-content"]',
-  );
-  expect(timePicker).toBeTruthy();
-  expect(calendar).toBeTruthy();
-  expect(popover).toBeTruthy();
   expectNoHorizontalOverflow();
 
   const orderedSlots = Array.from(
-    (popover as HTMLElement).querySelectorAll<HTMLElement>(
+    popover.querySelectorAll<HTMLElement>(
       '[data-slot="calendar"], [data-slot="time-picker"]',
     ),
   ).map((element) => element.dataset.slot);
   expect(orderedSlots).toEqual(["calendar", "time-picker"]);
-  const popoverRect = (popover as HTMLElement).getBoundingClientRect();
-  const timeRect = (timePicker as HTMLElement).getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const timeRect = timePicker.getBoundingClientRect();
   expect(timeRect.bottom).toBeLessThanOrEqual(popoverRect.bottom + 1);
   expect(
     document.querySelector<HTMLElement>(
@@ -910,27 +871,25 @@ function expectAuthKeyTimePickerPopover() {
 }
 
 function expectAppHeader() {
-  const header = document.querySelector<HTMLElement>(
-    '[data-testid="app-header"]',
+  const header = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="app-header"]'),
   );
-  const primaryRow = document.querySelector<HTMLElement>(
-    '[data-testid="header-primary-row"]',
+  const primaryRow = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="header-primary-row"]'),
   );
-  const navigation = document.querySelector<HTMLElement>(
-    '[data-testid="header-navigation"]',
+  const navigation = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="header-navigation"]'),
   );
-  const pageBody = document.querySelector<HTMLElement>(
-    '[data-testid="page-body"]',
+  const pageBody = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="page-body"]'),
   );
-  expect(header?.getBoundingClientRect().width).toBe(
+  expect(header.getBoundingClientRect().width).toBe(
     document.documentElement.clientWidth,
   );
-  expect(primaryRow).toBeTruthy();
-  expect(navigation).toBeTruthy();
-  expect(navigation?.querySelectorAll("a[href]")).toHaveLength(6);
-  expect(primaryRow?.parentElement?.className).toContain("container");
-  expect(pageBody?.className).toContain("container");
-  expect(pageBody?.className).toContain("mx-auto");
+  expect(navigation.querySelectorAll("a[href]")).toHaveLength(6);
+  expect(primaryRow.parentElement?.className).toContain("container");
+  expect(pageBody.className).toContain("container");
+  expect(pageBody.className).toContain("mx-auto");
   expect(
     document.querySelector<HTMLElement>('[data-testid="app-logo"]')
       ?.textContent,
@@ -938,52 +897,42 @@ function expectAppHeader() {
   expect(
     document.querySelector<SVGElement>('[data-testid="app-logo"] svg'),
   ).toBeTruthy();
-  const githubLink = document.querySelector<HTMLElement>(
-    '[data-testid="github-repository-link"]',
+  const githubLink = requireValue(
+    document.querySelector<HTMLElement>(
+      '[data-testid="github-repository-link"]',
+    ),
   );
-  const profileTrigger = document.querySelector<HTMLElement>(
-    '[data-testid="profile-menu-trigger"]',
+  const profileTrigger = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="profile-menu-trigger"]'),
   );
-  expect(githubLink).toBeTruthy();
-  expect(profileTrigger).toBeTruthy();
-  expect(githubLink?.getAttribute("href")).toBe(
+  expect(githubLink.getAttribute("href")).toBe(
     "https://github.com/MunMunMiao/headscale-ui",
   );
-  expect(
-    githubLink?.compareDocumentPosition(profileTrigger as HTMLElement),
-  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(githubLink.compareDocumentPosition(profileTrigger)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
   expect(
     document.querySelector<HTMLElement>('[data-testid="current-server"]'),
   ).toBeNull();
-  expect(navigation?.getAttribute("dir")).toBe(document.documentElement.dir);
+  expect(navigation.getAttribute("dir")).toBe(document.documentElement.dir);
 
-  const headerRect = header?.getBoundingClientRect();
-  const primaryRect = primaryRow?.getBoundingClientRect();
-  const navigationRect = navigation?.getBoundingClientRect();
-  const headerStyle = getComputedStyle(header as HTMLElement);
+  const headerRect = header.getBoundingClientRect();
+  const primaryRect = primaryRow.getBoundingClientRect();
+  const navigationRect = navigation.getBoundingClientRect();
+  const headerStyle = getComputedStyle(header);
   const pageSurfaceStyle = getComputedStyle(document.body);
   expect(headerStyle.borderBottomWidth).toBe("0px");
   expect(headerStyle.boxShadow).not.toBe("none");
   expect(headerStyle.backgroundColor).not.toBe(
     pageSurfaceStyle.backgroundColor,
   );
-  expect(primaryRect?.top ?? 0).toBeGreaterThanOrEqual(
-    (headerRect?.top ?? 0) - 1,
-  );
-  expect(navigationRect?.top ?? 0).toBeGreaterThanOrEqual(
-    (primaryRect?.bottom ?? 0) - 1,
-  );
-  expect(navigationRect?.top ?? 0).toBeLessThanOrEqual(
-    (primaryRect?.bottom ?? 0) + 1,
-  );
-  expect(navigationRect?.bottom ?? 0).toBeLessThanOrEqual(
-    (headerRect?.bottom ?? 0) + 1,
-  );
-  expect(getComputedStyle(navigation as HTMLElement).borderTopWidth).toBe(
-    "0px",
-  );
+  expect(primaryRect.top).toBeGreaterThanOrEqual(headerRect.top - 1);
+  expect(navigationRect.top).toBeGreaterThanOrEqual(primaryRect.bottom - 1);
+  expect(navigationRect.top).toBeLessThanOrEqual(primaryRect.bottom + 1);
+  expect(navigationRect.bottom).toBeLessThanOrEqual(headerRect.bottom + 1);
+  expect(getComputedStyle(navigation).borderTopWidth).toBe("0px");
 
-  const activeTab = navigation?.querySelector<HTMLElement>(
+  const activeTab = navigation.querySelector<HTMLElement>(
     '[aria-current="page"]',
   );
   expect(activeTab).toBeTruthy();
@@ -1115,7 +1064,7 @@ async function approvedRoutesOf(nodeId: string) {
         })
       ).node,
     ).approvedRoutes,
-  ].sort();
+  ].toSorted();
 }
 
 async function operationCount(id: string) {
@@ -1139,9 +1088,9 @@ async function expectUiOperationDelta(
 async function observeApiContract<T>(
   operationId: OperationId,
   observedOperationIds: Set<OperationId>,
-  request: () => Promise<T>,
+  call: () => Promise<T>,
 ) {
-  const response = await request();
+  const response = await call();
   observedOperationIds.add(operationId);
   return response;
 }
@@ -1150,9 +1099,7 @@ function lastElementByTestIdPrefix(prefix: string) {
   const elements = Array.from(
     document.querySelectorAll<HTMLElement>(`[data-testid^="${prefix}"]`),
   );
-  const element = elements.at(-1);
-  expect(element).toBeTruthy();
-  return element as HTMLElement;
+  return requireValue(elements.at(-1));
 }
 
 async function clickLastByTestIdPrefix(prefix: string) {
@@ -1160,9 +1107,8 @@ async function clickLastByTestIdPrefix(prefix: string) {
 }
 
 async function inputLastByTestIdPrefix(prefix: string, value: string) {
-  const testId = lastElementByTestIdPrefix(prefix).dataset.testid;
-  expect(testId).toBeTruthy();
-  await page.getByTestId(testId as string).fill(value);
+  const testId = requireValue(lastElementByTestIdPrefix(prefix).dataset.testid);
+  await page.getByTestId(testId).fill(value);
 }
 
 async function expectPolicyRemovalDialog() {
@@ -1195,27 +1141,31 @@ async function waitForActionFinished(key: ActionFeedbackKey) {
 
 async function latestSavedPolicy() {
   await waitForActionFinished("save-policy");
-  const policyCall = (await commands.headscaleOperationCalls())
-    ?.filter((call) => call.id === "policy.set")
-    .at(-1);
-  expect(policyCall).toBeTruthy();
-  const payload = policyCall?.payload as { policy?: string };
-  expect(typeof payload.policy).toBe("string");
-  const expected = JSON.parse(payload.policy ?? "{}");
+  const policyCall = requireValue(
+    (await commands.headscaleOperationCalls())?.findLast(
+      (call) => call.id === "policy.set",
+    ),
+  );
+  const payload = policyCall.payload;
+  if (!payload || typeof payload !== "object")
+    throw new Error("policy payload is missing");
+  const policy = Reflect.get(payload, "policy");
+  expect(typeof policy).toBe("string");
+  const expected = JSON.parse(policy ?? "{}");
   const client = adopted();
-  let persisted: unknown;
+  let persisted: {
+    acls?: Array<{ action: string; src: string[]; dst: string[] }>;
+    groups?: Record<string, string[]>;
+    tagOwners?: Record<string, string[]>;
+    ssh?: unknown;
+  } = {};
   await expect
     .poll(async () => {
       persisted = JSON.parse((await readPolicy(client.read)).policy);
       return persisted;
     })
     .toEqual(expected);
-  return persisted as {
-    acls?: Array<{ action: string; src: string[]; dst: string[] }>;
-    groups?: Record<string, string[]>;
-    tagOwners?: Record<string, string[]>;
-    ssh?: unknown;
-  };
+  return persisted;
 }
 
 function expectNoRawPolicyEditor() {
@@ -1251,8 +1201,7 @@ function visibleDomTestId(testId: string) {
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0;
   });
-  expect(visible).toBeTruthy();
-  return visible as HTMLElement;
+  return requireValue(visible);
 }
 
 async function clickVisibleDomTestId(testId: string) {
@@ -1269,8 +1218,8 @@ async function selectDomTab(testId: string) {
 }
 
 function inputDomTestId(testId: string, value: string) {
-  const element = visibleDomTestId(testId) as HTMLInputElement;
-  Object.getOwnPropertyDescriptor(
+  const element = requireInstance(visibleDomTestId(testId), HTMLInputElement);
+  Reflect.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
     "value",
   )?.set?.call(element, value);
@@ -1291,15 +1240,24 @@ async function selectDomTestId(testId: string, value: string) {
 function stubDownloads() {
   const downloads: string[] = [];
   const objectTypes: string[] = [];
-  const originalCreateObjectURL = URL.createObjectURL;
-  const originalRevokeObjectURL = URL.revokeObjectURL;
-  const originalAnchorClick = HTMLAnchorElement.prototype.click;
+  const originalCreateObjectURL: typeof URL.createObjectURL = Reflect.get(
+    URL,
+    "createObjectURL",
+  );
+  const originalRevokeObjectURL: typeof URL.revokeObjectURL = Reflect.get(
+    URL,
+    "revokeObjectURL",
+  );
+  const originalAnchorClick: typeof HTMLAnchorElement.prototype.click =
+    Reflect.get(HTMLAnchorElement.prototype, "click");
 
-  URL.createObjectURL = ((blob: Blob) => {
-    objectTypes.push(blob.type);
+  const createObjectURL: typeof URL.createObjectURL = (blob) => {
+    objectTypes.push(blob instanceof Blob ? blob.type : "");
     return `blob:headscale-ui-${objectTypes.length}`;
-  }) as typeof URL.createObjectURL;
-  URL.revokeObjectURL = (() => {}) as typeof URL.revokeObjectURL;
+  };
+  URL.createObjectURL = createObjectURL;
+  const revokeObjectURL: typeof URL.revokeObjectURL = () => {};
+  URL.revokeObjectURL = revokeObjectURL;
   HTMLAnchorElement.prototype.click = function clickAnchor() {
     downloads.push(this.download);
   };
@@ -1317,13 +1275,16 @@ function stubDownloads() {
 
 function stubClipboard() {
   const writes: string[] = [];
-  const ownDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
-  const prototypeDescriptor = Object.getOwnPropertyDescriptor(
+  const ownDescriptor = Reflect.getOwnPropertyDescriptor(
+    navigator,
+    "clipboard",
+  );
+  const prototypeDescriptor = Reflect.getOwnPropertyDescriptor(
     Navigator.prototype,
     "clipboard",
   );
 
-  Object.defineProperty(navigator, "clipboard", {
+  Reflect.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: {
       writeText: async (value: string) => {
@@ -1336,12 +1297,12 @@ function stubClipboard() {
     writes,
     restore() {
       if (ownDescriptor) {
-        Object.defineProperty(navigator, "clipboard", ownDescriptor);
+        Reflect.defineProperty(navigator, "clipboard", ownDescriptor);
       } else {
         Reflect.deleteProperty(navigator, "clipboard");
       }
       if (prototypeDescriptor) {
-        Object.defineProperty(
+        Reflect.defineProperty(
           Navigator.prototype,
           "clipboard",
           prototypeDescriptor,
@@ -1503,7 +1464,10 @@ test("keeps native clicks targeted when preceding layers unmount", async () => {
   await resolved.click();
   expect(clicks).toBe(1);
 
-  const hiddenDuplicate = button.cloneNode(true) as HTMLButtonElement;
+  const hiddenDuplicate = requireInstance(
+    button.cloneNode(true),
+    HTMLButtonElement,
+  );
   hiddenDuplicate.hidden = true;
   const scope = document.createElement("div");
   scope.dataset.testid = "provider-target-scope";
@@ -2703,11 +2667,11 @@ test("keeps core dialogs usable on a short mobile viewport", async () => {
   // stacked buttons (keep editing / discard / save and close) must all fit.
   await page.getByTestId("team-open-group:ops").click();
   await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
-  const memberToRemove = document.querySelector(
-    '[data-testid^="team-member-remove-"]',
-  ) as HTMLElement | null;
-  expect(memberToRemove).not.toBeNull();
-  memberToRemove?.click();
+  const memberToRemove = requireInstance(
+    document.querySelector('[data-testid^="team-member-remove-"]'),
+    HTMLElement,
+  );
+  memberToRemove.click();
   await userEvent.keyboard("{Escape}");
   await expect
     .element(page.getByTestId("unsaved-changes-dialog"))
@@ -2948,7 +2912,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="route-available-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
   await expect
@@ -2992,12 +2956,14 @@ test("supports consumer-friendly route approval and revocation", async () => {
   const routeApprovalCall = (await commands.headscaleOperationCalls())?.find(
     (call) => call.id === "node.setApprovedRoutes",
   );
-  const routeApprovalPayload = routeApprovalCall?.payload as {
-    routes?: string[];
-  };
+  const routeApprovalPayload = routeApprovalCall?.payload;
+  const routes: unknown =
+    routeApprovalPayload && typeof routeApprovalPayload === "object"
+      ? Reflect.get(routeApprovalPayload, "routes")
+      : undefined;
   expect(routeApprovalCall?.url).toBe("/api/v1/node/2/approve_routes");
-  expect(routeApprovalPayload.routes).toEqual(["10.42.0.0/16", "0.0.0.0/0"]);
-  expect(routeApprovalPayload.routes).not.toContain("::/0");
+  expect(routes).toEqual(["10.42.0.0/16", "0.0.0.0/0"]);
+  expect(routes).not.toContain("::/0");
   await waitForActionFinished("approve-route");
   await expect
     .element(page.getByTestId("approve-route-dialog"))
@@ -3010,7 +2976,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
           input: { nodeId: "2" },
         })
       ).node,
-    ).approvedRoutes.sort(),
+    ).approvedRoutes.toSorted(),
   ).toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
 
   // Exit routes are revoked as a pair: the dialog names both prefixes and the write removes both.
@@ -3024,7 +2990,13 @@ test("supports consumer-friendly route approval and revocation", async () => {
     document.querySelector('[data-testid="revoke-route-target-2"]'),
   ).toBeNull();
   expect(
-    [0, 1].map((index) => visibleText(`revoke-route-target-${index}`)).sort(),
+    [0, 1]
+      .map((index) => visibleText(`revoke-route-target-${index}`))
+      .toSorted((a, b) => {
+        const left = a ?? "";
+        const right = b ?? "";
+        return left < right ? -1 : left > right ? 1 : 0;
+      }),
   ).toEqual(["0.0.0.0/0", "::/0"]);
   await page.getByTestId("revoke-route-confirm").click();
   await waitForActionFinished("revoke-route");
@@ -3037,7 +3009,7 @@ test("supports consumer-friendly route approval and revocation", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="pending-route-value-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "::/0"]);
 
@@ -3124,7 +3096,7 @@ test("covers dashboard refresh, machine filters, exports and machine lifecycle a
     )
       .map((element) => element.dataset.testid ?? "")
       .filter((testId) => /^device-\d+$/.test(testId))
-      .sort();
+      .toSorted();
   let filteredDeviceCount = 0;
   for (const [filter, expected] of [
     ["online", ["device-1"]],
@@ -4080,7 +4052,7 @@ test("preserves member group and tag selections while a policy refresh is pendin
       const prefix = `assign-user-${kind}`;
       await expect.element(page.getByTestId(`${prefix}-dialog`)).toBeVisible();
       const option = lastElementByTestIdPrefix(`${prefix}-option-`);
-      const optionId = option.dataset.testid as string;
+      const optionId = requireValue(option.dataset.testid);
       await clickLastByTestIdPrefix(`assign-user-${kind}-option-`);
       await expect.element(page.getByTestId(`${prefix}-apply`)).toBeEnabled();
       const selected = option
@@ -4139,13 +4111,12 @@ test("covers user filters, user export and member deletion", async () => {
   await expect
     .element(page.getByTestId("member-auth-source-charlie"))
     .toHaveTextContent("-");
-  const memberDeviceTags = document.querySelector<HTMLElement>(
-    '[data-testid="member-device-tags-charlie"]',
+  const memberDeviceTags = requireValue(
+    document.querySelector<HTMLElement>(
+      '[data-testid="member-device-tags-charlie"]',
+    ),
   );
-  expect(memberDeviceTags).toBeTruthy();
-  expect(getComputedStyle(memberDeviceTags as HTMLElement).display).toBe(
-    "grid",
-  );
+  expect(getComputedStyle(memberDeviceTags).display).toBe("grid");
   await expect
     .element(page.getByTestId("member-device-tag-charlie-3"))
     .toMatchTextContent("old-phone");
@@ -4639,10 +4610,14 @@ test("covers auth-key filters, expiration and deletion", async () => {
       ),
     )
     .toBe(true);
-  const createdPayload = (await commands.headscaleOperationCalls())
-    ?.filter((call) => call.id === "preauthkey.create")
-    .at(-1)?.payload as { expiration?: string } | undefined;
-  expect(createdPayload?.expiration).toBe(
+  const createdPayload = (await commands.headscaleOperationCalls())?.findLast(
+    (call) => call.id === "preauthkey.create",
+  )?.payload;
+  const expiration =
+    createdPayload && typeof createdPayload === "object"
+      ? Reflect.get(createdPayload, "expiration")
+      : undefined;
+  expect(expiration).toBe(
     new Date(`${expirationYear}-06-01T00:00`).toISOString(),
   );
   await expect
@@ -4650,7 +4625,7 @@ test("covers auth-key filters, expiration and deletion", async () => {
       const key = (
         (await request(adopted().read, { endpoint: "listPreAuthKeys" }))
           .preAuthKeys ?? []
-      ).find((key) => key.aclTags?.includes("tag:mobile"));
+      ).find((candidate) => candidate.aclTags?.includes("tag:mobile"));
       return Date.parse(key?.expiration ?? "");
     })
     .toBe(new Date(`${expirationYear}-06-01T00:00`).getTime());
@@ -4868,7 +4843,7 @@ test("clean up orphan refs banner: cancel keeps them, confirm strips them", asyn
   const saved = await latestSavedPolicy();
   expect(saved.groups?.["group:ops"]).toEqual(["alice@"]);
   expect(saved.tagOwners?.["tag:server"]).toEqual(["alice@"]);
-  expect(saved.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
+  expect(saved.acls?.flatMap((rule) => rule.dst).toSorted()).toEqual([
     "tag:server:443",
     "tag:server:80",
   ]);
@@ -4886,11 +4861,11 @@ test("unsaved-changes dialog covers cancel, discard and save-and-close paths", a
 
   // Make it dirty by removing an existing member. The fixture policy must give
   // group:ops at least one member — fail loudly if that ever changes.
-  const memberRow = document.querySelector(
-    '[data-testid^="team-member-remove-"]',
-  ) as HTMLElement | null;
-  expect(memberRow).not.toBeNull();
-  memberRow?.click();
+  const memberRow = requireInstance(
+    document.querySelector('[data-testid^="team-member-remove-"]'),
+    HTMLElement,
+  );
+  memberRow.click();
 
   // Escape now triggers the unsaved-changes confirm.
   await userEvent.keyboard("{Escape}");
@@ -4927,11 +4902,11 @@ test("unsaved-changes dialog covers cancel, discard and save-and-close paths", a
   // row is back. Dirty it again, this time use save-and-close.
   await page.getByTestId("team-card-group:ops").click();
   await expect.element(page.getByTestId("team-detail-dialog")).toBeVisible();
-  const memberRow2 = document.querySelector(
-    '[data-testid^="team-member-remove-"]',
-  ) as HTMLElement | null;
-  expect(memberRow2).not.toBeNull();
-  memberRow2?.click();
+  const memberRow2 = requireInstance(
+    document.querySelector('[data-testid^="team-member-remove-"]'),
+    HTMLElement,
+  );
+  memberRow2.click();
   await userEvent.keyboard("{Escape}");
   await page.getByTestId("unsaved-changes-save").click();
   await confirmPolicyPublication();
@@ -5723,9 +5698,9 @@ test("covers server settings API keys and maintenance actions", async () => {
     await expect
       .poll(
         async () =>
-          (await commands.headscaleOperationCalls())
-            ?.filter((call) => call.id === "node.backfillIps")
-            .at(-1)?.payload,
+          (await commands.headscaleOperationCalls())?.findLast(
+            (call) => call.id === "node.backfillIps",
+          )?.payload,
       )
       .toEqual({ confirmed: true });
     await expect
@@ -5788,12 +5763,13 @@ test("encrypts API keys at rest", async () => {
   await expect.element(page.getByTestId("profile-row-Secure")).toBeVisible();
 
   // IndexedDB row exists with an encrypted ApiKeySecret, never the raw bearer token.
-  const idbProfiles = await idbGetAll(STORE_PROFILES);
-  expect(idbProfiles).toHaveLength(1);
-  const stored = idbProfiles[0] as {
+  const idbProfiles = await idbGetAll<{
+    keyEpoch: string;
     credentialVersion: string;
     apiKey: { v: number; scheme: string; iv: string; ct: string };
-  };
+  }>(STORE_PROFILES);
+  expect(idbProfiles).toHaveLength(1);
+  const stored = requireValue(idbProfiles[0]);
   expect(stored.apiKey).toBeTypeOf("object");
   expect(stored.apiKey.v).toBe(2);
   expect(stored.apiKey.scheme).toBe("password");
@@ -6233,7 +6209,7 @@ test("keeps every core function usable on mobile", async () => {
       Array.from(
         document.querySelectorAll('[data-testid^="route-approved-2-"]'),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "::/0"]);
   expectNoHorizontalOverflow();
@@ -6437,11 +6413,12 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
-  const connectionHeader = document.querySelector<HTMLElement>(
-    '[data-testid="connection-dialog"] [data-slot="dialog-header"]',
+  const connectionHeader = requireValue(
+    document.querySelector<HTMLElement>(
+      '[data-testid="connection-dialog"] [data-slot="dialog-header"]',
+    ),
   );
-  expect(connectionHeader).toBeTruthy();
-  expectTextAlignsToStart(connectionHeader as HTMLElement);
+  expectTextAlignsToStart(connectionHeader);
   expect(
     document.querySelector(
       '[data-testid="connection-dialog"] [data-slot="dialog-close"]',
@@ -6469,11 +6446,10 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   await selectSectionTab("devices");
   await expect.element(page.getByTestId("machines-workbench")).toBeVisible();
   await expect.element(page.getByTestId("machine-list")).toBeVisible();
-  const deviceCell = document.querySelector<HTMLElement>(
-    '[data-testid="machine-list"] td',
+  const deviceCell = requireValue(
+    document.querySelector<HTMLElement>('[data-testid="machine-list"] td'),
   );
-  expect(deviceCell).toBeTruthy();
-  expectTextAlignsToStart(deviceCell as HTMLElement);
+  expectTextAlignsToStart(deviceCell);
   expect(
     document
       .querySelector('[data-testid^="device-owner-link-"] bdi')
@@ -6544,11 +6520,10 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   expectTestIdNetworkTokensLtr("route-node-2", 3);
   await page.getByTestId("approve-route-2-0").click();
   await expect.element(page.getByTestId("approve-route-dialog")).toBeVisible();
-  const alertHeader = document.querySelector<HTMLElement>(
-    '[data-slot="alert-dialog-header"]',
+  const alertHeader = requireValue(
+    document.querySelector<HTMLElement>('[data-slot="alert-dialog-header"]'),
   );
-  expect(alertHeader).toBeTruthy();
-  expectTextAlignsToStart(alertHeader as HTMLElement);
+  expectTextAlignsToStart(alertHeader);
   await page.getByTestId("approve-route-cancel").click();
   await expect
     .element(page.getByTestId("approve-route-dialog"))
@@ -6558,11 +6533,12 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
     .getByTestId(`revoke-route-2-${approvedRouteIndex("2", "10.42.0.0/16")}`)
     .click();
   await expect.element(page.getByTestId("revoke-route-dialog")).toBeVisible();
-  const revokeHeader = document.querySelector<HTMLElement>(
-    '[data-testid="revoke-route-dialog"] [data-slot="alert-dialog-header"]',
+  const revokeHeader = requireValue(
+    document.querySelector<HTMLElement>(
+      '[data-testid="revoke-route-dialog"] [data-slot="alert-dialog-header"]',
+    ),
   );
-  expect(revokeHeader).toBeTruthy();
-  expectTextAlignsToStart(revokeHeader as HTMLElement);
+  expectTextAlignsToStart(revokeHeader);
   expectTestIdNetworkTokensLtr("revoke-route-dialog");
   await page.viewport(390, 844);
   expectDialogFitsViewport("revoke-route-dialog");
@@ -7202,7 +7178,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     ).node,
   );
   expect(routeNode.givenName).toBe("edge-router");
-  expect([...routeNode.availableRoutes].sort()).toEqual([
+  expect([...routeNode.availableRoutes].toSorted()).toEqual([
     "0.0.0.0/0",
     "10.42.0.0/16",
     "::/0",
@@ -7250,7 +7226,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
           `[data-testid^="route-approved-${routeNode.id}-"]`,
         ),
         (route) => route.textContent?.trim(),
-      ).sort(),
+      ).toSorted(),
     )
     .toEqual(["0.0.0.0/0", "10.42.0.0/16", "172.16.0.0/12", "::/0"]);
   const routeWritesBeforeRevoke = await operationCount(
@@ -7440,9 +7416,9 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
   await expect
     .poll(
       async () =>
-        (await commands.headscaleOperationCalls())
-          ?.filter((call) => call.id === "node.backfillIps")
-          .at(-1)?.payload,
+        (await commands.headscaleOperationCalls())?.findLast(
+          (call) => call.id === "node.backfillIps",
+        )?.payload,
     )
     .toEqual({ confirmed: true });
   await closeLayerWithEscape("server-settings-dialog");
@@ -7626,7 +7602,7 @@ test("cleans only true orphan references against Headscale v0.29.4", async () =>
   const submitted = await latestSavedPolicy();
   expect(submitted.groups?.["group:test-01"]).toEqual(["admin-test@"]);
   expect(submitted.tagOwners?.["tag:test-01"]).toEqual(["admin-test@"]);
-  expect(submitted.acls?.flatMap((rule) => rule.dst).sort()).toEqual([
+  expect(submitted.acls?.flatMap((rule) => rule.dst).toSorted()).toEqual([
     "tag:test-01:80",
     "tag:test-02:22",
   ]);
@@ -7694,11 +7670,9 @@ test("saves a live CLI user without email as a device-label manager against Head
 
   await expect
     .poll(async () => {
-      const persisted = JSON.parse(
-        await commands.readHeadscaleFixturePolicy(),
-      ) as {
+      const persisted: {
         tagOwners?: Record<string, string[]>;
-      };
+      } = JSON.parse(await commands.readHeadscaleFixturePolicy());
       return (
         persisted.tagOwners?.["tag:issue7-live"]?.join(",") === "issue7-live@"
       );
@@ -7823,11 +7797,10 @@ test("deletes the wildcard allow-all rule and keeps empty ACLs after saving and 
 
         await expect
           .poll(async () => {
-            return (
-              JSON.parse(await commands.readHeadscaleFixturePolicy()) as {
-                acls?: unknown[];
-              }
-            ).acls;
+            const persisted: { acls?: unknown[] } = JSON.parse(
+              await commands.readHeadscaleFixturePolicy(),
+            );
+            return persisted.acls;
           })
           .toEqual([]);
         await session().snapshot.refreshSnapshot();

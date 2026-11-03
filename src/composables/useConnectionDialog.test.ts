@@ -17,7 +17,7 @@ let session: Session;
 const cleanup: (() => void | Promise<void>)[] = [];
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.splice(0).reverse()) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 beforeEach(async () => {
   __resetForTest();

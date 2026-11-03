@@ -22,7 +22,7 @@ beforeEach(async () => {
   await hydrateSettings();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 async function fixture() {
@@ -35,7 +35,7 @@ async function fixture() {
   }
   const first = await page("owner-a");
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   first.profiles.setConnectionForm({
     profileName: "Shared server",
     baseUrl: server.baseUrl,
@@ -128,7 +128,10 @@ test("a failed profile read after committed reset remains visible while the page
       failReads = true;
     }),
   );
-  const getAll = IDBObjectStore.prototype.getAll;
+  const getAll: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   let failures = 0;
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,

@@ -40,11 +40,13 @@ async function setup(path = "/home", extraKeys: PreAuthKey[] = []) {
   };
   const session = await prepareTestSession(async (input, init) => {
     const request = new Request(input, init);
-    const path = new URL(request.url).pathname;
-    if (request.method !== "GET" || !(path in responses)) {
-      throw new Error(`Unexpected fixture request: ${request.method} ${path}`);
+    const requestPath = new URL(request.url).pathname;
+    if (request.method !== "GET" || !(requestPath in responses)) {
+      throw new Error(
+        `Unexpected fixture request: ${request.method} ${requestPath}`,
+      );
     }
-    return Response.json(responses[path]);
+    return Response.json(responses[requestPath]);
   });
   await setLocale("en-US");
   await authenticateTestSession(session);

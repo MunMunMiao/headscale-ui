@@ -9,7 +9,7 @@ import {
   parseCommaList,
 } from "./policy-designer";
 
-export type ServiceId = "ssh" | "web" | "rdp" | "ping" | "dns" | "all" | string;
+export type ServiceId = string;
 
 export interface ServicePreset {
   id: ServiceId;
@@ -408,7 +408,7 @@ export function listTagsFromState(state: PolicyDesignerState): string[] {
     }
   }
 
-  return Array.from(seen).sort();
+  return Array.from(seen).toSorted();
 }
 
 export function stripTagPrefix(tag: string): string {

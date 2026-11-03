@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
+import { testDouble } from "@/test/dom";
 import { createSessionBridge } from "@/session/bridge";
 import { type Session, SessionContext } from "./session-context";
 import { createActionFeedbackStore } from "./useActionFeedback";
@@ -40,7 +41,7 @@ test("React profiles projection reacts to an ordinary draft without opening a wo
     null,
   );
   await render(
-    <SessionContext.Provider value={{ profiles } as Session}>
+    <SessionContext.Provider value={testDouble<Session>({ profiles })}>
       <Form />
     </SessionContext.Provider>,
   );

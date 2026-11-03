@@ -256,7 +256,10 @@ test("a failed migration write clears new secrets, associates its error and requ
   const { session, profile, requests } = await setup("device");
   const before = await idbGet("profiles", profile.id);
   await renderSessionPage(session, <UnlockOverlay />, "/login");
-  const nativePut = IDBObjectStore.prototype.put;
+  const nativePut: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   let rejectedWrites = 0;
   const put = vi
     .spyOn(IDBObjectStore.prototype, "put")

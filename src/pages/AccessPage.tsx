@@ -321,9 +321,10 @@ export default function AccessPage() {
   const checkResult = checked?.text === draftText ? checked : null;
 
   const [tagSearchQuery, setTagSearchQuery] = useState("");
-  const rawMaintenance = (
-    useSearch({ strict: false }) as Record<string, unknown>
-  ).maintenance;
+  const searchParams: Record<string, unknown> = useSearch({
+    strict: false,
+  });
+  const rawMaintenance = searchParams.maintenance;
   const queryMaintenance =
     typeof rawMaintenance === "string" && rawMaintenance.trim()
       ? rawMaintenance
@@ -348,7 +349,7 @@ export default function AccessPage() {
       ...inventory.tags.map((entry) => entry.tag),
       ...(returnTo?.managedTag ? [returnTo.managedTag] : []),
     ]),
-  ).sort();
+  ).toSorted();
 
   interface TagMeta {
     tagName: string;
@@ -523,7 +524,7 @@ export default function AccessPage() {
   );
   const tagForm = useAppForm({
     defaultValues: tagDefaults,
-    onSubmitMeta: "done" as "name" | "done",
+    onSubmitMeta: "done" satisfies "name" | "done",
     validators: {
       onDynamic: ({ value }) => {
         const issue = nameIssue("tag", value.name, tagDetailCurrent);
@@ -546,11 +547,11 @@ export default function AccessPage() {
         return Object.keys(fields).length ? { fields } : undefined;
       },
     },
-    onSubmit: async ({ value, formApi, meta }) => {
+    onSubmit: async ({ value, formApi, meta: submitMeta }) => {
       if (value.name !== value.name.trim())
         formApi.setFieldValue("name", value.name.trim());
       if (!(await commitTagName(value.name))) return;
-      if (meta === "done") {
+      if (submitMeta === "done") {
         const valid = formApi.state.values.accessors.every((accessor) =>
           commitCustomPorts(accessor),
         );
@@ -561,7 +562,7 @@ export default function AccessPage() {
   });
   const teamForm = useAppForm({
     defaultValues: teamDefaults,
-    onSubmitMeta: "done" as "name" | "done",
+    onSubmitMeta: "done" satisfies "name" | "done",
     validators: {
       onDynamic: ({ value }) => {
         const issue = nameIssue("group", value.name, teamDetailCurrent);
@@ -570,10 +571,11 @@ export default function AccessPage() {
           : undefined;
       },
     },
-    onSubmit: ({ value, formApi, meta }) => {
+    onSubmit: ({ value, formApi, meta: submitMeta }) => {
       if (value.name !== value.name.trim())
         formApi.setFieldValue("name", value.name.trim());
-      if (commitTeamName(value.name) && meta === "done") closeDialog("team");
+      if (commitTeamName(value.name) && submitMeta === "done")
+        closeDialog("team");
     },
   });
   const tagValues = useFormStore(tagForm.store, (state) => state.values);
@@ -591,12 +593,12 @@ export default function AccessPage() {
   }, [teamForm, teamDefaults]);
   // rules 引用订阅策略变化，聚合 state getter 每次读取都会创建新对象。
   useEffect(() => {
-    const drafts = tagForm.state.values.accessors;
+    const formAccessors = tagForm.state.values.accessors;
     tagForm.setFieldValue(
       "accessors",
       getTagAccessors(policyStore.policyDesignerState, tagDetailCurrent).map(
         (accessor) => {
-          const draft = drafts.find(
+          const draft = formAccessors.find(
             (candidate) => candidate.who === accessor.who,
           );
           return draft && pendingPortDrafts.current.has(accessor.who)
@@ -630,16 +632,16 @@ export default function AccessPage() {
   ) {
     const error = identityErrorText(issue, kind);
     if (kind === "tag") {
-      tagForm.setFieldMeta("name", (meta) => ({
-        ...meta,
+      tagForm.setFieldMeta("name", (fieldMeta) => ({
+        ...fieldMeta,
         isTouched: true,
-        errorMap: { ...meta.errorMap, onDynamic: error },
+        errorMap: { ...fieldMeta.errorMap, onDynamic: error },
       }));
     } else {
-      teamForm.setFieldMeta("name", (meta) => ({
-        ...meta,
+      teamForm.setFieldMeta("name", (fieldMeta) => ({
+        ...fieldMeta,
         isTouched: true,
-        errorMap: { ...meta.errorMap, onDynamic: error },
+        errorMap: { ...fieldMeta.errorMap, onDynamic: error },
       }));
     }
   }
@@ -831,7 +833,8 @@ export default function AccessPage() {
   function changeTeamMembers(members: string[]) {
     const state = policyStore.policyDesignerState;
     const group = state.groups.find(
-      (group) => group.name === policyStore.getSnapshot().teamDetailCurrent,
+      (candidate) =>
+        candidate.name === policyStore.getSnapshot().teamDetailCurrent,
     );
     const next = group
       ? upsertGroup(state, { ...group, members: members.map(toMemberRef) })
@@ -862,10 +865,10 @@ export default function AccessPage() {
   }
 
   function tagNameMessage(message: string) {
-    tagForm.setFieldMeta("name", (meta) => ({
-      ...meta,
+    tagForm.setFieldMeta("name", (fieldMeta) => ({
+      ...fieldMeta,
       isTouched: true,
-      errorMap: { ...meta.errorMap, onDynamic: message },
+      errorMap: { ...fieldMeta.errorMap, onDynamic: message },
     }));
   }
 
@@ -1069,11 +1072,11 @@ export default function AccessPage() {
       (entry) => entry.who === who,
     );
     if (index < 0) return false;
-    tagForm.setFieldMeta(`accessors[${index}].customPorts`, (meta) => ({
-      ...meta,
+    tagForm.setFieldMeta(`accessors[${index}].customPorts`, (fieldMeta) => ({
+      ...fieldMeta,
       isTouched: true,
       errorMap: {
-        ...meta.errorMap,
+        ...fieldMeta.errorMap,
         onDynamic: valid ? undefined : copy.policyBufferedInvalid,
       },
     }));
@@ -1333,12 +1336,11 @@ export default function AccessPage() {
   const [ipDraftDirty, setIpDraftDirty] = useState(false);
   const [pendingIpEdit, setPendingIpEdit] = useState<string | null>(null);
   const dirtyIpInput = editingIpRuleId !== null && ipDraftDirty;
-  const dirtyDialogInput = Boolean(
+  const dirtyDialogInput =
     (tagDetailOpen &&
       (tagValues.name !== stripTagPrefix(tagDetailCurrent) ||
         pendingPortDrafts.current.size > 0)) ||
-    (teamDetailOpen && teamValues.name !== stripGroupPrefix(teamDetailCurrent)),
-  );
+    (teamDetailOpen && teamValues.name !== stripGroupPrefix(teamDetailCurrent));
   const ipNavigation = useBlocker({
     shouldBlockFn: ({ current, next }) =>
       (dirtyIpInput || dirtyDialogInput) && current.pathname !== next.pathname,
@@ -1681,6 +1683,7 @@ export default function AccessPage() {
   useEffect(() => {
     if (ipNavigation.status === "blocked" && dirtyDialogInput && !saving)
       attemptDialogClose(tagDetailOpen ? "tag" : "team");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the dialog must not retrigger from its own state changes
   }, [ipNavigation.status, dirtyDialogInput, saving]);
 
   const managedReturn = useRef<string | null>(null);
@@ -1695,6 +1698,7 @@ export default function AccessPage() {
       return;
     managedReturn.current = returnTo.id;
     if (returnTo.managedTag) openTagDetailFor(returnTo.managedTag);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one opening per handoff
   }, [returnTo?.id, policyError, queryMaintenance]);
   const { viewEpoch } = useStore(drafts);
   // identity/view/version changes retire confirmations but retain non-secret editor input.
@@ -2234,11 +2238,9 @@ export default function AccessPage() {
                 className="p-3 flex flex-col gap-2"
                 data-testid={`template-card-${template.id}`}
               >
-                <p className="font-medium">
-                  {copy[template.titleKey as keyof typeof copy] as string}
-                </p>
+                <p className="font-medium">{copy[template.titleKey]}</p>
                 <p className="text-xs text-muted-foreground flex-1">
-                  {copy[template.descriptionKey as keyof typeof copy] as string}
+                  {copy[template.descriptionKey]}
                 </p>
                 <Button
                   size="sm"
@@ -2750,9 +2752,12 @@ export default function AccessPage() {
                     listeners={{
                       onChange: ({ fieldApi }) => {
                         ++closeGeneration.current;
-                        fieldApi.setMeta((meta) => ({
-                          ...meta,
-                          errorMap: { ...meta.errorMap, onDynamic: undefined },
+                        fieldApi.setMeta((fieldMeta) => ({
+                          ...fieldMeta,
+                          errorMap: {
+                            ...fieldMeta.errorMap,
+                            onDynamic: undefined,
+                          },
                         }));
                       },
                       onBlur: () => {
@@ -3244,8 +3249,7 @@ export default function AccessPage() {
                 checked={tagRename?.external ?? false}
                 onCheckedChange={(external) =>
                   setTagRename(
-                    (current) =>
-                      current && { ...current, external: external === true },
+                    (current) => current && { ...current, external: external },
                   )
                 }
               />
@@ -3300,9 +3304,12 @@ export default function AccessPage() {
                     listeners={{
                       onChange: ({ fieldApi }) => {
                         ++closeGeneration.current;
-                        fieldApi.setMeta((meta) => ({
-                          ...meta,
-                          errorMap: { ...meta.errorMap, onDynamic: undefined },
+                        fieldApi.setMeta((fieldMeta) => ({
+                          ...fieldMeta,
+                          errorMap: {
+                            ...fieldMeta.errorMap,
+                            onDynamic: undefined,
+                          },
                         }));
                       },
                       onBlur: () => {

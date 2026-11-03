@@ -1,11 +1,4 @@
-import {
-  type AnyStruct,
-  type HttpCommand,
-  type Infer,
-  type RequestSuccessData,
-  struct,
-} from "@defjs/core";
-import type { rpcStatus } from "@/api/contracts";
+import { type Infer, struct } from "@defjs/core";
 import * as endpoints from "@/api/requests";
 import type { VaultVersion } from "@/lib/profile-storage";
 import type { ProfileActions } from "./profile-actions";
@@ -23,19 +16,30 @@ import {
 type Endpoints = typeof endpoints;
 /** An export of src/api/requests.ts; the Worker runs that endpoint with its own client. */
 export type EndpointName = keyof Endpoints;
+
+/** An operation's parameters are `[client]` or `[client, input?]`; only the input crosses the port. */
+type EndpointInput<T extends readonly unknown[]> = T extends {
+  readonly length: 1;
+}
+  ? never
+  : T[1];
+
 export type ApiCommand<K extends EndpointName = EndpointName> = {
-  [N in K]: Parameters<Endpoints[N]> extends []
+  [N in K]: EndpointInput<Parameters<Endpoints[N]>> extends never
     ? { readonly endpoint: N }
-    : { readonly endpoint: N; readonly input: Parameters<Endpoints[N]>[0] };
+    : {
+        readonly endpoint: N;
+        readonly input: EndpointInput<Parameters<Endpoints[N]>>;
+      };
 }[K];
-export type ApiOutput<K extends EndpointName> =
-  ReturnType<Endpoints[K]> extends HttpCommand<
-    infer _Input,
-    infer Output,
-    infer _Error
-  >
-    ? RequestSuccessData<Output>
-    : never;
+
+/** The success member of an operation's error-first tuple. */
+type SuccessData<T> = T extends readonly [null, infer Data, ...unknown[]]
+  ? Data
+  : never;
+export type ApiOutput<K extends EndpointName> = SuccessData<
+  Awaited<ReturnType<Endpoints[K]>>
+>;
 
 /**
  * A request as the Worker runs it. The page declares which kind it publishes, as tRPC's query and
@@ -46,27 +50,16 @@ export type ApiRequest<K extends EndpointName = EndpointName> =
     readonly type: "api.read" | "api.write";
   };
 
-type AnyEndpoint = (
-  input?: unknown,
-) => HttpCommand<
-  AnyStruct | undefined,
-  AnyStruct | undefined,
-  typeof rpcStatus
->;
-
-/** The endpoint a request names, or undefined for anything requests.ts does not export. */
-export function endpointOf(name: unknown) {
-  return typeof name === "string" && Object.hasOwn(endpoints, name)
-    ? // the Worker serves every endpoint, so none can be shaken.
-      (endpoints[name as EndpointName] as AnyEndpoint)
-    : undefined;
+function isEndpointName(name: unknown): name is EndpointName {
+  return typeof name === "string" && Object.hasOwn(endpoints, name);
 }
 
-const ENDPOINTS = Object.keys(endpoints) as [EndpointName, ...EndpointName[]];
-/** Only these may be published as reads, so a write can never pass for one (like Connect's GET check). */
-const GET_ENDPOINTS = ENDPOINTS.filter(
-  (name) => (endpointOf(name) as AnyEndpoint)().definition.method === "GET",
-) as [EndpointName, ...EndpointName[]];
+/** A non-empty tuple keeps `struct.enum`'s literal union. */
+function nonEmpty<T>(values: readonly T[]): [T, ...T[]] {
+  return [values[0], ...values.slice(1)];
+}
+
+const ENDPOINTS = nonEmpty(Object.keys(endpoints).filter(isEndpointName));
 
 export type SessionMessagePort = Pick<
   MessagePort,
@@ -134,7 +127,7 @@ export const sessionCommand = struct.discriminatedUnion("type", [
   struct.object({
     type: struct.literal("api.read"),
     expected: sessionIdentity,
-    endpoint: struct.enum(GET_ENDPOINTS),
+    endpoint: struct.enum(ENDPOINTS),
     // The endpoint's own input struct checks this when the Worker client executes it.
     input: struct.unknown().optional(),
   }),
@@ -219,7 +212,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       });
   });
   return {
-    connect(port: SessionMessagePort) {
+    connect(this: void, port: SessionMessagePort) {
       const portId = crypto.randomUUID();
       let ownerTabId: string | null = null;
       let highestId = 0;
@@ -245,11 +238,12 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
           connections.delete(connection);
           pending.clear();
           port.removeEventListener("message", receive);
-          port.removeEventListener("messageerror", connection.close);
+          port.removeEventListener("messageerror", closePort);
           port.close();
           void deps.runtime.detachPort(portId);
         },
       };
+      const closePort = connection.close.bind(connection);
       function reject(error: WorkerErrorDto) {
         connection.send({ type: "error", error });
         connection.close();
@@ -258,7 +252,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         if (closed) return;
         const [invalid, message] = struct.parse(
           pageMessage,
-          (event as MessageEvent).data,
+          Reflect.get(event, "data"),
         );
         if (invalid) return reject({ kind: "invalid-request" });
         if (ownerTabId === null) {
@@ -282,7 +276,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             storageVersion: deps.storageVersion,
             snapshot: deps.runtime.auth.getSnapshot(),
           });
-          return;
+          return undefined;
         }
         if (message.type === "disconnect") return connection.close();
         if (message.type === "hello" || !requestId(message.requestId))
@@ -292,7 +286,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
           highestId = Math.max(highestId, id);
           pending.delete(id);
           void deps.runtime.cancel(portId, String(id));
-          return;
+          return undefined;
         }
         const reply = (result: SessionResult<unknown>) =>
           connection.send({
@@ -308,7 +302,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         if (id <= highestId || malformed) {
           highestId = Math.max(highestId, id);
           reply({ ok: false, error: { kind: "invalid-request" } });
-          return;
+          return undefined;
         }
         highestId = id;
         const control = [
@@ -321,6 +315,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         pending.add(id);
         const owner = ownerTabId;
         void deps.runtime
+          // eslint-disable-next-line @typescript-eslint/consistent-return -- exhaustive switch over SessionCommand
           .runOperation(portId, String(id), async (signal) => {
             const context = {
               ownerTabId: owner,
@@ -345,15 +340,19 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
                 return result;
               }
               case "api.read":
-              case "api.write":
+              case "api.write": {
                 // The endpoint is one requests.ts exports; its input struct runs inside client.execute.
-                return deps.runtime.auth.execute(
-                  command.expected,
-                  command as ApiRequest,
-                  {
-                    signal,
-                  },
+                const run: typeof deps.runtime.auth.execute = Reflect.get(
+                  deps.runtime.auth,
+                  "execute",
                 );
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- dynamic defjs operation dispatch
+                return Reflect.apply(run, deps.runtime.auth, [
+                  command.expected,
+                  command,
+                  { signal },
+                ]);
+              }
               case "profiles.list":
                 return deps.profiles.list(context);
               case "profiles.save":
@@ -372,6 +371,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             if (!pending.delete(id) || closed) return;
             reply(result);
           });
+        return undefined;
       }
       if (disposed) {
         port.close();
@@ -379,9 +379,9 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       }
       connections.add(connection);
       port.addEventListener("message", receive);
-      port.addEventListener("messageerror", connection.close);
+      port.addEventListener("messageerror", closePort);
       port.start();
-      return connection.close;
+      return () => connection.close();
     },
     notifyProfiles() {
       for (const connection of connections)
@@ -391,6 +391,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       for (const connection of connections)
         connection.send({ type: "reset", version });
     },
+    // eslint-disable-next-line @typescript-eslint/require-await -- async API retained for callers
     async dispose(): Promise<void> {
       if (disposed) return;
       disposed = true;

@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import {
@@ -107,10 +108,8 @@ async function setup(
     const request = new Request(input, init);
     const path = new URL(request.url).pathname;
     if (request.method !== "GET") {
-      const body =
-        request.method === "DELETE"
-          ? {}
-          : ((await request.json()) as Record<string, unknown>);
+      const body: Record<string, unknown> =
+        request.method === "DELETE" ? {} : await request.json();
       writes.push({ method: request.method, path, body });
       if (heldWrite) await heldWrite;
       if (path === "/api/v1/policy" && request.method === "PUT") {
@@ -584,12 +583,15 @@ for (const source of ["invites", "members"] as const) {
           )
           .toBe(readsBeforeReturn + 1);
         const reads = readsBeforeReturn + 1;
-        const search = page
-          .getByTestId(source === "invites" ? "invite-search" : "user-search")
-          .element() as HTMLInputElement;
+        const search = requireInstance(
+          page
+            .getByTestId(source === "invites" ? "invite-search" : "user-search")
+            .element(),
+          HTMLInputElement,
+        );
         ctx.holdPolicy(nextPolicy.promise);
         if (newer) {
-          const setValue = Object.getOwnPropertyDescriptor(
+          const setValue = Reflect.getOwnPropertyDescriptor(
             HTMLInputElement.prototype,
             "value",
           )?.set;
@@ -662,17 +664,21 @@ for (const source of ["invites", "members"] as const) {
       const ctx = await setup(source, undefined, loading.promise);
       await open(source);
       await editInvitation();
-      const manage = page
-        .getByTestId("invite-tags-define-tag:roundtrip")
-        .element() as HTMLButtonElement;
-      const search = page
-        .getByTestId(source === "invites" ? "invite-search" : "user-search")
-        .element() as HTMLInputElement;
+      const manage = requireInstance(
+        page.getByTestId("invite-tags-define-tag:roundtrip").element(),
+        HTMLButtonElement,
+      );
+      const search = requireInstance(
+        page
+          .getByTestId(source === "invites" ? "invite-search" : "user-search")
+          .element(),
+        HTMLInputElement,
+      );
       try {
         // Queue both native interactions before React can commit the intermediate destination URL.
         manage.click();
         if (newer) {
-          const setValue = Object.getOwnPropertyDescriptor(
+          const setValue = Reflect.getOwnPropertyDescriptor(
             HTMLInputElement.prototype,
             "value",
           )?.set;
@@ -782,7 +788,7 @@ for (const source of ["invites", "members"] as const) {
     await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
     let outgoing: ReturnType<
       typeof ctx.session.tagLifecycle.getSnapshot
-    >["returnTo"] = null;
+    >["returnTo"];
     try {
       await page.getByTestId("invite-tags-define-tag:roundtrip").click();
       // Only the destination module is delayed; normal identity/policy reads may complete.

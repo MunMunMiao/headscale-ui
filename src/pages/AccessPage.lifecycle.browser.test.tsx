@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import {
@@ -97,7 +98,7 @@ async function setup(
     const request = new Request(input, init);
     const path = new URL(request.url).pathname;
     if (request.method === "PUT" && path === "/api/v1/policy") {
-      const body = (await request.json()) as { policy: string };
+      const body: { policy: string } = await request.json();
       writes.push(body.policy);
       if (writeDelay) await writeDelay;
       if (writeFailure)
@@ -106,7 +107,8 @@ async function setup(
       return Response.json({ policy });
     }
     if (request.method === "POST" && path === "/api/v1/policy/check") {
-      checks.push(((await request.json()) as { policy: string }).policy);
+      const checkBody: { policy: string } = await request.json();
+      checks.push(checkBody.policy);
       return Response.json({});
     }
     if (
@@ -114,10 +116,13 @@ async function setup(
       (request.method === "DELETE" && path === "/api/v1/preauthkey")
     ) {
       const action = request.method === "POST" ? "expire" : "delete";
-      const id =
-        action === "expire"
-          ? ((await request.json()) as { id: string }).id
-          : new URL(request.url).searchParams.get("id");
+      let id: string | null;
+      if (action === "expire") {
+        const body: { id: string } = await request.json();
+        id = body.id;
+      } else {
+        id = new URL(request.url).searchParams.get("id");
+      }
       if (!id) throw new Error("Missing key id");
       stoppedKeys.push({ action, id });
       preAuthKeys =
@@ -1104,8 +1109,8 @@ function deviceReturn(session: Session, managedTag: string) {
 }
 
 test("device-origin declaration rejects a policy-only compatible name without silently lowercasing it", async () => {
-  const { session, writes } = await setup(baseline, (session) =>
-    deviceReturn(session, "tag:Web1"),
+  const { session, writes } = await setup(baseline, (activeSession) =>
+    deviceReturn(activeSession, "tag:Web1"),
   );
   await expect.element(page.getByTestId("tag-name-input")).toHaveValue("Web1");
   await expect.element(page.getByTestId("tag-declare")).toBeDisabled();
@@ -1965,9 +1970,10 @@ test.each([
         .element(page.getByTestId("tag-migration-prepare"))
         .toBeEnabled();
     }
-    const dialog = page
-      .getByTestId("tag-maintenance-dialog")
-      .element() as HTMLElement;
+    const dialog = requireInstance(
+      page.getByTestId("tag-maintenance-dialog").element(),
+      HTMLElement,
+    );
     expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth);
   },
 );
@@ -2130,7 +2136,10 @@ test.each(["Escape before focus", "Cancel"] as const)(
     await page.getByTestId("tag-open-tag:server").click();
     await page.getByTestId("tag-name-input").fill("replacement");
     const input = page.getByTestId("tag-name-input").element();
-    const originalFocus = HTMLElement.prototype.focus;
+    const originalFocus: typeof HTMLElement.prototype.focus = Reflect.get(
+      HTMLElement.prototype,
+      "focus",
+    );
     const focus = vi
       .spyOn(HTMLElement.prototype, "focus")
       .mockImplementation(function (this: HTMLElement, options?: FocusOptions) {
@@ -2729,7 +2738,7 @@ test("a publication click already in flight cannot open a review while another s
   );
   const publish = page.getByTestId("save-policy");
   await expect.element(publish).toBeEnabled();
-  const button = publish.element() as HTMLButtonElement;
+  const button = requireInstance(publish.element(), HTMLButtonElement);
   const ticket = fixture.session.policy.beginSave(
     fixture.session.policy.policyDesignerState,
   );

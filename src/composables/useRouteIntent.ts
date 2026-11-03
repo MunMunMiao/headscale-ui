@@ -23,13 +23,18 @@ const POPUP_KINDS = new Set<PopupKind>(["user", "node", "tags"]);
  * `allowed` is given the value must also be in that whitelist — the runtime
  * check doubles as the type predicate.
  */
+function narrow(value: unknown): string | null;
+function narrow<T extends string>(
+  value: unknown,
+  allowed: ReadonlySet<T>,
+): T | null;
 function narrow<T extends string>(
   value: unknown,
   allowed?: ReadonlySet<T>,
-): T | null {
+): string | T | null {
   if (typeof value !== "string" || value.length === 0) return null;
-  if (allowed && !allowed.has(value as T)) return null;
-  return value as T;
+  if (!allowed) return value;
+  return [...allowed].find((candidate) => candidate === value) ?? null;
 }
 
 interface RouteIntent {
@@ -49,7 +54,7 @@ interface RouteIntent {
  * (`?from=…&popup=…&user=…&node=…&search=…&profile=…`).
  */
 export function useRouteIntent(): RouteIntent {
-  const query = useSearch({ strict: false }) as Record<string, unknown>;
+  const query: Record<string, unknown> = useSearch({ strict: false });
   return {
     from: narrow(query.from, PAGE_NAMES),
     popup: narrow(query.popup, POPUP_KINDS),

@@ -58,6 +58,7 @@ export default function SecuritySettings({
           return { fields: { newPassphrase: t("profilePasswordMinLength") } };
         if (password !== value.confirmPassphrase.trim())
           return { fields: { confirmPassphrase: t("passwordsMismatch") } };
+        return undefined;
       },
     },
     listeners: {

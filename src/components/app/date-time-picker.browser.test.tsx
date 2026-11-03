@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -102,7 +103,10 @@ test("date field blur reports leaving the closed trigger and dismissing the popu
       <button type="button">Next field</button>
     </>,
   );
-  (page.getByTestId("expiry").element() as HTMLButtonElement).focus();
+  requireInstance(
+    page.getByTestId("expiry").element(),
+    HTMLButtonElement,
+  ).focus();
   await userEvent.keyboard("{Tab}");
   expect(blurred).toEqual(["blur"]);
   await page.getByTestId("expiry").click();
@@ -230,7 +234,8 @@ test("keyboard date editing starts on the selected day and preserves its time", 
 });
 
 test("keyboard opening falls back to the first popup control when no calendar day can receive initial focus", async () => {
-  const nativeQuery = HTMLDivElement.prototype.querySelector;
+  const nativeQuery: typeof HTMLDivElement.prototype.querySelector =
+    Reflect.get(HTMLDivElement.prototype, "querySelector");
   const query = vi
     .spyOn(HTMLDivElement.prototype, "querySelector")
     .mockImplementation(function (this: HTMLDivElement, selector: string) {
@@ -479,7 +484,7 @@ test("generated ids link the trigger, the error and the time group without a tes
   );
   expect(messages[0]?.[1]).toBe("first error");
   expect(messages[1]?.[1]).toBe("second error");
-  await triggers[0]?.click();
+  triggers[0]?.click();
   const group = page.getByRole("group", { name: "Time" });
   await expect.element(group).toBeVisible();
   await expect.element(group.getByLabelText("Hour")).toHaveValue("13");

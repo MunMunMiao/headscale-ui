@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import "fake-indexeddb/auto";
 import { I18nProvider } from "@lingui/react";
 import { useState } from "react";
@@ -21,8 +22,8 @@ afterEach(async () => {
 });
 function Host({
   mode = "key",
-  tags = [] as string[],
-  options = [] as string[],
+  tags = [],
+  options = [],
   manage = false,
   disabled,
 }: {
@@ -238,8 +239,8 @@ test("disabled native controls cannot mutate the selected collection", async () 
   const add = page.getByTestId("test-tags-option-tag:extra");
   await expect.element(remove).toBeDisabled();
   await expect.element(add).toBeDisabled();
-  (remove.element() as HTMLButtonElement).click();
-  (add.element() as HTMLButtonElement).click();
+  requireInstance(remove.element(), HTMLButtonElement).click();
+  requireInstance(add.element(), HTMLButtonElement).click();
   await expect
     .element(page.getByTestId("selected"))
     .toHaveTextContent('["tag:prod"]');
@@ -283,8 +284,9 @@ test.each([false, true])(
       expect(bounds.left).toBeGreaterThanOrEqual(0);
       expect(bounds.right).toBeLessThanOrEqual(320);
     }
-    (
-      page.getByTestId(`test-tags-remove-${tag}`).element() as HTMLButtonElement
+    requireInstance(
+      page.getByTestId(`test-tags-remove-${tag}`).element(),
+      HTMLButtonElement,
     ).focus();
     await userEvent.keyboard("{Enter}");
     await expect

@@ -156,7 +156,7 @@ export function normalizePreAuthKey(key: Infer<typeof preAuthKey>) {
 }
 
 export function normalizeHeadscaleNode(node: Infer<typeof headscaleNode>) {
-  const { preAuthKey, ...rest } = node;
+  const { preAuthKey: nodePreAuthKey, ...rest } = node;
   const dates: { expiry?: string; lastSeen?: string } = {
     expiry: unsetAsUndefined(node.expiry),
     lastSeen: unsetAsUndefined(node.lastSeen),
@@ -164,9 +164,9 @@ export function normalizeHeadscaleNode(node: Infer<typeof headscaleNode>) {
   return {
     ...rest,
     ...dates,
-    ...(preAuthKey == null
+    ...(nodePreAuthKey == null
       ? {}
-      : { preAuthKey: normalizePreAuthKey(preAuthKey) }),
+      : { preAuthKey: normalizePreAuthKey(nodePreAuthKey) }),
     ipAddresses: node.ipAddresses ?? [],
     online: node.online ?? false,
     approvedRoutes: node.approvedRoutes ?? [],

@@ -104,43 +104,39 @@ describe("CSV", () => {
     }
   });
 
-  test("downloads the rendered CSV and revokes its object URL", async () => {
-    let blob: Blob | undefined;
-    let revokedUrl = "";
-    let clicks = 0;
-    const link = {
-      download: "",
-      href: "",
-      click: () => void clicks++,
+  function stubCsvDownload(blobUrl: string, onClick: () => void = () => {}) {
+    const link = { download: "", href: "", click: onClick };
+    const state: {
+      blob: Blob | MediaSource | undefined;
+      revoked: string;
+    } = { blob: undefined, revoked: "" };
+    vi.stubGlobal("document", { createElement: () => link });
+    const create = vi
+      .spyOn(URL, "createObjectURL")
+      .mockImplementation((value) => {
+        state.blob = value;
+        return blobUrl;
+      });
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation((url) => {
+        state.revoked = url;
+      });
+    return {
+      link,
+      state,
+      restore(this: void) {
+        create.mockRestore();
+        revoke.mockRestore();
+        vi.unstubAllGlobals();
+      },
     };
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => link },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:test-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value: (value: string) => {
-        revokedUrl = value;
-      },
+  }
+
+  test("downloads the rendered CSV and revokes its object URL", async () => {
+    let clicks = 0;
+    const { link, state, restore } = stubCsvDownload("blob:test-csv", () => {
+      clicks++;
     });
 
     vi.useFakeTimers();
@@ -154,28 +150,21 @@ describe("CSV", () => {
         ],
       );
       // Revoking during click() can cancel a download that has not read the blob yet.
-      expect(revokedUrl).toBe("");
+      expect(state.revoked).toBe("");
       vi.runAllTimers();
     } finally {
       vi.useRealTimers();
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
     expect(link.download).toBe("devices.csv");
     expect(link.href).toBe("blob:test-csv");
     expect(clicks).toBe(1);
-    expect(revokedUrl).toBe("blob:test-csv");
-    expect(blob?.type).toBe("text/csv;charset=utf-8");
+    expect(state.revoked).toBe("blob:test-csv");
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(state.blob.type).toBe("text/csv;charset=utf-8");
     // The UTF-8 byte order mark makes Excel read non-ASCII names correctly.
-    const bytes = new Uint8Array(await (blob as Blob).arrayBuffer());
+    const bytes = new Uint8Array(await state.blob.arrayBuffer());
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     expect(new TextDecoder().decode(bytes)).toBe(
       '"name","active","count"\n"A ""quoted"" device","true","2"\n"Second","","3"',
@@ -183,81 +172,20 @@ describe("CSV", () => {
   });
 
   test("writes only the declared header row for an empty export", async () => {
-    let blob: Blob | undefined;
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => ({ href: "", download: "", click() {} }) },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:empty-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value() {},
-    });
+    const { state, restore } = stubCsvDownload("blob:empty-csv");
 
     try {
       downloadCsv("empty.csv", ["name", "owner"], []);
     } finally {
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
-    expect(await blob?.text()).toBe('"name","owner"');
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(await state.blob.text()).toBe('"name","owner"');
   });
 
   test("neutralises formulas in downloaded cells but not negative numbers", async () => {
-    let blob: Blob | undefined;
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => ({ href: "", download: "", click() {} }) },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:formula-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value() {},
-    });
+    const { state, restore } = stubCsvDownload("blob:formula-csv");
 
     try {
       downloadCsv(
@@ -266,18 +194,11 @@ describe("CSV", () => {
         [{ name: "=cmd|' /C calc'!A0", count: -1 }],
       );
     } finally {
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
-    expect(await blob?.text()).toBe(
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(await state.blob.text()).toBe(
       '"name","count"\n"\'=cmd|\' /C calc\'!A0","-1"',
     );
   });

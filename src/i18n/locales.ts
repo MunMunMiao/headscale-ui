@@ -16,6 +16,8 @@ export const SUPPORTED_LOCALES = [
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
+const SUPPORTED = new Set<string>(SUPPORTED_LOCALES);
+
 export interface LocaleMeta {
   code: Locale;
   label: string;
@@ -103,7 +105,7 @@ export function normalizeLocale(value: string): string {
 }
 
 export function isLocale(value: string): value is Locale {
-  return SUPPORTED_LOCALES.includes(value as Locale);
+  return SUPPORTED.has(value);
 }
 
 export function resolveLocale(value: string | null | undefined): Locale {

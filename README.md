@@ -18,7 +18,7 @@ keys, routes, and access policies.
 
 ## Quick start
 
-Use **Bun 1.4.4** for all JavaScript commands.
+Use the **Bun canary** pinned in `packageManager` for all JavaScript commands.
 
 ```bash
 bun install --frozen-lockfile

@@ -21,7 +21,7 @@ import RoutesPage from "./RoutesPage";
 
 beforeEach(async () => {
   await hydrateSettings();
-  setLocale("en-US");
+  await setLocale("en-US");
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -156,7 +156,11 @@ async function setup(
         (candidate) => candidate.id === body.user,
       );
       const created = { id: "4", key: SECRET, ...body, user, used: false };
-      backend.preAuthKeys.push({ ...created, key: LISTED } as never);
+      const preAuthKey: HeadscaleSnapshot["preAuthKeys"][number] = {
+        ...created,
+        key: LISTED,
+      };
+      backend.preAuthKeys.push(preAuthKey);
       return Response.json({ preAuthKey: created });
     }
     if (url.pathname === "/api/v1/preauthkey/expire") {
@@ -184,7 +188,7 @@ async function setup(
     return Response.json(reads[url.pathname]);
   };
   const session = await prepareTestSession(transport);
-  setLocale("en-US");
+  await setLocale("en-US");
   await authenticateTestSession(session);
   const { router } = await renderSessionPage(session, element, path);
   await expect

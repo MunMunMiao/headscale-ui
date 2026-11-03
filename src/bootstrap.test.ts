@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   vi.unstubAllGlobals();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 async function installHost(storageVersion = DB_VERSION) {
@@ -100,7 +100,10 @@ test("bootstrap rejects an incompatible Worker handshake instead of mounting an 
 test("bootstrap rejects a failed Worker profile read instead of presenting an empty profile list", async () => {
   const bridge = await installBridge();
   const dispose = vi.spyOn(bridge, "dispose");
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args: Parameters<IDBObjectStore["getAll"]>
@@ -211,7 +214,7 @@ async function unreadableVaultFixture() {
   const observer = page("owner-observer");
   expect((await observer.connect()).ok).toBe(true);
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const list = await observer.listProfiles();
   if (!list.ok) throw new Error("profile list failed");
   const saved = await observer.saveProfile({

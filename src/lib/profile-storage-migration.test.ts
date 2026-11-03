@@ -18,6 +18,30 @@ beforeEach(() => {
 });
 
 test.each([
+  ["device", undefined],
+  ["password", "legacy-version"],
+] as const)(
+  "reads a legacy encrypted %s credential",
+  async (scheme, credentialVersion) => {
+    const version = readVaultState(await idbGet("meta", VAULT_STATE_KEY));
+    const secret = { v: 1, scheme, iv: "old-iv", ct: "old-cipher" };
+    await idbPut("profiles", {
+      id: `legacy-${scheme}`,
+      name: "Legacy encrypted",
+      baseUrl: `https://${scheme}.example`,
+      apiKey: secret,
+      keyEpoch: version.keyEpoch,
+      scope: "persistent",
+      updatedAt: "old",
+      ...(credentialVersion === undefined ? {} : { credentialVersion }),
+    });
+    const saved = await readProfileForOwner(`legacy-${scheme}`, "owner-a");
+    expect(saved?.profile.apiKey).toEqual(secret);
+    expect(saved?.profile.credentialVersion).toBe(credentialVersion);
+  },
+);
+
+test.each([
   ["https://headscale.example//", "https://headscale.example"],
   ["https://headscale.example///", "https://headscale.example"],
   [

@@ -15,7 +15,7 @@ import type { SessionIdentity } from "@/session/types";
 import { ApiError } from "@/session/types";
 import { storageErrorMessage } from "@/utils/storage-error";
 import { normalizedBaseUrl } from "@/utils/strings";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { createActionFeedbackStore } from "./useActionFeedback";
 
 export const newProfileId = "__new__";
@@ -112,7 +112,7 @@ export function createProfilesStore(
     const current = store.getSnapshot().connectionForm;
     if (
       Object.entries(patch).every(
-        ([key, value]) => current[key as keyof ConnectionForm] === value,
+        ([key, value]) => Reflect.get(current, key) === value,
       )
     )
       return;
@@ -180,6 +180,7 @@ export function createProfilesStore(
       ],
     });
   }
+  // eslint-disable-next-line @typescript-eslint/require-await -- async API retained for callers
   async function loadProfile(profileId: string) {
     ++formGeneration;
     draftId = null;
@@ -265,12 +266,12 @@ export function createProfilesStore(
       const error = connectionSettingsError(form);
       if (error) throw new Error(t(error));
       if (!form.password) throw new Error(t("serverPasswordRequired"));
-      if (!profile) draftId ??= crypto.randomUUID();
+      const profileId = profile?.id ?? (draftId ??= crypto.randomUUID());
       input = {
         kind: "credentials",
         expected: expected(profile, draftExpected),
         profile: {
-          id: profile?.id ?? (draftId as string),
+          id: profileId,
           name: form.profileName,
           baseUrl: form.baseUrl,
           scope,
@@ -339,8 +340,9 @@ export function createProfilesStore(
   }
   async function enterProfile(
     profile: ProfileSummary,
-    password?: string,
+    passwordInput?: string,
   ): Promise<boolean> {
+    let password = passwordInput;
     if (password === undefined) {
       feedback.setState({ lastError: "" });
       store.setState({ unlockProfile: profile });
@@ -363,6 +365,7 @@ export function createProfilesStore(
       },
       { signal: controller.signal },
     );
+    // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
     password = "";
     try {
       const result = await unlocking;
@@ -389,9 +392,11 @@ export function createProfilesStore(
   }
   async function migrateAndEnterProfile(
     profile: ProfileSummary,
-    password: string,
-    legacyPassword?: string,
+    passwordInput: string,
+    legacyPasswordInput?: string,
   ) {
+    let password = passwordInput;
+    let legacyPassword = legacyPasswordInput;
     if (store.getSnapshot().phase.kind !== "idle") return false;
     const ticket = ++submissionGeneration;
     const initialIdentity = bridge.getSessionSnapshot()?.identity;
@@ -441,6 +446,7 @@ export function createProfilesStore(
         });
       return false;
     } finally {
+      // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
       password = legacyPassword = "";
       if (ticket === submissionGeneration) {
         controller = null;
@@ -526,11 +532,14 @@ export function createProfilesStore(
       feedback.setState({ lastError: "" });
     },
     async changeProfilePassword(
+      this: void,
       profile: ProfileSummary,
-      password: string,
-      newPassword: string,
+      passwordInput: string,
+      newPasswordInput: string,
       onFeedback?: (result: PasswordChangeFeedback) => boolean,
     ): Promise<boolean> {
+      let password = passwordInput;
+      let newPassword = newPasswordInput;
       if (store.getSnapshot().phase.kind !== "idle") return false;
       const ticket = ++submissionGeneration;
       const formTicket = formGeneration;
@@ -579,6 +588,7 @@ export function createProfilesStore(
         }
         return false;
       } finally {
+        // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
         password = newPassword = "";
         if (ticket === submissionGeneration) {
           controller = null;
@@ -589,6 +599,7 @@ export function createProfilesStore(
           let consumed = false;
           if (onFeedback) {
             try {
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- callbacks may return a truthy non-boolean
               consumed = onFeedback(outcome) === true;
             } catch {
               consumed = false;
@@ -604,10 +615,10 @@ export function createProfilesStore(
         }
       }
     },
-    deleteProfile(profile: ProfileSummary) {
+    deleteProfile(this: void, profile: ProfileSummary) {
       store.setState({ pendingDeleteProfile: profile });
     },
-    async confirmDeleteProfile() {
+    async confirmDeleteProfile(this: void) {
       const profile = store.getSnapshot().pendingDeleteProfile;
       if (!profile || store.getSnapshot().phase.kind !== "idle") return;
       const ticket = ++submissionGeneration;
@@ -665,7 +676,7 @@ export function createProfilesStore(
         }
       }
     },
-    async logout() {
+    async logout(this: void) {
       closeConnectionDialog();
       const ticket = submissionGeneration;
       const formTicket = formGeneration;

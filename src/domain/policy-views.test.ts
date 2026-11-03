@@ -194,7 +194,9 @@ describe("getTagAccessors", () => {
 
     const accessors = getTagAccessors(state, "tag:server");
     expect(accessors).toHaveLength(1);
-    expect(accessors[0]?.services.sort()).toEqual(["ssh", "web"].sort());
+    expect(accessors[0]?.services.toSorted()).toEqual(
+      ["ssh", "web"].toSorted(),
+    );
   });
 
   test("returns empty when tag has no rules", () => {
@@ -212,7 +214,7 @@ describe("getTagAccessors", () => {
 
     const accessors = getTagAccessors(state, "tag:server");
     expect(accessors).toHaveLength(2);
-    expect(accessors.map((a) => a.who).sort()).toEqual([
+    expect(accessors.map((a) => a.who).toSorted()).toEqual([
       "alice@example.com",
       "bob@example.com",
     ]);
@@ -240,7 +242,7 @@ describe("getGroupAccess", () => {
 
     const access = getGroupAccess(state, "group:ops");
     expect(access).toHaveLength(2);
-    const tags = access.map((a) => a.tagName).sort();
+    const tags = access.map((a) => a.tagName).toSorted();
     expect(tags).toEqual(["tag:db", "tag:server"]);
   });
 
@@ -472,7 +474,7 @@ describe("removeTagAccessor", () => {
           ),
         ),
       )
-      .sort();
+      .toSorted();
 
   test.each([
     ["1x1", "alice@", "tag:server"],
@@ -673,7 +675,7 @@ describe("getIpRules", () => {
 
     const ipRules = getIpRules(state);
     expect(ipRules).toHaveLength(2);
-    expect(ipRules.map((r) => r.destination).sort()).toEqual([
+    expect(ipRules.map((r) => r.destination).toSorted()).toEqual([
       "10.0.0.1",
       "192.168.0.0/24",
     ]);

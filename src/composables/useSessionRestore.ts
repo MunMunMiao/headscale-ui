@@ -19,8 +19,10 @@ export function createSessionRestoration(session: Session, router: AnyRouter) {
         to: "/login",
         replace: true,
         search: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- TanStack Router search is untyped
           ...(typeof location.search.profile === "string"
-            ? { profile: location.search.profile }
+            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment -- TanStack Router search is untyped
+              { profile: location.search.profile }
             : {}),
           redirect: location.href,
         },
@@ -44,6 +46,7 @@ export function createSessionRestoration(session: Session, router: AnyRouter) {
       session.profiles.closeUnlockDialog();
       void router.navigate(
         redirectTarget(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- TanStack Router search is untyped
           location.search.redirect,
           current.profile,
           session.navigationProfile,

@@ -131,7 +131,7 @@ export function useHeadscaleI18n() {
     localeChanges.subscribe,
     localeChanges.getSnapshot,
   );
-  const locale = i18n.locale as Locale;
+  const locale = resolveLocale(i18n.locale);
   return { locale, meta: LOCALE_META[locale], setLocale, t, ...changes };
 }
 

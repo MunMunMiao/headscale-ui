@@ -90,7 +90,7 @@ export default function RoutesPage() {
     ? nodeId
     : null;
   useEffect(() => {
-    if (!linkedNodeId) return;
+    if (!linkedNodeId) return undefined;
     // One frame later: the router resets the scroll position after the navigation that opened this page.
     const frame = requestAnimationFrame(() => {
       const heading = document.getElementById(

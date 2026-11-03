@@ -109,6 +109,7 @@ export default function IpRuleRow({
         destination: rule.destination,
         ports: rule.ports,
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh must not overwrite the local draft
   }, [form, isEditing]);
   // Focus follows the mode switch: into the first field, then back to this row's edit button unless
   // another row has already taken focus.

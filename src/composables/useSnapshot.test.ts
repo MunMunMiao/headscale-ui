@@ -106,7 +106,7 @@ describe("snapshot fetchers", () => {
     );
 
     const snapshot = await fetchSnapshot(client);
-    expect(Object.keys(snapshot).sort()).toEqual([
+    expect(Object.keys(snapshot).toSorted()).toEqual([
       "apiKeys",
       "health",
       "nodes",

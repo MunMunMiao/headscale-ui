@@ -245,11 +245,11 @@ try {
       signal: AbortSignal.timeout(5000),
     });
     assert.equal(response.status, 200, "Headscale policy API read");
-    const body = (await response.json()) as { policy: string };
+    const body: { policy: string } = await response.json();
     const errors: ParseError[] = [];
-    const policy = parseJsonc(body.policy, errors, {
+    const policy: Policy = parseJsonc(body.policy, errors, {
       allowTrailingComma: true,
-    }) as Policy;
+    });
     assert.deepEqual(
       errors,
       [],
@@ -356,7 +356,8 @@ try {
         .filter((entry) => new URL(entry.name).pathname === "/api/v1/policy")
         .map((entry) => ({
           start: entry.startTime,
-          end: (entry as PerformanceResourceTiming).responseEnd,
+          end:
+            entry instanceof PerformanceResourceTiming ? entry.responseEnd : 0,
         })),
     }));
   const expectEmpty = async (checkpoint: string) => {
@@ -539,7 +540,7 @@ try {
       state: "visible",
       timeout: 15000,
     });
-    assert.equal(new URL(await page.url()).pathname, "/login");
+    assert.equal(new URL(page.url()).pathname, "/login");
     await unlockProfile();
     await openAccess();
   };
@@ -610,9 +611,15 @@ try {
             )
             .map((entry) => ({
               path: new URL(entry.name).pathname,
-              status: (entry as PerformanceResourceTiming).responseStatus,
+              status:
+                entry instanceof PerformanceResourceTiming
+                  ? entry.responseStatus
+                  : 0,
               start: entry.startTime,
-              end: (entry as PerformanceResourceTiming).responseEnd,
+              end:
+                entry instanceof PerformanceResourceTiming
+                  ? entry.responseEnd
+                  : 0,
             })),
         }),
         origin,
@@ -680,7 +687,8 @@ try {
         200,
         "Read the owned fixture's raw policy for injection",
       );
-      const { policy } = (await response.json()) as { policy: string };
+      const body: { policy: string } = await response.json();
+      const { policy } = body;
       assert.equal(
         typeof policy,
         "string",

@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -358,8 +359,9 @@ test.each(["duplicate-machine", "missing-machine"])(
     await expect
       .element(page.getByTestId("restore-personal-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     expect(ctx.writes()).toHaveLength(0);
   },
@@ -388,8 +390,9 @@ test.each(["/api/v1/node", "/api/v1/user"])(
     await expect
       .element(page.getByTestId("restore-personal-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect
       .element(page.getByTestId("restore-auth-id"))
@@ -461,8 +464,9 @@ test.each([
     await expect
       .element(page.getByTestId("restore-personal-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect
       .element(page.getByTestId("restore-auth-id"))

@@ -32,7 +32,7 @@ export default function HomePage() {
   const visibleUsers = snapshot.users.filter((user) => hasVisibleUser(user));
   // Headscale ids grow with registration; createdAt is optional, so order by id.
   const recentNodes = [...snapshot.nodes]
-    .sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }))
+    .toSorted((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }))
     .slice(0, 4);
   const stats = [
     {

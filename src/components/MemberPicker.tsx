@@ -66,7 +66,7 @@ export default function MemberPicker<T extends MemberOption>({
         items: [option],
       });
   }
-  const groupedOptions = Array.from(buckets.values()).sort(
+  const groupedOptions = Array.from(buckets.values()).toSorted(
     (a, b) => a.order - b.order,
   );
   return (

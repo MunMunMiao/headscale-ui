@@ -20,7 +20,7 @@ beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 function value<T>(result: SessionResult<T>): T {
@@ -35,7 +35,7 @@ async function fixture() {
     const bridge = createSessionBridge({
       openPort() {
         const ports = createSessionPorts();
-        cleanup.push(ports.close);
+        cleanup.push(() => ports.close());
         host.connect(ports.worker);
         return ports.page;
       },
@@ -55,7 +55,7 @@ async function save(
   wrapUrl: (url: string) => string = (url) => url,
 ) {
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const list = value(await bridge.listProfiles());
   const result = value(
     await bridge.saveProfile({
@@ -87,7 +87,7 @@ test("validates and unlocks a profile when Headscale file mode has no policy pat
   const { page } = await fixture();
   const bridge = await page("owner-a");
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   server.policyFailure = {
     status: 500,
     message: 'reading policy from path "": open : no such file or directory',
@@ -139,7 +139,7 @@ test.each([
     const { page } = await fixture();
     const bridge = await page("owner-a");
     const server = startSnapshotServer();
-    cleanup.push(server.stop);
+    cleanup.push(() => server.stop());
     const before = value(await bridge.listProfiles()).version;
     const binding = {
       profileId: "historical-password",
@@ -226,9 +226,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   const identity = first.getSessionSnapshot()?.identity;
   expect.assert(identity);
   const window = new EventTarget();
-  const document = Object.assign(new EventTarget(), {
-    visibilityState: "visible" as const,
-  });
+  class VisibleDocument extends EventTarget {
+    readonly visibilityState: DocumentVisibilityState = "visible";
+  }
+  const document = new VisibleDocument();
   cleanup.push(
     attachSessionActivity({ window, document, now: Date.now }, first),
   );
@@ -249,9 +250,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   });
   const pending = first.read(identity, { endpoint: "listUsers", input: {} });
   await expect.poll(() => gate.getSnapshot().captured).toBe(true);
-  window.dispatchEvent(
-    Object.assign(new Event("pagehide"), { persisted: false }),
-  );
+  class PageHideEvent extends Event {
+    readonly persisted = false;
+  }
+  window.dispatchEvent(new PageHideEvent("pagehide"));
   expect(await pending).toMatchObject({
     ok: false,
     error: { kind: "unavailable" },
@@ -369,7 +371,7 @@ test.each(["cancel", "disconnect"] as const)(
   "a committed save notifies peers even when activation is abandoned by %s",
   async (boundary) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
+    cleanup.push(() => backend.stop());
     const network = createSessionNetwork({ upstream: backend.baseUrl });
     cleanup.push(() => network.close());
     const { page } = await fixture();
@@ -430,7 +432,7 @@ test.each(["cancel", "disconnect"] as const)(
 
 test("an unlock adopts the current profile name when a peer renames it during validation", async () => {
   const backend = startSnapshotServer();
-  cleanup.push(backend.stop);
+  cleanup.push(() => backend.stop());
   const network = createSessionNetwork({ upstream: backend.baseUrl });
   cleanup.push(() => network.close());
   const { page } = await fixture();
@@ -495,7 +497,7 @@ test.each(["deleted", "credential-rotated"] as const)(
   "an unlock fails with a storage conflict when a foreign writer leaves the profile %s during validation",
   async (change) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
+    cleanup.push(() => backend.stop());
     const network = createSessionNetwork({ upstream: backend.baseUrl });
     cleanup.push(() => network.close());
     const { page } = await fixture();

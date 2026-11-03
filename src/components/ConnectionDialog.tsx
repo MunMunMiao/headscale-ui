@@ -38,6 +38,11 @@ import { useHeadscaleI18n } from "@/i18n";
 import { MIN_PROFILE_PASSWORD_LENGTH } from "@/lib/api-key-crypto";
 import { normalizedBaseUrl } from "@/utils/strings";
 
+const CONNECTION_FIELDS = new Set<string>(Object.keys(defaultConnectionForm()));
+function isConnectionField(name: string): name is keyof ConnectionForm {
+  return CONNECTION_FIELDS.has(name);
+}
+
 function ApiKeyHelp() {
   const { t } = useHeadscaleI18n();
   const command = "headscale apikeys create --expiration 90d";
@@ -126,7 +131,7 @@ export default function ConnectionDialog({
       selectedProfile.credentialKind !== "unreadable" &&
       normalizedBaseUrl(normalized.baseUrl) === selectedProfile.baseUrl &&
       !normalized.apiKey;
-    if (metadataOnly) return;
+    if (metadataOnly) return undefined;
     const error = connectionSettingsError(normalized);
     if (error)
       fields[error === "connectionApiKeyRequired" ? "apiKey" : "baseUrl"] =
@@ -143,12 +148,13 @@ export default function ConnectionDialog({
   }
   const form = useAppForm({
     defaultValues: defaultConnectionForm(),
-    onSubmitMeta: { intent: selectedProfile ? "save" : "unlock" } as {
-      intent: "save" | "unlock";
-    },
+    onSubmitMeta: {
+      intent: selectedProfile ? "save" : "unlock",
+    } satisfies { intent: "save" | "unlock" },
     listeners: {
       onChange: ({ fieldApi }) => {
         session.profiles.setConnectionForm({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TanStack Form fields are dynamically keyed
           [fieldApi.name]: fieldApi.state.value,
         });
       },
@@ -203,7 +209,7 @@ export default function ConnectionDialog({
   useLayoutEffect(() => {
     function sync() {
       const next = session.profiles.getSnapshot().connectionForm;
-      for (const name of Object.keys(next) as (keyof ConnectionForm)[]) {
+      for (const name of Object.keys(next).filter(isConnectionField)) {
         if (form.getFieldValue(name) !== next[name])
           form.setFieldValue(name, next[name], {
             dontRunListeners: true,

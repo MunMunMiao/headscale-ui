@@ -62,21 +62,22 @@ async function setup({
   const session = await prepareTestSession(transport);
   await setLocale("en-US");
   const keyEpoch = session.profiles.getSnapshot().version?.keyEpoch;
-  for (const profile of profiles) {
-    const credentialVersion = profile.credentialVersion ?? "fixture-credential";
+  for (const storedProfile of profiles) {
+    const credentialVersion =
+      storedProfile.credentialVersion ?? "fixture-credential";
     const apiKey =
-      profile.credentialKind === "unreadable"
+      storedProfile.credentialKind === "unreadable"
         ? { v: 99 }
-        : profile.credentialKind === "legacy-plaintext"
+        : storedProfile.credentialKind === "legacy-plaintext"
           ? "isolated-legacy-key"
           : await encryptProfileKey({
-              profileId: profile.id,
-              canonicalBaseUrl: profile.baseUrl,
+              profileId: storedProfile.id,
+              canonicalBaseUrl: storedProfile.baseUrl,
               credentialVersion,
               apiKey: "isolated-key",
               password: "server password",
             });
-    const { credentialKind: _kind, ...fields } = profile;
+    const { credentialKind: _kind, ...fields } = storedProfile;
     await idbPut("profiles", {
       ...fields,
       keyEpoch,
@@ -289,7 +290,10 @@ test("keeps a validated connection draft open when its local save fails", async 
   const ctx = await setup();
   await page.getByTestId("profile-option-new").click();
   await fillConnection("Unsaved server");
-  const put = IDBObjectStore.prototype.put;
+  const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -322,7 +326,10 @@ test("keeps a validated connection draft open when its local save fails", async 
 test("keeps a failed profile deletion open and reports the storage error inside its dialog", async () => {
   const ctx = await setup({ profiles: [profile()] });
   await page.getByTestId("delete-profile-Alpha").click();
-  const remove = IDBObjectStore.prototype.delete;
+  const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

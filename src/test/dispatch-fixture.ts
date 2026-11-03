@@ -8,7 +8,12 @@ import { createHeadscaleClientStore } from "@/composables/useHeadscaleClient";
 import type { SessionRequestOptions } from "@/session/auth-session";
 import type { SessionBridge } from "@/session/bridge";
 import { executeOperation } from "@/session/operation-dispatch";
-import type { ApiCommand, ApiRequest } from "@/session/protocol";
+import type {
+  ApiCommand,
+  ApiOutput,
+  ApiRequest,
+  EndpointName,
+} from "@/session/protocol";
 import type { SessionIdentity, SessionResult } from "@/session/types";
 
 /** Runs the Worker dispatcher against a test-controlled client so the real endpoint contracts apply. */
@@ -80,14 +85,17 @@ export function fakeAuth(bridge: {
 }): Pick<SessionBridge, "read" | "write"> {
   const publish =
     (type: ApiRequest["type"]) =>
-    (
+    <K extends EndpointName>(
       expected: SessionIdentity,
-      command: ApiCommand,
+      command: ApiCommand<K>,
       options?: SessionRequestOptions,
-    ) =>
-      bridge.execute(expected, { ...command, type } as ApiRequest, options);
-  return { read: publish("api.read"), write: publish("api.write") } as Pick<
-    SessionBridge,
-    "read" | "write"
-  >;
+    ): Promise<SessionResult<ApiOutput<K>>> => {
+      const execute: typeof bridge.execute = Reflect.get(bridge, "execute");
+      return Reflect.apply(execute, bridge, [
+        expected,
+        { ...command, type },
+        options,
+      ]);
+    };
+  return { read: publish("api.read"), write: publish("api.write") };
 }

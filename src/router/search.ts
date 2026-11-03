@@ -1,12 +1,12 @@
 // Existing shared links use URL strings, including numeric user and node IDs.
 export function parseSearch(search: string): Record<string, string | string[]> {
   const params = new URLSearchParams(search);
-  const result: Record<string, string | string[]> = Object.create(null);
+  const result = new Map<string, string | string[]>();
   for (const key of new Set(params.keys())) {
     const values = params.getAll(key);
-    result[key] = values.length === 1 ? values[0] : values;
+    result.set(key, values.length === 1 ? values[0] : values);
   }
-  return result;
+  return Object.fromEntries(result);
 }
 
 const loginPaths = new Set(["/login", "/unlock"]);

@@ -66,7 +66,10 @@ async function setupProfile(scope: "persistent" | "session" = "persistent") {
 
 test("a profile save reports an abort after request success and preserves the old committed row", async () => {
   const { profile, expected } = await setupProfile();
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   let injected = 0;
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,

@@ -25,7 +25,12 @@ const files: Record<string, string> = {
 function tree(order: string[] = Object.keys(files)) {
   const root = mkdtempSync(join(tmpdir(), "headscale-build-id-"));
   temporary.push(root);
-  for (const name of order) put(root, name, files[name] as string);
+  for (const name of order) {
+    const content = Reflect.get(files, name);
+    if (typeof content !== "string")
+      throw new Error(`Missing fixture file: ${name}`);
+    put(root, name, content);
+  }
   return root;
 }
 
@@ -38,7 +43,7 @@ test("the id is a 32 character hex digest independent of location and creation o
   const id = computeBuildId(tree());
   expect(id).toMatch(/^[0-9a-f]{32}$/);
   expect(computeBuildId(tree())).toBe(id);
-  expect(computeBuildId(tree(Object.keys(files).reverse()))).toBe(id);
+  expect(computeBuildId(tree(Object.keys(files).toReversed()))).toBe(id);
   const copy = mkdtempSync(join(tmpdir(), "headscale-build-id-copy-"));
   temporary.push(copy);
   cpSync(tree(), copy, { recursive: true });

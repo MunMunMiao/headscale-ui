@@ -39,9 +39,9 @@ export function snapshotFixture(): HeadscaleSnapshot {
 export function startSnapshotServer() {
   const snapshot = snapshotFixture();
   const requests: string[] = [];
-  const control = {
-    policyFailure: null as { status: number; message: string } | null,
-  };
+  const control: {
+    policyFailure: { status: number; message: string } | null;
+  } = { policyFailure: null };
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -80,7 +80,7 @@ export function startSnapshotServer() {
     },
     baseUrl: server.url.origin,
     stop() {
-      server.stop(true);
+      void server.stop(true);
     },
   };
 }

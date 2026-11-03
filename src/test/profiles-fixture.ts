@@ -16,7 +16,7 @@ export async function profilesFixture(
   const host = await createSessionHost("profiles-test");
   cleanup.push(() => host.dispose());
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const proxy = handle
     ? Bun.serve({
         hostname: "127.0.0.1",

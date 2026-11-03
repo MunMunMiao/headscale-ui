@@ -1,6 +1,6 @@
 import { createStore } from "@/lib/store";
 import type { PublicSessionSnapshot, SessionIdentity } from "@/session/types";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 
 /** The unlocked session the page publishes its requests under, and the server it shows. */
 export function createHeadscaleClientStore() {
@@ -20,21 +20,24 @@ export function createHeadscaleClientStore() {
     clear,
     adopt(snapshot: PublicSessionSnapshot) {
       const identity = snapshot.identity;
-      if (!identity || !snapshot.profile || snapshot.status !== "unlocked")
-        return clear();
+      if (!identity || !snapshot.profile || snapshot.status !== "unlocked") {
+        clear();
+        return undefined;
+      }
       const previous = state.getSnapshot().identity;
       if (
         previous?.workerId === identity.workerId &&
         previous.sessionId === identity.sessionId
       )
-        return;
+        return undefined;
       state.setState({
         settings: { baseUrl: snapshot.profile.baseUrl },
-        identity: Object.freeze({
+        identity: {
           workerId: identity.workerId,
           sessionId: identity.sessionId,
-        }),
+        },
       });
+      return undefined;
     },
   };
 }

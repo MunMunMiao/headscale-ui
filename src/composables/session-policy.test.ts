@@ -28,7 +28,7 @@ beforeEach(async () => {
   await hydrateSettings();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 const fixture = (text?: string) => sessionPolicyFixture(cleanup, text);
 const richPolicy =

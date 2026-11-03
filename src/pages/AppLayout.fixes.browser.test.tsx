@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -45,7 +46,8 @@ async function setup(
       return Response.json({ apiKey: CREATED_KEY });
     }
     if (request.method === "POST" && path === "/api/v1/apikey/expire") {
-      const { prefix } = (await request.json()) as { prefix: string };
+      const body: { prefix: string } = await request.json();
+      const { prefix } = body;
       apiKeys = apiKeys.map((key) =>
         key.prefix === prefix
           ? { ...key, expiration: "2000-01-01T00:00:00Z" }
@@ -116,15 +118,14 @@ async function finishAnimations() {
 function capturePolls() {
   const polls: Array<{ tick: () => void; timer: unknown }> = [];
   const realSetInterval = globalThis.setInterval;
-  vi.spyOn(globalThis, "setInterval").mockImplementation(((
-    handler: () => void,
-    ms?: number,
-    ...args: unknown[]
-  ) => {
-    const timer = realSetInterval(handler, ms, ...args);
-    if (ms === 30_000) polls.push({ tick: handler, timer });
-    return timer;
-  }) as typeof setInterval);
+  vi.spyOn(globalThis, "setInterval").mockImplementation(
+    (handler, ms, ...args) => {
+      const timer = realSetInterval(handler, ms, ...args);
+      if (ms === 30_000 && typeof handler === "function")
+        polls.push({ tick: () => handler(), timer });
+      return timer;
+    },
+  );
   return polls;
 }
 
@@ -242,14 +243,13 @@ test("a requested refresh shows Data updated briefly, and a failed one shows onl
   await expect.element(id("refresh-status")).toBeEmptyDOMElement();
   const timers: Array<{ handler: () => void; ms?: number }> = [];
   const realSetTimeout = globalThis.setTimeout;
-  vi.spyOn(globalThis, "setTimeout").mockImplementation(((
-    handler: () => void,
-    ms?: number,
-    ...args: unknown[]
-  ) => {
-    timers.push({ handler, ms });
-    return realSetTimeout(handler, ms, ...args);
-  }) as typeof setTimeout);
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(
+    (handler, ms, ...args) => {
+      if (typeof handler === "function")
+        timers.push({ handler: () => handler(), ms });
+      return realSetTimeout(handler, ms, ...args);
+    },
+  );
   await openSettings();
   await id("refresh-api-keys").click();
   await expect.element(id("refresh-status")).toHaveTextContent("Data updated");
@@ -437,7 +437,7 @@ test("the API key table names creation and last use, and is a focusable scroll r
   const region = page.getByRole("region", { name: "API keys" });
   await expect.element(region).toHaveAttribute("tabindex", "0");
   await page.viewport(375, 720);
-  const scroller = region.element() as HTMLElement;
+  const scroller = requireInstance(region.element(), HTMLElement);
   await expect
     .poll(() => scroller.scrollWidth > scroller.clientWidth)
     .toBe(true);

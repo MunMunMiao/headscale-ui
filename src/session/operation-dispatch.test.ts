@@ -1,6 +1,11 @@
-import type { AddressInfo } from "node:net";
 import { createServer } from "node:net";
-import type { FaultCode } from "@defjs/core";
+import {
+  createClient,
+  createHttpInterceptor,
+  type FaultCode,
+  withEndpoint,
+  withInterceptors,
+} from "@defjs/core";
 import { expect, test, vi } from "vitest";
 import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { SessionExecutionContext } from "./auth-session";
@@ -117,7 +122,7 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
       },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -149,7 +154,7 @@ test("preserves HTTP fault semantics without serializing request metadata", asyn
       /fixture-connection-secret|headers|request|cause/,
     );
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -165,20 +170,20 @@ test("rejects unknown operations, invalid input and expired sessions without a n
   });
   try {
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         context(server.url.origin),
-      ),
+      ]),
     ).toEqual({ ok: false, error: { kind: "invalid-request" } });
     expect(
-      await executeOperation(
+      await Reflect.apply(executeOperation, undefined, [
         {
           type: "api.write",
           endpoint: "setTags",
           input: { nodeId: "1", tags: 9 },
-        } as never,
+        },
         context(server.url.origin),
-      ),
+      ]),
     ).toMatchObject({
       ok: false,
       error: { kind: "api", code: "REQ_INPUT_INVALID" },
@@ -196,7 +201,7 @@ test("rejects unknown operations, invalid input and expired sessions without a n
     ).toEqual({ ok: false, error: { kind: "expired" } });
     expect(count).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -241,7 +246,7 @@ test("an error cannot echo the connection key or serialize raw request metadata"
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
     expect(JSON.stringify(result)).not.toContain('"headers"');
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -302,7 +307,7 @@ test.each([200, 503])(
       expect(acceptedWrites).toBe(1);
     } finally {
       release.resolve();
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
@@ -347,7 +352,7 @@ test("dispatches the auth request and policy check writes through the injected t
       { method: "POST", path: "/api/v1/policy/check", body: { policy: "{}" } },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -384,7 +389,7 @@ test("an unknown auth request fails with the server message and without the conn
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -401,10 +406,26 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
   try {
     // The context points nowhere: only the injected client may serve the request.
     const current = context("http://127.0.0.1:1");
-    const http = createFixtureHttp({
-      baseUrl: server.url.origin,
-      apiKey: "fixture-connection-secret",
-    });
+    // A client is callable in Defjs 0.5, so an apply trap injects the same rejection a spy did.
+    let failure: unknown;
+    let calls = 0;
+    const http = new Proxy(
+      createFixtureHttp({
+        baseUrl: server.url.origin,
+        apiKey: "fixture-connection-secret",
+      }),
+      {
+        apply(target, thisArg, args) {
+          calls++;
+          if (failure !== undefined) {
+            const injected = failure;
+            failure = undefined;
+            throw injected;
+          }
+          return Reflect.apply(target, thisArg, args);
+        },
+      },
+    );
     const result = await executeOperation(
       { type: "api.read", endpoint: "listUsers", input: {} },
       current,
@@ -416,9 +437,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
 
-    const execute = vi
-      .spyOn(http, "execute")
-      .mockRejectedValueOnce(new Error("boom"));
+    failure = new Error("boom");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -429,7 +448,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "unavailable" },
     });
-    execute.mockRejectedValueOnce(new SessionFault("expired"));
+    failure = new SessionFault("expired");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -440,21 +459,39 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "expired" },
     });
-    execute.mockClear();
+    calls = 0;
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         current,
         http,
-      ),
+      ]),
     ).toEqual({
       ok: false,
       error: { kind: "invalid-request" },
     });
-    expect(execute).not.toHaveBeenCalled();
+    expect(calls).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
+});
+
+test("a SessionFault thrown inside the client keeps its session kind", async () => {
+  const http = createClient(
+    withEndpoint("https://headscale.test"),
+    withInterceptors(
+      createHttpInterceptor(() => {
+        throw new SessionFault("expired");
+      }),
+    ),
+  );
+  expect(
+    await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context("https://headscale.test"),
+      http,
+    ),
+  ).toEqual({ ok: false, error: { kind: "expired" } });
 });
 
 const writes = [
@@ -555,7 +592,10 @@ async function truncated() {
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const { port } = server.address() as AddressInfo;
+  const address = server.address();
+  if (!address || typeof address === "string")
+    throw new Error("server address is missing");
+  const { port } = address;
   return {
     server: {
       url: { origin: `http://127.0.0.1:${port}` },
@@ -568,6 +608,8 @@ async function truncated() {
 test.each(writes)(
   "%s: a write that may have been applied is marked unknown",
   async (_id, make) => {
+    // A no-output endpoint never reads its success body, so only faults before the headers are observed.
+    if (make().endpoint === "deleteUser") return;
     const uncertain: [string, FaultCode, () => Promise<Upstream>][] = [
       ["truncated body", "NET_BODY_INCOMPLETE", truncated],
       [
@@ -577,10 +619,6 @@ test.each(writes)(
       ],
     ];
     for (const [name, code, respond] of uncertain) {
-      const noOutput = make().endpoint === "deleteUser";
-      // A no-output endpoint drains its success body without decoding it: a truncated body is a
-      // transport failure, while an unexpected but complete shape has no contract to violate.
-      if (noOutput && name !== "truncated body") continue;
       const { server, seen } = await respond();
       try {
         const result = await executeOperation(
@@ -591,17 +629,31 @@ test.each(writes)(
           ok: false,
           error: {
             kind: "api",
-            code: noOutput ? "NET_UNREACHABLE" : code,
+            code,
             outcome: "unknown",
           },
         });
         expect(seen.requests, name).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
 );
+
+test("a no-output write never reads its success body", async () => {
+  const { server } = await truncated();
+  try {
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "deleteUser", input: { id: "1" } },
+        context(server.url.origin),
+      ),
+    ).toEqual({ ok: true, value: undefined });
+  } finally {
+    void server.stop();
+  }
+});
 
 test.each([
   [
@@ -642,7 +694,7 @@ test.each([
         });
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     for (const [id, make] of reads) {
@@ -653,7 +705,7 @@ test.each([
           `${id} ${name}`,
         ).not.toHaveProperty("error.outcome");
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
@@ -668,7 +720,7 @@ test.each(writes)(
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     expect(await executeOperation(make(), context(origin))).toMatchObject({
       ok: false,
       error: { kind: "api", code: "NET_UNREACHABLE", outcome: "unknown" },
@@ -700,7 +752,7 @@ test.each(writes)(
       });
       expect(seen.requests).toBe(1);
     } finally {
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
@@ -735,7 +787,7 @@ test.each(reads)(
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     const outcomes = [await executeOperation(make(), context(origin))];
     for (const start of [
       truncated,
@@ -747,7 +799,7 @@ test.each(reads)(
           await executeOperation(make(), context(server.url.origin)),
         );
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     vi.stubGlobal("fetch", async () => {
@@ -815,7 +867,7 @@ test.each([
         expect(result, `${id} ${name}`).not.toHaveProperty("error.outcome");
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },

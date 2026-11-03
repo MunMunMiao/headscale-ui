@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import {
   createBrowserHistory,
   createMemoryHistory,
@@ -45,7 +46,8 @@ async function setup(path = "/home", authorized = true) {
       return Response.json({ apiKey });
     }
     if (request.method === "PUT" && url.pathname === "/api/v1/policy") {
-      policy = ((await request.json()) as { policy: string }).policy;
+      const body: { policy: string } = await request.json();
+      policy = body.policy;
       return Response.json({ policy });
     }
     const responses: Record<string, unknown> = {
@@ -414,7 +416,10 @@ test("document titles follow page, language and profile without stealing focus f
   await expect
     .poll(() => document.title)
     .toBe("用户 · Test server · Headscale UI");
-  const trigger = id("profile-menu-trigger").element() as HTMLElement;
+  const trigger = requireInstance(
+    id("profile-menu-trigger").element(),
+    HTMLElement,
+  );
   trigger.focus();
   await router.navigate({ to: "/members", search: { search: "alice" } });
   expect(document.activeElement).toBe(trigger);

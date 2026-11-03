@@ -47,7 +47,7 @@ test.each(SUPPORTED_LOCALES)(
   "provides translated per-server credential UI in %s",
   async (locale) => {
     await loadLocale(locale);
-    const keys = [
+    const keys: MessageKey[] = [
       "sessionDraftsStaleTitle",
       "sessionDraftsStaleBody",
       "sessionDraftsDiscard",
@@ -71,16 +71,14 @@ test.each(SUPPORTED_LOCALES)(
       "securityProfileHint",
     ];
     for (const key of keys) {
-      const text = getMessage(locale, key as MessageKey, {
+      const text = getMessage(locale, key, {
         name: "Server Alpha",
       });
       expect.soft(text).toBeTruthy();
       if (locale !== "en-US")
         expect
           .soft(text)
-          .not.toBe(
-            getMessage("en-US", key as MessageKey, { name: "Server Alpha" }),
-          );
+          .not.toBe(getMessage("en-US", key, { name: "Server Alpha" }));
     }
   },
 );

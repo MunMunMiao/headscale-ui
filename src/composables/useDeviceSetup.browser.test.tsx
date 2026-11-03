@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { expect, test } from "vitest";
 import { render } from "vitest-browser-react";
+import { testDouble } from "@/test/dom";
 import { type Session, SessionContext } from "./session-context";
 import {
   createDeviceSetupStore,
@@ -33,7 +34,7 @@ function Probe({ ready }: { ready?: boolean }) {
 
 function setup(ready?: boolean) {
   const deviceSetup = createDeviceSetupStore();
-  const session = { deviceSetup } as Session;
+  const session = testDouble<Session>({ deviceSetup });
   const view = render(
     <SessionContext.Provider value={session}>
       <Probe ready={ready} />
@@ -64,7 +65,7 @@ test("focuses the created key once and clears the one-shot reveal flag", async (
 
 test("waits until the target is ready before revealing", async () => {
   const deviceSetup = createDeviceSetupStore();
-  const session = { deviceSetup } as Session;
+  const session = testDouble<Session>({ deviceSetup });
   deviceSetup.setState({
     lastCreatedInvite: "key-2",
     revealCreatedInvite: true,
@@ -92,7 +93,7 @@ function Detached() {
 test("does nothing without a created key or an attached target", async () => {
   const deviceSetup = createDeviceSetupStore();
   deviceSetup.setState({ revealCreatedInvite: true });
-  const session = { deviceSetup } as Session;
+  const session = testDouble<Session>({ deviceSetup });
   await render(
     <SessionContext.Provider value={session}>
       <Detached />

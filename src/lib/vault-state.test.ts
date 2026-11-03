@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import {
   advanceVaultState,
   assertVaultVersion,
@@ -99,11 +100,13 @@ test("worker broadcast hints are validated and share one channel until the final
     {},
     { reset: true, keyEpoch: "", profilesRevision: 0 },
   ])
-    connection.onmessage?.({ data } as MessageEvent<unknown>);
+    connection.onmessage?.(testDouble<MessageEvent>({ data }));
   expect(a).not.toHaveBeenCalled();
-  connection.onmessage?.({
-    data: { keyEpoch: "remote", profilesRevision: 2, reset: false },
-  } as MessageEvent<unknown>);
+  connection.onmessage?.(
+    testDouble<MessageEvent>({
+      data: { keyEpoch: "remote", profilesRevision: 2, reset: false },
+    }),
+  );
   expect(a).toHaveBeenCalledWith({
     keyEpoch: "remote",
     profilesRevision: 2,

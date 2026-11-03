@@ -7,7 +7,7 @@ import {
   writeSetting,
 } from "@/lib/settings-storage";
 import { createStore } from "@/lib/store";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 
 export type ThemeMode = "light" | "dark" | "auto";
 

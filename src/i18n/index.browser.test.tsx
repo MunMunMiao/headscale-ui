@@ -25,11 +25,19 @@ import {
 } from "./index";
 import * as runtime from "./runtime";
 
+async function actAsync(callback: () => unknown): Promise<void> {
+  await Promise.resolve(
+    act(async () => {
+      await callback();
+    }),
+  );
+}
+
 vi.mock("@/lib/settings-storage", { spy: true });
 vi.mock("./runtime", { spy: true });
 
 beforeEach(async () => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   globalThis.indexedDB = new IDBFactory();
   __resetForTest();
   settingsStorageTestingHandle.reset();
@@ -93,7 +101,7 @@ describe("locale integration", () => {
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -117,7 +125,7 @@ describe("locale integration", () => {
     write.mockClear();
     try {
       await idbPut(STORE_META, { locale: "ar", theme: "dark" }, "ui-settings");
-      await act(async () => {
+      await actAsync(async () => {
         peer.postMessage("locale");
         await started.promise;
         notifyVaultChanged({
@@ -133,7 +141,7 @@ describe("locale integration", () => {
       expect(write).not.toHaveBeenCalled();
     } finally {
       peer.close();
-      await act(() => root.unmount());
+      await actAsync(() => root.unmount());
     }
   });
 
@@ -142,7 +150,7 @@ describe("locale integration", () => {
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -167,7 +175,7 @@ describe("locale integration", () => {
       .mockRejectedValueOnce(new Error("newer profile reread failed"));
     const peer = new BroadcastChannel("headscale-ui-preferences");
     try {
-      await act(async () => {
+      await actAsync(async () => {
         peer.postMessage("locale");
         await started.promise;
         notifyVaultChanged({
@@ -184,7 +192,7 @@ describe("locale integration", () => {
       expect(current.settingsError).toBe("reload-failed");
     } finally {
       peer.close();
-      await act(() => root.unmount());
+      await actAsync(() => root.unmount());
     }
   });
 
@@ -219,7 +227,7 @@ describe("locale integration", () => {
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -242,7 +250,7 @@ describe("locale integration", () => {
       })
       .mockRejectedValueOnce(new Error("latest peer read failed"));
     try {
-      await act(async () => {
+      await actAsync(async () => {
         peer.postMessage("locale");
         await started.promise;
         peer.postMessage("locale");
@@ -260,7 +268,7 @@ describe("locale integration", () => {
         return superseded.promise;
       });
       await idbPut(STORE_META, { locale: "ar" }, "ui-settings");
-      await act(async () => {
+      await actAsync(async () => {
         peer.postMessage("locale");
         await oldReadStarted.promise;
         peer.postMessage("locale");
@@ -272,7 +280,7 @@ describe("locale integration", () => {
       expect(current.locale).toBe("ar");
     } finally {
       peer.close();
-      await act(() => root.unmount());
+      await actAsync(() => root.unmount());
     }
   });
 
@@ -294,7 +302,7 @@ describe("locale integration", () => {
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -314,13 +322,13 @@ describe("locale integration", () => {
     vi.mocked(settings.hydrateSettings).mockRejectedValueOnce(
       new Error("read unavailable"),
     );
-    await act(async () => {
+    await actAsync(async () => {
       notifyVaultChanged(version);
       await Promise.resolve();
     });
     expect(current.settingsError).toBe("reload-failed");
     await idbPut(STORE_META, { locale: "ar", theme: "dark" }, "ui-settings");
-    await act(async () => {
+    await actAsync(async () => {
       notifyVaultChanged(version);
       await vi.waitFor(() => expect(readSetting("locale")).toBe("ar"));
     });
@@ -330,7 +338,7 @@ describe("locale integration", () => {
 
     const late = Promise.withResolvers<void>();
     vi.mocked(settings.hydrateSettings).mockReturnValueOnce(late.promise);
-    await act(async () => {
+    await actAsync(async () => {
       notifyVaultChanged(version);
       notifyVaultChanged(version);
       await vi.waitFor(() =>
@@ -339,14 +347,14 @@ describe("locale integration", () => {
       late.reject(new Error("old read failure"));
     });
     expect(current.settingsError).toBeNull();
-    await act(() => root.unmount());
+    await actAsync(() => root.unmount());
   });
   test("a superseded successful preference refresh cannot hide a newer refresh failure", async () => {
     const container = document.createElement("div");
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -367,19 +375,19 @@ describe("locale integration", () => {
     vi.mocked(settings.hydrateSettings)
       .mockReturnValueOnce(late.promise)
       .mockRejectedValueOnce(new Error("newer read failure"));
-    await act(async () => {
+    await actAsync(async () => {
       notifyVaultChanged(version);
       notifyVaultChanged(version);
       await vi.waitFor(() =>
         expect(current.settingsError).toBe("reload-failed"),
       );
     });
-    await act(async () => {
+    await actAsync(async () => {
       late.resolve();
       await late.promise;
     });
     expect(current.settingsError).toBe("reload-failed");
-    await act(() => root.unmount());
+    await actAsync(() => root.unmount());
   });
   test("restores a saved legacy tag before React mounts and syncs document metadata", async () => {
     await writeSetting("locale", "fr", captureSettingsWriteEpoch());
@@ -413,7 +421,7 @@ describe("locale integration", () => {
     document.body.append(container);
     const root = createRoot(container);
     let current!: ReturnType<typeof useHeadscaleI18n>;
-    await act(() =>
+    await actAsync(() =>
       root.render(
         createElement(
           I18nProvider,
@@ -434,7 +442,7 @@ describe("locale integration", () => {
     expect(current.t("profileUnlockTitle", { name: "Alpha" })).toBe(
       "Unlock Alpha",
     );
-    await act(() => current.setLocale("ar"));
+    await actAsync(() => current.setLocale("ar"));
     expect(current.locale).toBe("ar");
     expect(current.meta.dir).toBe("rtl");
     expect(
@@ -446,6 +454,6 @@ describe("locale integration", () => {
     expect(readSetting("locale")).toBe("ar");
     expect(document.documentElement.lang).toBe("ar");
     expect(document.documentElement.dir).toBe("rtl");
-    await act(() => root.unmount());
+    await actAsync(() => root.unmount());
   });
 });

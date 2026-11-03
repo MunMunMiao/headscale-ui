@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { testDouble } from "@/test/dom";
 import baseline from "./__fixtures__/plural-forms.json";
 import { SUPPORTED_LOCALES } from "./locales";
 import { type CountMessage, formatCount } from "./plural";
@@ -13,7 +14,11 @@ describe("formatCount", () => {
       for (const [key, cases] of Object.entries(baseline[locale].plurals)) {
         for (const [count, expected] of cases) {
           expect(
-            formatCount(locale, key as CountMessage, count as number),
+            formatCount(
+              locale,
+              testDouble<CountMessage>(key),
+              testDouble<number>(count),
+            ),
           ).toBe(expected);
         }
       }

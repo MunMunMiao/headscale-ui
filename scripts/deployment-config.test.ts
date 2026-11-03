@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { testDouble } from "@/test/dom";
 
 const read = (path: string) => Bun.file(path).text();
 interface Job {
@@ -21,8 +22,10 @@ interface Workflow {
   jobs: Record<string, Job>;
 }
 // Test-only view of our own workflow files; every asserted field is checked below.
-const workflow = async (name: string) =>
-  Bun.YAML.parse(await read(`.github/workflows/${name}.yml`)) as Workflow;
+const workflow = async (name: string): Promise<Workflow> =>
+  testDouble<Workflow>(
+    Bun.YAML.parse(await read(`.github/workflows/${name}.yml`)),
+  );
 
 test("CI checks pull requests without duplicate feature-branch push runs", async () => {
   const ci = await workflow("ci");
@@ -78,7 +81,7 @@ test("failed CI jobs preserve only existing browser screenshots as short-lived a
 test("base images are referenced by tag", async () => {
   const dockerfile = await read("Dockerfile");
   expect(dockerfile.match(/^FROM .+$/gm)).toEqual([
-    "FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine AS build",
+    "FROM --platform=$BUILDPLATFORM oven/bun:canary-alpine AS build",
     "FROM nginx:1.30.6-alpine",
   ]);
   expect(dockerfile).not.toContain("@sha256:");

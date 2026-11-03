@@ -48,7 +48,7 @@ async function runValidator(
     const events = output
       .split("\n")
       .filter((line) => line.startsWith('{"kind":"policy-publication-count",'))
-      .map((line) => JSON.parse(line) as CountEvent);
+      .map((line): CountEvent => JSON.parse(line));
     const prefix = `headscale-policy-lifecycle-${child.pid}-`;
     const inspections: Record<string, string[]> = {
       containers: [

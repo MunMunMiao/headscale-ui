@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import { createBrowserHistory } from "@tanstack/react-router";
 import { afterEach, expect, test, vi } from "vitest";
@@ -725,7 +726,7 @@ test.each(["current-key", "backfill"] as const)(
       submit = id("confirm-backfill-node-ips");
       dialog = id("backfill-node-ips-dialog");
     }
-    const form = (submit.element() as HTMLButtonElement).form;
+    const form = requireInstance(submit.element(), HTMLButtonElement).form;
     expect.assert(form);
     await expect.element(submit).toBeDisabled();
     form.requestSubmit();
@@ -764,7 +765,7 @@ test.each(["api-key-create", "api-key-action", "backfill-node-ips"] as const)(
       submit = id("confirm-backfill-node-ips");
       dialog = id("backfill-node-ips-dialog");
     }
-    const form = (submit.element() as HTMLButtonElement).form;
+    const form = requireInstance(submit.element(), HTMLButtonElement).form;
     expect.assert(form);
     const request = Promise.withResolvers<void>();
     const externalAction = screen.session.feedback.runAction(
@@ -808,10 +809,15 @@ test("cancelling a current-key action before a queued submit cannot reuse its ac
   await id(`api-key-actions-trigger-${CURRENT_PREFIX}`).click();
   await id(`delete-api-key-${CURRENT_PREFIX}`).click();
   await id("api-key-current-ack").click();
-  const form = (id("confirm-api-key-action").element() as HTMLButtonElement)
-    .form;
+  const form = requireInstance(
+    id("confirm-api-key-action").element(),
+    HTMLButtonElement,
+  ).form;
   expect.assert(form);
-  (id("cancel-api-key-action").element() as HTMLButtonElement).click();
+  requireInstance(
+    id("cancel-api-key-action").element(),
+    HTMLButtonElement,
+  ).click();
   form.requestSubmit();
   await expect.element(id("delete-api-key-dialog")).not.toBeInTheDocument();
   expect(writes(screen)).toEqual([]);
@@ -839,8 +845,10 @@ test("a current-key form cannot submit its captured target after the session cha
   await id(`api-key-actions-trigger-${CURRENT_PREFIX}`).click();
   await id(`delete-api-key-${CURRENT_PREFIX}`).click();
   await id("api-key-current-ack").click();
-  const form = (id("confirm-api-key-action").element() as HTMLButtonElement)
-    .form;
+  const form = requireInstance(
+    id("confirm-api-key-action").element(),
+    HTMLButtonElement,
+  ).form;
   expect.assert(form);
   await authenticateTestSession(
     screen.session,
@@ -854,12 +862,10 @@ test("a current-key form cannot submit its captured target after the session cha
   expect(writes(screen)).toEqual([]);
   expect(screen.session.drafts.isCurrent()).toBe(false);
   await expect.element(id("stale-session-draft-dialog")).toBeVisible();
-  // The stale alert is modal, so the acknowledgement is not in the accessibility tree.
-  expect(
-    document
-      .querySelector('[data-testid="api-key-current-ack"]')
-      ?.getAttribute("aria-checked"),
-  ).toBe("true");
+  // Dismissal belongs to the modal alert: the form underneath keeps its acknowledgement.
+  await expect
+    .element(id("api-key-current-ack"))
+    .toHaveAttribute("aria-checked", "true");
 });
 
 test.each(["create", "current-key", "backfill"] as const)(
@@ -890,11 +896,11 @@ test.each(["create", "current-key", "backfill"] as const)(
     }
     const request = Promise.withResolvers<void>();
     screen.hold(request.promise);
-    const form = (submit.element() as HTMLButtonElement).form;
+    const form = requireInstance(submit.element(), HTMLButtonElement).form;
     expect.assert(form);
     form.requestSubmit();
     form.requestSubmit();
-    (cancel.element() as HTMLButtonElement).click();
+    requireInstance(cancel.element(), HTMLButtonElement).click();
     try {
       await expect.element(dialog).toBeVisible();
       await expect.element(submit).toHaveAttribute("aria-busy", "true");
@@ -1114,7 +1120,8 @@ test("a failed action error is cleared when the route changes, not on the first 
   const { session, router } = await setup();
   session.feedback.setState({ lastError: "Old failure" });
   await expect.element(id("action-error")).toHaveTextContent("Old failure");
-  await router.navigate({ to: "/home", search: { q: "1" } as never });
+  const navigate: typeof router.navigate = Reflect.get(router, "navigate");
+  await Reflect.apply(navigate, router, [{ to: "/home", search: { q: "1" } }]);
   await expect.element(id("action-error")).toHaveTextContent("Old failure");
   await id("section-invites").click();
   await expect.poll(() => router.state.location.pathname).toBe("/invites");
@@ -1559,7 +1566,7 @@ test("one real user refresh notifies once while repeated background failures and
   expect(add).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(add.mock.calls)).not.toContain(raw);
   const persistentErrors = { ...session.snapshot.getSnapshot().refreshErrors };
-  expect(Object.keys(persistentErrors).sort()).toEqual([
+  expect(Object.keys(persistentErrors).toSorted()).toEqual([
     "fabric",
     "identity",
     "policy",

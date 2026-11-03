@@ -15,7 +15,7 @@ try {
     socket.on("framereceived", ({ payload }) => {
       const text = typeof payload === "string" ? payload : payload.toString();
       if (!text.startsWith("{")) return;
-      const event = JSON.parse(text) as { type?: string };
+      const event: { type?: string } = JSON.parse(text);
       if (event.type === "connected") connected = true;
       if (event.type === "full-reload") reloads.push(event);
     });

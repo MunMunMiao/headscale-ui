@@ -8,7 +8,7 @@ import type { SessionIdentity } from "./types";
 const cleanups: (() => void)[] = [];
 
 afterEach(() => {
-  for (const cleanup of cleanups.splice(0).reverse()) cleanup();
+  for (const cleanup of cleanups.splice(0).toReversed()) cleanup();
 });
 
 async function fixture() {

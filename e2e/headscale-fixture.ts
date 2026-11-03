@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
 import { statSync } from "node:fs";
 import { promisify } from "node:util";
+import { requireValue } from "@/test/dom";
 
 export function createHeadscalePolicyFixture(connection: {
   baseUrl: string;
@@ -300,9 +301,11 @@ export async function seedHeadscaleFixture(
 // Restore only the disposable Compose container owned by this runner; every browser test
 // starts from persisted Headscale data, including its original API key and stable IDs.
 export async function resetHeadscaleFixture(blankPolicy = false) {
-  const container = process.env.HEADSCALE_E2E_CONTAINER;
+  const container = requireValue(process.env.HEADSCALE_E2E_CONTAINER);
   const snapshot = process.env.HEADSCALE_E2E_SNAPSHOT;
-  const onlineContainer = process.env.HEADSCALE_E2E_ONLINE_CONTAINER;
+  const onlineContainer = requireValue(
+    process.env.HEADSCALE_E2E_ONLINE_CONTAINER,
+  );
   const project = container?.match(/^(headscale-ui-e2e-\d+)-headscale-1$/)?.[1];
   assert.ok(project, "Expected a runner-owned Headscale container");
   assert.equal(project, process.env.HEADSCALE_E2E_COMPOSE_PROJECT);
@@ -324,23 +327,16 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
         "inspect",
         "--format",
         '{{index .Config.Labels "com.docker.compose.project"}}',
-        container as string,
+        container,
       )
     )
       .toString()
       .trim(),
     project,
   );
-  await docker("stop", onlineContainer as string, container as string);
+  await docker("stop", onlineContainer, container);
   assert.equal(
-    (
-      await docker(
-        "inspect",
-        "--format",
-        "{{.State.Running}}",
-        container as string,
-      )
-    )
+    (await docker("inspect", "--format", "{{.State.Running}}", container))
       .toString()
       .trim(),
     "false",
@@ -358,7 +354,7 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     "--label",
     "com.docker.compose.service=fixture-restore",
     "--volumes-from",
-    container as string,
+    container,
     "--entrypoint",
     "rm",
     "tailscale/tailscale:v1.104.2",
@@ -372,11 +368,11 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     `${snapshot}/tailscale/.`,
     `${onlineContainer}:/var/lib/tailscale`,
   );
-  await docker("start", container as string);
+  await docker("start", container);
   let healthy = false;
   for (let attempt = 0; attempt < 100; attempt++) {
     try {
-      await docker("exec", container as string, "headscale", "health");
+      await docker("exec", container, "headscale", "health");
       healthy = true;
       break;
     } catch {
@@ -384,13 +380,13 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
     }
   }
   assert.ok(healthy, "Headscale fixture did not become healthy after reset");
-  await docker("start", onlineContainer as string);
+  await docker("start", onlineContainer);
   for (let attempt = 0; attempt < 100; attempt++) {
     const nodes = JSON.parse(
       (
         await docker(
           "exec",
-          container as string,
+          container,
           "headscale",
           "nodes",
           "list",
@@ -400,14 +396,11 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
       ).toString(),
     );
     if (
-      nodes.find(
-        (node: { id: number; online: boolean }) => Number(node.id) === 1,
-      )?.online
+      nodes.find((node: { id: number; online: boolean }) => node.id === 1)
+        ?.online
     ) {
-      const router = nodes.find(
-        (node: { id: number }) => Number(node.id) === 2,
-      );
-      const phone = nodes.find((node: { id: number }) => Number(node.id) === 3);
+      const router = nodes.find((node: { id: number }) => node.id === 2);
+      const phone = nodes.find((node: { id: number }) => node.id === 3);
       assert.equal(Boolean(router.online), false);
       assert.ok(
         Number(router.expiry?.seconds) * 1000 > Date.now(),

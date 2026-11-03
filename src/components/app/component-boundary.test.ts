@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { requireObject } from "@/test/dom";
 
 const modules = import.meta.glob("./*.tsx");
 
@@ -19,7 +20,9 @@ test.each([
       `${name} belongs in components/app, not the upstream ui registry`,
     ).toBeTypeOf("function");
     const module = await load();
-    for (const name of exports)
-      expect(Reflect.get(module as object, name)).toBeTypeOf("function");
+    for (const exportName of exports)
+      expect(Reflect.get(requireObject(module), exportName)).toBeTypeOf(
+        "function",
+      );
   },
 );

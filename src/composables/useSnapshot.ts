@@ -19,7 +19,7 @@ import { createStore } from "@/lib/store";
 import type { SessionBridge } from "@/session/bridge";
 import { ApiError } from "@/session/types";
 import { getErrorMessage } from "@/utils/error-mapping";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { createActionFeedbackStore } from "./useActionFeedback";
 import type { createHeadscaleClientStore } from "./useHeadscaleClient";
 
@@ -294,7 +294,7 @@ export function createSnapshotStore(
     refreshSnapshot,
     refreshSegments,
     refreshByUser,
-    clearRefreshNotice() {
+    clearRefreshNotice(this: void) {
       state.setState({ refreshNotice: false });
     },
     invalidatePolicyRefreshes() {
@@ -305,7 +305,7 @@ export function createSnapshotStore(
           segmentStatus: { ...current.segmentStatus, policy: "unknown" },
         }));
     },
-    captureSession() {
+    captureSession(this: void) {
       const captured = sessionRevision;
       return () => captured === sessionRevision;
     },
@@ -332,7 +332,7 @@ function useExpiryTick(
       ],
       Date.now(),
     );
-    if (ms === null) return;
+    if (ms === null) return undefined;
     const id = setTimeout(bump, ms);
     return () => clearTimeout(id);
   }, [nodes, preAuthKeys, apiKeys, tick]);
@@ -359,6 +359,7 @@ const AUTO_REFRESH_MS = 30_000;
 export function useAutoRefresh() {
   const { snapshot, drafts } = useSession();
   const { isAuthorized } = useStore(snapshot);
+  // eslint-disable @typescript-eslint/consistent-return -- the effect returns a cleanup on every path
   useEffect(() => {
     if (!isAuthorized) return;
     function refresh() {
@@ -378,4 +379,5 @@ export function useAutoRefresh() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [snapshot, drafts, isAuthorized]);
+  // eslint-enable @typescript-eslint/consistent-return
 }

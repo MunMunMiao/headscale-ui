@@ -127,7 +127,9 @@ export default function InvitesPage() {
   }, []);
   useRevealCreatedInvite(createdInviteRef, settled);
   const navigate = useNavigate();
-  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
+  const searchParams: Record<string, unknown> = useSearch({
+    strict: false,
+  });
   const inviteFilter =
     INVITE_FILTERS.find((filter) => filter === searchParams.filter) ?? "all";
   const exactTag = typeof searchParams.tag === "string" ? searchParams.tag : "";

@@ -13,23 +13,6 @@ import {
 } from "@/lib/settings-storage";
 import { applyStoredTheme, createThemeStore, isThemeMode } from "./useTheme";
 
-const documentDescriptor = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "document",
-);
-const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-
-function restoreGlobal(
-  name: "document" | "window",
-  descriptor?: PropertyDescriptor,
-) {
-  if (descriptor) {
-    Object.defineProperty(globalThis, name, descriptor);
-  } else {
-    Reflect.deleteProperty(globalThis, name);
-  }
-}
-
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory();
   __resetForTest();
@@ -39,8 +22,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  restoreGlobal("document", documentDescriptor);
-  restoreGlobal("window", windowDescriptor);
+  vi.unstubAllGlobals();
 });
 
 function DiscardedRender(): never {
@@ -157,21 +139,15 @@ describe("useTheme", () => {
   });
   test("a discarded React render does not apply or persist its initial theme", () => {
     const toggles: boolean[] = [];
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: {
-        documentElement: {
-          classList: {
-            toggle: (name: string, value: boolean) =>
-              name === "dark" && toggles.push(value),
-          },
+    vi.stubGlobal("document", {
+      documentElement: {
+        classList: {
+          toggle: (name: string, value: boolean) =>
+            name === "dark" && toggles.push(value),
         },
       },
     });
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: { matchMedia: () => ({ matches: true }) },
-    });
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
     expect(() => renderToString(createElement(DiscardedRender))).toThrow(
       "discarded render",
     );
@@ -197,22 +173,16 @@ describe("useTheme", () => {
 
   test("loads the saved mode and applies browser color-scheme changes", async () => {
     const toggles: boolean[] = [];
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: {
-        documentElement: {
-          classList: {
-            toggle: (name: string, enabled: boolean) => {
-              if (name === "dark") toggles.push(enabled);
-            },
+    vi.stubGlobal("document", {
+      documentElement: {
+        classList: {
+          toggle: (name: string, enabled: boolean) => {
+            if (name === "dark") toggles.push(enabled);
           },
         },
       },
     });
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: { matchMedia: () => ({ matches: true }) },
-    });
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
     await writeSetting("theme", "dark", settings.captureSettingsWriteEpoch());
 
     const theme = createThemeStore();
@@ -240,21 +210,15 @@ describe("useTheme", () => {
   describe("applyStoredTheme", () => {
     function stubDocument(prefersDark = false) {
       const classes = new Set<string>();
-      Object.defineProperty(globalThis, "document", {
-        configurable: true,
-        value: {
-          documentElement: {
-            classList: {
-              toggle: (name: string, on: boolean) =>
-                on ? classes.add(name) : classes.delete(name),
-            },
+      vi.stubGlobal("document", {
+        documentElement: {
+          classList: {
+            toggle: (name: string, on: boolean) =>
+              on ? classes.add(name) : classes.delete(name),
           },
         },
       });
-      Object.defineProperty(globalThis, "window", {
-        configurable: true,
-        value: { matchMedia: () => ({ matches: prefersDark }) },
-      });
+      vi.stubGlobal("window", { matchMedia: () => ({ matches: prefersDark }) });
       return classes;
     }
 
@@ -269,7 +233,7 @@ describe("useTheme", () => {
         await writeSetting("theme", mode, settings.captureSettingsWriteEpoch());
         const classes = stubDocument(osDark);
         applyStoredTheme();
-        expect([...classes].sort()).toEqual(expected);
+        expect([...classes].toSorted()).toEqual(expected);
       },
     );
 

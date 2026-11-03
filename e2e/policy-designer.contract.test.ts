@@ -20,9 +20,9 @@ beforeAll(async () => {
   const response = await fetch(`${baseUrl}/api/v1/node`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
-  const { nodes } = (await response.json()) as {
-    nodes: { name: string; ipAddresses: string[] }[];
-  };
+  const body: { nodes: { name: string; ipAddresses: string[] }[] } =
+    await response.json();
+  const { nodes } = body;
   const ip = nodes
     .find((node) => node.name === "alice-laptop")
     ?.ipAddresses.find((a) => !a.includes(":"));
@@ -98,8 +98,8 @@ test("a template replaces the open default, appending it after the default stays
   await expectAccessMismatch("template appended after the open default", {
     ...templated,
     acls: [
-      ...(defaultPolicy.acls as unknown[]),
-      ...(templated.acls as unknown[]),
+      ...(Array.isArray(defaultPolicy.acls) ? defaultPolicy.acls : []),
+      ...(Array.isArray(templated.acls) ? templated.acls : []),
     ],
     tests,
   });
@@ -194,9 +194,7 @@ test("a grants-only policy survives the designer round trip, an injected allow-a
   const roundTrip = serializePolicy(parsePolicy(JSON.stringify(grantsOnly)));
   // Compare transmitted values; the HuJSON parser uses prototype-free objects.
   // `?? null` keeps a dropped section a readable assertion failure instead of a JSON.parse crash.
-  expect(JSON.parse(JSON.stringify(roundTrip.grants ?? null))).toEqual(
-    grantsOnly.grants,
-  );
+  expect(structuredClone(roundTrip.grants ?? null)).toEqual(grantsOnly.grants);
   expect(roundTrip.acls).toEqual([]);
   await expectValid("grants-only round trip", { ...roundTrip, tests });
 });

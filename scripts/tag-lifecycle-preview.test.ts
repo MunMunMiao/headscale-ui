@@ -3,8 +3,14 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { inspect } from "node:util";
-import { createServer, type Plugin, type ViteDevServer } from "vite";
+import {
+  createServer,
+  type Plugin,
+  type PluginOption,
+  type ViteDevServer,
+} from "vite";
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import {
   createTagLifecycleFixture,
   type TagLifecycleFixture,
@@ -19,6 +25,17 @@ type Middleware = (
   response: ServerResponse,
   next: () => void,
 ) => void;
+
+const originalExit: typeof process.exit = Reflect.get(process, "exit");
+
+function isPlugin(option: PluginOption): option is Plugin {
+  return (
+    !!option &&
+    typeof option === "object" &&
+    !Array.isArray(option) &&
+    "name" in option
+  );
+}
 function initializer() {
   let handler: Middleware | undefined;
   const plugin = tagPreviewInitialization("http://127.0.0.1:4179", {
@@ -26,17 +43,17 @@ function initializer() {
     password: "synthetic-only-password",
     profileName: "Fixture",
   });
-  const server = {
+  const server = testDouble<ViteDevServer>({
     middlewares: {
       use: (callback: Middleware) => {
         handler = callback;
       },
     },
     transformIndexHtml: async (_url: string, html: string) => html,
-  } as unknown as ViteDevServer;
+  });
   if (typeof plugin.configureServer !== "function")
     throw new Error("Expected a preview middleware");
-  plugin.configureServer.call({} as never, server);
+  Reflect.apply(plugin.configureServer, plugin, [server]);
   return (patch: Partial<IncomingMessage> = {}) => {
     const headers: Record<string, string> = {};
     let body = "";
@@ -50,7 +67,8 @@ function initializer() {
       },
     };
     if (!handler) throw new Error("Expected an initialization request handler");
-    handler(
+    const handle: typeof handler = handler;
+    Reflect.apply(handle, undefined, [
       {
         url: "/__tag-preview-credentials",
         method: "POST",
@@ -61,10 +79,10 @@ function initializer() {
           "sec-fetch-dest": "empty",
         },
         ...patch,
-      } as IncomingMessage,
-      response as unknown as ServerResponse,
+      },
+      response,
       () => {},
-    );
+    ]);
     return {
       get status() {
         return response.statusCode;
@@ -132,12 +150,15 @@ test("preview credentials reject GET, foreign origins and embedding without cons
 });
 
 vi.mock("vite", () => ({ createServer: vi.fn() }));
+import type * as TagLifecycleModule from "./harness/tag-lifecycle.ts";
+
 vi.mock("./harness/tag-lifecycle.ts", async (original) => ({
-  ...(await original<typeof import("./harness/tag-lifecycle.ts")>()),
+  ...(await original<typeof TagLifecycleModule>()),
   createTagLifecycleFixture: vi.fn(),
 }));
 afterEach(() => {
   vi.restoreAllMocks();
+  Reflect.set(process, "exit", originalExit);
   process.exitCode = 0;
 });
 
@@ -146,13 +167,13 @@ test("SIGTERM during fixture startup waits for owned resources and never starts 
   vi.mocked(createTagLifecycleFixture).mockReturnValue(pending.promise);
   let terminate: (() => Promise<void>) | undefined;
   vi.spyOn(process, "on").mockImplementation((event, listener) => {
-    if (String(event) === "SIGTERM")
-      terminate = listener as () => Promise<void>;
+    const signal: string = event;
+    if (signal === "SIGTERM")
+      terminate = () => Reflect.apply(listener, process, []);
     return process;
   });
-  const exit = vi
-    .spyOn(process, "exit")
-    .mockImplementation(() => undefined as never);
+  const exit = vi.fn();
+  Reflect.set(process, "exit", exit);
   vi.spyOn(console, "error").mockImplementation(() => {});
   const close = vi.fn(async () => {});
   const policy = vi.fn(async () => ({}));
@@ -165,7 +186,7 @@ test("SIGTERM during fixture startup waits for owned resources and never starts 
       exit,
       "process must not exit while the fixture factory still owns live resources",
     ).not.toHaveBeenCalled();
-    pending.resolve({ close, policy } as unknown as TagLifecycleFixture);
+    pending.resolve(testDouble<TagLifecycleFixture>({ close, policy }));
     await Promise.all([running, stopped]);
     expect(close).toHaveBeenCalledTimes(1);
     expect(policy).not.toHaveBeenCalled();
@@ -181,38 +202,39 @@ test("Vite direct and concurrent shutdown await the same owned fixture cleanup b
   const directory = mkdtempSync(join(tmpdir(), "tag-preview-close-test-"));
   const pending = Promise.withResolvers<void>();
   const fixtureClose = vi.fn(() => pending.promise);
-  vi.mocked(createTagLifecycleFixture).mockResolvedValue({
-    directory,
-    project: "synthetic-only-project",
-    baseUrl: "http://127.0.0.1:49152",
-    users: { alice: "1" },
-    policy: async () => {},
-    key: async () => ({ key: "synthetic-only-key" }),
-    client: async () => ({}),
-    register: async () => {},
-    nodes: async () => [],
-    connection: () => ({ apiKey: "synthetic-only-key" }),
-    close: fixtureClose,
-  } as unknown as TagLifecycleFixture);
+  vi.mocked(createTagLifecycleFixture).mockResolvedValue(
+    testDouble<TagLifecycleFixture>({
+      directory,
+      project: "synthetic-only-project",
+      baseUrl: "http://127.0.0.1:49152",
+      users: { alice: "1" },
+      policy: async () => {},
+      key: async () => ({ key: "synthetic-only-key" }),
+      client: async () => ({}),
+      register: async () => {},
+      nodes: async () => [],
+      connection: () => ({ apiKey: "synthetic-only-key" }),
+      close: fixtureClose,
+    }),
+  );
   vi.spyOn(process, "on").mockImplementation(() => process);
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   let plugins: Plugin[] = [];
-  const server = {
+  const server = testDouble<ViteDevServer>({
     listen: async () => {},
     close: async () => {
       for (const plugin of plugins)
         if (typeof plugin.closeServer === "function")
-          await plugin.closeServer.call(
-            {} as never,
-            { reason: "close" } as never,
-          );
+          await Reflect.apply(plugin.closeServer, plugin, [
+            { reason: "close" },
+          ]);
     },
-  } as unknown as ViteDevServer;
+  });
   vi.mocked(createServer)
     .mockReset()
     .mockImplementation(async (options) => {
-      plugins = options?.plugins as Plugin[];
+      plugins = (options?.plugins ?? []).filter(isPlugin);
       return server;
     });
   const exited = vi.fn();
@@ -251,47 +273,48 @@ test.each(["SIGTERM", "Vite close"] as const)(
     const fixtureClose = vi.fn(async () => {
       rmSync(directory, { recursive: true, force: true });
     });
-    vi.mocked(createTagLifecycleFixture).mockResolvedValue({
-      directory,
-      project: "synthetic-only-project",
-      baseUrl: "http://127.0.0.1:49152",
-      users: { alice: "1" },
-      policy: async () => {},
-      key: async () => ({ key: "synthetic-only-key" }),
-      client: async () => ({}),
-      register: async () => {},
-      nodes: async () => [],
-      connection: () => ({ apiKey: "synthetic-only-key" }),
-      close: fixtureClose,
-    } as unknown as TagLifecycleFixture);
+    vi.mocked(createTagLifecycleFixture).mockResolvedValue(
+      testDouble<TagLifecycleFixture>({
+        directory,
+        project: "synthetic-only-project",
+        baseUrl: "http://127.0.0.1:49152",
+        users: { alice: "1" },
+        policy: async () => {},
+        key: async () => ({ key: "synthetic-only-key" }),
+        client: async () => ({}),
+        register: async () => {},
+        nodes: async () => [],
+        connection: () => ({ apiKey: "synthetic-only-key" }),
+        close: fixtureClose,
+      }),
+    );
     let terminate: (() => Promise<void>) | undefined;
     vi.spyOn(process, "on").mockImplementation((event, listener) => {
-      if (String(event) === "SIGTERM")
-        terminate = listener as () => Promise<void>;
+      const signal: string = event;
+      if (signal === "SIGTERM")
+        terminate = () => Reflect.apply(listener, process, []);
       return process;
     });
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined as never);
+    const exit = vi.fn();
+    Reflect.set(process, "exit", exit);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     let plugins: Plugin[] = [];
-    const server = {
+    const server = testDouble<ViteDevServer>({
       listen: async () => {},
       close: async () => {
         await pendingServer.promise;
         for (const plugin of plugins)
           if (typeof plugin.closeServer === "function")
-            await plugin.closeServer.call(
-              {} as never,
-              { reason: "close" } as never,
-            );
+            await Reflect.apply(plugin.closeServer, plugin, [
+              { reason: "close" },
+            ]);
       },
-    } as unknown as ViteDevServer;
+    });
     vi.mocked(createServer)
       .mockReset()
       .mockImplementation(async (options) => {
-        plugins = options?.plugins as Plugin[];
+        plugins = (options?.plugins ?? []).filter(isPlugin);
         return server;
       });
     let stopped: Promise<void> | undefined;
@@ -335,47 +358,48 @@ test.each(["fixture", "server"] as const)(
     const pendingFixture = Promise.withResolvers<void>();
     const pendingServer = Promise.withResolvers<void>();
     const failure = new Error(`Synthetic ${failing} shutdown failure`);
-    vi.mocked(createTagLifecycleFixture).mockResolvedValue({
-      directory,
-      project: "synthetic-only-project",
-      baseUrl: "http://127.0.0.1:49152",
-      users: { alice: "1" },
-      policy: async () => {},
-      key: async () => ({ key: "synthetic-only-key" }),
-      client: async () => ({}),
-      register: async () => {},
-      nodes: async () => [],
-      connection: () => ({ apiKey: "synthetic-only-key" }),
-      close: async () => {
-        try {
-          if (failing === "fixture") throw failure;
-          await pendingFixture.promise;
-        } finally {
-          rmSync(directory, { recursive: true, force: true });
-        }
-      },
-    } as unknown as TagLifecycleFixture);
+    vi.mocked(createTagLifecycleFixture).mockResolvedValue(
+      testDouble<TagLifecycleFixture>({
+        directory,
+        project: "synthetic-only-project",
+        baseUrl: "http://127.0.0.1:49152",
+        users: { alice: "1" },
+        policy: async () => {},
+        key: async () => ({ key: "synthetic-only-key" }),
+        client: async () => ({}),
+        register: async () => {},
+        nodes: async () => [],
+        connection: () => ({ apiKey: "synthetic-only-key" }),
+        close: async () => {
+          try {
+            if (failing === "fixture") throw failure;
+            await pendingFixture.promise;
+          } finally {
+            rmSync(directory, { recursive: true, force: true });
+          }
+        },
+      }),
+    );
     vi.spyOn(process, "on").mockImplementation(() => process);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     let plugins: Plugin[] = [];
-    const server = {
+    const server = testDouble<ViteDevServer>({
       listen: async () => {},
       close: async () => {
         if (failing === "server") throw failure;
         await pendingServer.promise;
         for (const plugin of plugins)
           if (typeof plugin.closeServer === "function")
-            await plugin.closeServer.call(
-              {} as never,
-              { reason: "close" } as never,
-            );
+            await Reflect.apply(plugin.closeServer, plugin, [
+              { reason: "close" },
+            ]);
       },
-    } as unknown as ViteDevServer;
+    });
     vi.mocked(createServer)
       .mockReset()
       .mockImplementation(async (options) => {
-        plugins = options?.plugins as Plugin[];
+        plugins = (options?.plugins ?? []).filter(isPlugin);
         return server;
       });
     let result: unknown = "pending";
@@ -426,36 +450,38 @@ test.each(["server-only", "both"] as const)(
       `Synthetic fixture close failure\n${secret}`,
     );
     const serverFailure = new Error(`Synthetic Vite close failure\n${secret}`);
-    vi.mocked(createTagLifecycleFixture).mockResolvedValue({
-      directory,
-      project: "synthetic-only-project",
-      baseUrl: "http://127.0.0.1:49152",
-      users: { alice: "1" },
-      policy: async () => {},
-      key: async () => ({ key: "synthetic-only-key" }),
-      client: async () => ({}),
-      register: async () => {},
-      nodes: async () => [],
-      connection: () => ({ apiKey: secret }),
-      close: async () => {
-        rmSync(directory, { recursive: true, force: true });
-        if (failing === "both") throw fixtureFailure;
-      },
-    } as unknown as TagLifecycleFixture);
+    vi.mocked(createTagLifecycleFixture).mockResolvedValue(
+      testDouble<TagLifecycleFixture>({
+        directory,
+        project: "synthetic-only-project",
+        baseUrl: "http://127.0.0.1:49152",
+        users: { alice: "1" },
+        policy: async () => {},
+        key: async () => ({ key: "synthetic-only-key" }),
+        client: async () => ({}),
+        register: async () => {},
+        nodes: async () => [],
+        connection: () => ({ apiKey: secret }),
+        close: async () => {
+          rmSync(directory, { recursive: true, force: true });
+          if (failing === "both") throw fixtureFailure;
+        },
+      }),
+    );
     vi.spyOn(process, "on").mockImplementation(() => process);
     vi.spyOn(console, "log").mockImplementation(() => {});
     const diagnostics = vi.spyOn(console, "error").mockImplementation(() => {});
     const exitStatuses: number[] = [];
-    vi.spyOn(process, "exit").mockImplementation((code) => {
+    const exit = vi.fn((code?: number) => {
       exitStatuses.push(Number(code ?? process.exitCode ?? 0));
-      return undefined as never;
     });
-    const server = {
+    Reflect.set(process, "exit", exit);
+    const server = testDouble<ViteDevServer>({
       listen: async () => {},
       close: async () => {
         throw serverFailure;
       },
-    } as unknown as ViteDevServer;
+    });
     vi.mocked(createServer).mockReset().mockResolvedValue(server);
     let result: unknown;
     try {

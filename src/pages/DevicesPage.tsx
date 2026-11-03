@@ -156,6 +156,10 @@ const MACHINE_FILTERS: readonly MachineFilter[] = [
   "tagged",
 ];
 
+function toMachineFilter(value: unknown): MachineFilter {
+  return MACHINE_FILTERS.find((filter) => filter === value) ?? "all";
+}
+
 type TagDecision = {
   scope: LifecycleScope;
   node: NodeTagBaseline;
@@ -272,9 +276,12 @@ export default function DevicesPage() {
     pendingRegistrationForm: storedPendingRegistration,
   } = useDeviceSetup();
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TanStack Router history is untyped
   const history: RouterHistory = useRouter().history;
   const intent = useRouteIntent();
-  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
+  const searchParams: Record<string, unknown> = useSearch({
+    strict: false,
+  });
   const migrationFrom =
     typeof searchParams.migrateFrom === "string"
       ? searchParams.migrateFrom
@@ -299,8 +306,7 @@ export default function DevicesPage() {
 
   // The URL carries the filters, so a reload or a shared link lists the same machines.
   const urlSearch = intent.search ?? "";
-  const urlFilter =
-    MACHINE_FILTERS.find((filter) => filter === searchParams.filter) ?? "all";
+  const urlFilter = toMachineFilter(searchParams.filter);
   const ownerFilter = intent.userId;
   const [deviceSearch, setDeviceSearch] = useState(urlSearch);
   const [machineFilter, setMachineFilter] = useState<MachineFilter>(urlFilter);
@@ -367,6 +373,7 @@ export default function DevicesPage() {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- bump on unmount so late replies are ignored
       ++tagOperation.current;
     };
   }, []);
@@ -559,8 +566,12 @@ export default function DevicesPage() {
     (state) => state.isSubmitting,
   );
 
+  const tagsDefaults: { tags: string[]; acknowledged: boolean } = {
+    tags: [],
+    acknowledged: false,
+  };
   const tagsForm = useAppForm({
-    defaultValues: { tags: [] as string[], acknowledged: false },
+    defaultValues: tagsDefaults,
     validators: {
       onDynamic: ({ value }) => ({
         fields: {
@@ -581,16 +592,25 @@ export default function DevicesPage() {
     (state) => state.isSubmitting,
   );
 
+  const setupDefaults: {
+    task: AddDeviceTask | null;
+    user: string;
+    reusable: boolean;
+    ephemeral: boolean;
+    aclTags: string;
+    advertiseExitNode: boolean;
+    expiryDays: string;
+  } = {
+    task: null,
+    user: "",
+    reusable: false,
+    ephemeral: false,
+    aclTags: "",
+    advertiseExitNode: false,
+    expiryDays: "7",
+  };
   const setupForm = useAppForm({
-    defaultValues: {
-      task: null as AddDeviceTask | null,
-      user: "",
-      reusable: false,
-      ephemeral: false,
-      aclTags: "",
-      advertiseExitNode: false,
-      expiryDays: "7",
-    },
+    defaultValues: setupDefaults,
     listeners: {
       onChange: ({ fieldApi }) => {
         ++setupEditVersion.current;
@@ -666,9 +686,10 @@ export default function DevicesPage() {
       setupForm.setFieldValue("user", draftUsers[0]?.id ?? "");
   }, [draftUsers, setupForm, stale]);
 
+  const authSubmitMeta = (): "approved" | "rejected" => "approved";
   const authForm = useAppForm({
     defaultValues: storedPendingRegistration,
-    onSubmitMeta: "approved" as "approved" | "rejected",
+    onSubmitMeta: authSubmitMeta(),
     validators: {
       onDynamic: ({ value }) => ({
         fields: {
@@ -715,9 +736,9 @@ export default function DevicesPage() {
       formApi.setFieldValue("key", key);
       formApi.setFieldValue("user", user);
       // onDynamic 已用同一解析器校验，只有有效请求能进入提交回调。
-      const request = parseAuthRequest(key) as NonNullable<
-        ReturnType<typeof parseAuthRequest>
-      >;
+      const request = parseAuthRequest(key);
+      /* istanbul ignore next -- onDynamic already rejected every key this parser rejects */
+      if (!request) return;
       if (value.kind === "device") await registerPendingNode(request.id);
       else await decideAuthRequest(meta, request.id);
     },
@@ -1788,6 +1809,7 @@ export default function DevicesPage() {
       tagsValues.tags,
       tagsBaseline,
       pendingTagWrite,
+      intent.nodeId,
     ],
   );
 
@@ -4237,7 +4259,7 @@ export default function DevicesPage() {
                   <NativeSelect
                     value={machineFilter}
                     onChange={(event) =>
-                      changeMachineFilter(event.target.value as MachineFilter)
+                      changeMachineFilter(toMachineFilter(event.target.value))
                     }
                     id="machine-filter"
                     data-testid="machine-filter"
