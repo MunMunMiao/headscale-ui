@@ -150,8 +150,10 @@ test("preview credentials reject GET, foreign origins and embedding without cons
 });
 
 vi.mock("vite", () => ({ createServer: vi.fn() }));
+import type * as TagLifecycleModule from "./harness/tag-lifecycle.ts";
+
 vi.mock("./harness/tag-lifecycle.ts", async (original) => ({
-  ...(await original<typeof import("./harness/tag-lifecycle.ts")>()),
+  ...(await original<typeof TagLifecycleModule>()),
   createTagLifecycleFixture: vi.fn(),
 }));
 afterEach(() => {

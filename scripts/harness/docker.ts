@@ -52,9 +52,10 @@ export function createCleanup(label: string, steps: (() => unknown)[]) {
 
 /** Keeps at most 8K characters, omitting credential-bearing lines and any truncated first line. */
 export function diagnosticTail(
-  output: string,
+  rawOutput: string,
   secrets: readonly string[] = [],
 ): string {
+  let output = rawOutput;
   for (const secret of secrets) {
     if (secret) output = output.replaceAll(secret, "<redacted>");
   }

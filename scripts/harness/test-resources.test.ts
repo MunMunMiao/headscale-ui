@@ -134,12 +134,18 @@ test.skipIf(process.platform === "win32").each(["abort", "dispose"] as const)(
       await expect.poll(() => Bun.file(ready).exists()).toBe(true);
       owned = await Bun.file(ready).json();
       expect.assert(owned);
+      if (!owned) throw new Error("Expected owned resources");
+      const ownedResources = owned;
       if (mode === "abort") controller.abort();
       else await tasks.disposeAsync();
       await expect
-        .poll(() => alive(owned!.parent) || alive(owned!.descendant), {
-          timeout: 1000,
-        })
+        .poll(
+          () =>
+            alive(ownedResources.parent) || alive(ownedResources.descendant),
+          {
+            timeout: 1000,
+          },
+        )
         .toBe(false);
       const result = await outcome;
       if (mode === "abort")
@@ -217,10 +223,15 @@ test("owned timeout fixture", async ({ resources }) => {
     expect(await Bun.file(removed).exists()).toBe(true);
     expect(existsSync(ownedDirectory)).toBe(false);
     expect.assert(owned);
+    if (!owned) throw new Error("Expected owned resources");
+    const ownedResources = owned;
     await expect
-      .poll(() => alive(owned!.parent) || alive(owned!.descendant), {
-        timeout: 1000,
-      })
+      .poll(
+        () => alive(ownedResources.parent) || alive(ownedResources.descendant),
+        {
+          timeout: 1000,
+        },
+      )
       .toBe(false);
     expect(await Bun.file(`${ready}.natural`).exists()).toBe(false);
   } finally {
@@ -270,11 +281,17 @@ ${interrupt === "exit" ? `while (!(await Bun.file(${JSON.stringify(ready)}).exis
       owned = await Bun.file(ready).json();
       expect.assert(owner);
       expect.assert(owned);
+      if (!owned) throw new Error("Expected owned resources");
+      const ownedResources = owned;
       if (interrupt !== "exit") process.kill(-owner, interrupt);
       await expect
-        .poll(() => alive(owned!.parent) || alive(owned!.descendant), {
-          timeout: 1000,
-        })
+        .poll(
+          () =>
+            alive(ownedResources.parent) || alive(ownedResources.descendant),
+          {
+            timeout: 1000,
+          },
+        )
         .toBe(false);
       await outcome;
       expect(await Bun.file(`${ready}.natural`).exists()).toBe(false);

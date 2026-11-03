@@ -56,8 +56,10 @@ await import(${JSON.stringify(join(root, "scripts/run-e2e.ts"))});
       .split("\n")
       .find((line) => line.startsWith("RUNNER_TRACE="));
     expect(traceLine, stdout + stderr).toBeDefined();
+    if (traceLine === undefined)
+      throw new Error("RUNNER_TRACE line is missing");
     const trace: RunnerTrace = JSON.parse(
-      traceLine!.slice("RUNNER_TRACE=".length),
+      traceLine.slice("RUNNER_TRACE=".length),
     );
     return { code, output: stdout + stderr, trace };
   } finally {

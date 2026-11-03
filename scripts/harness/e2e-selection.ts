@@ -11,7 +11,8 @@ export function selectE2eSuites(argv: readonly string[]): {
   let suite: E2eSuite | "all" | undefined;
   const vitestArgs: string[] = [];
   for (let index = 0; index < args.length; index++) {
-    const arg = args[index]!;
+    const arg = args[index];
+    if (arg === undefined) continue;
     if (arg === "--suite" || arg.startsWith("--suite=")) {
       if (suite !== undefined) throw new Error("Specify --suite only once");
       const value =

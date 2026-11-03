@@ -194,9 +194,7 @@ test("a grants-only policy survives the designer round trip, an injected allow-a
   const roundTrip = serializePolicy(parsePolicy(JSON.stringify(grantsOnly)));
   // Compare transmitted values; the HuJSON parser uses prototype-free objects.
   // `?? null` keeps a dropped section a readable assertion failure instead of a JSON.parse crash.
-  expect(JSON.parse(JSON.stringify(roundTrip.grants ?? null))).toEqual(
-    grantsOnly.grants,
-  );
+  expect(structuredClone(roundTrip.grants ?? null)).toEqual(grantsOnly.grants);
   expect(roundTrip.acls).toEqual([]);
   await expectValid("grants-only round trip", { ...roundTrip, tests });
 });

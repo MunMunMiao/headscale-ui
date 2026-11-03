@@ -4,7 +4,7 @@ import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
 import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import * as endpoints from "@/api/requests";
 import { type SessionExecutionContext, SessionFault } from "./auth-session";
-import { type ApiOutput, type ApiRequest, type EndpointName } from "./protocol";
+import type { ApiOutput, ApiRequest, EndpointName } from "./protocol";
 import type { SessionResult } from "./types";
 
 type HeadscaleFault = FaultOf<Infer<typeof rpcStatus>>;

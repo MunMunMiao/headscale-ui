@@ -121,7 +121,7 @@ test.each(["en-US", "zh-Hans", "ar"] as const)(
     );
     expect(error.code).toBe("RES_MEDIA_TYPE_INVALID");
     expect(error.status).toBe(401);
-    expect("data" in JSON.parse(JSON.stringify(error))).toBe(false);
+    expect(JSON.stringify(error)).not.toContain('"data"');
     const expected = getProductCopy(locale).errorRequestFailed;
     expect(getErrorMessage(error)).toBe(expected);
     expect(storageErrorMessage(error)).toBe(expected);

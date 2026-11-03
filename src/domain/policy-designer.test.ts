@@ -31,7 +31,7 @@ import {
 import { PrincipalIndex, policyPrincipalForUser } from "./principal";
 
 function normalizeForCompare(input: Record<string, unknown>) {
-  const clone: Record<string, unknown> = JSON.parse(JSON.stringify(input));
+  const clone: Record<string, unknown> = structuredClone(input);
   for (const key of Object.keys(clone)) {
     const value = clone[key];
     if (Array.isArray(value)) {

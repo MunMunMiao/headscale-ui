@@ -339,8 +339,9 @@ export function createProfilesStore(
   }
   async function enterProfile(
     profile: ProfileSummary,
-    password?: string,
+    passwordInput?: string,
   ): Promise<boolean> {
+    let password = passwordInput;
     if (password === undefined) {
       feedback.setState({ lastError: "" });
       store.setState({ unlockProfile: profile });
@@ -389,9 +390,11 @@ export function createProfilesStore(
   }
   async function migrateAndEnterProfile(
     profile: ProfileSummary,
-    password: string,
-    legacyPassword?: string,
+    passwordInput: string,
+    legacyPasswordInput?: string,
   ) {
+    let password = passwordInput;
+    let legacyPassword = legacyPasswordInput;
     if (store.getSnapshot().phase.kind !== "idle") return false;
     const ticket = ++submissionGeneration;
     const initialIdentity = bridge.getSessionSnapshot()?.identity;
@@ -527,10 +530,12 @@ export function createProfilesStore(
     },
     async changeProfilePassword(
       profile: ProfileSummary,
-      password: string,
-      newPassword: string,
+      passwordInput: string,
+      newPasswordInput: string,
       onFeedback?: (result: PasswordChangeFeedback) => boolean,
     ): Promise<boolean> {
+      let password = passwordInput;
+      let newPassword = newPasswordInput;
       if (store.getSnapshot().phase.kind !== "idle") return false;
       const ticket = ++submissionGeneration;
       const formTicket = formGeneration;
