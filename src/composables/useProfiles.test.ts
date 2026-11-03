@@ -1098,13 +1098,16 @@ test.each(["decline", "throw"] as const)(
       expect(f.profiles.isConnecting).toBe(true);
       expect(f.feedback.getSnapshot().lastError).toBe("New operation feedback");
       release.resolve();
-      expect(await next).toBe(true);
+      const pending = next;
+      if (!pending) throw new Error("Expected a pending password change");
+      expect(await Promise.resolve(pending)).toBe(true);
       expect(nextResults).toEqual([{ kind: "changed" }]);
       expect(requests).toBe(2);
       expect(f.profiles.getSnapshot().phase).toEqual({ kind: "idle" });
     } finally {
       release.resolve();
-      await next;
+      const pendingChange = next;
+      if (pendingChange) await Promise.resolve(pendingChange);
     }
   },
 );

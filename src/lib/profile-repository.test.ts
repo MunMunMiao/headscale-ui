@@ -363,8 +363,14 @@ test.each(["last-put", "request-success-abort", "canary-delete"])(
       ownerTabId: "owner-a",
       profile: { id: "migrate", credentialVersion: null },
     };
-    const put = IDBObjectStore.prototype.put;
-    const remove = IDBObjectStore.prototype.delete;
+    const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+      IDBObjectStore.prototype,
+      "put",
+    );
+    const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+      IDBObjectStore.prototype,
+      "delete",
+    );
     const putSpy = vi
       .spyOn(IDBObjectStore.prototype, "put")
       .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -703,7 +709,10 @@ test("a native delete request that succeeds before transaction abort cannot publ
     ownerTabId: "owner-a",
     profile: { id: profile.id, credentialVersion: profile.credentialVersion },
   };
-  const remove = IDBObjectStore.prototype.delete;
+  const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -814,13 +823,13 @@ test.each(["commit", "delete"] as const)(
     };
     const controller = new AbortController();
     const method = operation === "commit" ? "put" : "delete";
-    const original = IDBObjectStore.prototype[method];
+    const original: (...args: never[]) => IDBRequest = Reflect.get(
+      IDBObjectStore.prototype,
+      method,
+    );
     const spy = vi
       .spyOn(IDBObjectStore.prototype, method)
-      .mockImplementation(function (
-        this: IDBObjectStore,
-        ...args: Parameters<typeof original>
-      ) {
+      .mockImplementation(function (this: IDBObjectStore, ...args: unknown[]) {
         const request: IDBRequest = Reflect.apply(original, this, args);
         if (this.name === "profiles")
           request.addEventListener("success", () => controller.abort(), {

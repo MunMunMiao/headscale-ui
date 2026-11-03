@@ -118,7 +118,7 @@ test("reopens after an unexpectedly terminated connection", async () => {
     db.addEventListener("close", () => resolve(), { once: true }),
   );
   // fake-indexeddb's declaration incorrectly accepts the constructor, not an instance.
-  const closeDatabase: Function = forceCloseDatabase;
+  const closeDatabase: typeof forceCloseDatabase = forceCloseDatabase;
   Reflect.apply(closeDatabase, undefined, [unwrap(db)]);
   await closed;
   expect(await openHeadscaleDb()).not.toBe(db);
@@ -175,9 +175,7 @@ test("a legacy session profile without an owner loses its global active referenc
   await openHeadscaleDb();
   expect(await idbGet("meta", "active-profile-id")).toBeUndefined();
   const keys = await (await openHeadscaleDb()).getAllKeys("meta");
-  expect(
-    keys.filter((key) => String(key).startsWith("active-profile")),
-  ).toEqual([]);
+  expect(keys.filter((key) => key.startsWith("active-profile"))).toEqual([]);
   expect(await idbGet("profiles", "legacy")).toMatchObject({
     keyEpoch: expect.any(String),
   });
@@ -190,7 +188,10 @@ test("drops only an orphaned active reference during upgrade", async () => {
 });
 test("an aborted upgrade leaves the v1 records untouched", async () => {
   await seedOld("legacy");
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const interception = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

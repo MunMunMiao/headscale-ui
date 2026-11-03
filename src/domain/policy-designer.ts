@@ -110,7 +110,7 @@ function destinationParts(
     const destination = value.slice(0, separator);
     const ports = value.slice(separator + 1);
     if (separator <= 0 || !ports.trim() || destination.includes(",")) {
-      return;
+      return undefined;
     }
     result.push({ destination, ports });
   }

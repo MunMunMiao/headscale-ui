@@ -92,10 +92,13 @@ export function createSessionRuntime(deps: SessionRuntimeDependencies) {
       const fiber = ports.get(portId)?.get(requestId);
       if (fiber) await Effect.runPromise(Fiber.interrupt(fiber));
     },
-    async cancelPending(except: {
-      portId: string;
-      requestId: string;
-    }): Promise<void> {
+    async cancelPending(
+      this: void,
+      except: {
+        portId: string;
+        requestId: string;
+      },
+    ): Promise<void> {
       const cancelled: Fiber.Fiber<unknown, WorkerErrorDto>[] = [];
       for (const [portId, pending] of ports)
         for (const [requestId, fiber] of pending) {

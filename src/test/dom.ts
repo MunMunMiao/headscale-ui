@@ -19,6 +19,7 @@ export function requireValue<T>(value: T | null | undefined): T {
  * A stand-in that implements only the surface a test exercises. No typed path exists from a
  * partial fixture to the interface it replaces, so this is the one documented erasure point.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the caller supplies the decoded type
 export function testDouble<T>(value: unknown): T {
   // oxlint-disable-next-line typescript/no-explicit-any -- fixture boundary, value is returned as-is
   const erased: any = value;

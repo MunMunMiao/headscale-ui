@@ -16,7 +16,7 @@ vi.mock("./harness/session-network.ts", () => ({
 vi.mock("../vite.config.ts", () => ({ default: {} }));
 vi.mock("@vitest/browser-playwright", () => ({ playwright: () => ({}) }));
 
-const originalExit = process.exit;
+const originalExit: typeof process.exit = Reflect.get(process, "exit");
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -64,7 +64,8 @@ test.each(["primary", "alternate"] as const)(
       );
     let terminate: (() => Promise<void>) | undefined;
     vi.spyOn(process, "on").mockImplementation((event, listener) => {
-      if (String(event) === "SIGTERM")
+      const signal: string = event;
+      if (signal === "SIGTERM")
         terminate = () => Reflect.apply(listener, process, []);
       return process;
     });

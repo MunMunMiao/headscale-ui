@@ -51,7 +51,7 @@ async function fixture(path = "/secure") {
   });
   await router.load();
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   async function save(activate = false) {
     session.profiles.setConnectionForm({
       profileName: "A",

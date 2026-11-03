@@ -11,7 +11,7 @@ SSH execution, network forwarding, server database layout, background reclamatio
 ## Before editing
 
 1. Read the code you will change and its callers. Reuse the existing request, session, and page path.
-2. Use Bun 1.4.4 (`packageManager`). Install with `bun install --frozen-lockfile`. Node.js, npm, npx, Yarn, and pnpm are not the execution chain.
+2. Use the Bun canary pinned in `packageManager`. Install with `bun install --frozen-lockfile`. Node.js, npm, npx, Yarn, and pnpm are not the execution chain.
 3. Do not add a `check` or `fmt` script. Those names shadow `bun check` and `bun fmt`.
 4. Do not edit `src/components/ui`. Add a registry component with `bunx shadcn add <component>` and leave the generated file unchanged. Put business styling in the consumer or in `src/components/app`.
 5. Declare HTTP only in `src/api/requests.ts`. Shared schemas stay in `src/api/contracts.ts`.

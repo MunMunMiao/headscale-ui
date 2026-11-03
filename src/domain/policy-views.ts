@@ -9,7 +9,7 @@ import {
   parseCommaList,
 } from "./policy-designer";
 
-export type ServiceId = "ssh" | "web" | "rdp" | "ping" | "dns" | "all" | string;
+export type ServiceId = string;
 
 export interface ServicePreset {
   id: ServiceId;

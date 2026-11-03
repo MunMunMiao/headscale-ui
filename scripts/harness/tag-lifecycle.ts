@@ -172,6 +172,8 @@ export async function createTagLifecycleFixture(
   }
   const owner = runOwner ?? project;
   const directory = mkdtempSync(join(runDirectory ?? tmpdir(), `${project}-`));
+  // The SQL probe runs in a Bun container; pull it before the short per-query timeout.
+  docker("pull", "oven/bun:canary");
   const containers = new Set<string>();
   const clients = new Map<string, TagClient>();
   const logins = new Set<ReturnType<typeof Bun.spawn>>();
@@ -265,6 +267,7 @@ export async function createTagLifecycleFixture(
       );
     rmSync(directory, { recursive: true, force: true });
   }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the caller supplies the decoded type
   async function call<T = Record<string, unknown>>(
     method: string,
     path: string,
@@ -356,7 +359,7 @@ export async function createTagLifecycleFixture(
         "none",
         "--volumes-from",
         headscale,
-        "oven/bun:1.4.4",
+        "oven/bun:canary",
         "bun",
         "-e",
         'const {Database}=require("bun:sqlite");const input=await Bun.stdin.json();const db=new Database("/var/lib/headscale/db.sqlite");db.exec("PRAGMA busy_timeout=5000");try { const q=db.query(input.statement);console.log(JSON.stringify(q.all(...input.params))); } finally { db.close(); }',
@@ -469,7 +472,10 @@ export async function createTagLifecycleFixture(
       assert.equal(
         result.exitCode,
         0,
-        tagLifecycleDiagnostics(`${result.stdout}\n${result.stderr}`, secrets),
+        tagLifecycleDiagnostics(
+          `${result.stdout.toString()}\n${result.stderr.toString()}`,
+          secrets,
+        ),
       );
     }
   }
@@ -508,7 +514,7 @@ export async function createTagLifecycleFixture(
     );
     try {
       // nc closes on stdin EOF, so retain the input pipe until the real HTTP response has arrived.
-      child.stdin.write(
+      void child.stdin.write(
         `GET / HTTP/1.1\r\nHost: ${host}:${port}\r\nConnection: close\r\n\r\n`,
       );
       await child.stdin.flush();
@@ -528,7 +534,7 @@ export async function createTagLifecycleFixture(
         diagnostic: tagLifecycleDiagnostics(errors, secrets),
       };
     } finally {
-      child.stdin.end();
+      void child.stdin.end();
       if (child.exitCode === null) {
         child.kill();
         await child.exited;

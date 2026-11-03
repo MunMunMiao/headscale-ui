@@ -115,12 +115,12 @@ describe("policy save protocol", () => {
 
   test("a failed pre-read replaces an old unknown outcome and the next explicit save can proceed", async () => {
     let failRead = false;
-    let readDelay: Promise<void> | undefined;
+    const readGate: { delay?: Promise<void> } = {};
     let writes = 0;
     const session = setup(async (input, init) => {
       const request = new Request(input, init);
       if (request.method === "GET") {
-        if (readDelay) await readDelay;
+        if (readGate.delay) await readGate.delay;
         return failRead
           ? Response.json(
               { message: "policy read unavailable" },
@@ -145,7 +145,7 @@ describe("policy save protocol", () => {
     expect(session.feedback.actionError("save-policy")).not.toBe("");
     failRead = true;
     const preread = Promise.withResolvers<void>();
-    readDelay = preread.promise;
+    readGate.delay = preread.promise;
     const retry = session.savePolicy("save-policy", next);
     try {
       expect(session.policy.isPolicySaving).toBe(true);

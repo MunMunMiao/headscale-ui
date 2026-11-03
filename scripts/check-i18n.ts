@@ -15,8 +15,14 @@ async function checkI18n(): Promise<void> {
   const config = getConfig({ configPath: resolve("lingui.config.ts") });
   if (
     config.sourceLocale !== DEFAULT_LOCALE ||
-    JSON.stringify([...config.locales].toSorted()) !==
-      JSON.stringify([...SUPPORTED_LOCALES].toSorted())
+    JSON.stringify(
+      [...config.locales].toSorted((a, b) =>
+        String(a).localeCompare(String(b)),
+      ),
+    ) !==
+      JSON.stringify(
+        [...SUPPORTED_LOCALES].toSorted((a, b) => a.localeCompare(b)),
+      )
   )
     throw new Error(
       "Lingui must contain all 11 supported locales with en-US as source",

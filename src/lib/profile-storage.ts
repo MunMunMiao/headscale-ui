@@ -522,8 +522,8 @@ function activeRef(
   raw: unknown,
 ): { profileId: string; operationId: string } | null {
   if (raw === null || typeof raw !== "object") return null;
-  const profileId = Reflect.get(raw, "profileId");
-  const operationId = Reflect.get(raw, "operationId");
+  const profileId: unknown = Reflect.get(raw, "profileId");
+  const operationId: unknown = Reflect.get(raw, "operationId");
   return typeof profileId === "string" && typeof operationId === "string"
     ? { profileId, operationId }
     : null;

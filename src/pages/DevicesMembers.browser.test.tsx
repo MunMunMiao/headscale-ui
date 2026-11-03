@@ -333,7 +333,7 @@ function discardDraft(ctx: Awaited<ReturnType<typeof setup>>) {
 function sectionRows(testid: string) {
   return Array.from(
     document.querySelectorAll(`[data-testid="${testid}"]`),
-    (row) => String(row.textContent),
+    (row) => row.textContent ?? "",
   ).toSorted();
 }
 async function deviceAction(action: string, id = "1") {
@@ -2122,7 +2122,7 @@ test("nodes owned by nobody or by the hidden tagged-devices user stay out of mem
     Array.from(
       document.querySelectorAll('[data-testid^="member-device-tag-"]'),
       (button) => button.getAttribute("data-testid"),
-    ).toSorted(),
+    ).toSorted((a, b) => String(a).localeCompare(String(b))),
   ).toEqual(["member-device-tag-alice-1", "member-device-tag-bob-2"]);
 });
 
@@ -3150,7 +3150,7 @@ test("tag-owned machines have no owner link, owner text or owner search match", 
     .not.toBeInTheDocument();
   const cells = Array.from(
     document.querySelectorAll("[data-testid='device-3'] td"),
-    (cell) => String(cell.textContent).trim(),
+    (cell) => (cell.textContent ?? "").trim(),
   );
   expect(cells).toContain("-");
   await page.getByTestId("device-detail-link-3").click();

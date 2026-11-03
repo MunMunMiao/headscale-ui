@@ -203,6 +203,7 @@ export default mergeConfig(
           log.trim() === `[Error: ${resizeObserverLoopMessage}]`
         )
           return false;
+        return undefined;
       },
       include: [
         "e2e/**/*.browser.test.tsx",

@@ -77,7 +77,10 @@ function installCryptoGate() {
   const probe = scope.deploymentStorageProbe;
   if (probe.crypto?.installed)
     throw new Error("A crypto gate is already installed");
-  const original = crypto.subtle.encrypt;
+  const original: typeof crypto.subtle.encrypt = Reflect.get(
+    crypto.subtle,
+    "encrypt",
+  );
   const pending: Array<{ release(): void; released: boolean }> = [];
   const state = {
     held: 0,
@@ -125,7 +128,10 @@ function installAbort(target: AbortRequest) {
   const probe = scope.deploymentStorageProbe;
   if (probe.abort?.installed)
     throw new Error("An IDB fault is already installed");
-  const original = IDBObjectStore.prototype[target.operation];
+  const original: (...args: never[]) => IDBRequest = Reflect.get(
+    IDBObjectStore.prototype,
+    target.operation,
+  );
   const state = {
     injected: 0,
     installed: true,
@@ -356,8 +362,8 @@ async function vaultSnapshot(page: Page) {
         ).join("");
       const active: Record<string, unknown> = {};
       metaKeys.result.forEach((key, index) => {
-        if (String(key).startsWith("active-profile"))
-          active[String(key)] = meta.result[index];
+        if (typeof key !== "string") return;
+        if (key.startsWith("active-profile")) active[key] = meta.result[index];
       });
       return {
         databaseVersion: db.version,
@@ -874,7 +880,9 @@ async function checkWriteRaces(
       await b.getByTestId("connect-submit").click();
       await b.getByTestId("profile-option-Second").waitFor();
       assert.deepEqual(
-        (await vaultSnapshot(b)).profiles.map((row) => row.name).toSorted(),
+        (await vaultSnapshot(b)).profiles
+          .map((row) => row.name)
+          .toSorted((a, b) => a.localeCompare(b)),
         ["First", "Second"],
       );
       assert.ok(await credentialMatches(b, connection, "First", password));
@@ -1194,7 +1202,10 @@ async function abortFirstUpgrade(page: Page) {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("deployment-aborted-upgrade")) return;
     sessionStorage.setItem("deployment-aborted-upgrade", "1");
-    const originalOpen = IDBFactory.prototype.open;
+    const originalOpen: typeof IDBFactory.prototype.open = Reflect.get(
+      IDBFactory.prototype,
+      "open",
+    );
     IDBFactory.prototype.open = function (name: string, version?: number) {
       const request = originalOpen.call(this, name, version);
       if (name === "headscale-ui" && version === 3)
@@ -1344,7 +1355,10 @@ async function checkDatabaseUpgrade(
       await current.addInitScript(() => {
         if (sessionStorage.getItem("deployment-aborted-migration")) return;
         sessionStorage.setItem("deployment-aborted-migration", "1");
-        const nativePut = IDBObjectStore.prototype.put;
+        const nativePut: typeof IDBObjectStore.prototype.put = Reflect.get(
+          IDBObjectStore.prototype,
+          "put",
+        );
         IDBObjectStore.prototype.put = function (
           this: IDBObjectStore,
           ...args: Parameters<IDBObjectStore["put"]>

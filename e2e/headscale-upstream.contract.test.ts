@@ -8,6 +8,7 @@ import {
   UPSTREAM_RPCS,
 } from "./headscale-upstream";
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the caller supplies the decoded type
 function jsonObject<T>(value: unknown): T {
   return testDouble<T>(requireObject(value));
 }

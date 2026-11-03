@@ -788,7 +788,7 @@ for (const source of ["invites", "members"] as const) {
     await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
     let outgoing: ReturnType<
       typeof ctx.session.tagLifecycle.getSnapshot
-    >["returnTo"] = null;
+    >["returnTo"];
     try {
       await page.getByTestId("invite-tags-define-tag:roundtrip").click();
       // Only the destination module is delayed; normal identity/policy reads may complete.

@@ -52,7 +52,10 @@ test("an aborted reset stays visible after the router locks and unmounts server 
   await page.getByTestId("profile-menu-trigger").click();
   await page.getByTestId("open-server-settings").click();
   await page.getByTestId("server-tab-security").click();
-  const original = IDBObjectStore.prototype.clear;
+  const original: typeof IDBObjectStore.prototype.clear = Reflect.get(
+    IDBObjectStore.prototype,
+    "clear",
+  );
   let injected = 0;
   vi.spyOn(IDBObjectStore.prototype, "clear").mockImplementationOnce(function (
     this: IDBObjectStore,
@@ -600,7 +603,7 @@ test("password-change feedback belongs to this attempt rather than an unrelated 
   const { session, profile } = await setup();
   const before = await idbGet("profiles", profile.id);
   const otherFeedback = "Independent operation failure";
-  const change = session.profiles.changeProfilePassword.bind(session.profiles);
+  const change = session.profiles.changeProfilePassword;
   vi.spyOn(session.profiles, "changeProfilePassword").mockImplementation(
     async (...args) => {
       const changed = await change(...args);
@@ -639,7 +642,10 @@ test("password-change feedback belongs to this attempt rather than an unrelated 
 test("a password storage failure stays visible without blaming the current password or losing the replacement", async () => {
   const { session, profile } = await setup();
   const before = await idbGet("profiles", profile.id);
-  const put = IDBObjectStore.prototype.put;
+  const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -730,7 +736,7 @@ test("a busy password operation does not make the current form consume unrelated
 test("a committed password change keeps its own reload warning and clears secrets without consuming another result", async () => {
   const { session, profile } = await setup();
   const otherFeedback = "Independent operation failure";
-  const change = session.profiles.changeProfilePassword.bind(session.profiles);
+  const change = session.profiles.changeProfilePassword;
   let completed: boolean | undefined;
   vi.spyOn(session.profiles, "changeProfilePassword").mockImplementation(
     async (...args) => {

@@ -144,7 +144,10 @@ test("failed writes preserve both old disk state and the old projection", async 
   await hydrateSettings();
   const epoch = captureSettingsWriteEpoch();
   await writeSetting("locale", "en-US", epoch);
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const interception = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

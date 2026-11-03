@@ -15,7 +15,7 @@ import { createCleanup, root } from "./docker";
 import { createTagLifecycleRunner } from "./tag-lifecycle";
 
 const signals = ["SIGINT", "SIGTERM"] as const;
-const originalExit = process.exit;
+const originalExit: typeof process.exit = Reflect.get(process, "exit");
 const signalListeners = new Map(
   signals.map((signal) => [signal, process.listeners(signal)]),
 );

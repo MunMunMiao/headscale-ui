@@ -21,7 +21,7 @@ export function tagPreviewInitialization(
     name: "tag-preview-initialization",
     resolveId: (id) => (id === moduleId ? `\0${moduleId}` : undefined),
     load(id) {
-      if (id !== `\0${moduleId}`) return;
+      if (id !== `\0${moduleId}`) return null;
       return `
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
@@ -65,8 +65,10 @@ try {
         if (
           request.url !== credentialsPath &&
           request.url !== initializationPath
-        )
-          return next();
+        ) {
+          next();
+          return;
+        }
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");

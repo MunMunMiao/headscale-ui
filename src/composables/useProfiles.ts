@@ -180,6 +180,7 @@ export function createProfilesStore(
       ],
     });
   }
+  // eslint-disable-next-line @typescript-eslint/require-await -- async API retained for callers
   async function loadProfile(profileId: string) {
     ++formGeneration;
     draftId = null;
@@ -364,6 +365,7 @@ export function createProfilesStore(
       },
       { signal: controller.signal },
     );
+    // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
     password = "";
     try {
       const result = await unlocking;
@@ -444,6 +446,7 @@ export function createProfilesStore(
         });
       return false;
     } finally {
+      // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
       password = legacyPassword = "";
       if (ticket === submissionGeneration) {
         controller = null;
@@ -529,6 +532,7 @@ export function createProfilesStore(
       feedback.setState({ lastError: "" });
     },
     async changeProfilePassword(
+      this: void,
       profile: ProfileSummary,
       passwordInput: string,
       newPasswordInput: string,
@@ -584,6 +588,7 @@ export function createProfilesStore(
         }
         return false;
       } finally {
+        // eslint-disable-next-line no-useless-assignment -- clearing the secret is the point
         password = newPassword = "";
         if (ticket === submissionGeneration) {
           controller = null;
@@ -594,6 +599,7 @@ export function createProfilesStore(
           let consumed = false;
           if (onFeedback) {
             try {
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- callbacks may return a truthy non-boolean
               consumed = onFeedback(outcome) === true;
             } catch {
               consumed = false;
@@ -609,10 +615,10 @@ export function createProfilesStore(
         }
       }
     },
-    deleteProfile(profile: ProfileSummary) {
+    deleteProfile(this: void, profile: ProfileSummary) {
       store.setState({ pendingDeleteProfile: profile });
     },
-    async confirmDeleteProfile() {
+    async confirmDeleteProfile(this: void) {
       const profile = store.getSnapshot().pendingDeleteProfile;
       if (!profile || store.getSnapshot().phase.kind !== "idle") return;
       const ticket = ++submissionGeneration;
@@ -670,7 +676,7 @@ export function createProfilesStore(
         }
       }
     },
-    async logout() {
+    async logout(this: void) {
       closeConnectionDialog();
       const ticket = submissionGeneration;
       const formTicket = formGeneration;

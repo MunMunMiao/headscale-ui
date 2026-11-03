@@ -492,7 +492,7 @@ function AppLayoutContent() {
 
   function logoutToLogin() {
     setProfileMenuOpen(false);
-    logout();
+    void logout();
     void navigate({ to: "/login", search: { redirect: location.href } });
   }
 
@@ -690,7 +690,7 @@ function AppLayoutContent() {
   }, [createdApiKey]);
 
   useEffect(() => {
-    if (!refreshNotice) return;
+    if (!refreshNotice) return undefined;
     const timer = setTimeout(clearRefreshNotice, 4000);
     return () => clearTimeout(timer);
   }, [refreshNotice, clearRefreshNotice]);

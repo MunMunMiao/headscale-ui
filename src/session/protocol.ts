@@ -212,7 +212,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       });
   });
   return {
-    connect(port: SessionMessagePort) {
+    connect(this: void, port: SessionMessagePort) {
       const portId = crypto.randomUUID();
       let ownerTabId: string | null = null;
       let highestId = 0;
@@ -238,11 +238,12 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
           connections.delete(connection);
           pending.clear();
           port.removeEventListener("message", receive);
-          port.removeEventListener("messageerror", connection.close);
+          port.removeEventListener("messageerror", closePort);
           port.close();
           void deps.runtime.detachPort(portId);
         },
       };
+      const closePort = connection.close.bind(connection);
       function reject(error: WorkerErrorDto) {
         connection.send({ type: "error", error });
         connection.close();
@@ -275,7 +276,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             storageVersion: deps.storageVersion,
             snapshot: deps.runtime.auth.getSnapshot(),
           });
-          return;
+          return undefined;
         }
         if (message.type === "disconnect") return connection.close();
         if (message.type === "hello" || !requestId(message.requestId))
@@ -285,7 +286,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
           highestId = Math.max(highestId, id);
           pending.delete(id);
           void deps.runtime.cancel(portId, String(id));
-          return;
+          return undefined;
         }
         const reply = (result: SessionResult<unknown>) =>
           connection.send({
@@ -301,7 +302,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         if (id <= highestId || malformed) {
           highestId = Math.max(highestId, id);
           reply({ ok: false, error: { kind: "invalid-request" } });
-          return;
+          return undefined;
         }
         highestId = id;
         const control = [
@@ -314,6 +315,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
         pending.add(id);
         const owner = ownerTabId;
         void deps.runtime
+          // eslint-disable-next-line @typescript-eslint/consistent-return -- exhaustive switch over SessionCommand
           .runOperation(portId, String(id), async (signal) => {
             const context = {
               ownerTabId: owner,
@@ -338,14 +340,19 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
                 return result;
               }
               case "api.read":
-              case "api.write":
+              case "api.write": {
                 // The endpoint is one requests.ts exports; its input struct runs inside client.execute.
-                const run: Function = deps.runtime.auth.execute;
+                const run: typeof deps.runtime.auth.execute = Reflect.get(
+                  deps.runtime.auth,
+                  "execute",
+                );
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- dynamic defjs operation dispatch
                 return Reflect.apply(run, deps.runtime.auth, [
                   command.expected,
                   command,
                   { signal },
                 ]);
+              }
               case "profiles.list":
                 return deps.profiles.list(context);
               case "profiles.save":
@@ -364,6 +371,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             if (!pending.delete(id) || closed) return;
             reply(result);
           });
+        return undefined;
       }
       if (disposed) {
         port.close();
@@ -371,9 +379,9 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       }
       connections.add(connection);
       port.addEventListener("message", receive);
-      port.addEventListener("messageerror", connection.close);
+      port.addEventListener("messageerror", closePort);
       port.start();
-      return connection.close;
+      return () => connection.close();
     },
     notifyProfiles() {
       for (const connection of connections)
@@ -383,6 +391,7 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       for (const connection of connections)
         connection.send({ type: "reset", version });
     },
+    // eslint-disable-next-line @typescript-eslint/require-await -- async API retained for callers
     async dispose(): Promise<void> {
       if (disposed) return;
       disposed = true;

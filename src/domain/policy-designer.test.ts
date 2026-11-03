@@ -42,7 +42,11 @@ function normalizeForCompare(input: Record<string, unknown>) {
       clone[key] = Object.fromEntries(
         Object.entries(value).map(([k, v]) => [
           k,
-          Array.isArray(v) ? [...v].toSorted() : v,
+          Array.isArray(v)
+            ? [...v].toSorted((a, b) =>
+                JSON.stringify(a).localeCompare(JSON.stringify(b)),
+              )
+            : v,
         ]),
       );
     }
@@ -64,7 +68,7 @@ describe("ensureTagDefinition", () => {
   ])(
     "adds a legal empty declaration without changing access baseline %s",
     (raw, acls) => {
-      const state = parsePolicy(String(raw));
+      const state = parsePolicy(raw);
       const result = ensureTagDefinition(state, "tag:observed");
       expect(serializePolicy(result)).toMatchObject({
         tagOwners: { "tag:observed": [] },

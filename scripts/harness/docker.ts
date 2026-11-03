@@ -12,9 +12,9 @@ export function docker(...args: string[]): string {
   assert.equal(
     result.exitCode,
     0,
-    `docker ${args.join(" ")}\n${result.stderr}`,
+    `docker ${args.join(" ")}\n${result.stderr.toString()}`,
   );
-  return `${result.stdout}${args[0] === "logs" ? result.stderr : ""}`.trim();
+  return `${result.stdout.toString()}${args[0] === "logs" ? result.stderr.toString() : ""}`.trim();
 }
 
 /** Runs `cleanup` and exits with the conventional signal status when the harness is interrupted. */
@@ -93,7 +93,10 @@ export function containerLogs(
       },
     );
     if (result.exitCode === 0)
-      return diagnosticTail(`${result.stdout}\n${result.stderr}`, secrets);
+      return diagnosticTail(
+        `${result.stdout.toString()}\n${result.stderr.toString()}`,
+        secrets,
+      );
   } catch {
     // Keep the original startup error; even Docker itself may be unavailable.
   }
@@ -115,7 +118,9 @@ export async function waitForHeadscale(container: string) {
         },
       );
       if (result.exitCode === 0) return;
-      health = diagnosticTail(`${result.stdout}\n${result.stderr}`);
+      health = diagnosticTail(
+        `${result.stdout.toString()}\n${result.stderr.toString()}`,
+      );
       await Bun.sleep(200);
     }
     throw new Error(`Headscale ${container} did not become healthy`);

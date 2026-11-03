@@ -26,7 +26,7 @@ type Middleware = (
   next: () => void,
 ) => void;
 
-const originalExit = process.exit;
+const originalExit: typeof process.exit = Reflect.get(process, "exit");
 
 function isPlugin(option: PluginOption): option is Plugin {
   return (
@@ -67,7 +67,7 @@ function initializer() {
       },
     };
     if (!handler) throw new Error("Expected an initialization request handler");
-    const handle: Function = handler;
+    const handle: typeof handler = handler;
     Reflect.apply(handle, undefined, [
       {
         url: "/__tag-preview-credentials",
@@ -167,7 +167,8 @@ test("SIGTERM during fixture startup waits for owned resources and never starts 
   vi.mocked(createTagLifecycleFixture).mockReturnValue(pending.promise);
   let terminate: (() => Promise<void>) | undefined;
   vi.spyOn(process, "on").mockImplementation((event, listener) => {
-    if (String(event) === "SIGTERM")
+    const signal: string = event;
+    if (signal === "SIGTERM")
       terminate = () => Reflect.apply(listener, process, []);
     return process;
   });
@@ -289,7 +290,8 @@ test.each(["SIGTERM", "Vite close"] as const)(
     );
     let terminate: (() => Promise<void>) | undefined;
     vi.spyOn(process, "on").mockImplementation((event, listener) => {
-      if (String(event) === "SIGTERM")
+      const signal: string = event;
+      if (signal === "SIGTERM")
         terminate = () => Reflect.apply(listener, process, []);
       return process;
     });

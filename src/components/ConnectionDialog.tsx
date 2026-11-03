@@ -131,7 +131,7 @@ export default function ConnectionDialog({
       selectedProfile.credentialKind !== "unreadable" &&
       normalizedBaseUrl(normalized.baseUrl) === selectedProfile.baseUrl &&
       !normalized.apiKey;
-    if (metadataOnly) return;
+    if (metadataOnly) return undefined;
     const error = connectionSettingsError(normalized);
     if (error)
       fields[error === "connectionApiKeyRequired" ? "apiKey" : "baseUrl"] =
@@ -154,6 +154,7 @@ export default function ConnectionDialog({
     listeners: {
       onChange: ({ fieldApi }) => {
         session.profiles.setConnectionForm({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TanStack Form fields are dynamically keyed
           [fieldApi.name]: fieldApi.state.value,
         });
       },

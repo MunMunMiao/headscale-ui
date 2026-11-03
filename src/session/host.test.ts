@@ -35,7 +35,7 @@ async function fixture() {
     const bridge = createSessionBridge({
       openPort() {
         const ports = createSessionPorts();
-        cleanup.push(ports.close);
+        cleanup.push(() => ports.close());
         host.connect(ports.worker);
         return ports.page;
       },
@@ -55,7 +55,7 @@ async function save(
   wrapUrl: (url: string) => string = (url) => url,
 ) {
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const list = value(await bridge.listProfiles());
   const result = value(
     await bridge.saveProfile({
@@ -87,7 +87,7 @@ test("validates and unlocks a profile when Headscale file mode has no policy pat
   const { page } = await fixture();
   const bridge = await page("owner-a");
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   server.policyFailure = {
     status: 500,
     message: 'reading policy from path "": open : no such file or directory',
@@ -139,7 +139,7 @@ test.each([
     const { page } = await fixture();
     const bridge = await page("owner-a");
     const server = startSnapshotServer();
-    cleanup.push(server.stop);
+    cleanup.push(() => server.stop());
     const before = value(await bridge.listProfiles()).version;
     const binding = {
       profileId: "historical-password",
@@ -371,7 +371,7 @@ test.each(["cancel", "disconnect"] as const)(
   "a committed save notifies peers even when activation is abandoned by %s",
   async (boundary) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
+    cleanup.push(() => backend.stop());
     const network = createSessionNetwork({ upstream: backend.baseUrl });
     cleanup.push(() => network.close());
     const { page } = await fixture();
@@ -432,7 +432,7 @@ test.each(["cancel", "disconnect"] as const)(
 
 test("an unlock adopts the current profile name when a peer renames it during validation", async () => {
   const backend = startSnapshotServer();
-  cleanup.push(backend.stop);
+  cleanup.push(() => backend.stop());
   const network = createSessionNetwork({ upstream: backend.baseUrl });
   cleanup.push(() => network.close());
   const { page } = await fixture();
@@ -497,7 +497,7 @@ test.each(["deleted", "credential-rotated"] as const)(
   "an unlock fails with a storage conflict when a foreign writer leaves the profile %s during validation",
   async (change) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
+    cleanup.push(() => backend.stop());
     const network = createSessionNetwork({ upstream: backend.baseUrl });
     cleanup.push(() => network.close());
     const { page } = await fixture();

@@ -878,7 +878,9 @@ test("a connection stays silent before its handshake and ignores everything once
   const port: SessionMessagePort = {
     postMessage: (message) => void posted.push(message),
     start() {},
-    close: () => void closes++,
+    close: () => {
+      closes++;
+    },
     addEventListener: (
       type: string,
       listener: EventListenerOrEventListenerObject,

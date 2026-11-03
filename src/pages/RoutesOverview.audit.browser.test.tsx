@@ -75,7 +75,7 @@ async function setup(element: ReactNode = <RoutesPage />, path = "/routes") {
     return Response.json(reads[pathname]);
   };
   const session = await prepareTestSession(transport);
-  setLocale("en-US");
+  await setLocale("en-US");
   await authenticateTestSession(session);
   const { router } = await renderSessionPage(session, element, path);
   await expect.poll(() => session.snapshot.getSnapshot().isReady).toBe(true);

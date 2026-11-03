@@ -24,7 +24,7 @@ export async function sessionPolicyFixture(
   cleanup.push(session.start());
   function server(policy: string) {
     const upstream = startSnapshotServer();
-    cleanup.push(upstream.stop);
+    cleanup.push(() => upstream.stop());
     upstream.snapshot.policy = { policy };
     let gate: {
       method: string;

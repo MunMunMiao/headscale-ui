@@ -5,14 +5,15 @@ import type {
 } from "./types";
 
 export interface SessionActivityBridge {
-  getSessionSnapshot(): Readonly<PublicSessionSnapshot> | null;
+  getSessionSnapshot(this: void): Readonly<PublicSessionSnapshot> | null;
   touch(
+    this: void,
     expected: SessionIdentity,
   ): Promise<SessionResult<PublicSessionSnapshot>>;
-  check(): Promise<SessionResult<PublicSessionSnapshot>>;
-  suspend(): void;
-  resume(): Promise<SessionResult<PublicSessionSnapshot>>;
-  dispose(): void;
+  check(this: void): Promise<SessionResult<PublicSessionSnapshot>>;
+  suspend(this: void): void;
+  resume(this: void): Promise<SessionResult<PublicSessionSnapshot>>;
+  dispose(this: void): void;
 }
 
 type EventSource = Pick<
@@ -22,7 +23,7 @@ type EventSource = Pick<
 export interface SessionActivitySource {
   document: EventSource & { readonly visibilityState: DocumentVisibilityState };
   window: EventSource;
-  now(): number;
+  now(this: void): number;
 }
 
 export function attachSessionActivity(

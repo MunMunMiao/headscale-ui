@@ -122,7 +122,7 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
       },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -154,7 +154,7 @@ test("preserves HTTP fault semantics without serializing request metadata", asyn
       /fixture-connection-secret|headers|request|cause/,
     );
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -201,7 +201,7 @@ test("rejects unknown operations, invalid input and expired sessions without a n
     ).toEqual({ ok: false, error: { kind: "expired" } });
     expect(count).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -246,7 +246,7 @@ test("an error cannot echo the connection key or serialize raw request metadata"
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
     expect(JSON.stringify(result)).not.toContain('"headers"');
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -307,7 +307,7 @@ test.each([200, 503])(
       expect(acceptedWrites).toBe(1);
     } finally {
       release.resolve();
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
@@ -352,7 +352,7 @@ test("dispatches the auth request and policy check writes through the injected t
       { method: "POST", path: "/api/v1/policy/check", body: { policy: "{}" } },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -389,7 +389,7 @@ test("an unknown auth request fails with the server message and without the conn
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -472,7 +472,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     });
     expect(calls).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -635,7 +635,7 @@ test.each(writes)(
         });
         expect(seen.requests, name).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
@@ -651,7 +651,7 @@ test("a no-output write never reads its success body", async () => {
       ),
     ).toEqual({ ok: true, value: undefined });
   } finally {
-    server.stop();
+    void server.stop();
   }
 });
 
@@ -694,7 +694,7 @@ test.each([
         });
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     for (const [id, make] of reads) {
@@ -705,7 +705,7 @@ test.each([
           `${id} ${name}`,
         ).not.toHaveProperty("error.outcome");
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
@@ -720,7 +720,7 @@ test.each(writes)(
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     expect(await executeOperation(make(), context(origin))).toMatchObject({
       ok: false,
       error: { kind: "api", code: "NET_UNREACHABLE", outcome: "unknown" },
@@ -752,7 +752,7 @@ test.each(writes)(
       });
       expect(seen.requests).toBe(1);
     } finally {
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
@@ -787,7 +787,7 @@ test.each(reads)(
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     const outcomes = [await executeOperation(make(), context(origin))];
     for (const start of [
       truncated,
@@ -799,7 +799,7 @@ test.each(reads)(
           await executeOperation(make(), context(server.url.origin)),
         );
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     vi.stubGlobal("fetch", async () => {
@@ -867,7 +867,7 @@ test.each([
         expect(result, `${id} ${name}`).not.toHaveProperty("error.outcome");
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },

@@ -125,7 +125,7 @@ describe("CSV", () => {
     return {
       link,
       state,
-      restore() {
+      restore(this: void) {
         create.mockRestore();
         revoke.mockRestore();
         vi.unstubAllGlobals();
@@ -135,10 +135,9 @@ describe("CSV", () => {
 
   test("downloads the rendered CSV and revokes its object URL", async () => {
     let clicks = 0;
-    const { link, state, restore } = stubCsvDownload(
-      "blob:test-csv",
-      () => void clicks++,
-    );
+    const { link, state, restore } = stubCsvDownload("blob:test-csv", () => {
+      clicks++;
+    });
 
     vi.useFakeTimers();
     try {

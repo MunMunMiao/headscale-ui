@@ -16,7 +16,7 @@ export function assertProductCopy(
     throw new Error("Product copy must be an object");
   for (const key of Object.keys(productDescriptors)) {
     if (key === "nav") {
-      const nav = Reflect.get(value, "nav");
+      const nav: unknown = Reflect.get(value, "nav");
       if (nav === null || typeof nav !== "object")
         throw new Error("Product copy nav must be an object");
       for (const navKey of Object.keys(productDescriptors.nav))

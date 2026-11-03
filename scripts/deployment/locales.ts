@@ -160,7 +160,10 @@ async function checkEnglish(browser: Browser, origin: string, base: string) {
     let failed = false;
     const pattern = `${origin}${base}assets/*.js`;
     await page.route(pattern, async (route) => {
-      if (failed) return route.continue();
+      if (failed) {
+        await route.continue();
+        return;
+      }
       failed = true;
       await barrier;
       await route.fulfill({
@@ -168,6 +171,7 @@ async function checkEnglish(browser: Browser, origin: string, base: string) {
         contentType: "text/plain",
         body: "Injected missing catalog",
       });
+      return;
     });
     try {
       await selectLocale(page, "fr-FR");

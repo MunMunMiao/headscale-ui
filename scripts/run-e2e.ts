@@ -129,7 +129,7 @@ try {
       fetch: () => new Response(null),
     });
     process.env.HEADSCALE_E2E_PORT = String(reservation.port);
-    reservation.stop(true);
+    void reservation.stop(true);
     composeStarted = true;
     await runner.run([...compose, "up", "-d", "--wait"]);
     const networkId = capture([

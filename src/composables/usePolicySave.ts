@@ -36,7 +36,7 @@ export function createPolicySave(
     if (!session.drafts.isCurrent()) {
       await session.feedback.runAction(
         key,
-        async () => {
+        () => {
           throw new ApiError({ kind: "stale" });
         },
         isCurrent,
@@ -46,7 +46,7 @@ export function createPolicySave(
     if (!session.client.getSnapshot().identity) {
       await session.feedback.runAction(
         key,
-        async () => {
+        () => {
           throw new ApiError({ kind: "locked" });
         },
         isCurrent,
@@ -62,7 +62,7 @@ export function createPolicySave(
     const reportConflict = () =>
       session.feedback.runAction(
         key,
-        async () => {
+        () => {
           throw new Error(i18n._(productDescriptors.policySaveConflict));
         },
         isCurrent,
@@ -93,7 +93,7 @@ export function createPolicySave(
       if (!fresh) {
         await session.feedback.runAction(
           key,
-          async () => {
+          () => {
             throw new Error(
               session.snapshot.getSnapshot().refreshErrors.policy ||
                 i18n._(productDescriptors.policySaveConflict),
@@ -139,5 +139,9 @@ export function usePolicySave() {
   const session = useSession();
   const { identity } = useStore(session.client);
   // A new session must replace callbacks bound to the previous one.
-  return useMemo(() => createPolicySave(session), [session, identity]);
+  return useMemo(
+    () => createPolicySave(session),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- identity invalidates callbacks bound to the previous session
+    [session, identity],
+  );
 }

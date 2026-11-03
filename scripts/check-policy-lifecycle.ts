@@ -540,7 +540,7 @@ try {
       state: "visible",
       timeout: 15000,
     });
-    assert.equal(new URL(await page.url()).pathname, "/login");
+    assert.equal(new URL(page.url()).pathname, "/login");
     await unlockProfile();
     await openAccess();
   };

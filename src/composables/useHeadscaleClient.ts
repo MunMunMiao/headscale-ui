@@ -20,14 +20,16 @@ export function createHeadscaleClientStore() {
     clear,
     adopt(snapshot: PublicSessionSnapshot) {
       const identity = snapshot.identity;
-      if (!identity || !snapshot.profile || snapshot.status !== "unlocked")
-        return clear();
+      if (!identity || !snapshot.profile || snapshot.status !== "unlocked") {
+        clear();
+        return undefined;
+      }
       const previous = state.getSnapshot().identity;
       if (
         previous?.workerId === identity.workerId &&
         previous.sessionId === identity.sessionId
       )
-        return;
+        return undefined;
       state.setState({
         settings: { baseUrl: snapshot.profile.baseUrl },
         identity: {
@@ -35,6 +37,7 @@ export function createHeadscaleClientStore() {
           sessionId: identity.sessionId,
         },
       });
+      return undefined;
     },
   };
 }

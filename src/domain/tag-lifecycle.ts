@@ -93,7 +93,9 @@ function referencePaths(state: PolicyDesignerState, raw: string) {
     );
   if (!state.error) {
     // The designer expands multi-destination ACLs; source locations belong to the readback text.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- jsonc-parser returns untyped JSON
     const acls: { src: string[]; dst: string[] }[] =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- jsonc-parser returns untyped JSON
       parseJsonc(raw, undefined, { allowTrailingComma: true })?.acls ?? [];
     acls.forEach((rule, index) => {
       list(rule.src, `acls[${index}].src`);
@@ -116,7 +118,7 @@ function referencePaths(state: PolicyDesignerState, raw: string) {
     entries.forEach((entry: unknown, index) => {
       if (!entry || typeof entry !== "object") return;
       for (const field of fields) {
-        const value = Reflect.get(entry, field);
+        const value: unknown = Reflect.get(entry, field);
         const path = `${section}[${index}].${field}`;
         if (typeof value === "string") add(value, path);
         else list(value, path, section === "tests" && field !== "src");
@@ -125,8 +127,8 @@ function referencePaths(state: PolicyDesignerState, raw: string) {
   }
   const approvers = state.extras.autoApprovers;
   if (approvers && typeof approvers === "object") {
-    const routes = Reflect.get(approvers, "routes");
-    const exitNode = Reflect.get(approvers, "exitNode");
+    const routes: unknown = Reflect.get(approvers, "routes");
+    const exitNode: unknown = Reflect.get(approvers, "exitNode");
     list(exitNode, "autoApprovers.exitNode");
     if (routes && typeof routes === "object")
       for (const [route, values] of Object.entries(routes))

@@ -90,7 +90,7 @@ export function fakeAuth(bridge: {
       command: ApiCommand<K>,
       options?: SessionRequestOptions,
     ): Promise<SessionResult<ApiOutput<K>>> => {
-      const execute: Function = bridge.execute;
+      const execute: typeof bridge.execute = Reflect.get(bridge, "execute");
       return Reflect.apply(execute, bridge, [
         expected,
         { ...command, type },

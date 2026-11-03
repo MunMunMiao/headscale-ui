@@ -18,16 +18,19 @@ interface UseMutationOptions {
 }
 interface UseMutationReturn {
   mutateDetailed<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
   ): Promise<DetailedMutationResult<ApiOutput<K>>>;
   mutate<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
   ): Promise<boolean>;
   mutateWith<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
@@ -234,13 +237,13 @@ export function createMutation(
   }
   return {
     mutateDetailed,
-    async mutateWith(key, command, options) {
+    async mutateWith(this: void, key, command, options) {
       const completed = await mutateDetailed(key, command, options);
       return completed.ok
         ? { ok: true, result: completed.result }
         : { ok: false };
     },
-    async mutate(key, command, options) {
+    async mutate(this: void, key, command, options) {
       return (await mutateDetailed(key, command, options)).ok;
     },
   };
@@ -255,6 +258,7 @@ export function useMutation({
   // The factory captures the external store's current session and lifecycle scope.
   return useMemo(
     () => createMutation(session, { skipRefresh }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- identity/scope invalidate the captured session
     [session, skipRefresh, identity, scope],
   );
 }

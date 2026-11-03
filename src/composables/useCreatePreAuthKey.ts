@@ -128,6 +128,7 @@ export function useInviteTagReturn(
 ) {
   const session = useSession();
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TanStack Router history is untyped
   const history: RouterHistory = useRouter().history;
   const { returnTo } = useStore(session.tagLifecycle);
   const [restoring, setRestoring] = useState(false);
@@ -167,6 +168,7 @@ export function useInviteTagReturn(
   );
 
   // A new return scope or explicit retry must cancel the old continuation and restart its reads.
+  // eslint-disable @typescript-eslint/consistent-return -- the effect returns a cleanup on every path
   useEffect(() => {
     if (!id) {
       departingReturn.current = null;
@@ -185,19 +187,19 @@ export function useInviteTagReturn(
       setRestoring(false);
       setRestoreFailed(false);
       setNewerEdit(false);
-      return;
+      return () => {};
     }
     const generation = restoration.current.generation;
     setRestoreFailed(false);
     if (generation !== sourceContext.current) {
       setRestoring(false);
       setNewerEdit(true);
-      return;
+      return () => {};
     }
     const lifecycle = session.tagLifecycle;
     const scope = lifecycle.captureScope();
     const navigationGeneration = navigation.current.generation;
-    if (!lifecycle.requestReturn(id)) return;
+    if (!lifecycle.requestReturn(id)) return () => {};
     let cancelled = false;
     setRestoring(true);
     setNewerEdit(false);
@@ -227,17 +229,18 @@ export function useInviteTagReturn(
       cancelled = true;
     };
   }, [id, returnTo?.scope, retry, session, source, sourceContext, history]);
+  // eslint-enable @typescript-eslint/consistent-return
 
   return {
     restoring,
     restoreFailed,
     newerEdit,
-    retryRestore() {
+    retryRestore(this: void) {
       if (!id) return;
       restoration.current = { id, generation: sourceContext.current };
       setRetry((value) => value + 1);
     },
-    discardReturn() {
+    discardReturn(this: void) {
       if (id) session.tagLifecycle.cancelReturn(id);
     },
 

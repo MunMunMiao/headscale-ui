@@ -36,27 +36,31 @@ export interface SessionRequestOptions {
 
 export interface SessionExecutionContext {
   signal: AbortSignal;
-  requireCurrent(): { baseUrl: string; apiKey: string };
+  requireCurrent(this: void): { baseUrl: string; apiKey: string };
 }
 
 export interface AuthSessionDependencies {
   workerId: string;
-  now(): number;
-  newSessionId(): string;
+  now(this: void): number;
+  newSessionId(this: void): string;
   openCredential(
+    this: void,
     input: UnlockInput,
     signal: AbortSignal,
   ): Promise<CandidateCredential>;
   readCurrentProfile(
+    this: void,
     credential: CandidateCredential,
     ownerTabId: string,
   ): Promise<SessionProfile | null>;
   validateCredential(
+    this: void,
     credential: CandidateCredential,
     signal: AbortSignal,
     requireCurrent: () => void,
   ): Promise<void>;
   execute(
+    this: void,
     command: ApiRequest,
     context: SessionExecutionContext,
   ): Promise<SessionResult<unknown>>;

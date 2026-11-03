@@ -276,6 +276,7 @@ export default function DevicesPage() {
     pendingRegistrationForm: storedPendingRegistration,
   } = useDeviceSetup();
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TanStack Router history is untyped
   const history: RouterHistory = useRouter().history;
   const intent = useRouteIntent();
   const searchParams: Record<string, unknown> = useSearch({
@@ -372,6 +373,7 @@ export default function DevicesPage() {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- bump on unmount so late replies are ignored
       ++tagOperation.current;
     };
   }, []);
@@ -1807,6 +1809,7 @@ export default function DevicesPage() {
       tagsValues.tags,
       tagsBaseline,
       pendingTagWrite,
+      intent.nodeId,
     ],
   );
 

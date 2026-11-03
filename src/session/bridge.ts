@@ -245,7 +245,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           command.type !== "profiles.list");
       const entry: Pending = {
         resolve: (result) => {
-          const settle: Function = resolve;
+          const settle: typeof resolve = resolve;
           Reflect.apply(settle, undefined, [result]);
         },
         expected: headscale ? command.expected : null,
@@ -373,7 +373,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
             workerId: null,
             buildId: null,
           });
-          return;
+          return undefined;
         }
         const [invalid, message] = struct.parse(workerMessage, data);
         if (invalid) return unavailable();
@@ -431,6 +431,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           // workerMessage admits only these six types, so this is profiles-changed.
           for (const listener of profileListeners) listener();
         }
+        return undefined;
       }
       current.addEventListener("message", receive);
       current.addEventListener("messageerror", unavailable);
@@ -440,7 +441,9 @@ export function createSessionBridge(options: SessionBridgeOptions) {
         current.removeEventListener("messageerror", unavailable);
         try {
           current.postMessage({ type: "disconnect" });
-        } catch {}
+        } catch {
+          // The port is already closed; nothing to do.
+        }
         current.close();
       };
       try {

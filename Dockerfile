@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine AS build
+FROM --platform=$BUILDPLATFORM oven/bun:canary-alpine AS build
 WORKDIR /app
 
 COPY package.json bun.lock bunfig.toml ./

@@ -618,7 +618,9 @@ describe("explicit operation notifications", () => {
         }),
       ),
     ).toBe(false);
-    expect(Reflect.apply(operation.publish, operation, [null])).toBe(false);
+    expect(
+      Reflect.apply(Reflect.get(operation, "publish"), operation, [null]),
+    ).toBe(false);
     expect(
       operation.publish(
         testDouble<NotificationMessage>({

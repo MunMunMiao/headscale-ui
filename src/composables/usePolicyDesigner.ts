@@ -127,7 +127,7 @@ export function createPolicyDesignerStore() {
   function commitState(next: PolicyDesignerState) {
     if (store.getSnapshot().policyError) return;
     const current = designerState();
-    let changed = true;
+    let changed: boolean;
     try {
       changed =
         JSON.stringify(serializePolicy(current)) !==

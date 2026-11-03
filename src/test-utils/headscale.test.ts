@@ -80,7 +80,7 @@ export function startSnapshotServer() {
     },
     baseUrl: server.url.origin,
     stop() {
-      server.stop(true);
+      void server.stop(true);
     },
   };
 }

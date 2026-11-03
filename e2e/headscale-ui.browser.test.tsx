@@ -1240,9 +1240,16 @@ async function selectDomTestId(testId: string, value: string) {
 function stubDownloads() {
   const downloads: string[] = [];
   const objectTypes: string[] = [];
-  const originalCreateObjectURL = URL.createObjectURL;
-  const originalRevokeObjectURL = URL.revokeObjectURL;
-  const originalAnchorClick = HTMLAnchorElement.prototype.click;
+  const originalCreateObjectURL: typeof URL.createObjectURL = Reflect.get(
+    URL,
+    "createObjectURL",
+  );
+  const originalRevokeObjectURL: typeof URL.revokeObjectURL = Reflect.get(
+    URL,
+    "revokeObjectURL",
+  );
+  const originalAnchorClick: typeof HTMLAnchorElement.prototype.click =
+    Reflect.get(HTMLAnchorElement.prototype, "click");
 
   const createObjectURL: typeof URL.createObjectURL = (blob) => {
     objectTypes.push(blob instanceof Blob ? blob.type : "");
@@ -2985,7 +2992,11 @@ test("supports consumer-friendly route approval and revocation", async () => {
   expect(
     [0, 1]
       .map((index) => visibleText(`revoke-route-target-${index}`))
-      .toSorted(),
+      .toSorted((a, b) => {
+        const left = a ?? "";
+        const right = b ?? "";
+        return left < right ? -1 : left > right ? 1 : 0;
+      }),
   ).toEqual(["0.0.0.0/0", "::/0"]);
   await page.getByTestId("revoke-route-confirm").click();
   await waitForActionFinished("revoke-route");

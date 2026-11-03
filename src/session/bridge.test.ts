@@ -237,7 +237,7 @@ function scheduler() {
   }[] = [];
   return {
     timers,
-    schedule(milliseconds: number, callback: () => void) {
+    schedule(this: void, milliseconds: number, callback: () => void) {
       const timer = { milliseconds, callback, cancelled: false };
       timers.push(timer);
       return () => {

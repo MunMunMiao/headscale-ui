@@ -19,7 +19,7 @@ function memoryStore(): Storage {
       data.delete(key);
     },
     setItem: (key, value) => {
-      data.set(key, String(value));
+      data.set(key, value);
     },
   };
 }
@@ -69,7 +69,10 @@ test.each(["profiles", "keys", "meta"])(
       idbGetAll("keys"),
       idbGetAll("meta"),
     ]);
-    const original = IDBObjectStore.prototype.clear;
+    const original: typeof IDBObjectStore.prototype.clear = Reflect.get(
+      IDBObjectStore.prototype,
+      "clear",
+    );
     const interception = vi
       .spyOn(IDBObjectStore.prototype, "clear")
       .mockImplementation(function (this: IDBObjectStore) {
@@ -154,7 +157,10 @@ test("request-success cancellation aborts reset before it commits and preserves 
     idbGetAll("meta"),
   ]);
   const controller = new AbortController();
-  const clear = IDBObjectStore.prototype.clear;
+  const clear: typeof IDBObjectStore.prototype.clear = Reflect.get(
+    IDBObjectStore.prototype,
+    "clear",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "clear")
     .mockImplementation(function (this: IDBObjectStore) {
@@ -237,7 +243,10 @@ test("a storage failure while reading the vault version is not mistaken for an u
     idbGetAll("meta"),
   ]);
   const expected = readVaultState(await idbGet("meta", "vault-state"));
-  const get = IDBObjectStore.prototype.get;
+  const get: typeof IDBObjectStore.prototype.get = Reflect.get(
+    IDBObjectStore.prototype,
+    "get",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "get")
     .mockImplementation(function (

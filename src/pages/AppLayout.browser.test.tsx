@@ -1120,7 +1120,7 @@ test("a failed action error is cleared when the route changes, not on the first 
   const { session, router } = await setup();
   session.feedback.setState({ lastError: "Old failure" });
   await expect.element(id("action-error")).toHaveTextContent("Old failure");
-  const navigate: Function = router.navigate;
+  const navigate: typeof router.navigate = Reflect.get(router, "navigate");
   await Reflect.apply(navigate, router, [{ to: "/home", search: { q: "1" } }]);
   await expect.element(id("action-error")).toHaveTextContent("Old failure");
   await id("section-invites").click();

@@ -31,6 +31,7 @@ export function subscribeVaultChanges(
   listener: (change: VaultChange) => void,
 ): () => void {
   let stopped = false;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- CustomEvent detail is untyped at this boundary
   const handle = (event: Event) => listener(Reflect.get(event, "detail"));
   changes.addEventListener("change", handle);
   const connection = broadcastChannel();
@@ -116,9 +117,9 @@ export class VaultDataError extends Error {
 
 export function readVaultState(value: unknown): VaultState {
   if (value === null || typeof value !== "object") throw new VaultDataError();
-  const v = Reflect.get(value, "v");
-  const keyEpoch = Reflect.get(value, "keyEpoch");
-  const profilesRevision = Reflect.get(value, "profilesRevision");
+  const v: unknown = Reflect.get(value, "v");
+  const keyEpoch: unknown = Reflect.get(value, "keyEpoch");
+  const profilesRevision: unknown = Reflect.get(value, "profilesRevision");
   if (
     v !== 1 ||
     typeof keyEpoch !== "string" ||

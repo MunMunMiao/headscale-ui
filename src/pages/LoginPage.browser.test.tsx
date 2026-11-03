@@ -290,7 +290,10 @@ test("keeps a validated connection draft open when its local save fails", async 
   const ctx = await setup();
   await page.getByTestId("profile-option-new").click();
   await fillConnection("Unsaved server");
-  const put = IDBObjectStore.prototype.put;
+  const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -323,7 +326,10 @@ test("keeps a validated connection draft open when its local save fails", async 
 test("keeps a failed profile deletion open and reports the storage error inside its dialog", async () => {
   const ctx = await setup({ profiles: [profile()] });
   await page.getByTestId("delete-profile-Alpha").click();
-  const remove = IDBObjectStore.prototype.delete;
+  const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

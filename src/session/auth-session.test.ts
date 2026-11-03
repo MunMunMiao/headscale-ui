@@ -1166,6 +1166,6 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
     expect(acceptedWrites).toBe(1);
   } finally {
     release.resolve();
-    server.stop(true);
+    void server.stop(true);
   }
 });

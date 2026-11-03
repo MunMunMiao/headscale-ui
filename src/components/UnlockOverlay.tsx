@@ -59,6 +59,7 @@ function ProfileUnlockDialog({ profile }: { profile: ProfileSummary }) {
           if (password !== value.confirmation.trim())
             return { fields: { confirmation: t("passwordsMismatch") } };
         }
+        return undefined;
       },
     },
     listeners: {
@@ -91,6 +92,7 @@ function ProfileUnlockDialog({ profile }: { profile: ProfileSummary }) {
           redirectTarget(
             query.redirect,
             profile,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TanStack Router context is untyped
             router.options.context?.session?.navigationProfile,
           ),
         );

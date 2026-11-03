@@ -396,14 +396,11 @@ export async function resetHeadscaleFixture(blankPolicy = false) {
       ).toString(),
     );
     if (
-      nodes.find(
-        (node: { id: number; online: boolean }) => Number(node.id) === 1,
-      )?.online
+      nodes.find((node: { id: number; online: boolean }) => node.id === 1)
+        ?.online
     ) {
-      const router = nodes.find(
-        (node: { id: number }) => Number(node.id) === 2,
-      );
-      const phone = nodes.find((node: { id: number }) => Number(node.id) === 3);
+      const router = nodes.find((node: { id: number }) => node.id === 2);
+      const phone = nodes.find((node: { id: number }) => node.id === 3);
       assert.equal(Boolean(router.online), false);
       assert.ok(
         Number(router.expiry?.seconds) * 1000 > Date.now(),

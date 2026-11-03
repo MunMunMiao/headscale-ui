@@ -39,7 +39,9 @@ export async function runTestCommand(
           { stdout: "ignore", stderr: "pipe" },
         );
         if (result.exitCode !== 0 && child.exitCode === null)
-          throw new Error(`Cannot stop test command: ${result.stderr}`);
+          throw new Error(
+            `Cannot stop test command: ${result.stderr.toString()}`,
+          );
       } else {
         try {
           // ponytail: 仅管理命令进程组；自行守护化的工具由调用者登记独立清理。

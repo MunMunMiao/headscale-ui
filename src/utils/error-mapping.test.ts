@@ -104,7 +104,7 @@ async function failureFrom(
     if (result.ok) throw new Error("Expected an API failure");
     return new ApiError(result.error);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 }
 
@@ -169,7 +169,7 @@ test("classifies transport and proxy faults", async () => {
     fetch: () => new Response(),
   });
   const origin = refused.url.origin;
-  refused.stop(true);
+  void refused.stop(true);
   const refusedResult = await executeOperation(
     { type: "api.read", endpoint: "listUsers", input: {} },
     context(origin),

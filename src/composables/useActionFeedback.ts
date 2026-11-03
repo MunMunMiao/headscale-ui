@@ -60,6 +60,7 @@ export interface NotificationData {
 }
 
 /** Presentation only: never interpret server text or change the underlying write evidence. */
+// eslint-disable-next-line @typescript-eslint/consistent-return -- exhaustive switch over the outcome status
 export function mutationNotification(
   outcome: MutationOutcome,
   confirmedTitle?: NotificationMessageKey,
@@ -110,23 +111,24 @@ function isProductMessage(
 }
 
 function notificationText(key: unknown): string | undefined {
-  if (typeof key !== "string") return;
+  if (typeof key !== "string") return undefined;
   const [namespace, name, child, ...rest] = key.split(".");
-  if (rest.length) return;
+  if (rest.length) return undefined;
   if (
     namespace === "common" &&
     child === undefined &&
     hasDescriptor(commonDescriptors, name)
   )
     return i18n._(commonDescriptors[name]);
-  if (namespace !== "product") return;
+  if (namespace !== "product") return undefined;
   if (name === "nav") {
     if (child && hasDescriptor(productDescriptors.nav, child))
       return i18n._(productDescriptors.nav[child]);
-    return;
+    return undefined;
   }
   if (child === undefined && isProductMessage(name))
     return i18n._(productDescriptors[name]);
+  return undefined;
 }
 
 interface FeedbackState {

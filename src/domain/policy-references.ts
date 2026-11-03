@@ -60,7 +60,7 @@ function transform(
       paths.push(path);
       return [];
     }
-    return value;
+    return value.filter((item): item is string => typeof item === "string");
   };
   const alias = (
     value: string,

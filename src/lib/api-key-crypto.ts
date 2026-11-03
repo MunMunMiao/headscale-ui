@@ -88,14 +88,16 @@ export function parsePasswordApiKeySecret(
 ): PasswordApiKeySecretV2 {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new VaultDataError();
-  const v = Reflect.get(value, "v");
-  const scheme = Reflect.get(value, "scheme");
-  const algorithm = Reflect.get(value, "algorithm");
-  const kdf = Reflect.get(value, "kdf");
-  const iv = Reflect.get(value, "iv");
-  const ct = Reflect.get(value, "ct");
-  const iterations =
+  const v: unknown = Reflect.get(value, "v");
+  const scheme: unknown = Reflect.get(value, "scheme");
+  const algorithm: unknown = Reflect.get(value, "algorithm");
+  const kdf: unknown = Reflect.get(value, "kdf");
+  const iv: unknown = Reflect.get(value, "iv");
+  const ct: unknown = Reflect.get(value, "ct");
+  const iterations: unknown =
     kdf && typeof kdf === "object" ? Reflect.get(kdf, "iterations") : undefined;
+  const salt: unknown =
+    kdf && typeof kdf === "object" ? Reflect.get(kdf, "salt") : undefined;
   if (
     v !== 2 ||
     scheme !== "password" ||
@@ -104,11 +106,15 @@ export function parsePasswordApiKeySecret(
     typeof kdf !== "object" ||
     Reflect.get(kdf, "name") !== "PBKDF2" ||
     Reflect.get(kdf, "hash") !== "SHA-256" ||
+    typeof iterations !== "number" ||
     !Number.isSafeInteger(iterations) ||
     iterations < PROFILE_PBKDF2_ITERATIONS ||
     iterations > MAX_PBKDF2_ITERATIONS ||
-    profileBytes(Reflect.get(kdf, "salt")).length !== 32 ||
+    typeof salt !== "string" ||
+    profileBytes(salt).length !== 32 ||
+    typeof iv !== "string" ||
     profileBytes(iv).length !== 12 ||
+    typeof ct !== "string" ||
     profileBytes(ct).length < 16
   )
     throw new VaultDataError();
@@ -120,7 +126,7 @@ export function parsePasswordApiKeySecret(
       name: "PBKDF2",
       hash: "SHA-256",
       iterations,
-      salt: Reflect.get(kdf, "salt"),
+      salt,
     },
     iv,
     ct,
@@ -223,6 +229,7 @@ export async function readWithPasswordCandidates<T>(
         error.cause !== undefined &&
         !isCipherAuthenticationFailure(error)
       )
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- preserve the original transport cause
         throw error.cause;
       throw error;
     } finally {
@@ -254,7 +261,7 @@ export async function openProfileKey(
 
 export function isEncryptedApiKey(value: unknown): value is ApiKeySecret {
   if (value === null || typeof value !== "object") return false;
-  const scheme = Reflect.get(value, "scheme");
+  const scheme: unknown = Reflect.get(value, "scheme");
   return (
     Reflect.get(value, "v") === 1 &&
     (scheme === "device" || scheme === "password") &&
@@ -356,11 +363,11 @@ export async function verifyCanaryRecord(
 export function parseCanaryRecord(raw: unknown): CanaryRecord | null {
   if (raw === undefined || raw === null) return null;
   if (typeof raw !== "object") throw new VaultDataError();
-  const v = Reflect.get(raw, "v");
-  const iv = Reflect.get(raw, "iv");
-  const ct = Reflect.get(raw, "ct");
-  const salt = Reflect.get(raw, "salt");
-  const iterations = Reflect.get(raw, "iterations");
+  const v: unknown = Reflect.get(raw, "v");
+  const iv: unknown = Reflect.get(raw, "iv");
+  const ct: unknown = Reflect.get(raw, "ct");
+  const salt: unknown = Reflect.get(raw, "salt");
+  const iterations: unknown = Reflect.get(raw, "iterations");
   if (
     v !== 1 ||
     typeof iv !== "string" ||

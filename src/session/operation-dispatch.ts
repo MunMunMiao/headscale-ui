@@ -53,14 +53,17 @@ async function invoke<E extends AnyEndpoint>(
   client: Client,
   input: unknown,
 ): Promise<Outcome<E>> {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dynamic defjs operation dispatch
   const result: Awaited<ReturnType<E>> = await Reflect.apply(
     endpoint,
     undefined,
     input === undefined ? [client] : [client, input],
   );
   return result[0] === null
-    ? { fault: null, value: result[1] }
-    : { fault: result[0], value: undefined };
+    ? // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dynamic defjs operation dispatch
+      { fault: null, value: result[1] }
+    : // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dynamic defjs operation dispatch
+      { fault: result[0], value: undefined };
 }
 
 export async function executeOperation<K extends EndpointName>(

@@ -42,8 +42,14 @@ test("a wrong independent password never marks a profile permanently corrupted",
 test("a committed save remains successful and visible when the subsequent list read fails", async () => {
   const f = await profilesFixture(cleanup);
   f.profiles.setConnectionForm(f.form);
-  const originalPut = IDBObjectStore.prototype.put;
-  const originalRead = IDBObjectStore.prototype.getAll;
+  const originalPut: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
+  const originalRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   let committed = false;
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,
@@ -86,7 +92,10 @@ test("a failed native deletion preserves the credential and its confirmation for
   const f = await saved();
   const before = await idbGet(STORE_PROFILES, f.profile.id);
   f.profiles.deleteProfile(f.profile);
-  const original = IDBObjectStore.prototype.delete;
+  const original: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const fault = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -361,7 +370,10 @@ test("request success followed by transaction abort retains the unsaved form and
   const f = await profilesFixture(cleanup);
   f.profiles.setConnectionForm(f.form);
   f.profiles.setState({ connectionDialogOpen: true });
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -463,7 +475,10 @@ test("closing during legacy encryption cancels migration and cannot log in after
 test("disposing list synchronization prevents a queued read failure from changing a newer page's feedback", async () => {
   const f = await saved();
   const stop = f.profiles.startVaultSync();
-  const original = IDBObjectStore.prototype.getAll;
+  const original: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -544,7 +559,10 @@ test("repeated delete confirmation sends one storage operation and does not turn
 test("an old delete failure cannot overwrite a newer confirmation or its feedback", async () => {
   const f = await saved();
   f.profiles.deleteProfile(f.profile);
-  const original = IDBObjectStore.prototype.delete;
+  const original: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   vi.spyOn(IDBObjectStore.prototype, "delete").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -568,8 +586,14 @@ test("an old delete failure cannot overwrite a newer confirmation or its feedbac
 
 function failProfileReadsAfterWrite(operation: "put" | "delete") {
   let committed = false;
-  const nativeWrite = IDBObjectStore.prototype[operation];
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeWrite: (...args: never[]) => IDBRequest = Reflect.get(
+    IDBObjectStore.prototype,
+    operation,
+  );
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   if (operation === "put") {
     vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
       this: IDBObjectStore,
@@ -649,7 +673,10 @@ test.each(["save", "password", "delete"] as const)(
     await peer.profiles.loadProfile(f.profile.id);
     peer.profiles.setConnectionForm({ profileName: "Peer rename" });
     await peer.profiles.addProfile();
-    const nativeRead = IDBObjectStore.prototype.getAll;
+    const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+      IDBObjectStore.prototype,
+      "getAll",
+    );
     vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
       this: IDBObjectStore,
       ...args
@@ -685,7 +712,10 @@ test("an active list subscription reports an unreadable repository without delet
   const f = await saved();
   const stop = f.profiles.startVaultSync();
   cleanup.push(stop);
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -831,9 +861,18 @@ test.each(["migration", "delete"] as const)(
     const f = await saved();
     const profile =
       operation === "migration" ? await legacyProfile(f) : f.profile;
-    const originalPut = IDBObjectStore.prototype.put;
-    const originalDelete = IDBObjectStore.prototype.delete;
-    const originalRead = IDBObjectStore.prototype.getAll;
+    const originalPut: typeof IDBObjectStore.prototype.put = Reflect.get(
+      IDBObjectStore.prototype,
+      "put",
+    );
+    const originalDelete: typeof IDBObjectStore.prototype.delete = Reflect.get(
+      IDBObjectStore.prototype,
+      "delete",
+    );
+    const originalRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+      IDBObjectStore.prototype,
+      "getAll",
+    );
     let committed = false;
     const reading = Promise.withResolvers<void>();
     vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
@@ -915,7 +954,10 @@ test("an older commit receipt cannot overwrite a newer verified repository proje
   await peer.profiles.persistConnection();
   const current = peer.profiles.getSnapshot();
   f.profiles.setState({ profiles: current.profiles, version: current.version });
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args

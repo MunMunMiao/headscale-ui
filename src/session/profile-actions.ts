@@ -79,22 +79,27 @@ export interface ProfileResetOutcome {
 export interface ProfileActions {
   list(context: ProfileActionContext): Promise<SessionResult<ProfileList>>;
   save(
+    this: void,
     input: ProfileSaveInput,
     context: ProfileActionContext,
   ): Promise<SessionResult<ProfileSaveOutcome>>;
   migrate(
+    this: void,
     input: MigrateProfileInput,
     context: ProfileActionContext,
   ): Promise<SessionResult<StoredProfileCommit>>;
   changePassword(
+    this: void,
     input: ChangeProfilePasswordInput,
     context: ProfileActionContext,
   ): Promise<SessionResult<StoredProfileCommit>>;
   delete(
+    this: void,
     expected: ProfileWriteExpected,
     context: ProfileActionContext,
   ): Promise<SessionResult<{ version: VaultVersion }>>;
   reset(
+    this: void,
     expected: VaultVersion | null,
     context: ProfileActionContext,
   ): Promise<SessionResult<ProfileResetOutcome>>;
@@ -103,10 +108,10 @@ export interface ProfileActions {
 export interface ProfileActionDependencies {
   workerId: string;
   auth: AuthSession;
-  validate(context: SessionExecutionContext): Promise<void>;
-  cancelPending(except: ProfileActionContext): Promise<void>;
-  profilesCommitted(): void;
-  resetCommitted(version: VaultVersion): void;
+  validate(this: void, context: SessionExecutionContext): Promise<void>;
+  cancelPending(this: void, except: ProfileActionContext): Promise<void>;
+  profilesCommitted(this: void): void;
+  resetCommitted(this: void, version: VaultVersion): void;
 }
 
 export function createProfileActions(

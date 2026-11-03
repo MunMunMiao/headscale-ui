@@ -383,7 +383,7 @@ test.each([false, true])(
     const add = ctx.session.feedback.toastManager.add;
     vi.spyOn(ctx.session.feedback.toastManager, "add").mockImplementation(
       (options) => {
-        notices.push(String(options.title));
+        notices.push(typeof options.title === "string" ? options.title : "");
         return add(options);
       },
     );
@@ -2027,7 +2027,7 @@ test("check is disabled while a save is pending and absent for a read-only polic
 
 test("a passed check does not survive a server switch", async () => {
   const { session, checks } = await setup();
-  const button = await page.getByTestId("check-policy").element();
+  const button = page.getByTestId("check-policy").element();
   const draft = JSON.stringify(session.policy.policyPayload);
   await page.getByTestId("check-policy").click();
   await expect.element(page.getByTestId("policy-check-passed")).toBeVisible();
@@ -2565,7 +2565,9 @@ test("the member picker skips users without a principal and labels the rest by t
       .querySelectorAll("[data-testid]"),
     (option) => option.getAttribute("data-testid"),
   );
-  expect(options.toSorted()).toEqual([
+  expect(
+    options.toSorted((a, b) => String(a).localeCompare(String(b))),
+  ).toEqual([
     "team-add-member-option-bob@",
     "team-add-member-option-carol@",
     "team-add-member-option-dave@example.com",

@@ -2136,7 +2136,10 @@ test.each(["Escape before focus", "Cancel"] as const)(
     await page.getByTestId("tag-open-tag:server").click();
     await page.getByTestId("tag-name-input").fill("replacement");
     const input = page.getByTestId("tag-name-input").element();
-    const originalFocus = HTMLElement.prototype.focus;
+    const originalFocus: typeof HTMLElement.prototype.focus = Reflect.get(
+      HTMLElement.prototype,
+      "focus",
+    );
     const focus = vi
       .spyOn(HTMLElement.prototype, "focus")
       .mockImplementation(function (this: HTMLElement, options?: FocusOptions) {

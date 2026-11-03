@@ -1,8 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { Session } from "./session-context";
 
-export type { Session } from "./session-context";
-
 export const SessionContext = createContext<Session | null>(null);
 
 export function useSession(): Session {
@@ -12,14 +10,14 @@ export function useSession(): Session {
 }
 
 type ObservableStore<State extends object> = {
-  getSnapshot(): State;
-  subscribe(listener: () => void): () => void;
+  getSnapshot(this: void): State;
+  subscribe(this: void, listener: () => void): () => void;
 };
 
 export function useStore<
   State extends object,
   Model extends ObservableStore<State>,
->(store: Model & { getSnapshot(): State }): State & Model {
+>(store: Model & { getSnapshot(this: void): State }): State & Model {
   const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,

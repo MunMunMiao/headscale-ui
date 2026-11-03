@@ -35,7 +35,7 @@ test("Worker authentication replaces a builder header with the bound session cre
       [...(seen[0]?.keys() ?? [])].some((name) => /session|worker/i.test(name)),
     ).toBe(false);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -81,6 +81,6 @@ test("an abort during the interceptor chain prevents the native fetch", async ()
     expect(sent).toBe(0);
   } finally {
     vi.unstubAllGlobals();
-    server.stop(true);
+    void server.stop(true);
   }
 });

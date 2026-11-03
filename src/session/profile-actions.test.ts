@@ -36,7 +36,7 @@ async function version() {
 }
 function fixture() {
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const clock = createManualClock();
   let sequence = 0;
   const validate: ProfileActionDependencies["validate"] = async (context) => {
@@ -352,7 +352,7 @@ test("validation failure preserves storage; explicit save without validation req
       Response.json({ code: 7, message: "permission denied" }, { status: 403 }),
   });
   cleanup.push(() => {
-    server.stop(true);
+    void server.stop(true);
   });
   const input = await credentials(f);
   input.profile.baseUrl = server.url.origin;
@@ -547,7 +547,10 @@ test.each(["cancelled", "transaction-abort"] as const)(
     const controller = new AbortController();
     if (boundary === "cancelled") controller.abort();
     else {
-      const put = IDBObjectStore.prototype.put;
+      const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+        IDBObjectStore.prototype,
+        "put",
+      );
       vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
         this: IDBObjectStore,
         ...args
@@ -743,7 +746,10 @@ test("reset failure keeps the global session locked and original data recoverabl
   const row = await f.profile();
   expect((await f.unlock(row)).ok).toBe(true);
   const expected = await version();
-  const clear = IDBObjectStore.prototype.clear;
+  const clear: typeof IDBObjectStore.prototype.clear = Reflect.get(
+    IDBObjectStore.prototype,
+    "clear",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "clear")
     .mockImplementation(function (this: IDBObjectStore) {
@@ -976,7 +982,10 @@ test("a failed read of a readable row is not mistaken for an unreadable row", as
   const f = fixture();
   const row = await f.profile();
   const input = await credentials(f);
-  const get = IDBObjectStore.prototype.get;
+  const get: typeof IDBObjectStore.prototype.get = Reflect.get(
+    IDBObjectStore.prototype,
+    "get",
+  );
   let denied = false;
   vi.spyOn(IDBObjectStore.prototype, "get").mockImplementation(function (
     this: IDBObjectStore,

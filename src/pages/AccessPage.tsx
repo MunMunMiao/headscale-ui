@@ -1336,12 +1336,11 @@ export default function AccessPage() {
   const [ipDraftDirty, setIpDraftDirty] = useState(false);
   const [pendingIpEdit, setPendingIpEdit] = useState<string | null>(null);
   const dirtyIpInput = editingIpRuleId !== null && ipDraftDirty;
-  const dirtyDialogInput = Boolean(
+  const dirtyDialogInput =
     (tagDetailOpen &&
       (tagValues.name !== stripTagPrefix(tagDetailCurrent) ||
         pendingPortDrafts.current.size > 0)) ||
-    (teamDetailOpen && teamValues.name !== stripGroupPrefix(teamDetailCurrent)),
-  );
+    (teamDetailOpen && teamValues.name !== stripGroupPrefix(teamDetailCurrent));
   const ipNavigation = useBlocker({
     shouldBlockFn: ({ current, next }) =>
       (dirtyIpInput || dirtyDialogInput) && current.pathname !== next.pathname,
@@ -1684,6 +1683,7 @@ export default function AccessPage() {
   useEffect(() => {
     if (ipNavigation.status === "blocked" && dirtyDialogInput && !saving)
       attemptDialogClose(tagDetailOpen ? "tag" : "team");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the dialog must not retrigger from its own state changes
   }, [ipNavigation.status, dirtyDialogInput, saving]);
 
   const managedReturn = useRef<string | null>(null);
@@ -1698,6 +1698,7 @@ export default function AccessPage() {
       return;
     managedReturn.current = returnTo.id;
     if (returnTo.managedTag) openTagDetailFor(returnTo.managedTag);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one opening per handoff
   }, [returnTo?.id, policyError, queryMaintenance]);
   const { viewEpoch } = useStore(drafts);
   // identity/view/version changes retire confirmations but retain non-secret editor input.
@@ -3248,8 +3249,7 @@ export default function AccessPage() {
                 checked={tagRename?.external ?? false}
                 onCheckedChange={(external) =>
                   setTagRename(
-                    (current) =>
-                      current && { ...current, external: external === true },
+                    (current) => current && { ...current, external: external },
                   )
                 }
               />

@@ -100,7 +100,7 @@ function observeOwnedNetwork(initialFlags: string) {
   const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(
     testDouble<typeof fs.readdirSync>((path: fs.PathLike) => {
       if (path !== portsPath)
-        throw new Error(`Unexpected interface directory: ${path}`);
+        throw new Error(`Unexpected interface directory: ${String(path)}`);
       return ["veth-owned"];
     }),
   );
@@ -120,7 +120,7 @@ function observeOwnedNetwork(initialFlags: string) {
       ) {
         return "0\n";
       }
-      throw new Error(`Unexpected interface file: ${path}`);
+      throw new Error(`Unexpected interface file: ${String(path)}`);
     }),
   );
   return {
