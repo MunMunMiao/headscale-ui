@@ -1,7 +1,7 @@
 import { type RefObject, useEffect } from "react";
 import type { HeadscaleNode } from "@/api/contracts";
 import { createStore } from "@/lib/store";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 
 export type AddDeviceTask = "server" | "client" | "pending";
 type AddDeviceStep =

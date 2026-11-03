@@ -15,7 +15,7 @@ import type { SessionIdentity } from "@/session/types";
 import { ApiError } from "@/session/types";
 import { storageErrorMessage } from "@/utils/storage-error";
 import { normalizedBaseUrl } from "@/utils/strings";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { createActionFeedbackStore } from "./useActionFeedback";
 
 export const newProfileId = "__new__";

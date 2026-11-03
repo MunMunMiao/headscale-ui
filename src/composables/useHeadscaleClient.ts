@@ -1,6 +1,6 @@
 import { createStore } from "@/lib/store";
 import type { PublicSessionSnapshot, SessionIdentity } from "@/session/types";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 
 /** The unlocked session the page publishes its requests under, and the server it shows. */
 export function createHeadscaleClientStore() {

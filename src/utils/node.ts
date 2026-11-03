@@ -1,6 +1,6 @@
 import type { HeadscaleNode } from "@/api/contracts";
 import { nodeConnectionStatus } from "@/domain/node-status";
-import { isExitRoute } from "./status-class";
+import { isExitRoute } from "./routes";
 import { hasVisibleUser, userLabel } from "./user";
 
 export function nodeDisplayName(node: HeadscaleNode): string {

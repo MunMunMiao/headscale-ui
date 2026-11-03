@@ -1,5 +1,6 @@
 {
   "ignorePatterns": ["reports/**"],
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -17,6 +18,9 @@
     "eslint/eqeqeq": ["error", "always", { "null": "ignore" }],
     "eslint/no-param-reassign": "error",
     "unicorn/prefer-structured-clone": "error",
+    // CSS, polyfills and test setup are intentionally imported for their side effects.
+    "import/no-unassigned-import": "off",
+    "import/no-cycle": "error",
     "no-await-in-loop": "off",
     "unicorn/consistent-function-scoping": "off",
     "unicorn/require-post-message-target-origin": "off",
@@ -82,6 +86,11 @@
     ]
   },
   "overrides": [
+    {
+      // The Worker dispatches by runtime endpoint name, so a computed namespace lookup is required.
+      "files": ["src/session/operation-dispatch.ts"],
+      "rules": { "import/namespace": "off" }
+    },
     {
       "files": ["src/components/ui/**"],
       "rules": { "no-shadow": "off" }

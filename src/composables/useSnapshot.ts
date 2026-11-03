@@ -19,7 +19,7 @@ import { createStore } from "@/lib/store";
 import type { SessionBridge } from "@/session/bridge";
 import { ApiError } from "@/session/types";
 import { getErrorMessage } from "@/utils/error-mapping";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { createActionFeedbackStore } from "./useActionFeedback";
 import type { createHeadscaleClientStore } from "./useHeadscaleClient";
 

@@ -8,7 +8,7 @@ import {
 } from "@/domain/policy-designer";
 import type { ProductCopy } from "@/i18n/product-copy";
 import { createStore } from "@/lib/store";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 
 // Stored in policyError so every existing policyError write gate also covers Headscale file mode without a path.
 export const POLICY_FILE_MODE_WITHOUT_PATH = "policy-file-mode-without-path";

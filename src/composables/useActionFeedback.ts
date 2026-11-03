@@ -3,7 +3,7 @@ import { i18n } from "@/i18n";
 import { commonDescriptors, productDescriptors } from "@/i18n/descriptors";
 import { createStore } from "@/lib/store";
 import { getErrorDetails } from "@/utils/error-mapping";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { MutationOutcome } from "./tag-lifecycle-state";
 
 // Each keyed action reports its failure once, inline in the dialog or form that ran it; the page
