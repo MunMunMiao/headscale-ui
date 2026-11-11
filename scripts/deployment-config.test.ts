@@ -81,7 +81,7 @@ test("failed CI jobs preserve only existing browser screenshots as short-lived a
 test("base images are referenced by tag", async () => {
   const dockerfile = await read("Dockerfile");
   expect(dockerfile.match(/^FROM .+$/gm)).toEqual([
-    "FROM --platform=$BUILDPLATFORM oven/bun:canary-alpine AS build",
+    "FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine AS build",
     "FROM nginx:1.30.6-alpine",
   ]);
   expect(dockerfile).not.toContain("@sha256:");

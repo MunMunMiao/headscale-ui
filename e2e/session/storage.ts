@@ -882,7 +882,7 @@ async function checkWriteRaces(
       assert.deepEqual(
         (await vaultSnapshot(b)).profiles
           .map((row) => row.name)
-          .toSorted((a, b) => a.localeCompare(b)),
+          .toSorted((left, right) => left.localeCompare(right)),
         ["First", "Second"],
       );
       assert.ok(await credentialMatches(b, connection, "First", password));

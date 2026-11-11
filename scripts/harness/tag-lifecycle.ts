@@ -173,7 +173,7 @@ export async function createTagLifecycleFixture(
   const owner = runOwner ?? project;
   const directory = mkdtempSync(join(runDirectory ?? tmpdir(), `${project}-`));
   // The SQL probe runs in a Bun container; pull it before the short per-query timeout.
-  docker("pull", "oven/bun:canary");
+  docker("pull", "oven/bun:1.4.4");
   const containers = new Set<string>();
   const clients = new Map<string, TagClient>();
   const logins = new Set<ReturnType<typeof Bun.spawn>>();
@@ -359,7 +359,7 @@ export async function createTagLifecycleFixture(
         "none",
         "--volumes-from",
         headscale,
-        "oven/bun:canary",
+        "oven/bun:1.4.4",
         "bun",
         "-e",
         'const {Database}=require("bun:sqlite");const input=await Bun.stdin.json();const db=new Database("/var/lib/headscale/db.sqlite");db.exec("PRAGMA busy_timeout=5000");try { const q=db.query(input.statement);console.log(JSON.stringify(q.all(...input.params))); } finally { db.close(); }',

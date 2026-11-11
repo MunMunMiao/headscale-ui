@@ -61,13 +61,13 @@ test("a resolved write shows Copied and reverts after 1200 ms", async () => {
     </CopyButton>,
   );
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  // Browser actions advance fake time by 50 ms while they wait, so assert the delay itself.
+  const scheduled = vi.spyOn(globalThis, "setTimeout");
   await page.getByTestId("copy").click();
   await expect.element(page.getByTestId("copy")).toHaveTextContent("Copied");
   expect(writes).toEqual(["secret"]);
-  await vi.advanceTimersByTimeAsync(1199);
-  expect(vi.getTimerCount()).toBe(1);
-  await expect.element(page.getByTestId("copy")).toHaveTextContent("Copied");
-  await vi.advanceTimersByTimeAsync(2);
+  expect(scheduled).toHaveBeenCalledWith(expect.any(Function), 1200);
+  await vi.advanceTimersByTimeAsync(1200);
   await expect.element(page.getByTestId("copy")).toHaveTextContent("Copy");
   await expect
     .element(page.getByTestId("copy"))
@@ -135,12 +135,12 @@ test("the failure label lasts 5000 ms", async () => {
     </CopyButton>,
   );
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  // Browser actions advance fake time by 50 ms while they wait, so assert the delay itself.
+  const scheduled = vi.spyOn(globalThis, "setTimeout");
   await page.getByTestId("copy").click();
   await expect.element(page.getByTestId("copy")).toHaveTextContent(FAILED);
-  await vi.advanceTimersByTimeAsync(4999);
-  expect(vi.getTimerCount()).toBe(1);
-  await expect.element(page.getByTestId("copy")).toHaveTextContent(FAILED);
-  await vi.advanceTimersByTimeAsync(2);
+  expect(scheduled).toHaveBeenCalledWith(expect.any(Function), 5000);
+  await vi.advanceTimersByTimeAsync(5000);
   await expect.element(page.getByTestId("copy")).not.toHaveTextContent(FAILED);
   await expect.element(page.getByTestId("copy")).toHaveTextContent("Copy");
 });
