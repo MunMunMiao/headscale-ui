@@ -1,0 +1,7 @@
+#!/bin/sh
+# Reject the commit when staged files are not formatted. Does not write.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+if ! bun fmt --check --staged; then
+  echo "拒绝提交: 暂存的文件没有通过 bun fmt。运行 bun fmt 后重新暂存。" >&2
+  exit 1
+fi

@@ -9,7 +9,6 @@
     "typecheck": "bun check",
     "build": "bun run typecheck && vite build",
     "lint": "oxlint --type-aware",
-    "format": "bun fmt",
     "format:check": "bun fmt --check",
     "test": "vitest run --coverage",
     "e2e": "bun scripts/run-e2e.ts && bun scripts/check-policy-lifecycle.ts && bun scripts/check-session.ts && bun scripts/check-deployment.ts",

@@ -12,9 +12,15 @@ SSH execution, network forwarding, server database layout, background reclamatio
 
 1. Read the code you will change and its callers. Reuse the existing request, session, and page path.
 2. Use the Bun version pinned in `packageManager`. Install with `bun install --frozen-lockfile`. Node.js, npm, npx, Yarn, and pnpm are not the execution chain.
-3. Do not add a `check` or `fmt` script. Those names shadow `bun check` and `bun fmt`.
+3. Do not add a `check`, `fmt`, or `format` script. `check` and `fmt` shadow `bun check` and `bun fmt`. Format files with `bun fmt`. The done-gate uses `format:check`, which is `bun fmt --check` and does not write.
 4. Do not edit `src/components/ui`. Add a registry component with `bunx shadcn add <component>` and leave the generated file unchanged. Put business styling in the consumer or in `src/components/app`.
 5. Declare HTTP only in `src/api/requests.ts`. Shared schemas stay in `src/api/contracts.ts`.
+
+## Formatting
+
+`bun fmt` is the formatter. Run it on each file you change. Do not wrap it in another script.
+
+This repository rejects an unformatted commit from `.githooks/pre-commit` (`bun fmt --check --staged` exits 1 and does not write). `.githooks/pre-push` keeps the global GPG check. Once per clone, run `git config core.hooksPath .githooks`. A global `core.hooksPath` would otherwise hide these hooks. Do not pass `--no-verify` unless the user asks. The hook does not replace the done-gate. `bun run format:check` must still exit 0 by itself.
 
 ## While editing
 
