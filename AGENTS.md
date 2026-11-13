@@ -20,7 +20,7 @@ SSH execution, network forwarding, server database layout, background reclamatio
 
 - New behavior gets a test in the existing Vitest or browser suite. Covered files require 100% statements, branches, functions, and lines. Do not exclude a directory to pass the gate. A new file needs a test, or one named exclusion in `vitest.config.ts`.
 - User-visible copy goes through Lingui. After message changes, run `bun run i18n:extract`, give every locale a translation (`en-US` is the source; there are 11 locales), then `bun run i18n:compile`. `bun run i18n:check` fails if catalogs drift, a translation is missing, or compile rewrites files.
-- A dependency change updates `bun.lock`. Stay on stable versions, except the already pinned `@defjs/core` beta and the Effect pin.
+- A dependency change updates `bun.lock`. Stay on stable versions, except the pinned `effect` release.
 
 ## Before the change is done
 

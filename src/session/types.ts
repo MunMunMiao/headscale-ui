@@ -66,7 +66,6 @@ export type SessionFailureKind = Infer<typeof sessionFailureKind>;
 // Every code defjs reports; `satisfies` fails the build when a defjs upgrade adds or drops one.
 const faultCodes = {
   CAP_BUFFER_EXCEEDED: 0,
-  CAP_QUEUE_OVERFLOW: 0,
   ENV_UNSUPPORTED: 0,
   EXT_HOOK_FAILED: 0,
   EXT_INTERCEPTOR_FAILED: 0,
@@ -78,7 +77,6 @@ const faultCodes = {
   NET_UNREACHABLE: 0,
   REQ_BUILD_FAILED: 0,
   REQ_INPUT_INVALID: 0,
-  REQ_OPTIONS_INVALID: 0,
   RES_DECODE_FAILED: 0,
   RES_MEDIA_TYPE_INVALID: 0,
   RES_STRUCT_MISMATCH: 0,

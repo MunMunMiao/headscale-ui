@@ -306,9 +306,7 @@ test("never surfaces defjs transport text but keeps internal diagnostics", async
   const internal = new Set<FaultCode>([
     "REQ_BUILD_FAILED",
     "REQ_INPUT_INVALID",
-    "REQ_OPTIONS_INVALID",
     "CAP_BUFFER_EXCEEDED",
-    "CAP_QUEUE_OVERFLOW",
     "ENV_UNSUPPORTED",
     "EXT_HOOK_FAILED",
     "EXT_INTERCEPTOR_FAILED",
@@ -325,7 +323,7 @@ test("never surfaces defjs transport text but keeps internal diagnostics", async
     "RES_MEDIA_TYPE_INVALID",
     "RES_STRUCT_MISMATCH",
   ];
-  expect(codes).toHaveLength(17);
+  expect(codes).toHaveLength(15);
   for (const code of codes) {
     const message = getErrorMessage(
       new ApiError({

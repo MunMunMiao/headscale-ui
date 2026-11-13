@@ -38,13 +38,11 @@ interface UseMutationReturn {
 }
 
 const DRY_RUNS: ReadonlySet<EndpointName> = new Set(["checkPolicy"]);
+// Defjs codes that prove no request reached the server. `CAP_BUFFER_EXCEEDED` is post-send.
 const NOT_SENT: ReadonlySet<ApiError["code"]> = new Set([
   "REQ_BUILD_FAILED",
   "REQ_INPUT_INVALID",
-  "REQ_OPTIONS_INVALID",
   "ENV_UNSUPPORTED",
-  "CAP_BUFFER_EXCEEDED",
-  "CAP_QUEUE_OVERFLOW",
 ]);
 
 // These exact v0.29.4 failures precede any mutation. A generic 4xx is not such evidence.
