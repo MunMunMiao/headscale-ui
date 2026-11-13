@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";

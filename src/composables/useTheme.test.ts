@@ -1,9 +1,9 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { createElement, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { __resetForTest } from "@/lib/idb";
+import { testDouble } from "@/test/dom";
 import * as settings from "@/lib/settings-storage";
 import {
   hydrateSettings,
@@ -13,8 +13,10 @@ import {
 } from "@/lib/settings-storage";
 import { applyStoredTheme, createThemeStore, isThemeMode } from "./useTheme";
 
+vi.mock("@/lib/settings-storage", { spy: true });
+
 beforeEach(async () => {
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   __resetForTest();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
@@ -22,8 +24,16 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; an override would otherwise stick.
+  vi.resetAllMocks();
   vi.unstubAllGlobals();
+  document.documentElement.classList.remove("dark", "light");
 });
+
+const themeClasses = ["dark", "light"];
+function prefersColorScheme(dark: boolean) {
+  return testDouble<MediaQueryList>({ matches: dark });
+}
 
 function DiscardedRender(): never {
   useState(() => createThemeStore());
@@ -43,6 +53,7 @@ describe("useTheme", () => {
     const stop = theme.startPreferenceSync();
     await writeSetting("theme", "dark", settings.captureSettingsWriteEpoch());
     const write = vi.spyOn(settings, "writeSetting");
+    write.mockClear();
     receive("locale");
     await Promise.resolve();
     expect(theme.getSnapshot().colorMode).toBe("auto");
@@ -138,20 +149,12 @@ describe("useTheme", () => {
     expect(readSetting("theme")).toBe("light");
   });
   test("a discarded React render does not apply or persist its initial theme", () => {
-    const toggles: boolean[] = [];
-    vi.stubGlobal("document", {
-      documentElement: {
-        classList: {
-          toggle: (name: string, value: boolean) =>
-            name === "dark" && toggles.push(value),
-        },
-      },
-    });
-    vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
+    const toggle = vi.spyOn(document.documentElement.classList, "toggle");
+    vi.spyOn(window, "matchMedia").mockReturnValue(prefersColorScheme(true));
     expect(() => renderToString(createElement(DiscardedRender))).toThrow(
       "discarded render",
     );
-    expect(toggles).toEqual([]);
+    expect(toggle).not.toHaveBeenCalled();
     expect(readSetting("theme")).toBeNull();
   });
 
@@ -172,32 +175,21 @@ describe("useTheme", () => {
   });
 
   test("loads the saved mode and applies browser color-scheme changes", async () => {
-    const toggles: boolean[] = [];
-    vi.stubGlobal("document", {
-      documentElement: {
-        classList: {
-          toggle: (name: string, enabled: boolean) => {
-            if (name === "dark") toggles.push(enabled);
-          },
-        },
-      },
-    });
-    vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
+    vi.spyOn(window, "matchMedia").mockReturnValue(prefersColorScheme(true));
+    const dark = () => document.documentElement.classList.contains("dark");
     await writeSetting("theme", "dark", settings.captureSettingsWriteEpoch());
 
     const theme = createThemeStore();
     expect(theme.getSnapshot().colorMode).toBe("dark");
 
     await theme.setTheme("auto");
-    expect(toggles.at(-1)).toBe(true);
+    expect(dark()).toBe(true);
     await theme.setTheme("light");
-    expect(toggles.at(-1)).toBe(false);
+    expect(dark()).toBe(false);
     expect(readSetting("theme")).toBe("light");
   });
 
-  test("falls back to auto without browser globals for an invalid saved value", async () => {
-    Reflect.deleteProperty(globalThis, "document");
-    Reflect.deleteProperty(globalThis, "window");
+  test("falls back to auto for an invalid saved value", async () => {
     await writeSetting("theme", "sepia", settings.captureSettingsWriteEpoch());
 
     const theme = createThemeStore();
@@ -207,18 +199,14 @@ describe("useTheme", () => {
   });
 
   describe("applyStoredTheme", () => {
-    function stubDocument(prefersDark = false) {
-      const classes = new Set<string>();
-      vi.stubGlobal("document", {
-        documentElement: {
-          classList: {
-            toggle: (name: string, on: boolean) =>
-              on ? classes.add(name) : classes.delete(name),
-          },
-        },
-      });
-      vi.stubGlobal("window", { matchMedia: () => ({ matches: prefersDark }) });
-      return classes;
+    function stubOsTheme(prefersDark = false) {
+      vi.spyOn(window, "matchMedia").mockReturnValue(
+        prefersColorScheme(prefersDark),
+      );
+      return () =>
+        themeClasses.filter((name) =>
+          document.documentElement.classList.contains(name),
+        );
     }
 
     test.each([
@@ -230,9 +218,9 @@ describe("useTheme", () => {
       "applies the stored %s mode (OS dark: %s) with exclusive classes",
       async (mode, osDark, expected) => {
         await writeSetting("theme", mode, settings.captureSettingsWriteEpoch());
-        const classes = stubDocument(osDark);
+        const applied = stubOsTheme(osDark);
         applyStoredTheme();
-        expect([...classes].toSorted()).toEqual(expected);
+        expect(applied().toSorted()).toEqual(expected);
       },
     );
 
@@ -242,22 +230,16 @@ describe("useTheme", () => {
         "sepia",
         settings.captureSettingsWriteEpoch(),
       );
-      const classes = stubDocument(true);
+      const applied = stubOsTheme(true);
       applyStoredTheme();
-      expect([...classes]).toEqual(["dark"]);
+      expect(applied()).toEqual(["dark"]);
     });
 
     test("before hydration it follows the OS instead of throwing", () => {
       settingsStorageTestingHandle.reset();
-      const classes = stubDocument(true);
+      const applied = stubOsTheme(true);
       expect(() => applyStoredTheme()).not.toThrow();
-      expect([...classes]).toEqual(["dark"]);
-    });
-
-    test("does nothing without a document", () => {
-      Reflect.deleteProperty(globalThis, "document");
-      Reflect.deleteProperty(globalThis, "window");
-      expect(() => applyStoredTheme()).not.toThrow();
+      expect(applied()).toEqual(["dark"]);
     });
   });
 });

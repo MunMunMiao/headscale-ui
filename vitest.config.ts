@@ -43,12 +43,8 @@ export default mergeConfig(
           test: {
             name: "unit",
             pool: "forks",
-            include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
-            exclude: [
-              "src/**/*.browser.test.ts",
-              "src/test-utils/**",
-              ...toolchainTests,
-            ],
+            include: ["scripts/**/*.test.ts", "src/**/*.node.test.ts"],
+            exclude: toolchainTests,
           },
         },
         {
@@ -71,7 +67,8 @@ export default mergeConfig(
             hookTimeout: 60_000,
             // Keep the browser URL and listener on one loopback address during parallel runs.
             api: { host: "127.0.0.1" },
-            include: ["src/**/*.test.tsx", "src/**/*.browser.test.ts"],
+            include: ["src/**/*.test.{ts,tsx}"],
+            exclude: ["src/test-utils/**", "src/**/*.node.test.ts"],
             setupFiles: ["src/test/browser-setup.ts"],
             browser: {
               enabled: true,

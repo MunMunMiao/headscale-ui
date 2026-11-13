@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { beforeEach, expect, test, vi } from "vitest";
 import { idbDelete, idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
 import { __resetForTest } from "./idb";
@@ -23,9 +22,9 @@ function memoryStore(): Storage {
     },
   };
 }
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   vi.stubGlobal("sessionStorage", memoryStore());
 });
 async function seed() {

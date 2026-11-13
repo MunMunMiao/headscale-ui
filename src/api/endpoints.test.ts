@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import {
   createClient,
   createHttpInterceptor,
@@ -33,7 +34,7 @@ type SeenRequest = {
   token: string | null;
 };
 
-let server: ReturnType<typeof Bun.serve>;
+let server: ReturnType<typeof serveFixture>;
 let seenRequests: SeenRequest[] = [];
 
 function json(data: unknown, init: ResponseInit = {}) {
@@ -129,9 +130,7 @@ function responseFor(path: string) {
 
 beforeEach(() => {
   seenRequests = [];
-  server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  server = serveFixture({
     async fetch(request) {
       const url = new URL(request.url);
       seenRequests.push({

@@ -1,4 +1,4 @@
-import { createServer } from "node:net";
+import { serveFixture } from "@/test/fixture-server";
 import {
   createClient,
   createHttpInterceptor,
@@ -26,9 +26,7 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
     body: unknown;
     bearer: string | null;
   }[] = [];
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       const url = new URL(request.url);
       const body: unknown =
@@ -127,9 +125,7 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
 });
 
 test("preserves HTTP fault semantics without serializing request metadata", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         { code: 13, message: "acl policy not found" },
@@ -160,9 +156,7 @@ test("preserves HTTP fault semantics without serializing request metadata", asyn
 
 test("rejects unknown operations, invalid input and expired sessions without a network request", async () => {
   let count = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch() {
       count++;
       return Response.json({});
@@ -206,9 +200,7 @@ test("rejects unknown operations, invalid input and expired sessions without a n
 });
 
 test("an error cannot echo the connection key or serialize raw request metadata", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         {
@@ -259,9 +251,7 @@ test.each([200, 503])(
     const release = Promise.withResolvers<void>();
     let acceptedWrites = 0;
     let invalidated = false;
-    const server = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const server = serveFixture({
       async fetch(request) {
         await request.json();
         acceptedWrites++;
@@ -314,9 +304,7 @@ test.each([200, 503])(
 
 test("dispatches the auth request and policy check writes through the injected transport", async () => {
   const seen: { method: string; path: string; body: unknown }[] = [];
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       seen.push({
         method: request.method,
@@ -357,9 +345,7 @@ test("dispatches the auth request and policy check writes through the injected t
 });
 
 test("an unknown auth request fails with the server message and without the connection key", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         {
@@ -394,9 +380,7 @@ test("an unknown auth request fails with the server message and without the conn
 });
 
 test("an injected client faults keep redaction, the unavailable fallback and session fault kinds", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         { code: 13, message: "failed for fixture-connection-secret" },
@@ -567,9 +551,7 @@ async function scripted(
   respond: (received: () => void) => Response | Promise<Response>,
 ) {
   const seen = { requests: 0, received: Promise.withResolvers<void>() };
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       await request.text();
       seen.requests++;
@@ -579,30 +561,28 @@ async function scripted(
   return { server, seen };
 }
 
-/** Promises 100 body bytes, sends 8 and resets the connection (Bun.serve repairs content-length). */
+/** Delivers 8 bytes of a JSON body and then drops the connection, which a browser reports as a network error while reading. */
 async function truncated() {
   const seen = { requests: 0, received: Promise.withResolvers<void>() };
-  const server = createServer((socket) => {
-    socket.once("data", () => {
+  const server = serveFixture({
+    async fetch(request) {
+      await request.text();
       seen.requests++;
-      socket.write(
-        'HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: 100\r\n\r\n{"user":',
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"user":'));
+            setTimeout(
+              () => controller.error(new TypeError("network error")),
+              10,
+            );
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
       );
-      setTimeout(() => socket.destroy(), 10);
-    });
-  });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (!address || typeof address === "string")
-    throw new Error("server address is missing");
-  const { port } = address;
-  return {
-    server: {
-      url: { origin: `http://127.0.0.1:${port}` },
-      stop: () => server.close(),
     },
-    seen,
-  };
+  });
+  return { server, seen };
 }
 
 test.each(writes)(
@@ -714,9 +694,7 @@ test.each([
 test.each(writes)(
   "%s: an unreachable server is marked unknown",
   async (_id, make) => {
-    const closed = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const closed = serveFixture({
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
@@ -781,9 +759,7 @@ test.each(writes)(
 test.each(reads)(
   "%s: the same faults on a read never carry an outcome",
   async (_id, make) => {
-    const closed = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const closed = serveFixture({
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;

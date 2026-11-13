@@ -82,12 +82,19 @@ describe("CSV", () => {
   });
 
   function stubCsvDownload(blobUrl: string, onClick: () => void = () => {}) {
-    const link = { download: "", href: "", click: onClick };
+    const link = { download: "", href: "" };
     const state: {
       blob: Blob | MediaSource | undefined;
       revoked: string;
     } = { blob: undefined, revoked: "" };
-    vi.stubGlobal("document", { createElement: () => link });
+    // The page builds a real anchor; only click(), which would start a download, is observed.
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        link.download = this.download;
+        link.href = this.href;
+        onClick();
+      });
     const create = vi
       .spyOn(URL, "createObjectURL")
       .mockImplementation((value) => {
@@ -103,9 +110,9 @@ describe("CSV", () => {
       link,
       state,
       restore(this: void) {
+        click.mockRestore();
         create.mockRestore();
         revoke.mockRestore();
-        vi.unstubAllGlobals();
       },
     };
   }

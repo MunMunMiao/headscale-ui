@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import { expect, test, vi } from "vitest";
 import { testDouble } from "@/test/dom";
 import { createManualClock } from "@/test/session-clock";
@@ -1125,9 +1126,7 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
   const received = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let acceptedWrites = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       await request.json();
       acceptedWrites++;

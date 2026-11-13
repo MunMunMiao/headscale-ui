@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { serveFixture } from "@/test/fixture-server";
 import type { FaultCode } from "@defjs/core";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
@@ -95,7 +95,7 @@ function context(baseUrl: string): SessionExecutionContext {
 async function failureFrom(
   respond: () => Response | Promise<Response>,
 ): Promise<ApiError> {
-  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: respond });
+  const server = serveFixture({ fetch: respond });
   try {
     const result = await executeOperation(
       { type: "api.read", endpoint: "listUsers", input: {} },
@@ -163,9 +163,7 @@ test("classifies transport and proxy faults", async () => {
   await setLocale("en-US");
   const unexpected = (status: number) =>
     t("requestUnexpectedResponse", { status });
-  const refused = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const refused = serveFixture({
     fetch: () => new Response(),
   });
   const origin = refused.url.origin;

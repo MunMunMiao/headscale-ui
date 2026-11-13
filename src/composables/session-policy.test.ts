@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import {
   createGroup,
@@ -23,7 +22,7 @@ import { newProfileId } from "./useProfiles";
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
 });

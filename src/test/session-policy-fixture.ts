@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -32,9 +33,7 @@ export async function sessionPolicyFixture(
       release: ReturnType<typeof Promise.withResolvers<Response | undefined>>;
     } | null = null;
     const writes: string[] = [];
-    const proxy = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const proxy = serveFixture({
       async fetch(request) {
         const path = new URL(request.url).pathname;
         let text = "";

@@ -1,5 +1,4 @@
 import { requireInstance } from "@/test/dom";
-import "fake-indexeddb/auto";
 import { afterAll, afterEach, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import { setLocale } from "@/i18n";

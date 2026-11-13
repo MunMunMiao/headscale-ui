@@ -1,8 +1,9 @@
+import { serveFixture } from "@/test/fixture-server";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createFixtureHttp, fixtureExecute } from "@/test/dispatch-fixture";
 import { fetchSnapshot, readPolicy } from "./snapshot";
 
-let server: ReturnType<typeof Bun.serve>;
+let server: ReturnType<typeof serveFixture>;
 let policyErrorMessage = "";
 let policyRequested = false;
 
@@ -41,9 +42,7 @@ beforeEach(() => {
   policyErrorMessage = "";
   policyErrorStatus = 500;
   policyRequested = false;
-  server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  server = serveFixture({
     fetch(request) {
       const path = new URL(request.url).pathname;
 

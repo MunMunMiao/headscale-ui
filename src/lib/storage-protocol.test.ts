@@ -1,5 +1,3 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { idbGet, idbPut } from "@/test-utils/storage";
 import { encryptProfileKey } from "./api-key-crypto";
@@ -16,6 +14,7 @@ import {
   updateProfileMetadata,
 } from "./profile-storage";
 import { clearAllSecureData } from "./secure-storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   captureSettingsWriteEpoch,
   hydrateSettings,
@@ -24,9 +23,9 @@ import {
   writeSetting,
 } from "./settings-storage";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
 });
 afterEach(() => vi.restoreAllMocks());

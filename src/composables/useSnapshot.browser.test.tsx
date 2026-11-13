@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { isTimestampExpired } from "@/domain/node-status";

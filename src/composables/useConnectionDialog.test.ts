@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import type { ProfileSummary } from "@/lib/profile-storage";
@@ -21,7 +20,7 @@ afterEach(async () => {
 });
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
   const host = await createSessionHost("connection-dialog-test");

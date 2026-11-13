@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import { createActionFeedbackStore } from "@/composables/useActionFeedback";
 import { createProfilesStore, newProfileId } from "@/composables/useProfiles";
 import { DB_VERSION } from "@/lib/idb";
@@ -18,9 +19,7 @@ export async function profilesFixture(
   const server = startSnapshotServer();
   cleanup.push(() => server.stop());
   const proxy = handle
-    ? Bun.serve({
-        hostname: "127.0.0.1",
-        port: 0,
+    ? serveFixture({
         fetch(request) {
           return handle(request, () =>
             fetch(`${server.baseUrl}${new URL(request.url).pathname}`, {

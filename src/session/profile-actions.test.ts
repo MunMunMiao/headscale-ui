@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { serveFixture } from "@/test/fixture-server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { fetchSnapshot } from "@/api/snapshot";
 import { decryptProfileKey, encryptProfileKey } from "@/lib/api-key-crypto";
@@ -14,6 +13,7 @@ import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { idbDelete, idbGet, idbPut } from "@/test-utils/storage";
 import { createAuthSession, SessionFault } from "./auth-session";
 import { executeOperation } from "./operation-dispatch";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createProfileActions,
   type ProfileActionContext,
@@ -22,9 +22,9 @@ import {
 } from "./profile-actions";
 
 const cleanup: (() => void)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(() => {
   for (const stop of cleanup.splice(0)) stop();
@@ -345,9 +345,7 @@ test.each(["password", "apiKey", "baseUrl"] as const)(
 
 test("validation failure preserves storage; explicit save without validation requires a fresh call and cannot activate", async () => {
   const f = fixture();
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json({ code: 7, message: "permission denied" }, { status: 403 }),
   });

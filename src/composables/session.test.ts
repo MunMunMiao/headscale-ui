@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -18,7 +17,7 @@ const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
   settingsStorageTestingHandle.reset();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   await hydrateSettings();
 });
 afterEach(async () => {
@@ -550,6 +549,7 @@ test("a reconnect failing after a newer reset began reports nothing", async () =
     .mockImplementationOnce(() => gate.promise);
   await first.profiles.resetLocalData();
   await expect.poll(() => reconnect.mock.calls.length).toBe(1);
+  await expect.poll(() => first.auth.getSnapshot().status).toBe("ready-locked");
   await first.profiles.resetLocalData();
   await expect.poll(() => reconnect.mock.calls.length).toBe(2);
   gate.reject(new Error("late reconnect failure"));

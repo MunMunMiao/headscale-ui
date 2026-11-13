@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";

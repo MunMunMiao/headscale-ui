@@ -1,11 +1,10 @@
-import "fake-indexeddb/auto";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest } from "@/lib/idb";
 import { fieldOf, requireObject, testDouble } from "@/test/dom";
@@ -21,7 +20,7 @@ import { createSessionRestoration } from "./useSessionRestore";
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
 });

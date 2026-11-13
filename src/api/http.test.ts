@@ -1,12 +1,11 @@
+import { serveFixture } from "@/test/fixture-server";
 import { defineRequest, struct } from "@defjs/core";
 import { expect, test, vi } from "vitest";
 import { createWorkerHeadscaleHttp } from "./http";
 
 test("Worker authentication replaces a builder header with the bound session credential", async () => {
   const seen: Headers[] = [];
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch(request) {
       seen.push(request.headers);
       return Response.json({});
@@ -41,9 +40,7 @@ test("Worker authentication replaces a builder header with the bound session cre
 
 test("an abort during the interceptor chain prevents the native fetch", async () => {
   let sent = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch() {
       sent++;
       return new Response(null, { status: 204 });

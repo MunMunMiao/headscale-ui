@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { __resetForTest } from "@/lib/idb";
 import { testDouble } from "@/test/dom";
@@ -13,7 +12,7 @@ let page: Awaited<ReturnType<typeof harness.openPage>>;
 let server: ReturnType<typeof startSnapshotServer>;
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   harness = await createSessionHarness();
   page = await harness.openPage("owner-a");
   server = startSnapshotServer();

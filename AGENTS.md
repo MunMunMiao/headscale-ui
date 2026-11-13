@@ -39,6 +39,7 @@ Read [testing-business-behavior](.agents/skills/testing-business-behavior/SKILL.
 - In mixed tests, remove only out-of-scope assertions. Delete a case only when it has no behavioral assertion left, and a file only when it has no valid cases. Remove unused helpers; do not leave empty tests or assertion-free calls just to retain coverage.
 - Failure is not a deletion reason. Do not use skips, focused runs, wider exclusions, lower thresholds, disabled isolation, swallowed errors, or weaker assertions to make the final gate pass. A cleanup does not authorize product changes.
 - Keep the existing `unit`, `browser`, and `toolchain` projects in `vitest.config.ts`, the coverage gate, Lingui checks, and the disposable Headscale E2E fixture. Browser behavior runs in real Chromium; do not move failing component tests to another runtime to hide failures.
+- Tests for `src` run in the `browser` project, in real Chromium. Use the browser's own IndexedDB with `clearHeadscaleDatabase` from `src/test`, `vi.mock(path, { spy: true })` to spy on a module export, and `serveFixture` from `src/test/fixture-server.ts` for a local Headscale double. A test that a loaded page cannot run is named `*.node.test.ts`, runs in `unit`, and says why in its first line. `unit` and `toolchain` otherwise hold only `scripts/` tests.
 
 ## Before the change is done
 

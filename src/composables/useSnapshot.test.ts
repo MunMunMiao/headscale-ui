@@ -20,6 +20,8 @@ import { createActionFeedbackStore } from "./useActionFeedback";
 import type { createHeadscaleClientStore } from "./useHeadscaleClient";
 import { createSnapshotStore } from "./useSnapshot";
 
+vi.mock("@/api/snapshot", { spy: true });
+
 let feedbackStore: ReturnType<typeof createActionFeedbackStore>;
 let auth: ReturnType<typeof fixtureSession>["auth"];
 let clientStore: ReturnType<typeof createHeadscaleClientStore>;
@@ -37,6 +39,8 @@ beforeEach(() => {
 let fixture: ReturnType<typeof startSnapshotServer>;
 afterEach(() => {
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; an override would otherwise stick.
+  vi.resetAllMocks();
   fixture.stop();
 });
 

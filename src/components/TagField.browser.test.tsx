@@ -1,5 +1,4 @@
 import { requireInstance } from "@/test/dom";
-import "fake-indexeddb/auto";
 import { I18nProvider } from "@lingui/react";
 import { useState } from "react";
 import { afterEach, beforeEach, expect, test } from "vitest";

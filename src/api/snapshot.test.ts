@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { SessionFault } from "@/session/auth-session";
@@ -245,9 +246,7 @@ test("snapshot cancellation reaches all seven in-flight Defjs requests", async (
   const arrived = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let count = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch() {
       if (++count === 7) arrived.resolve();
       await release.promise;

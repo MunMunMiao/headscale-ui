@@ -1,5 +1,4 @@
 import { requireInstance } from "@/test/dom";
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import {
   createMemoryHistory,

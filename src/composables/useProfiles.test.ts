@@ -1,5 +1,3 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { setLocale, t } from "@/i18n";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -17,6 +15,7 @@ import { createSessionBridge } from "@/session/bridge";
 import { testDouble } from "@/test/dom";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { idbGetAll, idbPut } from "@/test-utils/storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createProfilesStore,
   newProfileId,
@@ -24,9 +23,9 @@ import {
 } from "./useProfiles";
 
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
   vi.restoreAllMocks();

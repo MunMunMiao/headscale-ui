@@ -4,8 +4,6 @@ import {
   makeLegacyCanary,
   seedLegacyDeviceKey,
 } from "@/test-utils/legacy-vault";
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
 import {
@@ -27,6 +25,7 @@ import {
   updateProfileMetadata,
 } from "./profile-storage";
 import { clearAllSecureData } from "./secure-storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   readVaultState,
   subscribeVaultChanges,
@@ -35,9 +34,9 @@ import {
   type VaultVersion,
 } from "./vault-state";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 
 async function version(): Promise<VaultVersion> {
@@ -92,7 +91,6 @@ test("worker repository lists only owner-visible summaries and never exposes sto
     ownerTabId: "owner-b",
   });
   const broken = await legacy("unreadable", { apiKey: { unsupported: true } });
-  vi.stubGlobal("window", undefined);
   vi.stubGlobal("sessionStorage", undefined);
   try {
     const result = await listProfileSummaries("owner-a");

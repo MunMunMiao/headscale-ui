@@ -1,3 +1,4 @@
+import { serveFixture } from "@/test/fixture-server";
 import type { HeadscaleSnapshot } from "@/api/contracts";
 
 export function snapshotFixture(): HeadscaleSnapshot {
@@ -42,9 +43,7 @@ export function startSnapshotServer() {
   const control: {
     policyFailure: { status: number; message: string } | null;
   } = { policyFailure: null };
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       const path = new URL(request.url).pathname;
       requests.push(`${request.method} ${path}`);

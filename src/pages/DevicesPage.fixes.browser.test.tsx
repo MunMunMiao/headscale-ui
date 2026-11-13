@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";

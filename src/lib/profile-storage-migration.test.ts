@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { beforeEach, expect, test } from "vitest";
 import { idbGet, idbPut } from "@/test-utils/storage";
 import { decryptProfileKey, encryptProfileKey } from "./api-key-crypto";
@@ -12,9 +11,9 @@ import {
 } from "./profile-storage";
 import { readVaultState, VAULT_STATE_KEY } from "./vault-state";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 
 test.each([

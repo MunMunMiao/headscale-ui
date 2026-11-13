@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createGroup, upsertGroup } from "@/domain/policy-designer";
 import { __resetForTest } from "@/lib/idb";
@@ -16,7 +15,7 @@ import { createPolicySave } from "./usePolicySave";
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
 });

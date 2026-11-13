@@ -57,7 +57,6 @@ test("local notifications publish only version hints and unsubscribe is idempote
   expect(listener).toHaveBeenCalledTimes(1);
 });
 test("a blocked broadcast channel cannot turn an already committed change into a failed operation", () => {
-  vi.stubGlobal("window", {});
   vi.stubGlobal(
     "BroadcastChannel",
     class {
@@ -77,7 +76,6 @@ test("a blocked broadcast channel cannot turn an already committed change into a
 });
 
 test("worker broadcast hints are validated and share one channel until the final subscriber leaves", () => {
-  vi.stubGlobal("window", undefined);
   class Channel {
     static instances: Channel[] = [];
     onmessage: ((event: MessageEvent<unknown>) => void) | null = null;

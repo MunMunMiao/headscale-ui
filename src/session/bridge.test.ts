@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { expect, test, vi } from "vitest";
 import { createSession } from "@/composables/session-context";
 import { createMutation } from "@/composables/useMutation";

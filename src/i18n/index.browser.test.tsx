@@ -1,10 +1,8 @@
-import "fake-indexeddb/auto";
 import { I18nProvider } from "@lingui/react";
-import { IDBFactory } from "fake-indexeddb";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { __resetForTest, STORE_META } from "@/lib/idb";
+import { STORE_META } from "@/lib/idb";
 import * as settings from "@/lib/settings-storage";
 import {
   captureSettingsWriteEpoch,
@@ -14,6 +12,7 @@ import {
   writeSetting,
 } from "@/lib/settings-storage";
 import { notifyVaultChanged } from "@/lib/vault-state";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { idbPut } from "@/test-utils/storage";
 import { clearAllSecureData } from "@/lib/secure-storage";
 import {
@@ -38,8 +37,7 @@ vi.mock("./runtime", { spy: true });
 
 beforeEach(async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  globalThis.indexedDB = new IDBFactory();
-  __resetForTest();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
   await setLocale("en-US");

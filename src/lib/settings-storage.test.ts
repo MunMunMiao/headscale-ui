@@ -1,10 +1,9 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { testDouble } from "@/test/dom";
 import { idbGet, idbPut } from "@/test-utils/storage";
 import { __resetForTest } from "./idb";
 import { clearAllSecureData } from "./secure-storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   captureSettingsWriteEpoch,
   hydrateSettings,
@@ -15,9 +14,9 @@ import {
   writeSetting,
 } from "./settings-storage";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
 });
 afterEach(() => {

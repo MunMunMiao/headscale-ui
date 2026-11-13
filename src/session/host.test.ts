@@ -1,9 +1,9 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { encryptProfileKey } from "@/lib/api-key-crypto";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import { subscribeVaultChanges } from "@/lib/vault-state";
+import { serveFixture } from "@/test/fixture-server";
 import { createSessionPorts } from "@/test/session-ports";
 import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { idbDelete, idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
@@ -14,14 +14,18 @@ import { createSessionHost } from "./host";
 import * as runtimeModule from "./runtime";
 import type { SessionResult } from "./types";
 
+vi.mock("./runtime", { spy: true });
+
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
   for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; their calls would otherwise carry over.
+  vi.resetAllMocks();
 });
 function value<T>(result: SessionResult<T>): T {
   expect(result.ok).toBe(true);
@@ -217,7 +221,7 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   const peer = await page("owner-b");
   let network: ReturnType<typeof createSessionNetwork> | undefined;
   await save(first, "persistent", (upstream) => {
-    network = createSessionNetwork({ upstream });
+    network = createSessionNetwork({ serve: serveFixture, upstream });
     cleanup.push(() => network?.close());
     return network.url;
   });
@@ -326,10 +330,7 @@ test("a newly created host cannot inherit an earlier unlocked connection", async
 });
 
 test("disposing the host also erases its live session and closes the Effect scope", async () => {
-  const createRuntime = runtimeModule.createSessionRuntime;
-  const runtime = vi
-    .spyOn(runtimeModule, "createSessionRuntime")
-    .mockImplementation(createRuntime);
+  const runtime = vi.mocked(runtimeModule.createSessionRuntime);
   const { host, page } = await fixture();
   const first = await page("owner-a");
   await save(first);
@@ -372,7 +373,10 @@ test.each(["cancel", "disconnect"] as const)(
   async (boundary) => {
     const backend = startSnapshotServer();
     cleanup.push(() => backend.stop());
-    const network = createSessionNetwork({ upstream: backend.baseUrl });
+    const network = createSessionNetwork({
+      serve: serveFixture,
+      upstream: backend.baseUrl,
+    });
     cleanup.push(() => network.close());
     const { page } = await fixture();
     const first = await page("owner-a");
@@ -433,7 +437,10 @@ test.each(["cancel", "disconnect"] as const)(
 test("an unlock adopts the current profile name when a peer renames it during validation", async () => {
   const backend = startSnapshotServer();
   cleanup.push(() => backend.stop());
-  const network = createSessionNetwork({ upstream: backend.baseUrl });
+  const network = createSessionNetwork({
+    serve: serveFixture,
+    upstream: backend.baseUrl,
+  });
   cleanup.push(() => network.close());
   const { page } = await fixture();
   const first = await page("owner-a");
@@ -498,7 +505,10 @@ test.each(["deleted", "credential-rotated"] as const)(
   async (change) => {
     const backend = startSnapshotServer();
     cleanup.push(() => backend.stop());
-    const network = createSessionNetwork({ upstream: backend.baseUrl });
+    const network = createSessionNetwork({
+      serve: serveFixture,
+      upstream: backend.baseUrl,
+    });
     cleanup.push(() => network.close());
     const { page } = await fixture();
     const bridge = await page("owner-a");

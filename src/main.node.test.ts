@@ -1,3 +1,4 @@
+// Runs in Node: the entry replaces document and react-dom/client, which a loaded page cannot swap.
 import { afterEach, expect, test, vi } from "vitest";
 import App from "./App";
 import ErrorScreen from "./components/ErrorScreen";
