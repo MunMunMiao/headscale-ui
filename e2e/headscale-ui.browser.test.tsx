@@ -5,7 +5,6 @@ import { commands, page, userEvent } from "vitest/browser";
 import { cleanup, render } from "vitest-browser-react";
 import { SessionProviders } from "@/AppProviders";
 import { type apiKey, normalizeHeadscaleNode } from "@/api/contracts";
-import * as endpoints from "@/api/requests";
 import { type Execute, readHealth, readPolicy } from "@/api/snapshot";
 import { prepareApplication, resetUnreadableVault } from "@/bootstrap";
 import ErrorScreen from "@/components/ErrorScreen";
@@ -562,18 +561,6 @@ function expectTestIdFitsViewport(testId: string) {
   expect(rect.right).toBeLessThanOrEqual(window.innerWidth);
 }
 
-function expectTestIdAboveTestId(testId: string, boundaryTestId: string) {
-  const element = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  const boundary = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${boundaryTestId}"]`),
-  );
-  const rect = element.getBoundingClientRect();
-  const boundaryRect = boundary.getBoundingClientRect();
-  expect(rect.bottom).toBeLessThanOrEqual(boundaryRect.top);
-}
-
 function expectTestIdNetworkTokensLtr(testId: string, minimum = 1) {
   const root = requireValue(
     document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
@@ -581,75 +568,10 @@ function expectTestIdNetworkTokensLtr(testId: string, minimum = 1) {
   expectNetworkTokensLtr(root, minimum);
 }
 
-function expectOverviewStatsCompactGrid() {
-  const stats = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="overview-stats"]'),
-  );
-  const cards = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-testid^="overview-stat-"]'),
-  );
-  expect(cards).toHaveLength(5);
-
-  const statsRect = stats.getBoundingClientRect();
-  const firstRect = requireValue(cards[0]?.getBoundingClientRect());
-  const secondRect = requireValue(cards[1]?.getBoundingClientRect());
-  expect(Math.abs(firstRect.top - secondRect.top)).toBeLessThan(2);
-  expect(secondRect.left).toBeGreaterThan(firstRect.left);
-  expect(statsRect.height).toBeLessThanOrEqual(170);
-
-  const recentHeading = requireValue(
-    document.querySelector<HTMLElement>(
-      '[data-testid="recent-devices-heading"]',
-    ),
-  );
-  expect(recentHeading.getBoundingClientRect().top).toBeLessThan(
-    window.innerHeight,
-  );
-}
-
 async function captureResponsiveScreenshot(name: string) {
   await page.screenshot({
     path: `__screenshots__/responsive-review/${name}.png`,
   });
-}
-
-function expectConnectionFormGridLayout() {
-  const fields = [
-    "connect-profile-name",
-    "connect-server-url",
-    "connect-api-key",
-  ].map((testId) =>
-    requireValue(
-      document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-    ),
-  );
-  const [name, url, key] = fields.map((field) => field.getBoundingClientRect());
-  expect(Math.abs(name.width - url.width)).toBeLessThan(2);
-  expect(Math.abs(key.width - url.width)).toBeLessThan(2);
-  expect(Math.abs(name.left - url.left)).toBeLessThan(2);
-  expect(Math.abs(key.left - url.left)).toBeLessThan(2);
-}
-
-function expectDialogHasNoInternalScrollbar(testId: string) {
-  const dialog = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  expect(dialog.scrollHeight).toBeLessThanOrEqual(dialog.clientHeight + 1);
-}
-
-function expectTextAlignsToStart(element: HTMLElement) {
-  expect(getComputedStyle(element).textAlign).toMatch(
-    document.documentElement.dir === "rtl"
-      ? /^(right|start)$/
-      : /^(left|start)$/,
-  );
-}
-
-function expectPointerCursor(testId: string) {
-  const element = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  expect(getComputedStyle(element).cursor).toBe("pointer");
 }
 
 function preventNextClickDefault(testId: string) {
@@ -660,157 +582,15 @@ function preventNextClickDefault(testId: string) {
     });
 }
 
-const interactiveCursorSelectors = [
-  "a[href]",
-  "button:not(:disabled):not([aria-disabled='true'])",
-  "select:not(:disabled)",
-  "input[type='button']:not(:disabled)",
-  "input[type='checkbox']:not(:disabled)",
-  "input[type='color']:not(:disabled)",
-  "input[type='date']:not(:disabled)",
-  "input[type='datetime-local']:not(:disabled)",
-  "input[type='file']:not(:disabled)",
-  "input[type='month']:not(:disabled)",
-  "input[type='radio']:not(:disabled)",
-  "input[type='reset']:not(:disabled)",
-  "input[type='submit']:not(:disabled)",
-  "input[type='time']:not(:disabled)",
-  "input[type='week']:not(:disabled)",
-  "label[for]",
-  "summary",
-  "[role='button']:not([aria-disabled='true'])",
-  "[role='checkbox']:not([aria-disabled='true'])",
-  "[role='menuitem']:not([data-disabled])",
-  "[role='menuitemcheckbox']:not([data-disabled])",
-  "[role='menuitemradio']:not([data-disabled])",
-  "[role='option']:not([aria-disabled='true'])",
-  "[role='radio']:not([aria-disabled='true'])",
-  "[role='switch']:not([aria-disabled='true'])",
-  "[role='tab']:not([disabled])",
-];
-
-function isVisibleCursorTarget(element: HTMLElement) {
-  const rect = element.getBoundingClientRect();
-  const style = getComputedStyle(element);
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    style.display !== "none" &&
-    style.visibility !== "hidden"
-  );
-}
-
-function describeCursorTarget(element: HTMLElement) {
-  return [
-    element.tagName.toLowerCase(),
-    element.dataset.testid ? `[data-testid="${element.dataset.testid}"]` : "",
-    element.getAttribute("role")
-      ? `[role="${element.getAttribute("role")}"]`
-      : "",
-    element.id ? `#${element.id}` : "",
-  ].join("");
-}
-
-function expectVisibleInteractiveElementsUsePointer() {
-  const offenders = Array.from(
-    document.querySelectorAll<HTMLElement>(
-      interactiveCursorSelectors.join(","),
-    ),
-  )
-    .filter(isVisibleCursorTarget)
-    .filter((element) => getComputedStyle(element).pointerEvents !== "none")
-    .filter((element) => getComputedStyle(element).cursor !== "pointer")
-    .map(
-      (element) =>
-        `${describeCursorTarget(element)} -> ${getComputedStyle(element).cursor}`,
-    );
-
-  expect(offenders).toEqual([]);
-}
-
-function expectDialogMirrorsInlineEnd(testId: string) {
-  const dialog = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  const close = requireValue(
-    dialog.querySelector<HTMLElement>('[data-slot="dialog-close"]'),
-  );
-  const header = requireValue(
-    dialog.querySelector<HTMLElement>('[data-slot="dialog-header"]'),
-  );
-  expectTextAlignsToStart(header);
-
-  const dialogRect = dialog.getBoundingClientRect();
-  const closeRect = close.getBoundingClientRect();
-  const distanceToLeft = Math.abs(closeRect.left - dialogRect.left);
-  const distanceToRight = Math.abs(dialogRect.right - closeRect.right);
-  if (document.documentElement.dir === "rtl") {
-    expect(distanceToLeft).toBeLessThan(distanceToRight);
-  } else {
-    expect(distanceToRight).toBeLessThan(distanceToLeft);
-  }
-}
-
-function expectNativeSelectIconMirrorsInlineEnd(testId: string) {
-  const select = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  const wrapper = requireValue(
-    select.closest<HTMLElement>('[data-slot="native-select-wrapper"]'),
-  );
-  const icon = requireValue(
-    wrapper.querySelector<HTMLElement>('[data-slot="native-select-icon"]'),
-  );
-
-  const wrapperRect = wrapper.getBoundingClientRect();
-  const iconRect = icon.getBoundingClientRect();
-  const distanceToLeft = Math.abs(iconRect.left - wrapperRect.left);
-  const distanceToRight = Math.abs(wrapperRect.right - iconRect.right);
-  if (document.documentElement.dir === "rtl") {
-    expect(distanceToLeft).toBeLessThan(distanceToRight);
-  } else {
-    expect(distanceToRight).toBeLessThan(distanceToLeft);
-  }
-}
-
-function expectSwitchThumbMirrorsCurrentState(testId: string) {
-  const switchRoot = requireValue(
-    document.querySelector<HTMLElement>(`[data-testid="${testId}"]`),
-  );
-  const thumb = requireValue(
-    switchRoot.querySelector<HTMLElement>('[data-slot="switch-thumb"]'),
-  );
-
-  const rootRect = switchRoot.getBoundingClientRect();
-  const thumbRect = thumb.getBoundingClientRect();
-  const thumbCenter = thumbRect.left + thumbRect.width / 2;
-  const rootCenter = rootRect.left + rootRect.width / 2;
-  const checked = switchRoot.getAttribute("aria-checked") === "true";
-  if (document.documentElement.dir === "rtl" && checked) {
-    expect(thumbCenter).toBeLessThan(rootCenter);
-  } else if (document.documentElement.dir === "rtl") {
-    expect(thumbCenter).toBeGreaterThan(rootCenter);
-  } else if (checked) {
-    expect(thumbCenter).toBeGreaterThan(rootCenter);
-  } else {
-    expect(thumbCenter).toBeLessThan(rootCenter);
-  }
-}
-
 function visibleSectionLinks() {
   return Array.from(
     document.querySelectorAll<HTMLAnchorElement>('a[data-testid^="section-"]'),
   ).filter((element) => element.getBoundingClientRect().width > 0);
 }
 
-function expectResponsiveTabMenu() {
+function expectVisibleSectionNavigation() {
   const links = visibleSectionLinks();
   expect(links.length).toBeGreaterThan(1);
-  expect(document.querySelector('[data-testid="section-select"]')).toBeNull();
-  const rects = links.map((link) => link.getBoundingClientRect());
-  for (let index = 1; index < rects.length; index += 1) {
-    expect(Math.abs(rects[index].top - rects[0].top)).toBeLessThan(2);
-  }
 }
 
 function testIdRect(testId: string) {
@@ -821,12 +601,7 @@ function testIdRect(testId: string) {
 }
 
 function expectAuthKeyDateTimePickerClosed() {
-  const picker = requireValue(
-    document.querySelector<HTMLElement>('[data-slot="date-time-picker"]'),
-  );
   expectNoHorizontalOverflow();
-
-  expect(getComputedStyle(picker).display).toBe("grid");
   expect(testIdRect("invite-expiration").width).toBeGreaterThan(0);
   expect(
     document.querySelector('[data-testid="invite-expiration-hour"]'),
@@ -837,106 +612,32 @@ function expectAuthKeyDateTimePickerClosed() {
 }
 
 function expectAuthKeyTimePickerPopover() {
-  const timePicker = requireValue(
-    document.querySelector<HTMLElement>('[data-slot="time-picker"]'),
-  );
-  const popover = requireValue(
-    document.querySelector<HTMLElement>('[data-slot="popover-content"]'),
-  );
   expectNoHorizontalOverflow();
-
-  const orderedSlots = Array.from(
-    popover.querySelectorAll<HTMLElement>(
-      '[data-slot="calendar"], [data-slot="time-picker"]',
-    ),
-  ).map((element) => element.dataset.slot);
-  expect(orderedSlots).toEqual(["calendar", "time-picker"]);
-  const popoverRect = popover.getBoundingClientRect();
-  const timeRect = timePicker.getBoundingClientRect();
-  expect(timeRect.bottom).toBeLessThanOrEqual(popoverRect.bottom + 1);
   expect(
     document.querySelector<HTMLElement>(
       '[data-testid="invite-expiration-time-label"]',
     ),
   ).toBeTruthy();
-  const hourRect = testIdRect("invite-expiration-hour");
-  const minuteRect = testIdRect("invite-expiration-minute");
-  expect(Math.abs(hourRect.top - minuteRect.top)).toBeLessThan(2);
-  expect(hourRect.right).toBeLessThanOrEqual(minuteRect.left);
-  expect(
-    document.querySelectorAll(
-      'input[type="time"], input[type="datetime-local"]',
-    ).length,
-  ).toBe(0);
 }
 
-function expectAppHeader() {
-  const header = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="app-header"]'),
-  );
-  const primaryRow = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="header-primary-row"]'),
-  );
+function expectHeaderNavigation() {
   const navigation = requireValue(
     document.querySelector<HTMLElement>('[data-testid="header-navigation"]'),
   );
-  const pageBody = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="page-body"]'),
-  );
-  expect(header.getBoundingClientRect().width).toBe(
-    document.documentElement.clientWidth,
-  );
   expect(navigation.querySelectorAll("a[href]")).toHaveLength(6);
-  expect(primaryRow.parentElement?.className).toContain("container");
-  expect(pageBody.className).toContain("container");
-  expect(pageBody.className).toContain("mx-auto");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="app-logo"]')
-      ?.textContent,
-  ).toContain("Headscale UI");
-  expect(
-    document.querySelector<SVGElement>('[data-testid="app-logo"] svg'),
-  ).toBeTruthy();
   const githubLink = requireValue(
     document.querySelector<HTMLElement>(
       '[data-testid="github-repository-link"]',
     ),
   );
-  const profileTrigger = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="profile-menu-trigger"]'),
-  );
   expect(githubLink.getAttribute("href")).toBe(
     "https://github.com/MunMunMiao/headscale-ui",
-  );
-  expect(githubLink.compareDocumentPosition(profileTrigger)).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
   );
   expect(
     document.querySelector<HTMLElement>('[data-testid="current-server"]'),
   ).toBeNull();
   expect(navigation.getAttribute("dir")).toBe(document.documentElement.dir);
-
-  const headerRect = header.getBoundingClientRect();
-  const primaryRect = primaryRow.getBoundingClientRect();
-  const navigationRect = navigation.getBoundingClientRect();
-  const headerStyle = getComputedStyle(header);
-  const pageSurfaceStyle = getComputedStyle(document.body);
-  expect(headerStyle.borderBottomWidth).toBe("0px");
-  expect(headerStyle.boxShadow).not.toBe("none");
-  expect(headerStyle.backgroundColor).not.toBe(
-    pageSurfaceStyle.backgroundColor,
-  );
-  expect(primaryRect.top).toBeGreaterThanOrEqual(headerRect.top - 1);
-  expect(navigationRect.top).toBeGreaterThanOrEqual(primaryRect.bottom - 1);
-  expect(navigationRect.top).toBeLessThanOrEqual(primaryRect.bottom + 1);
-  expect(navigationRect.bottom).toBeLessThanOrEqual(headerRect.bottom + 1);
-  expect(getComputedStyle(navigation).borderTopWidth).toBe("0px");
-
-  const activeTab = navigation.querySelector<HTMLElement>(
-    '[aria-current="page"]',
-  );
-  expect(activeTab).toBeTruthy();
-  expect(activeTab?.className).toContain("text-primary");
+  expect(navigation.querySelector('[aria-current="page"]')).toBeTruthy();
 }
 
 async function expectMachinesWorkbench() {
@@ -957,22 +658,11 @@ async function expectMachinesWorkbench() {
   expect(
     document.querySelector('[data-testid="device-1"]')?.closest("table"),
   ).toBeTruthy();
-  expect(
-    document
-      .querySelector('[data-testid="device-search"]')
-      ?.closest('[data-testid="machine-list"]'),
-  ).toBeNull();
-  expect(
-    document
-      .querySelector('[data-testid="device-search"]')
-      ?.closest('[data-testid="machine-toolbar"]'),
-  ).toBeTruthy();
   const deviceIpBadges = document.querySelectorAll<HTMLElement>(
     '[data-testid^="device-ip-1-"]',
   );
   expect(deviceIpBadges).toHaveLength(2);
   expect(deviceIpBadges[0]?.textContent).toContain("100.64.0.1");
-  expect(deviceIpBadges[0]?.className).toContain("font-mono");
   const deviceTag = document.querySelector<HTMLElement>(
     '[data-testid="device-tag-2-0"]',
   );
@@ -989,17 +679,9 @@ async function expectMachinesWorkbench() {
   expect(deviceStatus).toBeTruthy();
   expect(offlineStatus).toBeTruthy();
   expect(expiredStatus).toBeTruthy();
-  expect(deviceTag?.className).toContain("bg-cyan-50");
-  expect(deviceTag?.className).not.toBe(deviceStatus?.className);
   expect(deviceStatus?.textContent).toContain("Online");
-  expect(deviceStatus?.className).toContain("emerald");
   expect(offlineStatus?.textContent).toContain("Offline");
-  expect(offlineStatus?.className).toContain("slate");
   expect(expiredStatus?.textContent).toContain("Expired");
-  expect(expiredStatus?.className).toContain("rose");
-  expect(deviceStatus?.className).not.toBe(offlineStatus?.className);
-  expect(deviceStatus?.className).not.toBe(expiredStatus?.className);
-  expect(offlineStatus?.className).not.toBe(expiredStatus?.className);
   expect(document.querySelector('[data-testid="device-tag-3-0"]')).toBeNull();
   expect(
     document.querySelector('[data-testid="device-pending-routes-1"]'),
@@ -1012,12 +694,7 @@ async function expectMachinesWorkbench() {
   );
   expect(pendingRouteBadges).toHaveLength(2);
   expect(pendingRouteBadges[0]?.textContent).toContain("0.0.0.0/0");
-  expect(pendingRouteBadges[0]?.className).toContain("rose");
   expect(approvedRouteBadge?.textContent).toContain("10.42.0.0/16");
-  expect(approvedRouteBadge?.className).toContain("emerald");
-  expect(pendingRouteBadges[0]?.className).not.toBe(
-    approvedRouteBadge?.className,
-  );
   const deviceTableText =
     document.querySelector('[data-testid="machine-list"]')?.textContent ?? "";
   expect(deviceTableText).not.toMatch(
@@ -1025,7 +702,7 @@ async function expectMachinesWorkbench() {
   );
 }
 
-function expectRecentDeviceStatusColors() {
+function expectRecentDeviceStatuses() {
   const recentOnline = document.querySelector<HTMLElement>(
     '[data-testid="recent-device-status-1"]',
   );
@@ -1036,11 +713,8 @@ function expectRecentDeviceStatusColors() {
     '[data-testid="recent-device-status-3"]',
   );
   expect(recentOnline?.textContent).toContain("Online");
-  expect(recentOnline?.className).toContain("emerald");
   expect(recentOffline?.textContent).toContain("Offline");
-  expect(recentOffline?.className).toContain("slate");
   expect(recentExpired?.textContent).toContain("Expired");
-  expect(recentExpired?.className).toContain("rose");
 }
 
 /** Index of the approved-route badge that shows `route`, read from its `route-approved-<node>-<index>` id. */
@@ -1115,10 +789,6 @@ async function expectPolicyRemovalDialog() {
   await expect
     .element(page.getByTestId("remove-policy-item-dialog"))
     .toBeVisible();
-  const confirm = document.querySelector<HTMLElement>(
-    '[data-testid="confirm-remove-policy-item"]',
-  );
-  expect(confirm?.className).toContain("bg-destructive");
 }
 
 async function expectPolicyRemovalDialogClosed() {
@@ -1673,7 +1343,7 @@ test("manages multiple saved connection profiles and supports logout", async () 
       .map((element) => element.dataset.testid ?? "")
       .filter((testId) => /^recent-device-\d+$/.test(testId)),
   ).toEqual(["recent-device-3", "recent-device-2", "recent-device-1"]);
-  expectRecentDeviceStatusColors();
+  expectRecentDeviceStatuses();
   await openProfileMenu();
   await expect
     .element(page.getByTestId("profile-menu"))
@@ -2494,22 +2164,15 @@ test("supports language and theme selectors before login", async () => {
   await expect
     .element(page.getByTestId("github-repository-link"))
     .toHaveAttribute("href", "https://github.com/MunMunMiao/headscale-ui");
-  expectPointerCursor("github-repository-link");
   preventNextClickDefault("github-repository-link");
   await page.getByTestId("github-repository-link").click();
 
   await page.getByTestId("profile-option-new").click();
-  expectConnectionFormGridLayout();
-  const connectionHeader = document.querySelector<HTMLElement>(
-    '[data-testid="connection-dialog"] [data-slot="dialog-header"]',
-  );
-  expect(connectionHeader?.querySelector("svg")).toBeNull();
   expect(
     document.querySelector(
       '[data-testid="connection-dialog"] [data-slot="dialog-close"]',
     ),
   ).toBeNull();
-  expectDialogHasNoInternalScrollbar("connection-dialog");
   expect(document.querySelector('[data-testid="save-profile"]')).toBeNull();
   await expect
     .element(page.getByTestId("connect-submit"))
@@ -2609,7 +2272,6 @@ test("keeps the add profile dialog inside a short mobile viewport", async () => 
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   expectDialogUsableInViewport("connection-dialog");
   expectTestIdFitsViewport("connect-api-key");
-  expectTestIdAboveTestId("connect-api-key", "connect-footer");
   expectTestIdFitsViewport("connect-submit");
   expectNoHorizontalOverflow();
 });
@@ -2622,7 +2284,6 @@ test("keeps core dialogs usable on a short mobile viewport", async () => {
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
   expectDialogUsableInViewport("connection-dialog");
   expectTestIdFitsViewport("connect-api-key");
-  expectTestIdAboveTestId("connect-api-key", "connect-footer");
   expectTestIdFitsViewport("connect-submit");
   await captureResponsiveScreenshot("add-server-360x568");
   await closeLayerWithEscape("connection-dialog");
@@ -2686,49 +2347,27 @@ test("keeps core dialogs usable on a short mobile viewport", async () => {
   expectNoHorizontalOverflow();
 });
 
-test("keeps mobile overview statistics dense", async () => {
-  await page.viewport(360, 568);
-  await renderLogin();
-  await connectWithDefaults();
-
-  await expect.element(page.getByTestId("section-home")).toBeVisible();
-  expectOverviewStatsCompactGrid();
-  expectNoHorizontalOverflow();
-  await captureResponsiveScreenshot("home-overview-360x568");
-});
-
-test("uses pointer cursors for buttons, links, menus and tabs", async () => {
+test("opens and closes connection help and profile language menus", async () => {
   await renderLogin();
 
-  expectPointerCursor("profile-option-new");
-  expectVisibleInteractiveElementsUsePointer();
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await page
     .getByRole("button", { name: t("apiKeyGuideTitle"), exact: true })
     .click();
   await expect.element(page.getByTestId("api-key-guide")).toBeVisible();
-  expectPointerCursor("api-key-docs-link");
-  expectVisibleInteractiveElementsUsePointer();
   await closeLayerWithEscape("api-key-guide");
-  expectPointerCursor("connect-submit");
-  expectVisibleInteractiveElementsUsePointer();
 
   await connectWithDefaults();
-  expectPointerCursor("github-repository-link");
+  await expect
+    .element(page.getByTestId("github-repository-link"))
+    .toHaveAttribute("href", "https://github.com/MunMunMiao/headscale-ui");
   preventNextClickDefault("github-repository-link");
   await page.getByTestId("github-repository-link").click();
-  expectPointerCursor("profile-menu-trigger");
-  expectPointerCursor("section-devices");
-  expectVisibleInteractiveElementsUsePointer();
 
   await openProfileMenu();
-  expectPointerCursor("language-menu-trigger");
-  expectVisibleInteractiveElementsUsePointer();
   await clickDomTestId("language-menu-trigger");
   await expect.element(page.getByTestId("locale-option-zh-Hans")).toBeVisible();
-  expectPointerCursor("locale-option-zh-Hans");
-  expectVisibleInteractiveElementsUsePointer();
   await closeProfileMenu();
 });
 
@@ -2739,8 +2378,8 @@ test("supports consumer-friendly tailnet management flows", async () => {
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connect-form")).toBeVisible();
   await connectWithDefaults();
-  expectAppHeader();
-  expectResponsiveTabMenu();
+  expectHeaderNavigation();
+  expectVisibleSectionNavigation();
 
   await page.getByTestId("section-members").click();
   await openCreateMemberDialog();
@@ -4096,27 +3735,11 @@ test("covers user filters, user export and member deletion", async () => {
   expect(
     document.querySelector('[data-testid="member-alice"]')?.closest("table"),
   ).toBeTruthy();
-  expect(
-    document
-      .querySelector('[data-testid="user-search"]')
-      ?.closest('[data-testid="user-table"]'),
-  ).toBeNull();
-  expect(
-    document
-      .querySelector('[data-testid="user-search"]')
-      ?.closest('[data-testid="user-toolbar"]'),
-  ).toBeTruthy();
   inputDomTestId("user-search", "charlie");
   await expect.element(page.getByTestId("member-charlie")).toBeVisible();
   await expect
     .element(page.getByTestId("member-auth-source-charlie"))
     .toHaveTextContent("-");
-  const memberDeviceTags = requireValue(
-    document.querySelector<HTMLElement>(
-      '[data-testid="member-device-tags-charlie"]',
-    ),
-  );
-  expect(getComputedStyle(memberDeviceTags).display).toBe("grid");
   await expect
     .element(page.getByTestId("member-device-tag-charlie-3"))
     .toMatchTextContent("old-phone");
@@ -4457,53 +4080,9 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await closeLayerWithEscape("user-detail-dialog");
   expect(
     document
-      .querySelector('[data-testid="invite-search"]')
-      ?.closest('[data-testid="invite-toolbar"]'),
-  ).toBeTruthy();
-  expect(
-    document
-      .querySelector('[data-testid="invite-search"]')
-      ?.closest('[data-testid="invite-table"]'),
-  ).toBeNull();
-  expect(
-    document
-      .querySelector<HTMLElement>('[data-testid="invite-toolbar"]')
-      ?.getBoundingClientRect().height ?? 0,
-  ).toBeLessThanOrEqual(60);
-  expect(
-    document
       .querySelector<HTMLElement>('[data-testid="invite-filter"]')
       ?.getBoundingClientRect().height ?? 0,
   ).toBeGreaterThanOrEqual(36);
-  expect(
-    document
-      .querySelector<HTMLElement>('[data-testid="invite-1"]')
-      ?.getBoundingClientRect().height ?? 0,
-  ).toBeLessThanOrEqual(88);
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-status-1"]')
-      ?.className,
-  ).toContain("emerald");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-status-2"]')
-      ?.className,
-  ).toContain("rose");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-kind-1"]')
-      ?.className,
-  ).toContain("teal");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-kind-2"]')
-      ?.className,
-  ).toContain("violet");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-ephemeral-2"]')
-      ?.className,
-  ).toContain("amber");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-tag-1-0"]')
-      ?.className,
-  ).toContain("cyan");
   expect(document.querySelector('[data-testid="invite-tag-2-0"]')).toBeNull();
   expect(
     document.querySelector('[data-testid="invite-2"]')?.textContent,
@@ -4540,10 +4119,6 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await page.getByTestId("open-create-invite").click();
   await expect.element(page.getByTestId("invite-create-dialog")).toBeVisible();
   await page.getByTestId("invite-user").selectOptions("3");
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-expiration"]')
-      ?.tagName,
-  ).toBe("BUTTON");
   expectAuthKeyDateTimePickerClosed();
   await page.viewport(500, 768);
   expectAuthKeyDateTimePickerClosed();
@@ -4653,10 +4228,6 @@ test("covers auth-key filters, expiration and deletion", async () => {
   await expect
     .poll(() => visibleText("invite-status-1"))
     .toBe(getProductCopy("en-US").expiredOnly);
-  expect(
-    document.querySelector<HTMLElement>('[data-testid="invite-status-1"]')
-      ?.className,
-  ).toContain("rose");
   await clickVisibleDomTestId("invite-actions-trigger-2");
   await clickVisibleDomTestId("delete-invite-2");
   await expect.element(page.getByTestId("delete-invite-dialog")).toBeVisible();
@@ -5566,11 +5137,6 @@ test("covers server settings API keys and maintenance actions", async () => {
     await expect
       .poll(() => visibleText(`api-key-status-${livePrefix}`))
       .toBe(getProductCopy("en-US").statusActive);
-    expect(
-      document.querySelector<HTMLElement>(
-        `[data-testid="api-key-status-${livePrefix}"]`,
-      )?.className,
-    ).toContain("emerald");
 
     // Expiring the key this session authenticates with needs an explicit acknowledgement. The dialog is
     // cancelled: the shared session key must never be expired by a test.
@@ -5645,11 +5211,6 @@ test("covers server settings API keys and maintenance actions", async () => {
     await expect
       .poll(() => visibleText(`api-key-status-${livePrefix}`))
       .toBe(getProductCopy("en-US").expiredOnly);
-    expect(
-      document.querySelector<HTMLElement>(
-        `[data-testid="api-key-status-${livePrefix}"]`,
-      )?.className,
-    ).toContain("rose");
 
     await clickVisibleDomTestId(`api-key-actions-trigger-${oldPrefix}`);
     await clickVisibleDomTestId(`delete-api-key-${oldPrefix}`);
@@ -6008,8 +5569,8 @@ test("keeps every core function usable on mobile", async () => {
 
   await connectWithDefaults();
   await expect.element(page.getByTestId("profile-menu-trigger")).toBeVisible();
-  expectAppHeader();
-  expectResponsiveTabMenu();
+  expectHeaderNavigation();
+  expectVisibleSectionNavigation();
   expectNoHorizontalOverflow();
 
   for (const section of [
@@ -6246,7 +5807,6 @@ test("keeps every core function usable on mobile", async () => {
 test("defaults to English and switches through every supported BCP47 locale", async () => {
   await renderLogin();
 
-  const loginLocales = new Set<string>();
   for (const code of SUPPORTED_LOCALES) {
     await page.getByTestId("locale-select").click();
     await expect
@@ -6258,9 +5818,7 @@ test("defaults to English and switches through every supported BCP47 locale", as
       .poll(() => document.documentElement.dir)
       .toBe(LOCALE_META[code].dir);
     await expect.poll(() => readIdbSetting("locale")).toBe(code);
-    loginLocales.add(code);
   }
-  expect([...loginLocales]).toEqual([...SUPPORTED_LOCALES]);
 
   await page.getByTestId("locale-select").click();
   await page.getByTestId("locale-option-en-US").click();
@@ -6309,7 +5867,6 @@ test("defaults to English and switches through every supported BCP47 locale", as
     .toMatchTextContent("沒有相符篩選條件的使用者");
   inputDomTestId("user-search", "");
 
-  const appLocales = new Set<string>();
   for (const code of SUPPORTED_LOCALES) {
     await chooseProfileMenuOption(`locale-option-${code}`);
     await expect.poll(() => document.documentElement.lang).toBe(code);
@@ -6371,9 +5928,7 @@ test("defaults to English and switches through every supported BCP47 locale", as
         document.querySelector('[data-testid="member-create-dialog"]'),
       )
       .toBeNull();
-    appLocales.add(code);
   }
-  expect([...appLocales]).toEqual([...SUPPORTED_LOCALES]);
 
   await expect
     .element(page.getByTestId("section-devices"))
@@ -6413,12 +5968,6 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
 
   await page.getByTestId("profile-option-new").click();
   await expect.element(page.getByTestId("connection-dialog")).toBeVisible();
-  const connectionHeader = requireValue(
-    document.querySelector<HTMLElement>(
-      '[data-testid="connection-dialog"] [data-slot="dialog-header"]',
-    ),
-  );
-  expectTextAlignsToStart(connectionHeader);
   expect(
     document.querySelector(
       '[data-testid="connection-dialog"] [data-slot="dialog-close"]',
@@ -6427,8 +5976,8 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   await closeLayerWithEscape("connection-dialog");
 
   await connectWithDefaults();
-  expectAppHeader();
-  expectResponsiveTabMenu();
+  expectHeaderNavigation();
+  expectVisibleSectionNavigation();
   expectNoHorizontalOverflow();
 
   await selectSectionTab("home");
@@ -6446,10 +5995,6 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   await selectSectionTab("devices");
   await expect.element(page.getByTestId("machines-workbench")).toBeVisible();
   await expect.element(page.getByTestId("machine-list")).toBeVisible();
-  const deviceCell = requireValue(
-    document.querySelector<HTMLElement>('[data-testid="machine-list"] td'),
-  );
-  expectTextAlignsToStart(deviceCell);
   expect(
     document
       .querySelector('[data-testid^="device-owner-link-"] bdi')
@@ -6460,7 +6005,6 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
       .querySelector('[data-testid^="device-pending-route-"] bdi')
       ?.getAttribute("dir"),
   ).toBe("ltr");
-  expectNativeSelectIconMirrorsInlineEnd("machine-filter");
   // Addresses and CIDRs keep left-to-right order inside the right-to-left page ("0/::" symptom).
   expectTestIdNetworkTokensLtr("machine-list");
   await page.getByTestId("device-detail-link-1").click();
@@ -6473,20 +6017,15 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
         .getByRole("button", { name: "إغلاق" }),
     )
     .toBeVisible();
-  expectDialogMirrorsInlineEnd("device-detail-dialog");
   await closeLayerWithEscape("device-detail-dialog");
   await page.getByTestId("add-device-toggle").click();
   await expect.element(page.getByTestId("add-device-dialog")).toBeVisible();
-  expectDialogMirrorsInlineEnd("add-device-dialog");
   await page.getByTestId("add-client-device").click();
   await expect.element(page.getByTestId("device-setup-flow")).toBeVisible();
-  expectDialogMirrorsInlineEnd("add-device-dialog");
   await page.getByTestId("add-device-next").click();
   await expect.element(page.getByTestId("setup-auth-key-step")).toBeVisible();
-  expectSwitchThumbMirrorsCurrentState("setup-reusable");
   await page.getByTestId("setup-reusable").click();
   await expect.element(page.getByTestId("setup-reusable")).toBeChecked();
-  expectSwitchThumbMirrorsCurrentState("setup-reusable");
   await closeLayerWithEscape("add-device-dialog");
   expectNoHorizontalOverflow();
 
@@ -6494,7 +6033,6 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   await expect.element(page.getByTestId("user-table")).toBeVisible();
   await page.getByTestId("open-create-member").click();
   await expect.element(page.getByTestId("member-create-dialog")).toBeVisible();
-  expectDialogMirrorsInlineEnd("member-create-dialog");
   await closeLayerWithEscape("member-create-dialog");
   expectNoHorizontalOverflow();
 
@@ -6505,12 +6043,12 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
       .querySelector('[data-testid="invite-table"] code')
       ?.getAttribute("dir"),
   ).toBe("ltr");
-  expectNativeSelectIconMirrorsInlineEnd("invite-filter");
   await page.getByTestId("open-create-invite").click();
   await expect.element(page.getByTestId("invite-create-dialog")).toBeVisible();
-  expectDialogMirrorsInlineEnd("invite-create-dialog");
   await page.getByTestId("invite-expiration").click();
-  expectNativeSelectIconMirrorsInlineEnd("invite-expiration-hour");
+  await expect
+    .element(page.getByTestId("invite-expiration-hour"))
+    .toBeVisible();
   expectNoHorizontalOverflow();
   await closeLayerWithEscape("invite-create-dialog");
 
@@ -6520,25 +6058,14 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   expectTestIdNetworkTokensLtr("route-node-2", 3);
   await page.getByTestId("approve-route-2-0").click();
   await expect.element(page.getByTestId("approve-route-dialog")).toBeVisible();
-  const alertHeader = requireValue(
-    document.querySelector<HTMLElement>('[data-slot="alert-dialog-header"]'),
-  );
-  expectTextAlignsToStart(alertHeader);
   await page.getByTestId("approve-route-cancel").click();
   await expect
     .element(page.getByTestId("approve-route-dialog"))
     .not.toBeInTheDocument();
-  // The revoke dialog mirrors too and fits a phone; it is cancelled, never confirmed.
   await page
     .getByTestId(`revoke-route-2-${approvedRouteIndex("2", "10.42.0.0/16")}`)
     .click();
   await expect.element(page.getByTestId("revoke-route-dialog")).toBeVisible();
-  const revokeHeader = requireValue(
-    document.querySelector<HTMLElement>(
-      '[data-testid="revoke-route-dialog"] [data-slot="alert-dialog-header"]',
-    ),
-  );
-  expectTextAlignsToStart(revokeHeader);
   expectTestIdNetworkTokensLtr("revoke-route-dialog");
   await page.viewport(390, 844);
   expectDialogFitsViewport("revoke-route-dialog");
@@ -6554,12 +6081,11 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   await expect.element(page.getByTestId("device-labels-section")).toBeVisible();
   await page.getByTestId("new-device-label").click();
   await expect.element(page.getByTestId("tag-detail-dialog")).toBeVisible();
-  expectDialogMirrorsInlineEnd("tag-detail-dialog");
   await closeLayerWithEscape("tag-detail-dialog");
   expectNoHorizontalOverflow();
 
   await page.viewport(390, 844);
-  expectResponsiveTabMenu();
+  expectVisibleSectionNavigation();
   for (const section of [
     "home",
     "devices",
@@ -6573,7 +6099,7 @@ test("adapts every main page and shared controls for Arabic RTL", async () => {
   }
 });
 
-test("mirrors the access policy workspace in Arabic", async () => {
+test("keeps the access policy workspace available after switching to Arabic", async () => {
   await renderLogin();
   await connectWithDefaults();
 
@@ -6584,27 +6110,6 @@ test("mirrors the access policy workspace in Arabic", async () => {
 
   expect(document.documentElement.lang).toBe("ar");
   expect(document.documentElement.dir).toBe("rtl");
-
-  const teams = document.querySelector<HTMLElement>(
-    '[data-testid="teams-section"]',
-  );
-  const labels = document.querySelector<HTMLElement>(
-    '[data-testid="device-labels-section"]',
-  );
-  expect(teams).toBeTruthy();
-  expect(labels).toBeTruthy();
-
-  const teamsRect = teams?.getBoundingClientRect();
-  const labelsRect = labels?.getBoundingClientRect();
-  expect(teamsRect?.bottom ?? 0).toBeLessThanOrEqual(
-    (labelsRect?.top ?? 0) + 1,
-  );
-  expect(
-    Math.abs((teamsRect?.left ?? 0) - (labelsRect?.left ?? 0)),
-  ).toBeLessThan(2);
-  expect(
-    Math.abs((teamsRect?.right ?? 0) - (labelsRect?.right ?? 0)),
-  ).toBeLessThan(2);
   expectNoHorizontalOverflow();
 
   await page.viewport(390, 844);
@@ -7517,9 +7022,6 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
       (operationId) => !observedApiContractOperationIds.has(operationId),
     ),
   ).toEqual([]);
-  expect(
-    requiredUiOperationIds.length + requiredApiContractOperationIds.length,
-  ).toBe(Object.keys(endpoints).length);
 }, 120_000);
 
 test("keeps policy cards mounted when unchanged server policy is refreshed", async () => {

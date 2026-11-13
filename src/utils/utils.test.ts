@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import type { HeadscaleNode, HeadscaleUser, PreAuthKey } from "@/api/contracts";
+import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import { csvCell, downloadCsv } from "./csv";
 import { DATE_TIME_FORMAT, formatDate } from "./format";
 import {
@@ -9,18 +9,7 @@ import {
   nodeRevocationTargets,
   nodeStatusLabel,
 } from "./node";
-import {
-  apiKeyStatusClass,
-  approvedRouteClass,
-  deviceTagClass,
-  isExitRoute,
-  keyEphemeralClass,
-  keyKindClass,
-  keyStatusClass,
-  keyTagClass,
-  nodeStatusClass,
-  pendingRouteClass,
-} from "./status-class";
+import { isExitRoute } from "./status-class";
 import { normalizedBaseUrl, parseList, shortSecret } from "./strings";
 import { hasVisibleUser, isTagManagedDeviceUser, userLabel } from "./user";
 
@@ -38,18 +27,6 @@ function buildNode(overrides: Partial<HeadscaleNode> = {}): HeadscaleNode {
     availableRoutes: [],
     subnetRoutes: [],
     tags: [],
-    ...overrides,
-  };
-}
-
-function buildKey(overrides: Partial<PreAuthKey> = {}): PreAuthKey {
-  return {
-    id: "key-a",
-    key: "test-key",
-    reusable: false,
-    ephemeral: false,
-    used: false,
-    aclTags: [],
     ...overrides,
   };
 }
@@ -320,100 +297,11 @@ describe("nodeRevocationTargets", () => {
   });
 });
 
-describe("status classes", () => {
-  test("maps api-key status to expired or active", () => {
-    expect(
-      apiKeyStatusClass({
-        expiration: new Date(Date.now() - 60_000).toISOString(),
-      }),
-    ).toContain("rose");
-    expect(
-      apiKeyStatusClass({
-        expiration: new Date(Date.now() + 3_600_000).toISOString(),
-      }),
-    ).toContain("emerald");
-    expect(apiKeyStatusClass({ expiration: null })).toContain("emerald");
-    expect(apiKeyStatusClass({})).toContain("emerald");
-  });
-
+describe("exit routes", () => {
   test("recognizes both exit-route forms", () => {
     expect(isExitRoute("0.0.0.0/0")).toBe(true);
     expect(isExitRoute("::/0")).toBe(true);
     expect(isExitRoute("10.0.0.0/24")).toBe(false);
-  });
-
-  test("maps all node states", () => {
-    expect(nodeStatusClass(buildNode({ online: true }))).toContain("emerald");
-    expect(nodeStatusClass(buildNode())).toContain("slate");
-    expect(
-      nodeStatusClass(
-        buildNode({ expiry: new Date(Date.now() - 60_000).toISOString() }),
-      ),
-    ).toContain("rose");
-  });
-
-  test("used reusable keys remain available; expiry and unreadable expiry are not hidden by usage history", () => {
-    expect(keyStatusClass(buildKey({ used: true, reusable: true }))).toContain(
-      "emerald",
-    );
-    expect(
-      keyStatusClass(
-        buildKey({
-          used: true,
-          reusable: true,
-          expiration: "2000-01-01T00:00:00Z",
-        }),
-      ),
-    ).toContain("rose");
-    expect(
-      keyStatusClass(
-        buildKey({
-          used: true,
-          reusable: false,
-          expiration: "2000-01-01T00:00:00Z",
-        }),
-      ),
-    ).toContain("rose");
-    expect(
-      keyStatusClass(buildKey({ used: false, expiration: "unreadable" })),
-    ).toContain("amber");
-  });
-
-  test("maps auth-key status and kind", () => {
-    expect(keyStatusClass(buildKey({ used: true }))).toContain("sky");
-    expect(
-      keyStatusClass(
-        buildKey({ expiration: new Date(Date.now() - 60_000).toISOString() }),
-      ),
-    ).toContain("rose");
-    expect(keyStatusClass(buildKey())).toContain("emerald");
-    expect(keyKindClass(buildKey({ reusable: true }))).toContain("teal");
-    expect(keyKindClass(buildKey())).toContain("violet");
-    expect(keyEphemeralClass()).toContain("amber");
-  });
-
-  test("distinguishes approved, pending subnet, and pending exit routes", () => {
-    expect(approvedRouteClass()).toContain("emerald");
-    expect(pendingRouteClass("10.0.0.0/24")).toContain("amber");
-    expect(pendingRouteClass("::/0")).toContain("rose");
-  });
-
-  test("maps device tag keywords and falls back for unknown tags", () => {
-    expect(deviceTagClass("tag:server")).toContain("cyan");
-    expect(deviceTagClass("tag:workstation")).toContain("fuchsia");
-    expect(deviceTagClass("tag:desktop")).toContain("fuchsia");
-    expect(deviceTagClass("tag:mobile")).toContain("pink");
-    expect(deviceTagClass("tag:phone")).toContain("pink");
-    expect(deviceTagClass("tag:db")).toContain("indigo");
-    expect(deviceTagClass("tag:database")).toContain("indigo");
-    expect(deviceTagClass("tag:unknown")).toContain("emerald");
-  });
-
-  test("uses the narrower auth-key tag palette", () => {
-    expect(keyTagClass("tag:server")).toContain("cyan");
-    expect(keyTagClass("tag:mobile")).toContain("pink");
-    expect(keyTagClass("tag:db")).toContain("indigo");
-    expect(keyTagClass("tag:desktop")).toContain("slate");
   });
 });
 

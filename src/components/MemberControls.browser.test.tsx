@@ -381,8 +381,8 @@ test("assignment rows are checkboxes whose state flips on click and Space and wh
   await expect.element(beta).toHaveAttribute("aria-checked", "false");
 });
 
-// 16px prevents iOS from zooming on focus; desktop keeps the compact size.
-test("application and time selects use 16px text at narrow widths and 14px on desktop", async () => {
+// 16px 字号用于避免 iOS 在控件聚焦时自动缩放。
+test("application and time selects keep 16px text at narrow widths", async () => {
   await render(
     <>
       <NativeSelect aria-label="Pick" />
@@ -397,8 +397,6 @@ test("application and time selects use 16px text at narrow widths and 14px on de
   try {
     await page.viewport(360, 640);
     await expect.poll(sizes).toEqual(["16px", "16px", "16px"]);
-    await page.viewport(1024, 768);
-    await expect.poll(sizes).toEqual(["14px", "14px", "14px"]);
   } finally {
     await page.viewport(1280, 720);
   }

@@ -651,9 +651,6 @@ test("a submit in flight locks every control", async () => {
   await expect.element(page.getByTestId("cancel-create-invite")).toBeDisabled();
   await expect.element(page.getByTestId("invite-tags-search")).toBeDisabled();
   await expect.element(page.getByTestId("invite-expiration")).toBeDisabled();
-  expect(
-    document.querySelector('[data-testid="create-invite"] .animate-spin'),
-  ).not.toBeNull();
 });
 
 test("explicit add trims a free tag while Enter only searches and preserves the selected list", async () => {

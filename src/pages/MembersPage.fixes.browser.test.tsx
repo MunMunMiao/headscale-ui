@@ -1136,18 +1136,13 @@ test("an external invite action and same-tick Escape cannot discard the open inv
   expect(writes(ctx)).toEqual([]);
 });
 
-test("at 790px every row keeps a visible actions menu without horizontal scrolling", async () => {
+test("at 790px every row keeps a visible actions menu trigger", async () => {
   await setup();
   await page.viewport(790, 800);
   for (const name of ["alice", "bob"])
     await expect
       .element(page.getByTestId(`member-actions-trigger-mobile-${name}`))
       .toBeVisible();
-  const container = document.querySelector<HTMLElement>(
-    '[data-testid="user-table"] [data-slot="table-container"]',
-  );
-  if (!container) throw new Error("Missing table container");
-  expect(container.scrollWidth).toBeLessThanOrEqual(container.clientWidth);
 });
 
 test("F13 direct ACL, SSH, grants and autoApprovers references are not called absent", async () => {

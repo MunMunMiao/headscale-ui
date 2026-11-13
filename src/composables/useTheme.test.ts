@@ -187,7 +187,6 @@ describe("useTheme", () => {
 
     const theme = createThemeStore();
     expect(theme.getSnapshot().colorMode).toBe("dark");
-    expect(theme.themeModes).toEqual(["light", "dark", "auto"]);
 
     await theme.setTheme("auto");
     expect(toggles.at(-1)).toBe(true);

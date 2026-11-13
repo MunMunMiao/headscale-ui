@@ -1298,26 +1298,10 @@ test("a running delete keeps its dialog until the failure is reported there", as
     .not.toBeInTheDocument();
 });
 
-test("centers a single profile card under the heading and keeps long names readable", async () => {
+test("preserves long profile names and prevents edits while saving", async () => {
   const long =
     "Production headscale (eu-west) with a very long descriptive name";
   const ctx = await setup({ profiles: [profile({ name: long })] });
-  const center = (element: Element) => {
-    const box = element.getBoundingClientRect();
-    return box.left + box.width / 2;
-  };
-  const picker = page.getByTestId("profile-picker").element();
-  const cards = [...picker.children].map((child) =>
-    child.getBoundingClientRect(),
-  );
-  const left = Math.min(...cards.map((box) => box.left));
-  const right = Math.max(...cards.map((box) => box.right));
-  expect(
-    Math.abs(
-      (left + right) / 2 -
-        center(page.getByRole("heading", { level: 1 }).element()),
-    ),
-  ).toBeLessThan(2);
   expect(document.querySelector(`[title="${long}"]`)?.textContent).toBe(long);
   await page.getByTestId(`edit-profile-${long}`).click();
   await expect.element(page.getByRole("dialog")).toHaveAttribute("data-open");
@@ -1622,17 +1606,6 @@ test("API key help and copying never submit a valid parent form or erase its dra
     exact: true,
   });
   await help.click();
-  const dialog = page.getByRole("dialog", {
-    name: "How to get an API key",
-    exact: true,
-  });
-  const bounds = dialog.element().getBoundingClientRect();
-  expect(
-    Math.abs(bounds.left + bounds.width / 2 - window.innerWidth / 2),
-  ).toBeLessThan(2);
-  expect(
-    Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2),
-  ).toBeLessThan(2);
   await page.getByTestId("api-key-command-copy").click();
   await expect
     .element(page.getByTestId("api-key-command-copy"))

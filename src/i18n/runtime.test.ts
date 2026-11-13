@@ -1,6 +1,5 @@
 import { expect, test, vi } from "vitest";
 import { SUPPORTED_LOCALES } from "./locales";
-import { englishCopy } from "./product-copy";
 import { getLocaleI18n, i18n, loadLocale } from "./runtime";
 
 // A Vue composer or an unactivated Lingui runtime cannot serve the React bootstrap.
@@ -26,7 +25,6 @@ test("deduplicates pending catalogs and loads every supported translator without
   expect(getLocaleI18n("ar")._("product.missing-test")).toBe(
     "product.missing-test",
   );
-  expect(englishCopy.nav.devices).toBe("Machines");
 });
 
 test("removes a failed pending load so a later request can retry", async () => {

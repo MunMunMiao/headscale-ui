@@ -161,13 +161,16 @@ test("F10 ordinary dirty policy protects unload without blocking SPA navigation 
     expect(unloadIsPrevented()).toBe(true);
     await id("section-devices").click();
     await expect.poll(() => router.state.location.pathname).toBe("/devices");
+    // pathname 先更新，导航的 onLoad 随后才触发快照刷新。
+    await expect.element(id("machines-empty")).toBeVisible();
+    await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
     expect(session.policy.isPolicyDirty).toBe(true);
     expect(unloadIsPrevented()).toBe(true);
     const saved = await createPolicySave(session).savePolicy(
       "save-policy",
       session.policy.policyDesignerState,
     );
-    expect(saved.ok).toBe(true);
+    expect(saved.ok, session.feedback.actionError("save-policy")).toBe(true);
     expect(unloadIsPrevented()).toBe(false);
     session.policy.commitState({
       ...session.policy.policyDesignerState,
@@ -306,39 +309,6 @@ test.each([1280, 375])(
   },
 );
 
-test.each([
-  [1280, 900],
-  [375, 500],
-])(
-  "server settings stays centered across tabs at %ix%i",
-  async (width, height) => {
-    await page.viewport(width, height);
-    await setup();
-    await openSettings();
-    for (const tab of [
-      "server-tab-api-keys",
-      "server-tab-maintenance",
-      "server-tab-security",
-    ]) {
-      await id(tab).click();
-      await Promise.all(
-        document.getAnimations().map((animation) => animation.finished),
-      );
-      const dialog = id("server-settings-dialog").element();
-      const rect = dialog.getBoundingClientRect();
-      expect(
-        Math.abs(rect.left + rect.width / 2 - width / 2),
-      ).toBeLessThanOrEqual(1);
-      expect(
-        Math.abs(rect.top + rect.height / 2 - height / 2),
-      ).toBeLessThanOrEqual(1);
-      expect(rect.top).toBeGreaterThanOrEqual(16);
-      expect(rect.bottom).toBeLessThanOrEqual(height - 16);
-      expect(getComputedStyle(dialog).overflowY).toBe("auto");
-    }
-  },
-);
-
 test("a failed candidate on the login page leaves the original connection available", async () => {
   const ctx = await setup();
   const original = ctx.session.auth.getSessionSnapshot();
@@ -374,15 +344,10 @@ test("a failed candidate on the login page leaves the original connection availa
   await expect.element(id("profile-menu")).toMatchTextContent("Test server");
 });
 
-test("the narrow header keeps its logo and controls visible without overlap", async () => {
+test("the narrow header keeps the profile menu reachable with settings and logout", async () => {
   await page.viewport(375, 812);
   await setup();
-  const logo = id("app-logo").element().getBoundingClientRect();
-  const github = id("github-repository-link").element().getBoundingClientRect();
   const profile = id("profile-menu-trigger").element().getBoundingClientRect();
-  expect(logo.left).toBeGreaterThanOrEqual(0);
-  expect(logo.right).toBeLessThanOrEqual(github.left);
-  expect(github.right).toBeLessThanOrEqual(profile.left);
   expect(profile.right).toBeLessThanOrEqual(375);
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(375);
   await expect.element(id("profile-menu-trigger")).toBeVisible();

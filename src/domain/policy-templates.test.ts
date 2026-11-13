@@ -50,12 +50,6 @@ describe("policy templates", () => {
   });
 
   test("builds every supported template with independent policy objects", () => {
-    expect(POLICY_TEMPLATES.map((template) => template.id)).toEqual([
-      "self-only",
-      "small-team",
-      "split-env",
-    ]);
-
     const selfOnly = POLICY_TEMPLATES[0].build();
     expect(
       selfOnly.rules?.map(({ source, destination, ports }) => ({

@@ -22,6 +22,18 @@ SSH execution, network forwarding, server database layout, background reclamatio
 - User-visible copy goes through Lingui. After message changes, run `bun run i18n:extract`, give every locale a translation (`en-US` is the source; there are 11 locales), then `bun run i18n:compile`. `bun run i18n:check` fails if catalogs drift, a translation is missing, or compile rewrites files.
 - A dependency change updates `bun.lock`. Stay on stable versions, except the pinned `effect` release.
 
+## Test behavior
+
+Read [testing-business-behavior](.agents/skills/testing-business-behavior/SKILL.md) when writing, reviewing, or cleaning up tests.
+
+- Exercise production code. Mount components and drive their public inputs, user interactions, and events; test already-independent functions directly. Do not expose internals or extract production logic only to make it testable.
+- Keep assertions on requests, validation, permissions, state changes, business values, feedback, and recovery. DOM presence, text, and existing classes can observe functional state; they are not automatically appearance checks. Preserve accessibility and privacy behavior, including screenshot redaction.
+- Do not assert decorative styles, dimensions, layout, visual snapshots, static copy alone, or source/configuration structure. Reading source and checking strings, ASTs, hashes, or file inventories does not exercise behavior. Functional output from an executed build plugin or script is different.
+- Keep the existing CI artifact-publication security policy checks in `scripts/deployment-config.test.ts`: upload allowlist, failure-only publication, pinned action, and short retention. This narrow declarative-policy exception does not permit source-shape checks or replace runtime screenshot-redaction tests.
+- In mixed tests, remove only out-of-scope assertions. Delete a case only when it has no behavioral assertion left, and a file only when it has no valid cases. Remove unused helpers; do not leave empty tests or assertion-free calls just to retain coverage.
+- Failure is not a deletion reason. Do not use skips, focused runs, wider exclusions, lower thresholds, disabled isolation, swallowed errors, or weaker assertions to make the final gate pass. A cleanup does not authorize product changes.
+- Keep the existing `unit`, `browser`, and `toolchain` projects in `vitest.config.ts`, the coverage gate, Lingui checks, and the disposable Headscale E2E fixture. Browser behavior runs in real Chromium; do not move failing component tests to another runtime to hide failures.
+
 ## Before the change is done
 
 Run these locally, in this order. Each command must exit 0 by itself. An earlier pass does not cover a later command.

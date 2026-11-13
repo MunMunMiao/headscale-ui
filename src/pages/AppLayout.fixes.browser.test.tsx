@@ -106,14 +106,6 @@ async function openSettings() {
   await expect.element(id("server-settings-dialog")).toBeVisible();
 }
 
-async function finishAnimations() {
-  await Promise.all(
-    document
-      .getAnimations()
-      .map((animation) => animation.finished.catch(() => {})),
-  );
-}
-
 /** Captures the 30 s snapshot poll so a test can run one tick without waiting for it. */
 function capturePolls() {
   const polls: Array<{ tick: () => void; timer: unknown }> = [];
@@ -357,9 +349,6 @@ test("an API key expiring in open settings updates its badge and open actions wi
     .element(id("api-key-status-expiring-key"))
     .toHaveTextContent("Expired");
   await expect
-    .element(id("api-key-status-expiring-key"))
-    .toHaveClass("text-rose-700");
-  await expect
     .element(id("expire-api-key-expiring-key"))
     .not.toBeInTheDocument();
   await expect.element(id("delete-api-key-expiring-key")).toBeVisible();
@@ -385,9 +374,6 @@ test("an API key expiring while settings stay open updates its status and action
   await expect
     .element(id("api-key-status-short-lived"))
     .toHaveTextContent("Expired");
-  await expect
-    .element(id("api-key-status-short-lived"))
-    .toHaveClass("text-rose-700");
   await id("api-key-actions-trigger-short-lived").click();
   await expect
     .element(id("expire-api-key-short-lived"))
@@ -502,22 +488,11 @@ test("backfill confirms the concrete action and reports when nothing changed", a
     .not.toMatchTextContent("Ready to save");
 });
 
-test("switching server settings tabs keeps the dialog centered", async () => {
+test("the maintenance tab reveals server maintenance settings", async () => {
   await setup();
   await openSettings();
-  await finishAnimations();
-  const dialogCenter = () => {
-    const rect = id("server-settings-dialog").element().getBoundingClientRect();
-    return rect.top + rect.height / 2;
-  };
-  expect(dialogCenter()).toBeCloseTo(window.innerHeight / 2, 0);
   await id("server-tab-maintenance").click();
   await expect.element(id("server-maintenance-settings")).toBeVisible();
-  await finishAnimations();
-  expect(dialogCenter()).toBeCloseTo(window.innerHeight / 2, 0);
-  await id("server-tab-security").click();
-  await finishAnimations();
-  expect(dialogCenter()).toBeCloseTo(window.innerHeight / 2, 0);
 });
 
 test("a mouse click or Enter opens a profile submenu without waiting for hover", async () => {

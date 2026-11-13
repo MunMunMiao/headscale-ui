@@ -80,6 +80,28 @@ function Dialog({ onValue }: I18nProbeProps) {
 }
 
 describe("locale integration", () => {
+  test.each([
+    ["en-US", "ltr"],
+    ["zh-Hans", "ltr"],
+    ["zh-Hant-TW", "ltr"],
+    ["zh-Hant-HK", "ltr"],
+    ["ja-JP", "ltr"],
+    ["ko-KR", "ltr"],
+    ["fr-FR", "ltr"],
+    ["ru-RU", "ltr"],
+    ["es-ES", "ltr"],
+    ["it-IT", "ltr"],
+    ["ar", "rtl"],
+  ] as const)(
+    "updates document language and direction when selecting %s",
+    async (locale, direction) => {
+      await setLocale(locale === "ar" ? "en-US" : "ar");
+      await setLocale(locale);
+      expect(document.documentElement.lang).toBe(locale);
+      expect(document.documentElement.dir).toBe(direction);
+    },
+  );
+
   test("usability: a peer locale hint adopts only the stored preference without writing it back", async () => {
     const peer = new BroadcastChannel("headscale-ui-preferences");
     try {

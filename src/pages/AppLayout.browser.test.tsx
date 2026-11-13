@@ -957,14 +957,8 @@ test("API key rows show an Active or Expired status badge", async () => {
     .element(id("api-key-status-old-key"))
     .toHaveTextContent("Expired");
   await expect
-    .element(id("api-key-status-old-key"))
-    .toHaveClass("text-rose-700");
-  await expect
     .element(id("api-key-status-new-key"))
     .toHaveTextContent("Active");
-  await expect
-    .element(id("api-key-status-new-key"))
-    .toHaveClass("text-emerald-700");
   await expect
     .element(page.getByRole("table", { name: "API keys" }))
     .toBeInTheDocument();

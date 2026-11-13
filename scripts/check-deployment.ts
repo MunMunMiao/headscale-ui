@@ -422,6 +422,30 @@ async function checkBrowser(
 }
 
 async function main() {
+  const context = join(temporary, "ignore-context");
+  const output = join(temporary, "ignore-output");
+  const excluded = [".superpowers/probe.txt", ".grok/probe.txt"];
+  await Bun.write(join(context, "Dockerfile"), "FROM scratch\nCOPY . /\n");
+  await Bun.write(
+    join(context, ".dockerignore"),
+    Bun.file(new URL("../.dockerignore", import.meta.url)),
+  );
+  await Bun.write(join(context, "application.txt"), "public-build-input");
+  for (const path of excluded)
+    await Bun.write(join(context, path), "private-tool-state-canary");
+  docker("build", "--output", `type=local,dest=${output}`, context);
+  assert.equal(
+    await Bun.file(join(output, "application.txt")).text(),
+    "public-build-input",
+  );
+  for (const path of excluded)
+    assert.equal(
+      await Bun.file(join(output, path)).exists(),
+      false,
+      `Docker build context must exclude ${path}`,
+    );
+  console.log("PASS Docker build context excludes local tool state");
+
   await stack.prepare();
   const connection = await stack.startHeadscale("a");
   let pristineBuild: string | undefined;

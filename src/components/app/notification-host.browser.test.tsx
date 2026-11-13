@@ -550,9 +550,6 @@ test("the root host keeps all limited toast data non-secret at a narrow RTL view
         .getByRole("button", { name: "Report failure", exact: true })
         .click();
     await expect.element(notification().first()).toBeVisible();
-    const rect = notifications().element().getBoundingClientRect();
-    expect(rect.left).toBeGreaterThanOrEqual(0);
-    expect(rect.right).toBeLessThanOrEqual(window.innerWidth);
     expect(
       document.querySelectorAll('[data-slot="toast"]:not([inert])'),
     ).toHaveLength(3);

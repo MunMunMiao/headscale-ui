@@ -1,31 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  HEADSCALE_UPSTREAM_VERSION,
-  NON_RPC_OPERATIONS,
-  routeKey,
-  swaggerRoutes,
-  UPSTREAM_RPCS,
-} from "../e2e/headscale-upstream";
-import * as endpoints from "../src/api/requests";
-
-test("the request module covers every pinned upstream RPC plus the non-RPC routes", () => {
-  expect(Object.keys(endpoints)).toHaveLength(
-    UPSTREAM_RPCS.length + NON_RPC_OPERATIONS.length,
-  );
-});
-
-test("pinned upstream routes are unique and the E2E fixture runs the pinned Headscale version", async () => {
-  const keys = UPSTREAM_RPCS.map(({ method, path }) => routeKey(method, path));
-  expect(new Set(keys).size).toBe(keys.length);
-  expect(UPSTREAM_RPCS.map(({ rpc }) => rpc)).toHaveLength(
-    new Set(UPSTREAM_RPCS.map(({ rpc }) => rpc)).size,
-  );
-  expect(
-    await Bun.file(
-      new URL("../e2e/docker-compose.yml", import.meta.url),
-    ).text(),
-  ).toContain(`headscale/headscale:${HEADSCALE_UPSTREAM_VERSION}`);
-});
+import { routeKey, swaggerRoutes } from "../e2e/headscale-upstream";
 
 test("normalizes swagger path parameters to the route key", () => {
   const document = {

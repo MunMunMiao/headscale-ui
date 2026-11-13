@@ -946,9 +946,6 @@ test("an expired unused key reads Expired and is found by searching for it", asy
   await expect
     .element(page.getByTestId("invite-status-3"))
     .toHaveTextContent("Expired");
-  expect(page.getByTestId("invite-status-3").element().className).toContain(
-    "rose",
-  );
   await expect
     .element(page.getByTestId("invite-status-1"))
     .toHaveTextContent("Ready");

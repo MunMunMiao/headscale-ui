@@ -46,7 +46,6 @@ test("the default manager announces a titled toast and keeps its action and clos
   await expect
     .element(notice)
     .toHaveAccessibleDescription("The new name is available to every client.");
-  expect(notice.element().querySelector('[data-slot="toast-icon"]')).toBeNull();
   await userEvent.keyboard("{F6}");
   await expect.element(notifications).toHaveFocus();
   await userEvent.keyboard("{Tab}{Tab}");
@@ -58,7 +57,6 @@ test("the default manager announces a titled toast and keeps its action and clos
   await userEvent.tab();
   const close = notice.getByRole("button", { name: "Close toast" });
   await expect.element(close).toHaveFocus();
-  await expect.element(close.element().querySelector("svg")).toBeVisible();
   expect(close.element().querySelector("svg")).toHaveAttribute(
     "aria-hidden",
     "true",
@@ -69,15 +67,15 @@ test("the default manager announces a titled toast and keeps its action and clos
 });
 
 test.each([
-  ["success", "lucide-circle-check"],
-  ["info", "lucide-info"],
-  ["warning", "lucide-triangle-alert"],
-  ["error", "lucide-octagon-x"],
-  ["loading", "lucide-loader-circle"],
-  ["custom", null],
+  "success",
+  "info",
+  "warning",
+  "error",
+  "loading",
+  "custom",
 ] as const)(
-  "a %s toast displays its own decorative status icon and dismisses on click",
-  async (type, iconClass) => {
+  "a %s toast announces its result and dismisses on click",
+  async (type) => {
     const manager = createToastManager();
     const closed = vi.fn();
     await render(
@@ -103,19 +101,10 @@ test.each([
     await expect
       .element(notice)
       .toHaveAccessibleDescription("Review this operation result.");
-    const icon = notice
-      .element()
-      .querySelector<HTMLElement>('[data-slot="toast-icon"]');
-    if (iconClass) {
-      await expect.element(icon).toBeVisible();
-      expect(icon?.querySelector("svg")).toHaveClass(iconClass);
-      expect(icon?.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-      if (type === "error")
-        expect(icon?.querySelector("svg")).toHaveClass("text-destructive");
-      if (type === "loading")
-        expect(icon?.querySelector("svg")).toHaveClass("animate-spin");
-    } else {
-      expect(icon).toBeNull();
+    if (type !== "custom") {
+      expect(
+        notice.element().querySelector('[data-slot="toast-icon"] svg'),
+      ).toHaveAttribute("aria-hidden", "true");
     }
     expect(
       notice.element().querySelector('[data-slot="toast-action"]'),
@@ -143,27 +132,22 @@ function ComposedToasts({ onRetry }: { onRetry: () => void }) {
         Deploy changes
       </button>
       <ToastPortal>
-        <ToastViewport
-          aria-label="Deployment notices"
-          className="custom-viewport"
-        >
+        <ToastViewport aria-label="Deployment notices">
           {manager.toasts.map((item) => (
-            <Toast key={item.id} toast={item} className="custom-toast">
-              <ToastContent className="custom-content">
+            <Toast key={item.id} toast={item}>
+              <ToastContent>
                 <div>
-                  <ToastTitle className="custom-title" />
-                  <ToastDescription className="custom-description" />
+                  <ToastTitle />
+                  <ToastDescription />
                 </div>
                 <ToastAction
                   render={<button type="button" />}
-                  className="custom-action"
                   onClick={onRetry}
                 >
                   Retry deployment
                 </ToastAction>
                 <ToastClose
                   render={<button type="button" />}
-                  className="custom-close"
                   aria-label="Dismiss deployment notice"
                 >
                   Dismiss
@@ -193,24 +177,14 @@ test("composed primitives retain custom rendering, descriptions, actions and clo
   await expect
     .element(notice)
     .toHaveAccessibleDescription("Retry after checking the connection.");
-  await expect.element(viewport).toHaveClass("custom-viewport");
-  await expect.element(notice).toHaveClass("custom-toast");
-  for (const slot of ["content", "title", "description"]) {
-    expect(
-      notice.element().querySelector(`[data-slot="toast-${slot}"]`),
-    ).toHaveClass(`custom-${slot}`);
-  }
   await notice.hover();
   const action = notice.getByRole("button", { name: "Retry deployment" });
-  await expect.element(action).toHaveClass("custom-action");
   await action.click();
   expect(retry).toHaveBeenCalledOnce();
   const close = notice.getByRole("button", {
     name: "Dismiss deployment notice",
   });
-  await expect.element(close).toHaveClass("custom-close");
   await expect.element(close).toHaveTextContent("Dismiss");
-  expect(close.element().querySelector("svg")).toBeNull();
   await close.click();
   await expect.element(notice).not.toBeInTheDocument();
 });
