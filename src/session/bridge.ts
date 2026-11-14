@@ -29,7 +29,7 @@ import {
   type SessionFailureKind,
   type SessionIdentity,
   type SessionResult,
-  workerMessage,
+  WorkerMessage,
 } from "./types";
 
 /** The fields every build's hello carries, read before anything else a Worker of another build sends. */
@@ -61,6 +61,16 @@ export interface SessionBridgeOptions {
 }
 
 export function createSessionBridge(options: SessionBridgeOptions) {
+  function isIncompatibleHello(data: unknown): boolean {
+    const [err, stamp] = struct.parse(helloStamp, data);
+    if (err) return false;
+    return (
+      stamp.protocolVersion !== SESSION_PROTOCOL_VERSION ||
+      stamp.storageVersion !== options.storageVersion ||
+      stamp.buildId !== options.buildId
+    );
+  }
+
   let snapshot: SessionBridgeSnapshot = {
     status: "connecting",
     workerId: null,
@@ -356,14 +366,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
         if (port !== current) return;
         const data: unknown = Reflect.get(event, "data");
         // Another build may shape the rest of its messages differently: compare the build first.
-        const [, stamp] = struct.parse(helloStamp, data);
-        if (
-          hello &&
-          stamp &&
-          (stamp.protocolVersion !== SESSION_PROTOCOL_VERSION ||
-            stamp.storageVersion !== options.storageVersion ||
-            stamp.buildId !== options.buildId)
-        ) {
+        if (hello && isIncompatibleHello(data)) {
           hello.resolve({ ok: false, error: { kind: "reload-required" } });
           hello = null;
           disconnect();
@@ -375,8 +378,8 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           });
           return undefined;
         }
-        const [invalid, message] = struct.parse(workerMessage, data);
-        if (invalid) return unavailable();
+        const [err, message] = struct.parse(WorkerMessage, data);
+        if (err) return unavailable();
         if (message.type === "hello") {
           if (
             !hello ||
@@ -428,7 +431,7 @@ export function createSessionBridge(options: SessionBridgeOptions) {
           deferredReset = message.version;
           deliverReset();
         } else {
-          // workerMessage admits only these six types, so this is profiles-changed.
+          // WorkerMessage admits only these six types, so this is profiles-changed.
           for (const listener of profileListeners) listener();
         }
         return undefined;

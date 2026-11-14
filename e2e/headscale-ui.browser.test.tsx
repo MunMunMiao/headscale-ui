@@ -1,11 +1,14 @@
-import type { Infer } from "@defjs/core";
 import { createBrowserHistory, RouterProvider } from "@tanstack/react-router";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 import { cleanup, render } from "vitest-browser-react";
 import { SessionProviders } from "@/AppProviders";
-import { type apiKey, normalizeHeadscaleNode } from "@/api/contracts";
-import { type Execute, readHealth, readPolicy } from "@/api/snapshot";
+import { type ApiKey, normalizeHeadscaleNode } from "@/api/contracts";
+import {
+  type Execute,
+  readHealth as readHealthResult,
+  readPolicy as readPolicyResult,
+} from "@/api/snapshot";
 import { prepareApplication, resetUnreadableVault } from "@/bootstrap";
 import ErrorScreen from "@/components/ErrorScreen";
 import { createSession, type Session } from "@/composables/session-context";
@@ -88,6 +91,18 @@ async function request<K extends EndpointName>(
   const result = await execute(command);
   if (!result.ok) throw new ApiError(result.error);
   return result.value;
+}
+
+async function readHealth(execute: Execute) {
+  const [err, health] = await readHealthResult(execute);
+  if (err) throw err;
+  return health;
+}
+
+async function readPolicy(execute: Execute) {
+  const [err, policy] = await readPolicyResult(execute);
+  if (err) throw err;
+  return policy;
 }
 
 async function expectHeadscaleGate(upstreamRequests = 1) {
@@ -6826,7 +6841,7 @@ test("exercises every supported Headscale v0.29.4 REST operation with determinis
     observedUiOperationIds,
   );
 
-  let lifecycleApiKey: Infer<typeof apiKey> | undefined;
+  let lifecycleApiKey: ApiKey | undefined;
   await expect
     .poll(async () => {
       lifecycleApiKey = (

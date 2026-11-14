@@ -1,4 +1,4 @@
-/** The defjs `operation` of each request in src/api/requests.ts, matched here by method and path. */
+/** Each request's `meta.operation` in src/api/requests.ts, matched here by method and path. */
 export type OperationId = (typeof operations)[number][0];
 
 export interface NetworkOperationCall {

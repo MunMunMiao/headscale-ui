@@ -1,4 +1,3 @@
-import type { Infer } from "@defjs/core";
 import { canonicalBaseUrl, connectionSettingsError } from "@/api/connection";
 import {
   encryptProfileKey,
@@ -32,11 +31,11 @@ import {
   type SessionExecutionContext,
   SessionFault,
 } from "./auth-session";
-import type { profileSaveInput } from "./protocol";
+import type { ProfileSaveInput } from "./protocol";
 import type { PublicSessionSnapshot, SessionResult } from "./types";
 import { ApiError } from "./types";
 
-export type ProfileSaveInput = Infer<typeof profileSaveInput>;
+export type { ProfileSaveInput } from "./protocol";
 
 /** An `api` kind without a code is not a session failure; keep the result inside the closed set. */
 const NON_API_KIND: Record<

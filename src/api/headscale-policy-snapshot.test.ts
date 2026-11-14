@@ -1,7 +1,15 @@
 import { serveFixture } from "@/test/fixture-server";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createFixtureHttp, fixtureExecute } from "@/test/dispatch-fixture";
-import { fetchSnapshot, readPolicy } from "./snapshot";
+import { ApiError } from "@/session/types";
+import { findErrorCause } from "@/utils/error-cause";
+import { type ApiResult, fetchSnapshot, readPolicy } from "./snapshot";
+
+async function value<T>(reading: Promise<ApiResult<T>>): Promise<T> {
+  const [err, result] = await reading;
+  if (err) throw err;
+  return result;
+}
 
 let server: ReturnType<typeof serveFixture>;
 let policyErrorMessage = "";
@@ -80,7 +88,7 @@ describe("Headscale policy snapshot", () => {
           revision: "1",
         }),
     });
-    expect(await readPolicy(client())).toEqual({
+    expect(await value(readPolicy(client()))).toEqual({
       policy: '{"acls":[]}',
       updatedAt: null,
       revision: "1",
@@ -90,7 +98,7 @@ describe("Headscale policy snapshot", () => {
   test("keeps snapshot loading when Headscale has no ACL policy yet", async () => {
     policyErrorMessage = "loading ACL from database: acl policy not found";
 
-    const snapshot = await fetchSnapshot(client());
+    const snapshot = await value(fetchSnapshot(client()));
 
     expect(snapshot.policy).toEqual({ policy: "" });
     expect(snapshot.users).toHaveLength(1);
@@ -102,7 +110,7 @@ describe("Headscale policy snapshot", () => {
     policyErrorMessage =
       'reading policy from path "": open : no such file or directory';
 
-    const snapshot = await fetchSnapshot(client());
+    const snapshot = await value(fetchSnapshot(client()));
 
     expect(snapshot.policy).toEqual({ policy: "", fileModeWithoutPath: true });
     expect(snapshot.users).toHaveLength(1);
@@ -121,11 +129,15 @@ describe("Headscale policy snapshot", () => {
     policyErrorStatus = status;
     policyErrorMessage = message;
 
-    await expect(fetchSnapshot(client())).rejects.toMatchObject({
+    const [err, snapshot] = await fetchSnapshot(client());
+    expect(
+      findErrorCause(err, (cause) => cause instanceof ApiError),
+    ).toMatchObject({
       code: "HTTP_STATUS",
       status,
       data: { message },
     });
+    expect(snapshot).toBeUndefined();
   });
 
   test.each(["database connectivity failed", "policy not found"])(
@@ -133,11 +145,15 @@ describe("Headscale policy snapshot", () => {
     async (message) => {
       policyErrorMessage = message;
 
-      await expect(fetchSnapshot(client())).rejects.toMatchObject({
+      const [err, snapshot] = await fetchSnapshot(client());
+      expect(
+        findErrorCause(err, (cause) => cause instanceof ApiError),
+      ).toMatchObject({
         code: "HTTP_STATUS",
         status: 500,
         data: { message },
       });
+      expect(snapshot).toBeUndefined();
     },
   );
 
@@ -149,10 +165,12 @@ describe("Headscale policy snapshot", () => {
           { status: 403 },
         ),
     });
-    await expect(readPolicy(client())).rejects.toMatchObject({
+    const [err, policy] = await readPolicy(client());
+    expect(err).toMatchObject({
       code: "HTTP_STATUS",
       status: 403,
       data: { code: 7, message: "acl policy not found" },
     });
+    expect(policy).toBeUndefined();
   });
 });

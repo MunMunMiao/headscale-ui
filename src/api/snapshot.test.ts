@@ -6,16 +6,100 @@ import { executeOperation } from "@/session/operation-dispatch";
 import type { ApiRequest, EndpointName } from "@/session/protocol";
 import { ApiError } from "@/session/types";
 import { testDouble } from "@/test/dom";
+import { findErrorCause } from "@/utils/error-cause";
 import {
   snapshotFixture,
   startSnapshotServer,
 } from "@/test-utils/headscale.test";
 import {
+  type ApiResult,
   type Execute,
   fetchSegment,
   fetchSnapshot,
+  readHealth,
   readPolicy,
 } from "./snapshot";
+
+test.each([
+  { name: "health", read: readHealth },
+  { name: "policy", read: readPolicy },
+])(
+  "$name returns an error-first tuple without throwing a normal API failure",
+  async ({ read }) => {
+    const gateway = testDouble<Execute>(async () => ({
+      ok: false,
+      error: {
+        kind: "api",
+        code: "HTTP_STATUS",
+        message: "forbidden",
+        status: 403,
+        data: { message: "permission denied" },
+      },
+    }));
+    const [err, data] = await read(gateway);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err).toMatchObject({
+      status: 403,
+      data: { message: "permission denied" },
+    });
+    expect(data).toBeUndefined();
+  },
+);
+
+test("an unexpected rejected gateway is retained as a cause in the public tuple", async () => {
+  const cause = new Error("gateway failed");
+  const gateway = testDouble<Execute>(async () => {
+    throw cause;
+  });
+  const [err, data] = await readHealth(gateway);
+  expect(err).toMatchObject({ message: "execute request", cause });
+  expect(data).toBeUndefined();
+  const [policyErr, policy] = await readPolicy(gateway);
+  expect(policyErr).toHaveProperty("cause", cause);
+  expect(policy).toBeUndefined();
+});
+
+test.each([
+  ["identity", "listUsers"],
+  ["snapshot", "listUsers"],
+  ["snapshot", "getPolicy"],
+] as const)(
+  "%s returns a required %s failure without waiting for unrelated pending reads",
+  async (scope, endpoint) => {
+    const pending = Promise.withResolvers<void>();
+    const f = fixture();
+    const calls: EndpointName[] = [];
+    const gateway = testDouble<Execute>(async (command: ApiRequest) => {
+      calls.push(command.endpoint);
+      if (command.endpoint === endpoint)
+        return { ok: false, error: { kind: "cancelled" } };
+      await pending.promise;
+      return { ok: true, value: f.values.get(command.endpoint) };
+    });
+    const reading =
+      scope === "identity"
+        ? fetchSegment(gateway, "identity")
+        : fetchSnapshot(gateway);
+    try {
+      const [err, data] = await reading;
+      expect(err).toBeInstanceOf(Error);
+      expect(err).toHaveProperty("cause");
+      expect(
+        findErrorCause(err, (cause) => cause instanceof ApiError),
+      ).toMatchObject({ kind: "cancelled" });
+      expect(data).toBeUndefined();
+      expect(calls).toHaveLength(scope === "identity" ? 3 : 7);
+    } finally {
+      pending.resolve();
+    }
+  },
+);
+
+async function value<T>(reading: Promise<ApiResult<T>>): Promise<T> {
+  const [err, result] = await reading;
+  if (err) throw err;
+  return result;
+}
 
 function fixture() {
   const snapshot = snapshotFixture();
@@ -46,7 +130,7 @@ test("starts exactly seven reads with one cancellation signal and assembles norm
   const result = fetchSnapshot(f.gateway, { signal });
   const started = [...f.calls];
   f.release.resolve();
-  const snapshot = await result;
+  const snapshot = await value(result);
   expect(started.map(({ endpoint }) => endpoint).toSorted()).toEqual([
     "getPolicy",
     "health",
@@ -69,12 +153,12 @@ test("starts exactly seven reads with one cancellation signal and assembles norm
 test("reads only the resources of the selected segment", async () => {
   const f = fixture();
   f.release.resolve();
-  expect(await fetchSegment(f.gateway, "identity")).toEqual({
+  expect(await value(fetchSegment(f.gateway, "identity"))).toEqual({
     users: f.snapshot.users,
     preAuthKeys: f.snapshot.preAuthKeys,
     apiKeys: f.snapshot.apiKeys,
   });
-  expect(await fetchSegment(f.gateway, "policy")).toEqual({
+  expect(await value(fetchSegment(f.gateway, "policy"))).toEqual({
     policy: f.snapshot.policy,
   });
   expect(f.calls.map(({ endpoint }) => endpoint).toSorted()).toEqual([
@@ -92,7 +176,7 @@ test("keeps optional lists empty and normalizes missing node and key arrays", as
   f.values.set("listNodes", { nodes: [{ id: "1", name: "node" }] });
   f.values.set("listPreAuthKeys", { preAuthKeys: [{ id: "1" }] });
   f.release.resolve();
-  const snapshot = await fetchSnapshot(f.gateway);
+  const snapshot = await value(fetchSnapshot(f.gateway));
   expect(snapshot.users).toEqual([]);
   expect(snapshot.apiKeys).toEqual([]);
   expect(snapshot.nodes[0]).toMatchObject({
@@ -105,8 +189,10 @@ test("keeps optional lists empty and normalizes missing node and key arrays", as
   expect(snapshot.preAuthKeys[0]?.aclTags).toEqual([]);
   f.values.set("listNodes", {});
   f.values.set("listPreAuthKeys", {});
-  expect(await fetchSegment(f.gateway, "fabric")).toMatchObject({ nodes: [] });
-  expect(await fetchSegment(f.gateway, "identity")).toMatchObject({
+  expect(await value(fetchSegment(f.gateway, "fabric"))).toMatchObject({
+    nodes: [],
+  });
+  expect(await value(fetchSegment(f.gateway, "identity"))).toMatchObject({
     preAuthKeys: [],
   });
 });
@@ -125,7 +211,7 @@ test("treats only Headscale's missing ACL policy error as an empty policy", asyn
       },
     },
   }));
-  expect(await readPolicy(gateway)).toEqual({ policy: "" });
+  expect(await value(readPolicy(gateway))).toEqual({ policy: "" });
 });
 
 test("reports file mode without a policy path as an empty annotated policy", async () => {
@@ -143,7 +229,7 @@ test("reports file mode without a policy path as an empty annotated policy", asy
       },
     },
   }));
-  expect(await readPolicy(gateway)).toEqual({
+  expect(await value(readPolicy(gateway))).toEqual({
     policy: "",
     fileModeWithoutPath: true,
   });
@@ -178,10 +264,9 @@ test.each([
       data,
     },
   }));
-  await expect(readPolicy(gateway)).rejects.toMatchObject({
-    code: "HTTP_STATUS",
-    status,
-  });
+  const [err, policy] = await readPolicy(gateway);
+  expect(err).toMatchObject({ code: "HTTP_STATUS", status });
+  expect(policy).toBeUndefined();
 });
 
 test("keeps policy nullable timestamp and extension fields", async () => {
@@ -190,7 +275,7 @@ test("keeps policy nullable timestamp and extension fields", async () => {
     ok: true,
     value: policy,
   }));
-  expect(await readPolicy(gateway)).toEqual(policy);
+  expect(await value(readPolicy(gateway))).toEqual(policy);
 });
 
 test.each(["listUsers", "listNodes", "getPolicy"] as const)(
@@ -202,9 +287,11 @@ test.each(["listUsers", "listNodes", "getPolicy"] as const)(
         ? { ok: false, error: { kind: "cancelled" } }
         : { ok: true, value: f.values.get(command.endpoint) },
     );
-    await expect(fetchSnapshot(gateway)).rejects.toMatchObject({
-      kind: "cancelled",
-    });
+    const [err, snapshot] = await fetchSnapshot(gateway);
+    expect(
+      findErrorCause(err, (cause) => cause instanceof ApiError),
+    ).toMatchObject({ kind: "cancelled" });
+    expect(snapshot).toBeUndefined();
   },
 );
 
@@ -226,7 +313,7 @@ test("the Worker dispatcher reads all seven resources through declared Defjs con
   );
   try {
     expect(
-      await fetchSnapshot(gateway, { signal: controller.signal }),
+      await value(fetchSnapshot(gateway, { signal: controller.signal })),
     ).toMatchObject(server.snapshot);
     expect(server.requests.toSorted()).toEqual([
       "GET /api/v1/apikey",
@@ -271,11 +358,14 @@ test("snapshot cancellation reaches all seven in-flight Defjs requests", async (
       ),
   );
   const pending = fetchSnapshot(gateway, { signal: controller.signal });
-  const outcome = pending.catch((error: unknown) => error);
   try {
     await arrived.promise;
     controller.abort();
-    expect(await outcome).toMatchObject({ kind: "cancelled" });
+    const [err, snapshot] = await pending;
+    expect(
+      findErrorCause(err, (cause) => cause instanceof ApiError),
+    ).toMatchObject({ kind: "cancelled" });
+    expect(snapshot).toBeUndefined();
     expect(count).toBe(7);
   } finally {
     release.resolve();
@@ -324,7 +414,7 @@ test.each([
   async ({ failures }) => {
     const f = fixture();
     const gateway = fabricGateway(f, failures);
-    const fabric = await fetchSegment(gateway, "fabric");
+    const fabric = await value(fetchSegment(gateway, "fabric"));
     expect(fabric.nodes).toHaveLength(2);
     if ("health" in failures) expect(fabric.health).toBeNull();
     else expect(fabric.health).toMatchObject({ serverReachable: true });
@@ -343,9 +433,8 @@ test.each([
     const f = fixture();
     f.values.set("version", { version: "0.28.0" });
     const gateway = fabricGateway(f, { listNodes: { code } });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [error, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
     expect(error).toBeInstanceOf(UnsupportedServerVersionError);
     expect(error).toMatchObject({ serverVersion: "0.28.0", cause: { code } });
   },
@@ -370,9 +459,9 @@ test.each([
         ? { version: { code: "HTTP_STATUS", status: 404 } }
         : {}),
     });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [err, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
+    const error = findErrorCause(err, (cause) => cause instanceof ApiError);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ code: "RES_STRUCT_MISMATCH" });
   },
@@ -388,9 +477,9 @@ test.each([
     const f = fixture();
     f.values.set("version", { version: "0.28.0" });
     const gateway = fabricGateway(f, { listNodes: failure });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [err, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
+    const error = findErrorCause(err, (cause) => cause instanceof ApiError);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject(failure);
   },

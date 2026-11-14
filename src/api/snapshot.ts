@@ -19,6 +19,8 @@ export type Execute = <K extends EndpointName>(
   options?: SessionRequestOptions,
 ) => Promise<SessionResult<ApiOutput<K>>>;
 
+export type ApiResult<T> = [Error, undefined] | [null, T];
+
 export type SnapshotSegment = "identity" | "fabric" | "policy";
 export const ALL_SEGMENTS: readonly SnapshotSegment[] = [
   "identity",
@@ -30,24 +32,46 @@ async function request<K extends EndpointName>(
   execute: Execute,
   command: ApiCommand<K>,
   options?: SessionRequestOptions,
-): Promise<ApiOutput<K>> {
-  const result = await execute(command, options);
-  if (!result.ok) throw new ApiError(result.error);
-  return result.value;
+): Promise<ApiResult<ApiOutput<K>>> {
+  try {
+    const result = await execute(command, options);
+    if (!result.ok) return [new ApiError(result.error), undefined];
+    return [null, result.value];
+  } catch (cause) {
+    return [new Error("execute request", { cause }), undefined];
+  }
+}
+
+/** Promise.all requires rejection to fail fast; only this aggregation adapter throws tuple failures. */
+async function required<T>(
+  step: string,
+  reading: Promise<ApiResult<T>>,
+): Promise<T> {
+  const [err, value] = await reading;
+  if (err) throw new Error(step, { cause: err });
+  return value;
 }
 
 export async function readHealth(
   execute: Execute,
   options?: SessionRequestOptions,
-): Promise<HealthResponse> {
+): Promise<ApiResult<HealthResponse>> {
   const startedAt = performance.now();
-  const response = await request(execute, { endpoint: "health" }, options);
-  return {
-    ...response,
-    checkedAt: new Date().toISOString(),
-    latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
-    serverReachable: true,
-  };
+  const [err, response] = await request(
+    execute,
+    { endpoint: "health" },
+    options,
+  );
+  if (err) return [err, undefined];
+  return [
+    null,
+    {
+      ...response,
+      checkedAt: new Date().toISOString(),
+      latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
+      serverReachable: true,
+    },
+  ];
 }
 
 const MISSING_DATABASE_POLICY = /acl\s+policy not found/i;
@@ -56,21 +80,26 @@ const UNSET_FILE_POLICY = /^reading policy from path "":/;
 export async function readPolicy(
   execute: Execute,
   options?: SessionRequestOptions,
-): Promise<PolicyReading> {
-  const result = await execute({ endpoint: "getPolicy" }, options);
-  if (!result.ok) {
-    const error = new ApiError(result.error);
+): Promise<ApiResult<PolicyReading>> {
+  const [err, policy] = await request(
+    execute,
+    { endpoint: "getPolicy" },
+    options,
+  );
+  if (err) {
     const message =
-      error.code === "HTTP_STATUS" && error.status === 500
-        ? (error.data?.message ?? "")
+      err instanceof ApiError &&
+      err.code === "HTTP_STATUS" &&
+      err.status === 500
+        ? (err.data?.message ?? "")
         : "";
-    if (MISSING_DATABASE_POLICY.test(message)) return { policy: "" };
+    if (MISSING_DATABASE_POLICY.test(message)) return [null, { policy: "" }];
     // File mode with an empty policy.path means no policy is configured: Headscale itself runs allow-all.
     if (UNSET_FILE_POLICY.test(message))
-      return { policy: "", fileModeWithoutPath: true };
-    throw error;
+      return [null, { policy: "", fileModeWithoutPath: true }];
+    return [err, undefined];
   }
-  return result.value;
+  return [null, policy];
 }
 
 const UNREADABLE_RESPONSE = new Set<FaultCode>([
@@ -79,79 +108,106 @@ const UNREADABLE_RESPONSE = new Set<FaultCode>([
   "RES_MEDIA_TYPE_INVALID",
 ]);
 
+type SegmentFetcher = (
+  execute: Execute,
+  options?: SessionRequestOptions,
+) => Promise<ApiResult<Partial<HeadscaleSnapshot>>>;
+
 const SEGMENT_FETCHERS = {
   identity: async (execute, options) => {
-    const [users, preAuthKeys, apiKeys] = await Promise.all([
-      request(execute, { endpoint: "listUsers", input: {} }, options),
-      request(execute, { endpoint: "listPreAuthKeys" }, options),
-      request(execute, { endpoint: "listApiKeys" }, options),
-    ]);
-    return {
-      users: users.users ?? [],
-      preAuthKeys: (preAuthKeys.preAuthKeys ?? []).map(normalizePreAuthKey),
-      apiKeys: apiKeys.apiKeys ?? [],
-    };
+    try {
+      const [users, preAuthKeys, apiKeys] = await Promise.all([
+        required(
+          "list users",
+          request(execute, { endpoint: "listUsers", input: {} }, options),
+        ),
+        required(
+          "list pre-auth keys",
+          request(execute, { endpoint: "listPreAuthKeys" }, options),
+        ),
+        required(
+          "list api keys",
+          request(execute, { endpoint: "listApiKeys" }, options),
+        ),
+      ]);
+      return [
+        null,
+        {
+          users: users.users ?? [],
+          preAuthKeys: (preAuthKeys.preAuthKeys ?? []).map(normalizePreAuthKey),
+          apiKeys: apiKeys.apiKeys ?? [],
+        },
+      ];
+    } catch (cause) {
+      return [new Error("read identity", { cause }), undefined];
+    }
   },
   fabric: async (execute, options) => {
-    // ponytail: resolves when all three settle, so a hanging (not failing) optional read can delay
-    // the nodes by up to the Worker request timeout; apply the nodes patch first if that matters.
-    const [nodes, health, version] = await Promise.allSettled([
-      request(execute, { endpoint: "listNodes", input: {} }, options),
-      readHealth(execute, options),
-      request(execute, { endpoint: "version" }, options),
-    ]);
-    if (nodes.status === "rejected") {
+    // ponytail: optional reads may delay the nodes until their request deadline; apply nodes first if that matters.
+    const [[nodesErr, nodes], [healthErr, health], [versionErr, version]] =
+      await Promise.all([
+        request(execute, { endpoint: "listNodes", input: {} }, options),
+        readHealth(execute, options),
+        request(execute, { endpoint: "version" }, options),
+      ]);
+    if (nodesErr) {
       const unreadable =
-        nodes.reason instanceof ApiError &&
-        nodes.reason.code !== undefined &&
-        UNREADABLE_RESPONSE.has(nodes.reason.code);
+        nodesErr instanceof ApiError &&
+        nodesErr.code !== undefined &&
+        UNREADABLE_RESPONSE.has(nodesErr.code);
       // Only a contract-level failure is explained by an unsupported series; transport and status
       // failures keep their own meaning (offline health, abort checks).
       if (
         unreadable &&
-        version.status === "fulfilled" &&
-        serverVersionSupport(version.value.version) === "unsupported"
+        !versionErr &&
+        serverVersionSupport(version.version) === "unsupported"
       )
-        throw new UnsupportedServerVersionError(version.value.version, {
-          cause: nodes.reason,
-        });
-      throw nodes.reason;
+        return [
+          new UnsupportedServerVersionError(version.version, {
+            cause: nodesErr,
+          }),
+          undefined,
+        ];
+      return [new Error("list nodes", { cause: nodesErr }), undefined];
     }
-    return {
-      nodes: (nodes.value.nodes ?? []).map(normalizeHeadscaleNode),
-      health: health.status === "fulfilled" ? health.value : null,
-      // A failed read leaves the last known version in place.
-      ...(version.status === "fulfilled" ? { version: version.value } : {}),
-    };
+    return [
+      null,
+      {
+        nodes: (nodes.nodes ?? []).map(normalizeHeadscaleNode),
+        health: healthErr ? null : health,
+        // A failed optional read leaves the last known version in place.
+        ...(versionErr ? {} : { version }),
+      },
+    ];
   },
-  policy: async (execute, options) => ({
-    policy: await readPolicy(execute, options),
-  }),
-} satisfies Record<
-  SnapshotSegment,
-  (
-    execute: Execute,
-    options?: SessionRequestOptions,
-  ) => Promise<Partial<HeadscaleSnapshot>>
->;
+  policy: async (execute, options) => {
+    const [err, policy] = await readPolicy(execute, options);
+    if (err) return [err, undefined];
+    return [null, { policy }];
+  },
+} satisfies Record<SnapshotSegment, SegmentFetcher>;
 
 export function fetchSegment(
   execute: Execute,
   segment: SnapshotSegment,
   options?: SessionRequestOptions,
-): Promise<Partial<HeadscaleSnapshot>> {
+): Promise<ApiResult<Partial<HeadscaleSnapshot>>> {
   return SEGMENT_FETCHERS[segment](execute, options);
 }
 
 export async function fetchSnapshot(
   execute: Execute,
   options?: SessionRequestOptions,
-): Promise<HeadscaleSnapshot> {
-  const [identity, fabric, policy] = await Promise.all([
-    SEGMENT_FETCHERS.identity(execute, options),
-    SEGMENT_FETCHERS.fabric(execute, options),
-    SEGMENT_FETCHERS.policy(execute, options),
-  ]);
-  // version is omitted from the fabric patch when its optional read failed.
-  return { version: null, ...identity, ...fabric, ...policy };
+): Promise<ApiResult<HeadscaleSnapshot>> {
+  try {
+    const [identity, fabric, policy] = await Promise.all([
+      required("read identity", SEGMENT_FETCHERS.identity(execute, options)),
+      required("read fabric", SEGMENT_FETCHERS.fabric(execute, options)),
+      required("read policy", SEGMENT_FETCHERS.policy(execute, options)),
+    ]);
+    // version is omitted from the fabric patch when its optional read failed.
+    return [null, { version: null, ...identity, ...fabric, ...policy }];
+  } catch (cause) {
+    return [new Error("read snapshot", { cause }), undefined];
+  }
 }

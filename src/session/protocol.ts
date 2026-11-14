@@ -1,14 +1,13 @@
 import { type Infer, struct } from "@defjs/core";
 import * as endpoints from "@/api/requests";
-import type { VaultVersion } from "@/lib/profile-storage";
 import type { ProfileActions } from "./profile-actions";
 import type { SessionRuntime } from "./runtime";
 import {
   MAX_PORT_REQUESTS,
   SESSION_PROTOCOL_VERSION,
   type SessionResult,
-  sessionIdentity,
-  vaultVersion,
+  SessionIdentity,
+  VaultVersion,
   type WorkerErrorDto,
   type WorkerMessage,
 } from "./types";
@@ -67,7 +66,7 @@ export type SessionMessagePort = Pick<
 >;
 
 const profileWriteExpected = struct.object({
-  version: vaultVersion,
+  version: VaultVersion,
   ownerTabId: struct.string(),
   profile: struct
     .object({ id: struct.string(), credentialVersion: struct.string().null() })
@@ -75,16 +74,16 @@ const profileWriteExpected = struct.object({
 });
 const scope = struct.enum(["session", "persistent"]);
 
-const unlockInput = struct.object({
+export const PageUnlockInput = struct.object({
   profileId: struct.string(),
   password: struct.string(),
   expectedWorkerId: struct.string(),
   expectedCredentialVersion: struct.string(),
-  expectedIdentity: sessionIdentity.null(),
+  expectedIdentity: SessionIdentity.null(),
 });
-export type PageUnlockInput = Infer<typeof unlockInput>;
+export type PageUnlockInput = Infer<typeof PageUnlockInput>;
 
-export const profileSaveInput = struct.discriminatedUnion("kind", [
+export const ProfileSaveInput = struct.discriminatedUnion("kind", [
   struct.object({
     kind: struct.literal("metadata"),
     expected: profileWriteExpected,
@@ -105,42 +104,44 @@ export const profileSaveInput = struct.discriminatedUnion("kind", [
     validation: struct.enum(["required", "skip"]),
     activate: struct.boolean(),
     expectedWorkerId: struct.string(),
-    expectedIdentity: sessionIdentity.null(),
+    expectedIdentity: SessionIdentity.null(),
   }),
 ]);
 
+export type ProfileSaveInput = Infer<typeof ProfileSaveInput>;
+
 /** One page → Worker business command; `api.read`/`api.write` name an export of src/api/requests.ts. */
-export const sessionCommand = struct.discriminatedUnion("type", [
+export const SessionCommand = struct.discriminatedUnion("type", [
   struct.object({ type: struct.literal("session.snapshot") }),
   struct.object({
     type: struct.literal("session.unlock"),
-    input: unlockInput,
+    input: PageUnlockInput,
   }),
   struct.object({
     type: struct.literal("session.touch"),
-    expected: sessionIdentity,
+    expected: SessionIdentity,
   }),
   struct.object({
     type: struct.literal("session.lock"),
-    expected: sessionIdentity.null(),
+    expected: SessionIdentity.null(),
   }),
   struct.object({
     type: struct.literal("api.read"),
-    expected: sessionIdentity,
+    expected: SessionIdentity,
     endpoint: struct.enum(ENDPOINTS),
     // The endpoint's own input struct checks this when the Worker client executes it.
     input: struct.unknown().optional(),
   }),
   struct.object({
     type: struct.literal("api.write"),
-    expected: sessionIdentity,
+    expected: SessionIdentity,
     endpoint: struct.enum(ENDPOINTS),
     input: struct.unknown().optional(),
   }),
   struct.object({ type: struct.literal("profiles.list") }),
   struct.object({
     type: struct.literal("profiles.save"),
-    input: profileSaveInput,
+    input: ProfileSaveInput,
   }),
   struct.object({
     type: struct.literal("profiles.migrate"),
@@ -164,10 +165,10 @@ export const sessionCommand = struct.discriminatedUnion("type", [
   }),
   struct.object({
     type: struct.literal("storage.reset"),
-    expected: vaultVersion.null(),
+    expected: VaultVersion.null(),
   }),
 ]);
-export type SessionCommand = Infer<typeof sessionCommand>;
+export type SessionCommand = Infer<typeof SessionCommand>;
 
 /** Page → Worker envelope. A request's command is parsed on its own so a bad one is answered, not fatal. */
 const pageMessage = struct.discriminatedUnion("type", [
@@ -250,11 +251,11 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
       }
       function receive(event: Event) {
         if (closed) return;
-        const [invalid, message] = struct.parse(
+        const [err, message] = struct.parse(
           pageMessage,
           Reflect.get(event, "data"),
         );
-        if (invalid) return reject({ kind: "invalid-request" });
+        if (err) return reject({ kind: "invalid-request" });
         if (ownerTabId === null) {
           if (message.type !== "hello" || !message.ownerTabId)
             return reject({ kind: "invalid-request" });
@@ -295,11 +296,11 @@ export function createSessionProtocol(deps: SessionProtocolDependencies) {
             result,
             snapshot: deps.runtime.auth.getSnapshot(),
           });
-        const [malformed, command] = struct.parse(
-          sessionCommand,
+        const [commandErr, command] = struct.parse(
+          SessionCommand,
           message.command,
         );
-        if (id <= highestId || malformed) {
+        if (commandErr || id <= highestId) {
           highestId = Math.max(highestId, id);
           reply({ ok: false, error: { kind: "invalid-request" } });
           return undefined;

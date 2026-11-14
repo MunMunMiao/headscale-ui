@@ -1,6 +1,9 @@
 import { serveFixture } from "@/test/fixture-server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { fetchSnapshot } from "@/api/snapshot";
+import { UnsupportedServerVersionError } from "@/domain/server-version";
+import { findErrorCause } from "@/utils/error-cause";
+import { ApiError } from "./types";
 import { decryptProfileKey, encryptProfileKey } from "@/lib/api-key-crypto";
 import { __resetForTest } from "@/lib/idb";
 import {
@@ -40,12 +43,19 @@ function fixture() {
   const clock = createManualClock();
   let sequence = 0;
   const validate: ProfileActionDependencies["validate"] = async (context) => {
-    await fetchSnapshot(
+    const [err] = await fetchSnapshot(
       (command) => executeOperation({ ...command, type: "api.read" }, context),
-      {
-        signal: context.signal,
-      },
+      { signal: context.signal },
     );
+    if (err)
+      throw (
+        findErrorCause(
+          err,
+          (cause): cause is ApiError | UnsupportedServerVersionError =>
+            cause instanceof ApiError ||
+            cause instanceof UnsupportedServerVersionError,
+        ) ?? err
+      );
   };
   const auth = createAuthSession({
     workerId: "worker-a",

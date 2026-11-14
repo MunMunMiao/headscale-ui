@@ -10,10 +10,10 @@ import {
   type SessionMessagePort,
 } from "./protocol";
 import { createSessionRuntime } from "./runtime";
-import { workerMessage } from "./types";
+import { WorkerMessage } from "./types";
 
 const valid = (message: unknown) =>
-  struct.parse(workerMessage, message)[0] === null;
+  struct.parse(WorkerMessage, message)[0] === null;
 
 function auth(): AuthSessionDependencies {
   return {
@@ -1061,7 +1061,7 @@ test("a reply without a value and an API error with its server data both reach t
     }),
   ).toBe(true);
   // readPolicy recognizes an unconfigured policy only by this data.message.
-  const [, reply] = struct.parse(workerMessage, {
+  const [, reply] = struct.parse(WorkerMessage, {
     type: "reply",
     requestId: 1,
     snapshot: locked,

@@ -1,5 +1,5 @@
-import { type Infer, struct } from "@defjs/core";
-import { rpcStatus } from "./contracts";
+import { struct } from "@defjs/core";
+import { RpcStatus } from "./contracts";
 
 const privateField =
   /^(?:authorization|headers|request|response|cause|stack|apiKey|authId|password|key|secret|token)$/i;
@@ -27,9 +27,14 @@ export function redactDiagnosticData(value: unknown, secret: string): unknown {
 
 /** Redacts an error body and revalidates it against the same response contract. */
 export function redactStatusData(
-  value: Infer<typeof rpcStatus> | undefined,
+  value: RpcStatus | undefined,
   secret: string,
-): Infer<typeof rpcStatus> | undefined {
+): RpcStatus | undefined {
   if (value === undefined) return undefined;
-  return struct.parse(rpcStatus, redactDiagnosticData(value, secret))[1];
+  const [err, data] = struct.parse(
+    RpcStatus,
+    redactDiagnosticData(value, secret),
+  );
+  if (err) return undefined;
+  return data;
 }

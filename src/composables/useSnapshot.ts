@@ -18,6 +18,7 @@ import {
 import { createStore } from "@/lib/store";
 import type { SessionBridge } from "@/session/bridge";
 import { ApiError } from "@/session/types";
+import { findErrorCause } from "@/utils/error-cause";
 import { getErrorMessage } from "@/utils/error-mapping";
 import { useSession, useStore } from "./session-context-value";
 import type { createActionFeedbackStore } from "./useActionFeedback";
@@ -153,14 +154,38 @@ export function createSnapshotStore(
             requestSession === sessionRevision &&
             generation === generations[segment] &&
             (segment !== "policy" || requestPolicy === policyRevision);
+          const failed = (error: unknown) => {
+            if (!isCurrent() || controller.signal.aborted)
+              return "superseded" as const;
+            const apiError = findErrorCause(
+              error,
+              (cause) => cause instanceof ApiError,
+            );
+            if (
+              segment === "fabric" &&
+              (apiError?.code === "NET_UNREACHABLE" ||
+                apiError?.code === "NET_TIMEOUT")
+            )
+              applyOfflineHealth();
+            state.setState((current) => ({
+              refreshErrors: {
+                ...current.refreshErrors,
+                [segment]: getErrorMessage(error),
+              },
+              segmentStatus: { ...current.segmentStatus, [segment]: "error" },
+              ...(segment === "fabric" ? { versionFresh: false } : {}),
+            }));
+            return "failed" as const;
+          };
           try {
             const { identity } = client.getSnapshot();
-            if (!identity) throw new ApiError({ kind: "locked" });
-            const patch = await fetchSegment(
+            if (!identity) return failed(new ApiError({ kind: "locked" }));
+            const [err, patch] = await fetchSegment(
               (command, options) => auth.read(identity, command, options),
               segment,
               { signal: controller.signal },
             );
+            if (err) return failed(err);
             if (!isCurrent()) return "superseded" as const;
             applyPatch(patch);
             loadedSegments.add(segment);
@@ -178,24 +203,8 @@ export function createSnapshotStore(
             });
             return "applied" as const;
           } catch (error) {
-            if (!isCurrent() || controller.signal.aborted)
-              return "superseded" as const;
-            if (
-              segment === "fabric" &&
-              error instanceof Error &&
-              "code" in error &&
-              (error.code === "NET_UNREACHABLE" || error.code === "NET_TIMEOUT")
-            )
-              applyOfflineHealth();
-            state.setState((current) => ({
-              refreshErrors: {
-                ...current.refreshErrors,
-                [segment]: getErrorMessage(error),
-              },
-              segmentStatus: { ...current.segmentStatus, [segment]: "error" },
-              ...(segment === "fabric" ? { versionFresh: false } : {}),
-            }));
-            return "failed" as const;
+            // Unexpected failures at the UI integration boundary still settle the refresh state.
+            return failed(error);
           } finally {
             if (controllers[segment] === controller)
               delete controllers[segment];

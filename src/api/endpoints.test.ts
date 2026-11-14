@@ -20,8 +20,11 @@ import { normalizeHeadscaleNode, normalizePreAuthKey } from "./contracts";
 import * as definitions from "./requests";
 import { readHealth as readGatewayHealth } from "./snapshot";
 
-const readHealth = (http: HeadscaleHttp) =>
-  readGatewayHealth(fixtureExecute(http));
+const readHealth = async (http: HeadscaleHttp) => {
+  const [err, health] = await readGatewayHealth(fixtureExecute(http));
+  if (err) throw err;
+  return health;
+};
 
 import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { HeadscaleHttp } from "./http";

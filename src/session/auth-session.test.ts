@@ -1,3 +1,5 @@
+import type { HeadscaleHttp } from "@/api/http";
+import { listUsers } from "@/api/requests";
 import { serveFixture } from "@/test/fixture-server";
 import { expect, test, vi } from "vitest";
 import { testDouble } from "@/test/dom";
@@ -67,6 +69,72 @@ function fixture(overrides: Partial<AuthSessionDependencies> = {}) {
   });
   return { session, clock, deps, execute, input };
 }
+
+test("session-owned clients isolate call cancellation and cannot outlive their credential scope", async () => {
+  const seen: string[] = [];
+  const server = serveFixture({
+    fetch(request) {
+      seen.push(request.headers.get("authorization") ?? "");
+      return Response.json({ users: [] });
+    },
+  });
+  let http: HeadscaleHttp | undefined;
+  const f = fixture({
+    openCredential: async (input) => ({
+      profile: {
+        id: input.profileId,
+        name: input.profileId,
+        baseUrl: server.url.origin,
+      },
+      credentialVersion: input.expectedCredentialVersion,
+      keyEpoch: "epoch-a",
+      apiKey: `${input.profileId}-key`,
+    }),
+    execute: (command, context) => {
+      if (!context.http) throw new Error("Missing session-owned client");
+      http = context.http;
+      return executeOperation(command, context);
+    },
+  });
+  try {
+    const first = identityOf(successful(await f.session.unlock(f.input())));
+    const controller = new AbortController();
+    const command = {
+      type: "api.read",
+      endpoint: "listUsers",
+      input: {},
+    } as const;
+    successful(
+      await f.session.execute(first, command, { signal: controller.signal }),
+    );
+    controller.abort();
+    successful(await f.session.execute(first, command));
+    const previousHttp = http;
+    if (!previousHttp) throw new Error("Expected authenticated client");
+    successful(f.session.lock(first));
+    const [lockedErr] = await listUsers(previousHttp, {});
+    expect(lockedErr).toMatchObject({
+      code: "EXT_INTERCEPTOR_FAILED",
+      cause: { kind: "locked" },
+    });
+    const second = identityOf(
+      successful(await f.session.unlock(f.input("profile-b"))),
+    );
+    successful(await f.session.execute(second, command));
+    const [staleErr] = await listUsers(previousHttp, {});
+    expect(staleErr).toMatchObject({
+      code: "EXT_INTERCEPTOR_FAILED",
+      cause: { kind: "stale" },
+    });
+    expect(seen).toEqual([
+      "Bearer profile-a-key",
+      "Bearer profile-a-key",
+      "Bearer profile-b-key",
+    ]);
+  } finally {
+    void server.stop(true);
+  }
+});
 
 test("credential validation preserves API fault semantics without exposing the connection secret", async () => {
   const f = fixture();

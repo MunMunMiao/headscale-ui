@@ -1,5 +1,11 @@
 import { serveFixture } from "@/test/fixture-server";
-import type { FaultCode } from "@defjs/core";
+import {
+  createClient,
+  type FaultCode,
+  withEndpoint,
+  withHTTPHandle,
+} from "@defjs/core";
+import { listUsers } from "@/api/requests";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { setLocale, t } from "@/i18n";
@@ -84,6 +90,69 @@ test.each([
       .toBe(t("requestUnreachable"));
   },
 );
+
+test("step wrappers recognize a native Defjs fault without exposing outer diagnostics", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const client = createClient(
+    withEndpoint("https://headscale.test"),
+    withHTTPHandle(async () =>
+      Response.json({ code: 5, message: "user not found" }, { status: 404 }),
+    ),
+  );
+  const [err] = await listUsers(client, {});
+  expect(err).toMatchObject({ code: "HTTP_STATUS", status: 404 });
+  const wrapped = new Error("list users secret-canary", { cause: err });
+  expect(getErrorDetails(wrapped)).toEqual({
+    message: getProductCopy("en-US").errorUserNotFound,
+    productKey: "errorUserNotFound",
+  });
+  expect(getErrorMessage(wrapped)).not.toContain("secret-canary");
+});
+
+test("step wrappers preserve API recovery and localized business details without exposing their diagnostics", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const original = new ApiError({
+    kind: "api",
+    code: "HTTP_STATUS",
+    message: "server failure",
+    status: 404,
+    data: { message: "user not found" },
+  });
+  const wrapped = new Error("read identity secret-canary", {
+    cause: new Error("list users", { cause: original }),
+  });
+  expect(getErrorDetails(wrapped)).toEqual(getErrorDetails(original));
+  expect(getErrorDetails(wrapped).productKey).toBe("errorUserNotFound");
+  expect(getErrorMessage(wrapped)).not.toContain("secret-canary");
+
+  const denied = new ApiError({
+    kind: "api",
+    code: "RES_MEDIA_TYPE_INVALID",
+    message: "text/plain",
+    status: 401,
+  });
+  expect(getErrorMessage(new Error("read snapshot", { cause: denied }))).toBe(
+    getProductCopy("en-US").errorRequestFailed,
+  );
+  const unknown = new ApiError({ kind: "unavailable", outcome: "unknown" });
+  expect(getErrorMessage(new Error("write policy", { cause: unknown }))).toBe(
+    t("sessionOutcomeUnknown"),
+  );
+});
+
+test("the first recognized cause keeps unsupported-version precedence over its API cause", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const api = new ApiError({ kind: "unavailable", outcome: "unknown" });
+  const unsupported = new UnsupportedServerVersionError("0.28.0", {
+    cause: api,
+  });
+  expect(
+    getErrorMessage(new Error("read fabric", { cause: unsupported })),
+  ).toBe(getErrorMessage(unsupported));
+});
 
 function context(baseUrl: string): SessionExecutionContext {
   return {

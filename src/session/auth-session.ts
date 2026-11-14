@@ -1,3 +1,4 @@
+import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
 import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import { listedApiKeyPrefix } from "@/domain/api-key";
 import type { ApiRequest } from "./protocol";
@@ -35,6 +36,7 @@ export interface SessionRequestOptions {
 }
 
 export interface SessionExecutionContext {
+  http?: HeadscaleHttp;
   signal: AbortSignal;
   requireCurrent(this: void): { baseUrl: string; apiKey: string };
 }
@@ -96,6 +98,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
     identity: SessionIdentity;
     expiresAt: number;
     controller: AbortController;
+    http: HeadscaleHttp;
   } | null = null;
   type Candidate = {
     controller: AbortController;
@@ -326,12 +329,23 @@ export function createAuthSession(deps: AuthSessionDependencies) {
             workerId: deps.workerId,
             sessionId: deps.newSessionId(),
           };
+          const http = createWorkerHeadscaleHttp(
+            credential.profile.baseUrl,
+            () => {
+              const bound = requireActive(identity).credential;
+              return {
+                baseUrl: bound.profile.baseUrl,
+                apiKey: bound.apiKey,
+              };
+            },
+          );
           active?.controller.abort();
           active = {
             credential,
             identity,
             expiresAt: lastObserved + SESSION_IDLE_MS,
             controller: new AbortController(),
+            http,
           };
           candidate = null;
           return {
@@ -421,6 +435,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
         if (signal.aborted) return failure("cancelled");
         unknown = command.type === "api.write" ? "unknown" : undefined;
         const result = await deps.execute(command, {
+          http: current.http,
           signal,
           requireCurrent() {
             const credential = requireActive(current.identity).credential;

@@ -25,16 +25,14 @@ test.each([
     const controller = new AbortController();
     const reading = read(fixtureExecute(client), {
       signal: controller.signal,
-    }).then(
-      () => ({ code: "SUCCESS" }),
-      (error: unknown) => error,
-    );
+    });
     await expect.poll(() => signals.length).toBe(1);
     controller.abort();
     const propagated = signals[0].aborted;
     replies.resolve(Response.json(response));
-    const outcome = await reading;
+    const [err, value] = await reading;
     expect(propagated).toBe(true);
-    expect(outcome).toMatchObject({ code: "NET_ABORTED" });
+    expect(err).toMatchObject({ code: "NET_ABORTED" });
+    expect(value).toBeUndefined();
   },
 );

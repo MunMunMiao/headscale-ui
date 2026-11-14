@@ -1,39 +1,39 @@
 import { defineRequest, struct } from "@defjs/core";
 import {
-  apiKeysResponse,
-  changesResponse,
-  createApiKeyResponse,
-  healthResponse,
-  nodeResponse,
-  nodesResponse,
-  policyResponse,
-  preAuthKeyResponse,
-  preAuthKeysResponse,
-  rpcStatus,
-  userResponse,
-  usersResponse,
-  versionResponse,
+  ApiKeysResponse,
+  ChangesResponse,
+  CreateApiKeyResponse,
+  HealthPayload,
+  NodeResponse,
+  NodesResponse,
+  PolicyResponse,
+  PreAuthKeyResponse,
+  PreAuthKeysResponse,
+  RpcStatus,
+  UserResponse,
+  UsersResponse,
+  VersionResponse,
 } from "./contracts";
 
 // A builder only places its input. Checks belong before a command is built (defjs struct.mdx).
 export const health = defineRequest({
-  operation: "health.check",
+  meta: { operation: "health.check" },
   method: "GET",
   path: "/api/v1/health",
-  output: healthResponse,
-  error: rpcStatus,
+  output: HealthPayload,
+  error: RpcStatus,
 });
 
 export const version = defineRequest({
-  operation: "version.get",
+  meta: { operation: "version.get" },
   method: "GET",
   path: "/version",
-  output: versionResponse,
-  error: rpcStatus,
+  output: VersionResponse,
+  error: RpcStatus,
 });
 
 export const listUsers = defineRequest({
-  operation: "user.list",
+  meta: { operation: "user.list" },
   method: "GET",
   path: "/api/v1/user",
   input: struct.object({
@@ -42,12 +42,12 @@ export const listUsers = defineRequest({
     email: struct.string().optional(),
   }),
   builder: (input) => ({ query: input }),
-  output: usersResponse,
-  error: rpcStatus,
+  output: UsersResponse,
+  error: RpcStatus,
 });
 
 export const createUser = defineRequest({
-  operation: "user.create",
+  meta: { operation: "user.create" },
   method: "POST",
   path: "/api/v1/user",
   input: struct.object({
@@ -57,39 +57,39 @@ export const createUser = defineRequest({
     pictureUrl: struct.string().optional(),
   }),
   builder: (input) => ({ body: input }),
-  output: userResponse,
-  error: rpcStatus,
+  output: UserResponse,
+  error: RpcStatus,
 });
 
 export const renameUser = defineRequest({
-  operation: "user.rename",
+  meta: { operation: "user.rename" },
   method: "POST",
   path: "/api/v1/user/:id/rename/:newName",
   input: struct.object({ id: struct.string(), newName: struct.string() }),
   builder: (input) => ({ path: input }),
-  output: userResponse,
-  error: rpcStatus,
+  output: UserResponse,
+  error: RpcStatus,
 });
 
 export const deleteUser = defineRequest({
-  operation: "user.delete",
+  meta: { operation: "user.delete" },
   method: "DELETE",
   path: "/api/v1/user/:id",
   input: struct.object({ id: struct.string() }),
   builder: (input) => ({ path: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const listPreAuthKeys = defineRequest({
-  operation: "preauthkey.list",
+  meta: { operation: "preauthkey.list" },
   method: "GET",
   path: "/api/v1/preauthkey",
-  output: preAuthKeysResponse,
-  error: rpcStatus,
+  output: PreAuthKeysResponse,
+  error: RpcStatus,
 });
 
 export const createPreAuthKey = defineRequest({
-  operation: "preauthkey.create",
+  meta: { operation: "preauthkey.create" },
   method: "POST",
   path: "/api/v1/preauthkey",
   input: struct.object({
@@ -100,89 +100,89 @@ export const createPreAuthKey = defineRequest({
     aclTags: struct.array(struct.string()).optional(),
   }),
   builder: (input) => ({ body: input }),
-  output: preAuthKeyResponse,
-  error: rpcStatus,
+  output: PreAuthKeyResponse,
+  error: RpcStatus,
 });
 
 export const expirePreAuthKey = defineRequest({
-  operation: "preauthkey.expire",
+  meta: { operation: "preauthkey.expire" },
   method: "POST",
   path: "/api/v1/preauthkey/expire",
   input: struct.object({ id: struct.string() }),
   builder: (input) => ({ body: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const deletePreAuthKey = defineRequest({
-  operation: "preauthkey.delete",
+  meta: { operation: "preauthkey.delete" },
   method: "DELETE",
   path: "/api/v1/preauthkey",
   input: struct.object({ id: struct.string() }),
   builder: (input) => ({ query: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const listNodes = defineRequest({
-  operation: "node.list",
+  meta: { operation: "node.list" },
   method: "GET",
   path: "/api/v1/node",
   input: struct.object({ user: struct.string().optional() }),
   builder: (input) => ({ query: input }),
-  output: nodesResponse,
-  error: rpcStatus,
+  output: NodesResponse,
+  error: RpcStatus,
 });
 
 export const getNode = defineRequest({
-  operation: "node.get",
+  meta: { operation: "node.get" },
   method: "GET",
   path: "/api/v1/node/:nodeId",
   input: struct.object({ nodeId: struct.string() }),
   builder: (input) => ({ path: input }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const registerNode = defineRequest({
-  operation: "node.register",
+  meta: { operation: "node.register" },
   method: "POST",
   path: "/api/v1/node/register",
   input: struct.object({ user: struct.string(), key: struct.string() }),
   builder: (input) => ({ query: input }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const authRegister = defineRequest({
-  operation: "auth.register",
+  meta: { operation: "auth.register" },
   method: "POST",
   path: "/api/v1/auth/register",
   // user is the Headscale user name, not its numeric id.
   input: struct.object({ user: struct.string(), authId: struct.string() }),
   builder: (input) => ({ body: input }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const authApprove = defineRequest({
-  operation: "auth.approve",
+  meta: { operation: "auth.approve" },
   method: "POST",
   path: "/api/v1/auth/approve",
   input: struct.object({ authId: struct.string() }),
   builder: (input) => ({ body: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const authReject = defineRequest({
-  operation: "auth.reject",
+  meta: { operation: "auth.reject" },
   method: "POST",
   path: "/api/v1/auth/reject",
   input: struct.object({ authId: struct.string() }),
   builder: (input) => ({ body: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const debugCreateNode = defineRequest({
-  operation: "node.debugCreate",
+  meta: { operation: "node.debugCreate" },
   method: "POST",
   path: "/api/v1/debug/node",
   input: struct.object({
@@ -192,22 +192,22 @@ export const debugCreateNode = defineRequest({
     routes: struct.array(struct.string()).optional(),
   }),
   builder: (input) => ({ body: input }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const renameNode = defineRequest({
-  operation: "node.rename",
+  meta: { operation: "node.rename" },
   method: "POST",
   path: "/api/v1/node/:nodeId/rename/:newName",
   input: struct.object({ nodeId: struct.string(), newName: struct.string() }),
   builder: (input) => ({ path: input }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const expireNode = defineRequest({
-  operation: "node.expire",
+  meta: { operation: "node.expire" },
   method: "POST",
   path: "/api/v1/node/:nodeId/expire",
   input: struct.object({
@@ -219,21 +219,21 @@ export const expireNode = defineRequest({
     path: { nodeId: input.nodeId },
     query: { expiry: input.expiry, disableExpiry: input.disableExpiry },
   }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const deleteNode = defineRequest({
-  operation: "node.delete",
+  meta: { operation: "node.delete" },
   method: "DELETE",
   path: "/api/v1/node/:nodeId",
   input: struct.object({ nodeId: struct.string() }),
   builder: (input) => ({ path: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const setTags = defineRequest({
-  operation: "node.setTags",
+  meta: { operation: "node.setTags" },
   method: "POST",
   path: "/api/v1/node/:nodeId/tags",
   input: struct.object({
@@ -244,12 +244,12 @@ export const setTags = defineRequest({
     path: { nodeId: input.nodeId },
     body: { tags: input.tags },
   }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const setApprovedRoutes = defineRequest({
-  operation: "node.setApprovedRoutes",
+  meta: { operation: "node.setApprovedRoutes" },
   method: "POST",
   path: "/api/v1/node/:nodeId/approve_routes",
   input: struct.object({
@@ -260,40 +260,40 @@ export const setApprovedRoutes = defineRequest({
     path: { nodeId: input.nodeId },
     body: { routes: input.routes },
   }),
-  output: nodeResponse,
-  error: rpcStatus,
+  output: NodeResponse,
+  error: RpcStatus,
 });
 
 export const backfillNodeIps = defineRequest({
-  operation: "node.backfillIps",
+  meta: { operation: "node.backfillIps" },
   method: "POST",
   path: "/api/v1/node/backfillips",
   input: struct.object({ confirmed: struct.boolean() }),
   builder: (input) => ({ query: input }),
-  output: changesResponse,
-  error: rpcStatus,
+  output: ChangesResponse,
+  error: RpcStatus,
 });
 
 export const listApiKeys = defineRequest({
-  operation: "apikey.list",
+  meta: { operation: "apikey.list" },
   method: "GET",
   path: "/api/v1/apikey",
-  output: apiKeysResponse,
-  error: rpcStatus,
+  output: ApiKeysResponse,
+  error: RpcStatus,
 });
 
 export const createApiKey = defineRequest({
-  operation: "apikey.create",
+  meta: { operation: "apikey.create" },
   method: "POST",
   path: "/api/v1/apikey",
   input: struct.object({ expiration: struct.string() }),
   builder: (input) => ({ body: input }),
-  output: createApiKeyResponse,
-  error: rpcStatus,
+  output: CreateApiKeyResponse,
+  error: RpcStatus,
 });
 
 export const expireApiKey = defineRequest({
-  operation: "apikey.expire",
+  meta: { operation: "apikey.expire" },
   method: "POST",
   path: "/api/v1/apikey/expire",
   input: struct.or(
@@ -301,41 +301,41 @@ export const expireApiKey = defineRequest({
     struct.object({ id: struct.string(), prefix: struct.string().optional() }),
   ),
   builder: (input) => ({ body: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const deleteApiKey = defineRequest({
-  operation: "apikey.delete",
+  meta: { operation: "apikey.delete" },
   method: "DELETE",
   path: "/api/v1/apikey/:prefix",
   input: struct.object({ prefix: struct.string() }),
   builder: (input) => ({ path: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });
 
 export const getPolicy = defineRequest({
-  operation: "policy.get",
+  meta: { operation: "policy.get" },
   method: "GET",
   path: "/api/v1/policy",
-  output: policyResponse,
-  error: rpcStatus,
+  output: PolicyResponse,
+  error: RpcStatus,
 });
 
 export const setPolicy = defineRequest({
-  operation: "policy.set",
+  meta: { operation: "policy.set" },
   method: "PUT",
   path: "/api/v1/policy",
   input: struct.object({ policy: struct.string() }),
   builder: (input) => ({ body: input }),
-  output: policyResponse,
-  error: rpcStatus,
+  output: PolicyResponse,
+  error: RpcStatus,
 });
 
 export const checkPolicy = defineRequest({
-  operation: "policy.check",
+  meta: { operation: "policy.check" },
   method: "POST",
   path: "/api/v1/policy/check",
   input: struct.object({ policy: struct.string() }),
   builder: (input) => ({ body: input }),
-  error: rpcStatus,
+  error: RpcStatus,
 });

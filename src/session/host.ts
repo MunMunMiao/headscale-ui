@@ -1,4 +1,8 @@
+import { createWorkerHeadscaleHttp } from "@/api/http";
 import { fetchSnapshot } from "@/api/snapshot";
+import { UnsupportedServerVersionError } from "@/domain/server-version";
+import { findErrorCause } from "@/utils/error-cause";
+import { ApiError } from "./types";
 import { openProfileKey } from "@/lib/api-key-crypto";
 import { DB_VERSION, openHeadscaleDb } from "@/lib/idb";
 import { readProfileForOwner } from "@/lib/profile-storage";
@@ -16,13 +20,27 @@ export async function createSessionHost(buildId: string) {
   await openHeadscaleDb();
   const workerId = crypto.randomUUID();
   async function validate(context: SessionExecutionContext) {
-    // The seven snapshot reads are all GET requests.
-    await fetchSnapshot(
-      (command) => executeOperation({ ...command, type: "api.read" }, context),
-      {
-        signal: context.signal,
-      },
+    const http = createWorkerHeadscaleHttp(
+      context.requireCurrent().baseUrl,
+      context.requireCurrent,
     );
+    // The seven snapshot reads are all GET requests and share this candidate's client.
+    const [err] = await fetchSnapshot(
+      (command) =>
+        executeOperation({ ...command, type: "api.read" }, context, http),
+      { signal: context.signal },
+    );
+    if (err) {
+      // The credential validator rejects; its caller serializes only the known failure DTO.
+      throw (
+        findErrorCause(
+          err,
+          (cause): cause is ApiError | UnsupportedServerVersionError =>
+            cause instanceof ApiError ||
+            cause instanceof UnsupportedServerVersionError,
+        ) ?? err
+      );
+    }
   }
   const runtime = createSessionRuntime({
     auth: {

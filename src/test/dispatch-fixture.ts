@@ -66,13 +66,11 @@ export function createFixtureHttp(settings: ConnectionSettings) {
         ? "Enter an absolute HTTP(S) server URL."
         : "Enter an API key.",
     );
-  return createWorkerHeadscaleHttp({
-    signal: new AbortController().signal,
-    requireCurrent: () => ({
-      baseUrl: settings.baseUrl.trim().replace(/\/+$/, ""),
-      apiKey: settings.apiKey.trim(),
-    }),
-  });
+  const baseUrl = settings.baseUrl.trim().replace(/\/+$/, "");
+  return createWorkerHeadscaleHttp(baseUrl, () => ({
+    baseUrl,
+    apiKey: settings.apiKey.trim(),
+  }));
 }
 
 /** A bridge stand-in that sees the kind the page declared; the reply it fakes is the test's business. */

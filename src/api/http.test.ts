@@ -12,15 +12,12 @@ test("Worker authentication replaces a builder header with the bound session cre
     },
   });
   try {
-    const client = createWorkerHeadscaleHttp({
-      signal: new AbortController().signal,
-      requireCurrent: () => ({
-        baseUrl: server.url.origin,
-        apiKey: "fixture-private-key",
-      }),
-    });
+    const client = createWorkerHeadscaleHttp(server.url.origin, () => ({
+      baseUrl: server.url.origin,
+      apiKey: "fixture-private-key",
+    }));
     const request = defineRequest({
-      operation: "user.list",
+      meta: { operation: "user.list" },
       method: "GET",
       path: "/api/v1/user",
       builder: () => ({
@@ -47,7 +44,6 @@ test("an abort during the interceptor chain prevents the native fetch", async ()
     },
   });
   const controller = new AbortController();
-  let checks = 0;
   let nativeCalls = 0;
   const nativeFetch = globalThis.fetch;
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -55,17 +51,14 @@ test("an abort during the interceptor chain prevents the native fetch", async ()
     return nativeFetch(input, init);
   });
   try {
-    const client = createWorkerHeadscaleHttp({
-      signal: controller.signal,
-      requireCurrent() {
-        // The session invalidates after the interceptor reads the credential; production aborts
-        // the same signal from invalidate().
-        if (++checks === 2) queueMicrotask(() => controller.abort());
-        return { baseUrl: server.url.origin, apiKey: "fixture-private-key" };
-      },
+    const client = createWorkerHeadscaleHttp(server.url.origin, () => {
+      // The session invalidates after the interceptor reads the credential; production aborts
+      // the same signal from invalidate().
+      queueMicrotask(() => controller.abort());
+      return { baseUrl: server.url.origin, apiKey: "fixture-private-key" };
     });
     const request = defineRequest({
-      operation: "policy.set",
+      meta: { operation: "policy.set" },
       method: "PUT",
       path: "/api/v1/policy",
       input: struct.string(),

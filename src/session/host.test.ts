@@ -1,6 +1,7 @@
 import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { encryptProfileKey } from "@/lib/api-key-crypto";
+import * as snapshotModule from "@/api/snapshot";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import { subscribeVaultChanges } from "@/lib/vault-state";
 import { serveFixture } from "@/test/fixture-server";
@@ -15,6 +16,7 @@ import * as runtimeModule from "./runtime";
 import type { SessionResult } from "./types";
 
 vi.mock("./runtime", { spy: true });
+vi.mock("@/api/snapshot", { spy: true });
 
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
@@ -86,6 +88,39 @@ async function save(
   expect(result.activation?.ok).toBe(true);
   return { result, server };
 }
+
+test("an unexpected validation failure cannot save credentials or escape through the Worker reply", async () => {
+  const { page } = await fixture();
+  const bridge = await page("owner-a");
+  const before = value(await bridge.listProfiles());
+  vi.mocked(snapshotModule.fetchSnapshot).mockResolvedValueOnce([
+    new Error("unexpected validation failure: private-secret"),
+    undefined,
+  ]);
+  const result = await bridge.saveProfile({
+    kind: "credentials",
+    expected: { version: before.version, ownerTabId: "owner-a", profile: null },
+    profile: {
+      id: "broken",
+      name: "Broken",
+      baseUrl: "https://headscale.test",
+      scope: "persistent",
+    },
+    apiKey: "private-secret",
+    password: "profile-password",
+    validation: "required",
+    activate: true,
+    expectedWorkerId: bridge.getSnapshot().workerId ?? "",
+    expectedIdentity: null,
+  });
+  expect(result).toEqual({ ok: false, error: { kind: "storage-failed" } });
+  expect(value(await bridge.listProfiles())).toEqual(before);
+  expect(bridge.getSessionSnapshot()?.status).toBe("locked");
+  expect(await idbGetAll("profiles")).toEqual([]);
+  expect(JSON.stringify(result)).not.toMatch(
+    /private-secret|profile-password|unexpected validation/,
+  );
+});
 
 test("validates and unlocks a profile when Headscale file mode has no policy path", async () => {
   const { page } = await fixture();
