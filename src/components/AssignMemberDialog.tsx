@@ -88,7 +88,7 @@ export default function AssignMemberDialog({
     }
     wasOpen.current = open;
   }, [form, open, options]);
-  const sortedOptions = [...options].sort((a, b) =>
+  const sortedOptions = [...options].toSorted((a, b) =>
     collator.compare(a.name, b.name),
   );
   const dirty =

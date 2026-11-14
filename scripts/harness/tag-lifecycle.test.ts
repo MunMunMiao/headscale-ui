@@ -1,6 +1,7 @@
 import { existsSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createChildRunner } from "./child-runner";
 import { root } from "./docker";
 import {
@@ -29,7 +30,7 @@ test("cleanup preserves owned recovery files when a Docker removal fails", async
   let failRemoval = false;
   vi.spyOn(Bun, "spawnSync").mockImplementation((command) => {
     if (!Array.isArray(command)) throw new Error("Expected command arguments");
-    const args = command as string[];
+    const args: string[] = command;
     if (args[0] === "docker" && args[1] === "network" && args[2] === "create")
       project = args.at(-1) ?? "";
     const failed =
@@ -42,11 +43,11 @@ test("cleanup preserves owned recovery files when a Docker removal fails", async
           : args.includes("apikeys")
             ? "synthetic-test-key"
             : "";
-    return {
+    return testDouble<ReturnType<typeof Bun.spawnSync>>({
       exitCode: failed ? 1 : 0,
       stdout: Buffer.from(stdout),
       stderr: Buffer.from(failed ? "synthetic removal failure" : ""),
-    } as ReturnType<typeof Bun.spawnSync>;
+    });
   });
   vi.stubGlobal(
     "fetch",
@@ -87,7 +88,7 @@ test.each(["owner changed", "removal failed"])(
     vi.spyOn(Bun, "spawnSync").mockImplementation((command) => {
       if (!Array.isArray(command) || command[0] !== "docker")
         throw new Error("Expected Docker arguments");
-      const [, kind, operation] = command as string[];
+      const [, kind, operation] = command;
       let stdout = "";
       let failed = false;
       if (operation === "ls") {
@@ -102,11 +103,11 @@ test.each(["owner changed", "removal failed"])(
           !recovered && kind === "container" && failure === "removal failed";
         if (!failed) remaining.delete(kind);
       } else throw new Error(`Unexpected Docker operation: ${operation}`);
-      return {
+      return testDouble<ReturnType<typeof Bun.spawnSync>>({
         exitCode: failed ? 1 : 0,
         stdout: Buffer.from(stdout),
         stderr: Buffer.from(failed ? "synthetic removal failure" : ""),
-      } as ReturnType<typeof Bun.spawnSync>;
+      });
     });
     const lifecycle = createTagLifecycleRunner(runner);
     try {

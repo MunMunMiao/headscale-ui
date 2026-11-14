@@ -216,11 +216,11 @@ async function checkBrowser(
     assert.equal(result.executed, false, "injected inline script must not run");
     assert.ok(
       result.violated.some((directive) => directive.startsWith("script-src")),
-      `inline script must violate script-src: ${result.violated}`,
+      `inline script must violate script-src: ${result.violated.join(", ")}`,
     );
     assert.ok(
       result.violated.some((directive) => directive.startsWith("connect-src")),
-      `foreign page fetch must violate connect-src: ${result.violated}`,
+      `foreign page fetch must violate connect-src: ${result.violated.join(", ")}`,
     );
     // The Worker runs under its own response CSP, which allows only http: and https: fetches.
     assert.equal(
@@ -295,7 +295,7 @@ async function checkBrowser(
     await click(trigger);
     await click(confirm);
     await waitUntil(
-      async () => (await page.url()) === `${origin}${base}login${query}`,
+      async () => page.url() === `${origin}${base}login${query}`,
       {
         timeout: 15000,
       },
@@ -334,7 +334,7 @@ async function checkBrowser(
     for (const section of Object.keys(ready)) {
       await click(`section-${section}`);
       await waitUntil(
-        async () => new URL(await page.url()).pathname === `${base}${section}`,
+        async () => new URL(page.url()).pathname === `${base}${section}`,
         {
           timeout: 10000,
         },
@@ -386,7 +386,7 @@ async function checkBrowser(
       timeout: 15000,
     });
     await peer.close();
-    assert.equal(new URL(await page.url()).pathname, `${base}devices`);
+    assert.equal(new URL(page.url()).pathname, `${base}devices`);
     await security();
     await failClear("security-clear-all", "security-clear-all-confirm");
     await unlock();
@@ -422,6 +422,30 @@ async function checkBrowser(
 }
 
 async function main() {
+  const context = join(temporary, "ignore-context");
+  const output = join(temporary, "ignore-output");
+  const excluded = [".superpowers/probe.txt", ".grok/probe.txt"];
+  await Bun.write(join(context, "Dockerfile"), "FROM scratch\nCOPY . /\n");
+  await Bun.write(
+    join(context, ".dockerignore"),
+    Bun.file(new URL("../.dockerignore", import.meta.url)),
+  );
+  await Bun.write(join(context, "application.txt"), "public-build-input");
+  for (const path of excluded)
+    await Bun.write(join(context, path), "private-tool-state-canary");
+  docker("build", "--output", `type=local,dest=${output}`, context);
+  assert.equal(
+    await Bun.file(join(output, "application.txt")).text(),
+    "public-build-input",
+  );
+  for (const path of excluded)
+    assert.equal(
+      await Bun.file(join(output, path)).exists(),
+      false,
+      `Docker build context must exclude ${path}`,
+    );
+  console.log("PASS Docker build context excludes local tool state");
+
   await stack.prepare();
   const connection = await stack.startHeadscale("a");
   let pristineBuild: string | undefined;

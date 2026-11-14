@@ -785,7 +785,7 @@ describe("retargetUserReferences", () => {
     if (!result.ok) throw new Error(`expected ok, got ${result.issue.code}`);
     return {
       saved: serializePolicy(result.state),
-      sections: [...result.sections].sort(),
+      sections: [...result.sections].toSorted(),
     };
   }
 
@@ -808,7 +808,7 @@ describe("retargetUserReferences", () => {
         "nodeAttrs",
         "tests",
         "sshTests",
-      ].sort(),
+      ].toSorted(),
     );
     expect(out.groups).toEqual({
       "group:ops": ["bob@", "malice@"],

@@ -1,10 +1,9 @@
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   encryptLegacyKey,
   legacySalt,
   makeLegacyCanary,
 } from "@/test-utils/legacy-vault";
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   canaryKeyParameters,
@@ -23,8 +22,8 @@ import {
 import { __resetForTest } from "./idb";
 import { VaultDataError } from "./vault-state";
 
-beforeEach(() => {
-  globalThis.indexedDB = new IDBFactory();
+beforeEach(async () => {
+  await clearHeadscaleDatabase();
   __resetForTest();
 });
 

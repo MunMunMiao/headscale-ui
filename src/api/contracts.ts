@@ -5,7 +5,7 @@ const extensions = struct.record(struct.unknown().nullish());
 const optionalString = struct.string().nullish();
 const optionalStrings = struct.array(struct.string()).nullish();
 
-export const headscaleUser = struct.intersection(
+export const HeadscaleUser = struct.intersection(
   struct.object({
     id: struct.string(),
     name: struct.string(),
@@ -18,12 +18,13 @@ export const headscaleUser = struct.intersection(
   }),
   extensions,
 );
+export type HeadscaleUser = Infer<typeof HeadscaleUser>;
 
-export const preAuthKey = struct.intersection(
+export const PreAuthKeyData = struct.intersection(
   struct.object({
     id: struct.string(),
     key: struct.string(),
-    user: headscaleUser.nullish(),
+    user: HeadscaleUser.nullish(),
     reusable: struct.boolean().nullish(),
     ephemeral: struct.boolean().nullish(),
     used: struct.boolean().nullish(),
@@ -33,8 +34,9 @@ export const preAuthKey = struct.intersection(
   }),
   extensions,
 );
+export type PreAuthKeyData = Infer<typeof PreAuthKeyData>;
 
-export const headscaleNode = struct.intersection(
+export const HeadscaleNodeData = struct.intersection(
   struct.object({
     id: struct.string(),
     name: struct.string(),
@@ -42,10 +44,10 @@ export const headscaleNode = struct.intersection(
     nodeKey: optionalString,
     discoKey: optionalString,
     ipAddresses: optionalStrings,
-    user: headscaleUser.nullish(),
+    user: HeadscaleUser.nullish(),
     lastSeen: optionalString,
     expiry: optionalString,
-    preAuthKey: preAuthKey.nullish(),
+    preAuthKey: PreAuthKeyData.nullish(),
     createdAt: optionalString,
     registerMethod: optionalString,
     givenName: optionalString,
@@ -57,8 +59,9 @@ export const headscaleNode = struct.intersection(
   }),
   extensions,
 );
+export type HeadscaleNodeData = Infer<typeof HeadscaleNodeData>;
 
-export const apiKey = struct.intersection(
+export const ApiKey = struct.intersection(
   struct.object({
     id: struct.string(),
     prefix: struct.string(),
@@ -68,8 +71,9 @@ export const apiKey = struct.intersection(
   }),
   extensions,
 );
+export type ApiKey = Infer<typeof ApiKey>;
 
-export const rpcStatus = struct.intersection(
+export const RpcStatus = struct.intersection(
   struct.object({
     code: struct.number().optional(),
     message: struct.string().optional(),
@@ -84,55 +88,79 @@ export const rpcStatus = struct.intersection(
   }),
   extensions,
 );
+export type RpcStatus = Infer<typeof RpcStatus>;
 
-export const healthResponse = struct.intersection(
+export const HealthPayload = struct.intersection(
   struct.object({ databaseConnectivity: struct.boolean() }),
   extensions,
 );
-export const versionResponse = struct.intersection(
+export type HealthPayload = Infer<typeof HealthPayload>;
+
+export const VersionResponse = struct.intersection(
   struct.object({ version: struct.string() }),
   extensions,
 );
-export const usersResponse = struct.intersection(
-  struct.object({ users: struct.array(headscaleUser).nullish() }),
+export type VersionResponse = Infer<typeof VersionResponse>;
+
+export const UsersResponse = struct.intersection(
+  struct.object({ users: struct.array(HeadscaleUser).nullish() }),
   extensions,
 );
-export const userResponse = struct.intersection(
-  struct.object({ user: headscaleUser }),
+export type UsersResponse = Infer<typeof UsersResponse>;
+
+export const UserResponse = struct.intersection(
+  struct.object({ user: HeadscaleUser }),
   extensions,
 );
-export const preAuthKeysResponse = struct.intersection(
-  struct.object({ preAuthKeys: struct.array(preAuthKey).nullish() }),
+export type UserResponse = Infer<typeof UserResponse>;
+
+export const PreAuthKeysResponse = struct.intersection(
+  struct.object({ preAuthKeys: struct.array(PreAuthKeyData).nullish() }),
   extensions,
 );
-export const preAuthKeyResponse = struct.intersection(
-  struct.object({ preAuthKey }),
+export type PreAuthKeysResponse = Infer<typeof PreAuthKeysResponse>;
+
+export const PreAuthKeyResponse = struct.intersection(
+  struct.object({ preAuthKey: PreAuthKeyData }),
   extensions,
 );
-export const nodesResponse = struct.intersection(
-  struct.object({ nodes: struct.array(headscaleNode).nullish() }),
+export type PreAuthKeyResponse = Infer<typeof PreAuthKeyResponse>;
+
+export const NodesResponse = struct.intersection(
+  struct.object({ nodes: struct.array(HeadscaleNodeData).nullish() }),
   extensions,
 );
-export const nodeResponse = struct.intersection(
-  struct.object({ node: headscaleNode }),
+export type NodesResponse = Infer<typeof NodesResponse>;
+
+export const NodeResponse = struct.intersection(
+  struct.object({ node: HeadscaleNodeData }),
   extensions,
 );
-export const changesResponse = struct.intersection(
+export type NodeResponse = Infer<typeof NodeResponse>;
+
+export const ChangesResponse = struct.intersection(
   struct.object({ changes: optionalStrings }),
   extensions,
 );
-export const apiKeysResponse = struct.intersection(
-  struct.object({ apiKeys: struct.array(apiKey).nullish() }),
+export type ChangesResponse = Infer<typeof ChangesResponse>;
+
+export const ApiKeysResponse = struct.intersection(
+  struct.object({ apiKeys: struct.array(ApiKey).nullish() }),
   extensions,
 );
-export const createApiKeyResponse = struct.intersection(
+export type ApiKeysResponse = Infer<typeof ApiKeysResponse>;
+
+export const CreateApiKeyResponse = struct.intersection(
   struct.object({ apiKey: struct.string() }),
   extensions,
 );
-export const policyResponse = struct.intersection(
+export type CreateApiKeyResponse = Infer<typeof CreateApiKeyResponse>;
+
+export const PolicyResponse = struct.intersection(
   struct.object({ policy: struct.string(), updatedAt: optionalString }),
   extensions,
 );
+export type PolicyResponse = Infer<typeof PolicyResponse>;
 
 // Headscale sends Go's zero time for "never"; an unparseable value is left for formatDate to show raw.
 const ZERO_TIME = Date.parse("0001-01-01T00:00:00Z");
@@ -140,7 +168,7 @@ function unsetAsUndefined(value?: string | null): string | undefined {
   return !value || Date.parse(value) <= ZERO_TIME ? undefined : value;
 }
 
-export function normalizePreAuthKey(key: Infer<typeof preAuthKey>) {
+export function normalizePreAuthKey(key: PreAuthKeyData) {
   // Optional in the type: the key stays absent-or-string, never a required `undefined` slot.
   const dates: { expiration?: string } = {
     expiration: unsetAsUndefined(key.expiration),
@@ -155,8 +183,8 @@ export function normalizePreAuthKey(key: Infer<typeof preAuthKey>) {
   };
 }
 
-export function normalizeHeadscaleNode(node: Infer<typeof headscaleNode>) {
-  const { preAuthKey, ...rest } = node;
+export function normalizeHeadscaleNode(node: HeadscaleNodeData) {
+  const { preAuthKey: nodePreAuthKey, ...rest } = node;
   const dates: { expiry?: string; lastSeen?: string } = {
     expiry: unsetAsUndefined(node.expiry),
     lastSeen: unsetAsUndefined(node.lastSeen),
@@ -164,9 +192,9 @@ export function normalizeHeadscaleNode(node: Infer<typeof headscaleNode>) {
   return {
     ...rest,
     ...dates,
-    ...(preAuthKey == null
+    ...(nodePreAuthKey == null
       ? {}
-      : { preAuthKey: normalizePreAuthKey(preAuthKey) }),
+      : { preAuthKey: normalizePreAuthKey(nodePreAuthKey) }),
     ipAddresses: node.ipAddresses ?? [],
     online: node.online ?? false,
     approvedRoutes: node.approvedRoutes ?? [],
@@ -176,18 +204,14 @@ export function normalizeHeadscaleNode(node: Infer<typeof headscaleNode>) {
   };
 }
 
-export type HeadscaleUser = Infer<typeof headscaleUser>;
 export type PreAuthKey = ReturnType<typeof normalizePreAuthKey>;
 export type HeadscaleNode = ReturnType<typeof normalizeHeadscaleNode>;
-export type ApiKey = Infer<typeof apiKey>;
 
-export type HealthResponse = Infer<typeof healthResponse> & {
+export type HealthResponse = HealthPayload & {
   checkedAt?: string;
   latencyMs?: number;
   serverReachable?: boolean;
 };
-export type VersionResponse = Infer<typeof versionResponse>;
-export type PolicyResponse = Infer<typeof policyResponse>;
 // Client annotation (not a server field): Headscale runs in file mode without a policy path.
 export type PolicyReading = PolicyResponse & { fileModeWithoutPath?: true };
 

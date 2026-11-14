@@ -1,5 +1,5 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
+import { requireValue } from "@/test/dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createThemeStore } from "@/composables/useTheme";
 import { __resetForTest, STORE_META } from "@/lib/idb";
@@ -10,14 +10,30 @@ import { idbPut } from "@/test-utils/storage";
 import { applyStoredLocale, setLocale } from "./index";
 import * as runtime from "./runtime";
 
+vi.mock("@/lib/settings-storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof settings>();
+  return {
+    ...actual,
+    writeSetting: vi.fn(actual.writeSetting),
+  };
+});
+vi.mock("./runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof runtime>();
+  return { ...actual, loadLocale: vi.fn(actual.loadLocale) };
+});
+
 beforeEach(async () => {
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   __resetForTest();
   settings.settingsStorageTestingHandle.reset();
   await settings.hydrateSettings();
   runtime.i18n.activate("en-US");
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; an override would otherwise stick.
+  vi.resetAllMocks();
+});
 
 function deferred() {
   let resolve!: () => void;
@@ -40,7 +56,9 @@ test("keeps the active language and preference when its catalog fails", async ()
 });
 
 test("lets the newest locale win when catalog responses finish out of order", async () => {
-  const actualLoad = runtime.loadLocale;
+  const actualLoad = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   const slow = deferred();
   vi.spyOn(runtime, "loadLocale").mockImplementation(async (locale) => {
     if (locale === "ar") await slow.promise;
@@ -76,6 +94,7 @@ test("restores legacy stored locale without writing it again", async () => {
     settings.captureSettingsWriteEpoch(),
   );
   const write = vi.spyOn(settings, "writeSetting");
+  write.mockClear();
   await applyStoredLocale();
   expect(runtime.i18n.locale).toBe("fr-FR");
   expect(settings.readSetting("locale")).toBe("fr");
@@ -83,7 +102,9 @@ test("restores legacy stored locale without writing it again", async () => {
 });
 
 test("cancels a pending locale load when saved data is reset", async () => {
-  const actualLoad = runtime.loadLocale;
+  const actualLoad = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   const slow = deferred();
   vi.spyOn(runtime, "loadLocale").mockImplementation(async (locale) => {
     await slow.promise;
@@ -99,7 +120,9 @@ test("cancels a pending locale load when saved data is reset", async () => {
 
 test("does not overwrite the newest language when an older catalog rejects", async () => {
   const slow = deferred();
-  const actualLoad = runtime.loadLocale;
+  const actualLoad = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   vi.spyOn(runtime, "loadLocale").mockImplementation((locale) =>
     locale === "ar" ? slow.promise : actualLoad(locale),
   );
@@ -115,7 +138,9 @@ test.each([true, false])(
   "ignores an older persistence completion after a newer language (failure=%s)",
   async (fail) => {
     const slow = deferred();
-    const write = settings.writeSetting;
+    const write = requireValue(
+      vi.mocked(settings.writeSetting).getMockImplementation(),
+    );
     const started = deferred();
     vi.spyOn(settings, "writeSetting").mockImplementation(
       async (key, value, epoch) => {
@@ -152,7 +177,9 @@ test("keeps startup usable in English if the saved catalog cannot load", async (
 
 test("keeps the request-start epoch when a reset notification is lost", async () => {
   const slow = deferred();
-  const actualLoad = runtime.loadLocale;
+  const actualLoad = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   vi.spyOn(runtime, "loadLocale").mockImplementation(async (locale) => {
     await slow.promise;
     await actualLoad(locale);

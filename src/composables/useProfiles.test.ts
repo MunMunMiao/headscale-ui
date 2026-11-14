@@ -1,5 +1,3 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { setLocale, t } from "@/i18n";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -14,8 +12,10 @@ import {
   settingsStorageTestingHandle,
 } from "@/lib/settings-storage";
 import { createSessionBridge } from "@/session/bridge";
+import { testDouble } from "@/test/dom";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { idbGetAll, idbPut } from "@/test-utils/storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createProfilesStore,
   newProfileId,
@@ -23,13 +23,13 @@ import {
 } from "./useProfiles";
 
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 const fixture = () => profilesFixture(cleanup);
 
@@ -159,7 +159,7 @@ test("editing only metadata never decrypts or refills credentials", async () => 
   await profiles.addProfile();
   const profile = profiles.getSnapshot().profiles[0];
   if (!profile) throw new Error("Profile save failed");
-  const stored = await idbGetAll("profiles");
+  const stored = await idbGetAll<{ apiKey: unknown }>("profiles");
   const calls = server.requests.length;
   await profiles.loadProfile(profile.id);
   expect(profiles.getSnapshot().connectionForm).toMatchObject({
@@ -171,7 +171,7 @@ test("editing only metadata never decrypts or refills credentials", async () => 
   expect(profiles.getSnapshot().profiles[0]?.name).toBe("Renamed");
   expect(server.requests).toHaveLength(calls);
   expect((await idbGetAll<{ apiKey: unknown }>("profiles"))[0]?.apiKey).toEqual(
-    (stored[0] as { apiKey: unknown }).apiKey,
+    stored[0]?.apiKey,
   );
 });
 
@@ -754,8 +754,9 @@ test.each(["consume", "decline", "truthy", "throw", "absent"] as const)(
             });
             if (presentation === "throw")
               throw new Error("Presentation failed");
+            // A consumer can return a truthy non-boolean at runtime; only `true` counts.
             if (presentation === "truthy")
-              return "claimed" as unknown as boolean;
+              return testDouble<boolean>("claimed");
             return presentation === "consume";
           };
     expect(
@@ -1073,8 +1074,8 @@ test.each(["decline", "throw"] as const)(
               f.profile,
               f.form.password,
               "replacement-password",
-              (result) => {
-                nextResults.push(result);
+              (nextResult) => {
+                nextResults.push(nextResult);
                 return true;
               },
             );
@@ -1096,13 +1097,16 @@ test.each(["decline", "throw"] as const)(
       expect(f.profiles.isConnecting).toBe(true);
       expect(f.feedback.getSnapshot().lastError).toBe("New operation feedback");
       release.resolve();
-      expect(await next).toBe(true);
+      const pending = next;
+      if (!pending) throw new Error("Expected a pending password change");
+      expect(await Promise.resolve(pending)).toBe(true);
       expect(nextResults).toEqual([{ kind: "changed" }]);
       expect(requests).toBe(2);
       expect(f.profiles.getSnapshot().phase).toEqual({ kind: "idle" });
     } finally {
       release.resolve();
-      await next;
+      const pendingChange = next;
+      if (pendingChange) await Promise.resolve(pendingChange);
     }
   },
 );
@@ -1222,14 +1226,14 @@ test("a delete reply older than a synchronized newer vault version never moves t
     .toBe(newest);
   release.resolve();
   await confirming;
-  expect(revisions).toEqual([...revisions].sort((a, b) => a - b));
+  expect(revisions).toEqual([...revisions].toSorted((a, b) => a - b));
   expect(f.profiles.getSnapshot().version?.profilesRevision).toBe(newest);
   expect(
     f.profiles
       .getSnapshot()
       .profiles.map((profile) => profile.name)
-      .sort(),
-  ).toEqual([kept.name, "Third"].sort());
+      .toSorted(),
+  ).toEqual([kept.name, "Third"].toSorted());
   expect(f.profiles.getSnapshot().pendingDeleteProfile).toBeNull();
 });
 

@@ -1,5 +1,3 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { prepareApplication, resetUnreadableVault } from "./bootstrap";
 import * as theme from "./composables/useTheme";
@@ -20,18 +18,37 @@ import * as connector from "./session/connect";
 import { createSessionHost } from "./session/host";
 import { startSnapshotServer } from "./test-utils/headscale.test";
 import { idbDelete, idbGet, idbGetAll, idbPut } from "./test-utils/storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
+import { requireValue } from "@/test/dom";
+
+vi.mock("./composables/useTheme", { spy: true });
+vi.mock("./i18n/runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof runtime>();
+  return { ...actual, loadLocale: vi.fn(actual.loadLocale) };
+});
+vi.mock("./lib/settings-storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof settings>();
+  return {
+    ...actual,
+    hydrateSettings: vi.fn(actual.hydrateSettings),
+    writeSetting: vi.fn(actual.writeSetting),
+  };
+});
+vi.mock("./session/connect", { spy: true });
 
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
   runtime.i18n.activate("en-US");
   settingsStorageTestingHandle.reset();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
   vi.unstubAllGlobals();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; an override would otherwise stick.
+  vi.resetAllMocks();
 });
 async function installHost(storageVersion = DB_VERSION) {
   const host = await createSessionHost("bootstrap-test");
@@ -100,7 +117,10 @@ test("bootstrap rejects an incompatible Worker handshake instead of mounting an 
 test("bootstrap rejects a failed Worker profile read instead of presenting an empty profile list", async () => {
   const bridge = await installBridge();
   const dispose = vi.spyOn(bridge, "dispose");
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args: Parameters<IDBObjectStore["getAll"]>
@@ -121,7 +141,9 @@ test("waits for the persisted language before completing bootstrap without rewri
   await idbPut("meta", { locale: "ar" }, "ui-settings");
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
-  const load = runtime.loadLocale;
+  const load = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   vi.spyOn(runtime, "loadLocale").mockImplementation(async (locale) => {
     started.resolve();
     await release.promise;
@@ -159,7 +181,9 @@ test("reads the latest Worker profile summaries after a delayed locale load", as
   await idbPut("meta", { locale: "ar" }, "ui-settings");
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
-  const load = runtime.loadLocale;
+  const load = requireValue(
+    vi.mocked(runtime.loadLocale).getMockImplementation(),
+  );
   vi.spyOn(runtime, "loadLocale").mockImplementation(async (locale) => {
     started.resolve();
     await release.promise;
@@ -189,7 +213,9 @@ test("reads the latest Worker profile summaries after a delayed locale load", as
 test("bootstrap applies the stored theme right after hydration and before the Worker connects", async () => {
   const bridge = await installBridge();
   const order: string[] = [];
-  const hydrate = settings.hydrateSettings;
+  const hydrate = requireValue(
+    vi.mocked(settings.hydrateSettings).getMockImplementation(),
+  );
   vi.spyOn(settings, "hydrateSettings").mockImplementation(async () => {
     await hydrate();
     order.push("hydrate");
@@ -211,7 +237,7 @@ async function unreadableVaultFixture() {
   const observer = page("owner-observer");
   expect((await observer.connect()).ok).toBe(true);
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const list = await observer.listProfiles();
   if (!list.ok) throw new Error("profile list failed");
   const saved = await observer.saveProfile({
@@ -292,7 +318,7 @@ test("resetUnreadableVault returns false when the committed reset could not clea
   vi.spyOn(connector, "createBrowserSessionBridge").mockImplementation(() =>
     page("owner-reset"),
   );
-  expect(typeof sessionStorage).toBe("undefined");
+  vi.stubGlobal("sessionStorage", undefined);
   expect(await resetUnreadableVault()).toBe(false);
 });
 

@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import type { ProfileSummary } from "@/lib/profile-storage";
@@ -17,11 +16,11 @@ let session: Session;
 const cleanup: (() => void | Promise<void>)[] = [];
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.splice(0).reverse()) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
   const host = await createSessionHost("connection-dialog-test");

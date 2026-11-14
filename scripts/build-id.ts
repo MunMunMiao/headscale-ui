@@ -37,7 +37,7 @@ export function computeBuildId(root: string): string {
     }
   }
   const hash = createHash("sha256");
-  for (const path of paths.sort()) {
+  for (const path of paths.toSorted()) {
     const bytes = readFileSync(join(root, path));
     hash.update(`${path}\0${bytes.length}\0`).update(bytes);
   }

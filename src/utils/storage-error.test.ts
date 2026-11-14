@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { expect, test } from "vitest";
 import { setLocale, t } from "@/i18n";
 import { hydrateSettings } from "@/lib/settings-storage";

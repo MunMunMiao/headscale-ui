@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance } from "@/test/dom";
 import { I18nProvider } from "@lingui/react";
 import { useState } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -42,13 +42,22 @@ function Harness({
   empty = false,
   busy = false,
   error = "",
-  expirationDays = undefined as number | undefined,
+  expirationDays,
   owner = defaults.user,
   tags = "",
   management = true,
-  restoredDraft = undefined as AuthKeyDialogDraft | undefined,
-  submit = undefined as
-    ((payload: AuthKeyDialogPayload) => void | Promise<void>) | undefined,
+  restoredDraft,
+  submit,
+}: {
+  empty?: boolean;
+  busy?: boolean;
+  error?: string;
+  expirationDays?: number;
+  owner?: string;
+  tags?: string;
+  management?: boolean;
+  restoredDraft?: AuthKeyDialogDraft;
+  submit?: (payload: AuthKeyDialogPayload) => void | Promise<void>;
 }) {
   const [ownerDefaults] = useState({
     ...defaults,
@@ -641,9 +650,6 @@ test("a submit in flight locks every control", async () => {
   await expect.element(page.getByTestId("cancel-create-invite")).toBeDisabled();
   await expect.element(page.getByTestId("invite-tags-search")).toBeDisabled();
   await expect.element(page.getByTestId("invite-expiration")).toBeDisabled();
-  expect(
-    document.querySelector('[data-testid="create-invite"] .animate-spin'),
-  ).not.toBeNull();
 });
 
 test("explicit add trims a free tag while Enter only searches and preserves the selected list", async () => {
@@ -667,9 +673,10 @@ test("a native management click in the same turn as submission cannot leave the 
   const submit = vi.fn(() => request.promise);
   await render(<Harness submit={submit} />);
   const form = page.getByTestId("invite-form").element();
-  const manage = page
-    .getByTestId("invite-tags-manage")
-    .element() as HTMLButtonElement;
+  const manage = requireInstance(
+    page.getByTestId("invite-tags-manage").element(),
+    HTMLButtonElement,
+  );
   form.dispatchEvent(
     new SubmitEvent("submit", { bubbles: true, cancelable: true }),
   );

@@ -50,6 +50,7 @@ export function guardRoute(
         current?.status !== "unlocked" ||
         (requested && current.profile?.id !== requested)))
   )
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect is control flow
     throw redirect({
       to: "/login",
       search: {
@@ -96,6 +97,7 @@ export function createApplicationRouter(
     getParentRoute: () => layout,
     path: "/",
     beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect is control flow
       throw redirect({ to: "/home", search: true, hash: true, replace: true });
     },
   });
@@ -135,6 +137,7 @@ export function createApplicationRouter(
     getParentRoute: () => root,
     path: "/$profileId",
     beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect is control flow
       throw redirect({
         to: "/home",
         search: { profile: params.profileId },
@@ -147,6 +150,7 @@ export function createApplicationRouter(
     path: "/$profileId/$group",
     beforeLoad: ({ params }) => {
       const target = `/${params.group}`;
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect is control flow
       throw redirect({
         to: protectedPaths.has(target) ? target : "/login",
         search: protectedPaths.has(target) ? { profile: params.profileId } : {},
@@ -158,6 +162,7 @@ export function createApplicationRouter(
     getParentRoute: () => root,
     path: "/$",
     beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect is control flow
       throw redirect({ to: "/login", replace: true });
     },
   });

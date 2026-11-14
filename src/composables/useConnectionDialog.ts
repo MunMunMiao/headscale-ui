@@ -92,7 +92,7 @@ export function useConnectionDialog() {
   const { connectionDialogOpen } = useStore(profiles);
   const dialog = useMemo(() => createConnectionDialog(profiles), [profiles]);
   useEffect(() => {
-    if (!connectionDialogOpen) return;
+    if (!connectionDialogOpen) return undefined;
     const protectDraft = (event: BeforeUnloadEvent) => {
       if (!dialog.isConnectionFormDirty()) return;
       event.preventDefault();

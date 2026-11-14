@@ -4,8 +4,6 @@ import {
   makeLegacyCanary,
   seedLegacyDeviceKey,
 } from "@/test-utils/legacy-vault";
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
 import {
@@ -27,6 +25,7 @@ import {
   updateProfileMetadata,
 } from "./profile-storage";
 import { clearAllSecureData } from "./secure-storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   readVaultState,
   subscribeVaultChanges,
@@ -35,9 +34,9 @@ import {
   type VaultVersion,
 } from "./vault-state";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 
 async function version(): Promise<VaultVersion> {
@@ -92,11 +91,10 @@ test("worker repository lists only owner-visible summaries and never exposes sto
     ownerTabId: "owner-b",
   });
   const broken = await legacy("unreadable", { apiKey: { unsupported: true } });
-  vi.stubGlobal("window", undefined);
   vi.stubGlobal("sessionStorage", undefined);
   try {
     const result = await listProfileSummaries("owner-a");
-    expect(result.profiles.map((item) => item.id).sort()).toEqual([
+    expect(result.profiles.map((item) => item.id).toSorted()).toEqual([
       "own",
       "public",
       "unreadable",
@@ -363,8 +361,14 @@ test.each(["last-put", "request-success-abort", "canary-delete"])(
       ownerTabId: "owner-a",
       profile: { id: "migrate", credentialVersion: null },
     };
-    const put = IDBObjectStore.prototype.put;
-    const remove = IDBObjectStore.prototype.delete;
+    const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+      IDBObjectStore.prototype,
+      "put",
+    );
+    const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+      IDBObjectStore.prototype,
+      "delete",
+    );
     const putSpy = vi
       .spyOn(IDBObjectStore.prototype, "put")
       .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -507,10 +511,10 @@ test.each(["create", "change-password", "reset"])(
     const gate = vi
       .spyOn(crypto.subtle, "encrypt")
       .mockImplementationOnce(async (...args) => {
-        const encrypted = await nativeEncrypt(...args);
+        const ciphertext = await nativeEncrypt(...args);
         started.resolve();
         await release.promise;
-        return encrypted;
+        return ciphertext;
       });
     const task = migrateProfile({ expected, password: "migration password" });
     await started.promise;
@@ -703,7 +707,10 @@ test("a native delete request that succeeds before transaction abort cannot publ
     ownerTabId: "owner-a",
     profile: { id: profile.id, credentialVersion: profile.credentialVersion },
   };
-  const remove = IDBObjectStore.prototype.delete;
+  const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -814,14 +821,14 @@ test.each(["commit", "delete"] as const)(
     };
     const controller = new AbortController();
     const method = operation === "commit" ? "put" : "delete";
-    const original = IDBObjectStore.prototype[method];
+    const original: (...args: never[]) => IDBRequest = Reflect.get(
+      IDBObjectStore.prototype,
+      method,
+    );
     const spy = vi
       .spyOn(IDBObjectStore.prototype, method)
-      .mockImplementation(function (
-        this: IDBObjectStore,
-        ...args: Parameters<typeof original>
-      ) {
-        const request = Reflect.apply(original, this, args) as IDBRequest;
+      .mockImplementation(function (this: IDBObjectStore, ...args: unknown[]) {
+        const request: IDBRequest = Reflect.apply(original, this, args);
         if (this.name === "profiles")
           request.addEventListener("success", () => controller.abort(), {
             once: true,
@@ -934,7 +941,9 @@ test("a metadata update needs an existing profile reference and drops obsolete l
 });
 
 test("a row that is not a plain record is unreadable", async () => {
-  await idbPut("profiles", Object.assign([], { id: "array-row" }));
+  const row: unknown[] = [];
+  Reflect.set(row, "id", "array-row");
+  await idbPut("profiles", row);
   await expect(
     readProfileForOwner("array-row", "owner-a"),
   ).rejects.toBeInstanceOf(VaultDataError);

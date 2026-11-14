@@ -50,12 +50,6 @@ describe("policy templates", () => {
   });
 
   test("builds every supported template with independent policy objects", () => {
-    expect(POLICY_TEMPLATES.map((template) => template.id)).toEqual([
-      "self-only",
-      "small-team",
-      "split-env",
-    ]);
-
     const selfOnly = POLICY_TEMPLATES[0].build();
     expect(
       selfOnly.rules?.map(({ source, destination, ports }) => ({
@@ -133,8 +127,8 @@ describe("policy templates", () => {
 
     const emptyTemplate: PolicyTemplate = {
       id: "self-only",
-      titleKey: "unusedTitle",
-      descriptionKey: "unusedDescription",
+      titleKey: "templateSelfOnlyTitle",
+      descriptionKey: "templateSelfOnlyDescription",
       build: () => ({}),
     };
     expect(applyTemplate(state, emptyTemplate)).toEqual(state);

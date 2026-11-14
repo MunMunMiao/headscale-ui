@@ -2,7 +2,8 @@ import { createClient, withEndpoint, withHTTPHandle } from "@defjs/core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { HeadscaleSnapshot, HealthResponse } from "@/api/contracts";
 import * as headscale from "@/api/snapshot";
-import { fetchSegment, fetchSnapshot } from "@/api/snapshot";
+import { type ApiResult, fetchSegment, fetchSnapshot } from "@/api/snapshot";
+import { ApiError } from "@/session/types";
 import { registrationKeyStatus } from "@/domain/tag-lifecycle";
 import { i18n } from "@/i18n";
 import { productDescriptors } from "@/i18n/descriptors";
@@ -19,6 +20,8 @@ import {
 import { createActionFeedbackStore } from "./useActionFeedback";
 import type { createHeadscaleClientStore } from "./useHeadscaleClient";
 import { createSnapshotStore } from "./useSnapshot";
+
+vi.mock("@/api/snapshot", { spy: true });
 
 let feedbackStore: ReturnType<typeof createActionFeedbackStore>;
 let auth: ReturnType<typeof fixtureSession>["auth"];
@@ -37,8 +40,16 @@ beforeEach(() => {
 let fixture: ReturnType<typeof startSnapshotServer>;
 afterEach(() => {
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; an override would otherwise stick.
+  vi.resetAllMocks();
   fixture.stop();
 });
+
+async function value<T>(reading: Promise<ApiResult<T>>): Promise<T> {
+  const [err, result] = await reading;
+  if (err) throw err;
+  return result;
+}
 
 describe("snapshot fetchers", () => {
   test("preserves validated nullable metadata without replacing server extensions", async () => {
@@ -64,7 +75,7 @@ describe("snapshot fetchers", () => {
     const client = fixtureExecute(
       createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     );
-    const snapshot = await fetchSnapshot(client);
+    const snapshot = await value(fetchSnapshot(client));
     expect(snapshot.users).toEqual([
       {
         id: "1",
@@ -91,22 +102,22 @@ describe("snapshot fetchers", () => {
       createFixtureHttp({ baseUrl: fixture.baseUrl, apiKey: "test-key" }),
     );
 
-    const identity = await fetchSegment(client, "identity");
+    const identity = await value(fetchSegment(client, "identity"));
     expect(identity.users).toHaveLength(1);
     expect(identity.preAuthKeys).toHaveLength(1);
     expect(identity.apiKeys).toHaveLength(1);
     expect(identity.nodes).toBeUndefined();
 
-    const fabric = await fetchSegment(client, "fabric");
+    const fabric = await value(fetchSegment(client, "fabric"));
     expect(fabric.health?.serverReachable).toBe(true);
     expect(fabric.version).toEqual({ version: "v0.29.4" });
     expect(fabric.nodes).toHaveLength(2);
-    expect((await fetchSegment(client, "policy")).policy?.policy).toContain(
-      '"acls"',
-    );
+    expect(
+      (await value(fetchSegment(client, "policy"))).policy?.policy,
+    ).toContain('"acls"');
 
-    const snapshot = await fetchSnapshot(client);
-    expect(Object.keys(snapshot).sort()).toEqual([
+    const snapshot = await value(fetchSnapshot(client));
+    expect(Object.keys(snapshot).toSorted()).toEqual([
       "apiKeys",
       "health",
       "nodes",
@@ -137,6 +148,34 @@ function useTransport(
 }
 
 describe("useSnapshot", () => {
+  test.each(["NET_TIMEOUT", "NET_UNREACHABLE"] as const)(
+    "a wrapped %s tuple marks offline state and publishes the user refresh failure once",
+    async (code) => {
+      snapshotStore.setAuthorized(true);
+      snapshotStore.applyPatch(snapshotFixture());
+      const before = snapshotStore.getSnapshot().snapshot;
+      const err = new Error("read fabric", {
+        cause: new ApiError({
+          kind: "api",
+          code,
+          message: "transport-secret-canary",
+        }),
+      });
+      vi.mocked(headscale.fetchSegment).mockResolvedValue([err, undefined]);
+      const add = vi.spyOn(feedbackStore.toastManager, "add");
+      await snapshotStore.refreshByUser(["fabric"]);
+      const state = snapshotStore.getSnapshot();
+      expect(state.snapshot.health?.serverReachable).toBe(false);
+      expect(state.snapshot.nodes).toBe(before.nodes);
+      expect(state.refreshErrors.fabric).not.toMatch(
+        /read fabric|secret-canary/,
+      );
+      expect(state.segmentStatus.fabric).toBe("error");
+      expect(state.refreshSnapshotInFlight).toBe(0);
+      expect(add).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(add.mock.calls)).not.toContain("secret-canary");
+    },
+  );
   test("the first snapshot becomes ready only after all segments load and a session change resets readiness", async () => {
     snapshotStore.setAuthorized(true);
     expect(snapshotStore.getSnapshot()).toMatchObject({ isReady: false });
@@ -777,8 +816,8 @@ describe("useSnapshot", () => {
     const resolvers: Array<(health: HealthResponse) => void> = [];
     vi.spyOn(client, "fetchSegment").mockImplementation(
       () =>
-        new Promise<Partial<HeadscaleSnapshot>>((resolve) => {
-          resolvers.push((health) => resolve({ health }));
+        new Promise<ApiResult<Partial<HeadscaleSnapshot>>>((resolve) => {
+          resolvers.push((health) => resolve([null, { health }]));
         }),
     );
 
@@ -854,7 +893,7 @@ describe("useSnapshot", () => {
     api.setAuthorized(true);
     const response = Promise.withResolvers<HealthResponse>();
     vi.spyOn(client, "fetchSegment").mockImplementation(() =>
-      response.promise.then((health) => ({ health })),
+      response.promise.then((health) => [null, { health }]),
     );
     const refreshing = api.refreshSegments(["fabric"]);
 

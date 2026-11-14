@@ -134,7 +134,7 @@ export default function LoginPage({
   const { openConnectionDialogWithBaseline, editProfileWithBaseline } =
     connectionDialog;
   const navigate = useNavigate();
-  const query = useSearch({ strict: false }) as Record<string, unknown>;
+  const query: Record<string, unknown> = useSearch({ strict: false });
   const { formatDate } = useDisplayHelpers();
   function requestDeleteProfile(profile: ProfileSummary) {
     setFeedbackState({ lastError: "" });
@@ -162,13 +162,16 @@ export default function LoginPage({
   async function enterProfileAndRoute(profile: ProfileSummary) {
     if (profile.credentialKind === "unreadable") {
       await editProfileWithBaseline(profile);
-      return;
+      return undefined;
     }
     // Another tab already unlocked this server; the shared session needs no password here.
-    if (unlocked?.profile.id === profile.id)
-      return continueToServer(profile.id);
+    if (unlocked?.profile.id === profile.id) {
+      await continueToServer(profile.id);
+      return undefined;
+    }
     // Without a password this only opens the unlock overlay, which navigates after unlocking.
     await enterProfile(profile);
+    return undefined;
   }
   const profilesWereCleared = query.cleared === "1";
   const lockReason =
@@ -508,7 +511,7 @@ export default function LoginPage({
                     disabled={isConnecting || clearing}
                     onClick={(event) => {
                       event.stopPropagation();
-                      void requestDeleteProfile(profile);
+                      requestDeleteProfile(profile);
                     }}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />

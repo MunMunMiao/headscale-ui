@@ -8,7 +8,12 @@ import { createHeadscaleClientStore } from "@/composables/useHeadscaleClient";
 import type { SessionRequestOptions } from "@/session/auth-session";
 import type { SessionBridge } from "@/session/bridge";
 import { executeOperation } from "@/session/operation-dispatch";
-import type { ApiCommand, ApiRequest } from "@/session/protocol";
+import type {
+  ApiCommand,
+  ApiOutput,
+  ApiRequest,
+  EndpointName,
+} from "@/session/protocol";
 import type { SessionIdentity, SessionResult } from "@/session/types";
 
 /** Runs the Worker dispatcher against a test-controlled client so the real endpoint contracts apply. */
@@ -61,13 +66,11 @@ export function createFixtureHttp(settings: ConnectionSettings) {
         ? "Enter an absolute HTTP(S) server URL."
         : "Enter an API key.",
     );
-  return createWorkerHeadscaleHttp({
-    signal: new AbortController().signal,
-    requireCurrent: () => ({
-      baseUrl: settings.baseUrl.trim().replace(/\/+$/, ""),
-      apiKey: settings.apiKey.trim(),
-    }),
-  });
+  const baseUrl = settings.baseUrl.trim().replace(/\/+$/, "");
+  return createWorkerHeadscaleHttp(baseUrl, () => ({
+    baseUrl,
+    apiKey: settings.apiKey.trim(),
+  }));
 }
 
 /** A bridge stand-in that sees the kind the page declared; the reply it fakes is the test's business. */
@@ -80,14 +83,17 @@ export function fakeAuth(bridge: {
 }): Pick<SessionBridge, "read" | "write"> {
   const publish =
     (type: ApiRequest["type"]) =>
-    (
+    <K extends EndpointName>(
       expected: SessionIdentity,
-      command: ApiCommand,
+      command: ApiCommand<K>,
       options?: SessionRequestOptions,
-    ) =>
-      bridge.execute(expected, { ...command, type } as ApiRequest, options);
-  return { read: publish("api.read"), write: publish("api.write") } as Pick<
-    SessionBridge,
-    "read" | "write"
-  >;
+    ): Promise<SessionResult<ApiOutput<K>>> => {
+      const execute: typeof bridge.execute = Reflect.get(bridge, "execute");
+      return Reflect.apply(execute, bridge, [
+        expected,
+        { ...command, type },
+        options,
+      ]);
+    };
+  return { read: publish("api.read"), write: publish("api.write") };
 }

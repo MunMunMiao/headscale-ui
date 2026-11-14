@@ -11,6 +11,7 @@ import { i18n, t } from "@/i18n";
 import { commonDescriptors, productDescriptors } from "@/i18n/descriptors";
 import { loadLocale } from "@/i18n/runtime";
 import { ApiError } from "@/session/types";
+import { testDouble } from "@/test/dom";
 import type { MutationOutcome } from "./tag-lifecycle-state";
 import {
   createActionFeedbackStore,
@@ -592,43 +593,53 @@ describe("explicit operation notifications", () => {
       null,
     ]) {
       expect(() =>
-        operation.publish({
-          tone: "error",
-          title,
-        } as unknown as NotificationMessage),
+        operation.publish(
+          testDouble<NotificationMessage>({
+            tone: "error",
+            title,
+          }),
+        ),
       ).not.toThrow();
       expect(
-        operation.publish({
-          tone: "error",
-          title,
-        } as unknown as NotificationMessage),
+        operation.publish(
+          testDouble<NotificationMessage>({
+            tone: "error",
+            title,
+          }),
+        ),
       ).toBe(false);
     }
     expect(
-      operation.publish({
-        tone: "error",
-        title: "common.operationFailed",
-        description: { id: "common.close", message: raw },
-      } as unknown as NotificationMessage),
+      operation.publish(
+        testDouble<NotificationMessage>({
+          tone: "error",
+          title: "common.operationFailed",
+          description: { id: "common.close", message: raw },
+        }),
+      ),
     ).toBe(false);
-    expect(operation.publish(null as unknown as NotificationMessage)).toBe(
-      false,
-    );
     expect(
-      operation.publish({
-        tone: "not-a-tone",
-        title: "common.close",
-      } as unknown as NotificationMessage),
+      Reflect.apply(Reflect.get(operation, "publish"), operation, [null]),
+    ).toBe(false);
+    expect(
+      operation.publish(
+        testDouble<NotificationMessage>({
+          tone: "not-a-tone",
+          title: "common.close",
+        }),
+      ),
     ).toBe(false);
     expect(add).not.toHaveBeenCalled();
     expect(
-      operation.publish({
-        tone: "info",
-        title: "product.nav.access",
-        description: "common.operationFailed",
-        data: { authorization: raw },
-        values: { secret: raw },
-      } as NotificationMessage),
+      operation.publish(
+        testDouble<NotificationMessage>({
+          tone: "info",
+          title: "product.nav.access",
+          description: "common.operationFailed",
+          data: { authorization: raw },
+          values: { secret: raw },
+        }),
+      ),
     ).toBe(true);
     expect(add).toHaveBeenCalledWith({
       id: operation.id,
@@ -646,13 +657,14 @@ describe("explicit operation notifications", () => {
     const outcome: MutationOutcome = {
       status: "possibly-applied",
       refresh: "failed",
-      failure: { kind: "api", code: "HTTP_STATUS" },
-    };
-    Object.defineProperty(outcome.failure, "message", {
-      get() {
-        throw new Error("raw failure must not be read");
+      failure: {
+        kind: "api",
+        code: "HTTP_STATUS",
+        get message(): never {
+          throw new Error("raw failure must not be read");
+        },
       },
-    });
+    };
     const operation = feedback.beginNotification({ isCurrent: () => true });
     expect(() => operation.publishMutation(outcome)).not.toThrow();
     expect(add).toHaveBeenCalledTimes(1);

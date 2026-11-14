@@ -188,7 +188,9 @@ describe("useMutation", () => {
     const snapshot = session.snapshot;
     snapshot.setAuthorized(true);
     let refreshes = 0;
-    snapshot.setOnApplySnapshot(() => void refreshes++);
+    snapshot.setOnApplySnapshot(() => {
+      refreshes++;
+    });
     const mutation = createMutation(session, { skipRefresh: true });
 
     expect(

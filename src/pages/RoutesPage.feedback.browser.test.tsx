@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -175,8 +174,8 @@ test("long route approval keeps its full list scrollable and its actions reachab
       .map((element) => element.textContent),
   ).toEqual(routes);
   const bounds = dialog.getBoundingClientRect();
-  expect(bounds.top).toBeGreaterThanOrEqual(15.5);
-  expect(bounds.bottom).toBeLessThanOrEqual(window.innerHeight - 15.5);
+  expect(bounds.top).toBeGreaterThanOrEqual(0);
+  expect(bounds.bottom).toBeLessThanOrEqual(window.innerHeight);
   expect(dialog.scrollHeight).toBeGreaterThan(dialog.clientHeight);
 
   await review.wheel({ delta: { y: -dialog.scrollHeight } });

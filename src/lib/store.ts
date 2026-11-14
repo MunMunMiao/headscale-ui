@@ -4,16 +4,23 @@ export function createStore<State extends object>(initialState: State) {
 
   return {
     getSnapshot: () => state,
-    subscribe(listener: () => void) {
+    subscribe(this: void, listener: () => void) {
       listeners.add(listener);
       return () => {
         listeners.delete(listener);
       };
     },
-    setState(update: Partial<State> | ((current: State) => Partial<State>)) {
+    setState(
+      this: void,
+      update: Partial<State> | ((current: State) => Partial<State>),
+    ) {
       const patch = typeof update === "function" ? update(state) : update;
-      const keys = Object.keys(patch) as (keyof State)[];
-      if (keys.every((key) => Object.is(state[key], patch[key]))) return;
+      if (
+        Object.keys(patch).every((key) =>
+          Object.is(Reflect.get(state, key), Reflect.get(patch, key)),
+        )
+      )
+        return;
       state = { ...state, ...patch };
       for (const listener of listeners) listener();
     },

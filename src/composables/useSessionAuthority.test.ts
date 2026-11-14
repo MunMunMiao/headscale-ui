@@ -1,11 +1,10 @@
-import "fake-indexeddb/auto";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest } from "@/lib/idb";
 import {
@@ -20,12 +19,12 @@ import { createSessionRestoration } from "./useSessionRestore";
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 async function fixture(path = "/secure") {
@@ -34,13 +33,14 @@ async function fixture(path = "/secure") {
   const session = createSession(await harness.openPage());
   cleanup.push(session.start());
   const root = createRootRoute();
-  const children = ["/login", "/secure", "/secure-two", "/public"].map((path) =>
-    createRoute({
-      getParentRoute: () => root,
-      path,
-      component: () => null,
-      staticData: { requiresAuth: path.startsWith("/secure") },
-    }),
+  const children = ["/login", "/secure", "/secure-two", "/public"].map(
+    (routePath) =>
+      createRoute({
+        getParentRoute: () => root,
+        path: routePath,
+        component: () => null,
+        staticData: { requiresAuth: routePath.startsWith("/secure") },
+      }),
   );
   const router = createRouter({
     isServer: false,
@@ -50,7 +50,7 @@ async function fixture(path = "/secure") {
   });
   await router.load();
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   async function save(activate = false) {
     session.profiles.setConnectionForm({
       profileName: "A",

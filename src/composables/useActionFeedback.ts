@@ -3,7 +3,7 @@ import { i18n } from "@/i18n";
 import { commonDescriptors, productDescriptors } from "@/i18n/descriptors";
 import { createStore } from "@/lib/store";
 import { getErrorDetails } from "@/utils/error-mapping";
-import { useSession, useStore } from "./session-context";
+import { useSession, useStore } from "./session-context-value";
 import type { MutationOutcome } from "./tag-lifecycle-state";
 
 // Each keyed action reports its failure once, inline in the dialog or form that ran it; the page
@@ -60,6 +60,7 @@ export interface NotificationData {
 }
 
 /** Presentation only: never interpret server text or change the underlying write evidence. */
+// eslint-disable-next-line @typescript-eslint/consistent-return -- exhaustive switch over the outcome status
 export function mutationNotification(
   outcome: MutationOutcome,
   confirmedTitle?: NotificationMessageKey,
@@ -92,30 +93,42 @@ export function mutationNotification(
   }
 }
 
+function hasDescriptor<T extends object>(
+  descriptors: T,
+  name: string,
+): name is Extract<keyof T, string> {
+  return Object.hasOwn(descriptors, name);
+}
+
+const PRODUCT_MESSAGES = new Set(
+  Object.keys(productDescriptors).filter((key) => key !== "nav"),
+);
+
+function isProductMessage(
+  name: string,
+): name is Exclude<keyof typeof productDescriptors, "nav"> {
+  return PRODUCT_MESSAGES.has(name);
+}
+
 function notificationText(key: unknown): string | undefined {
-  if (typeof key !== "string") return;
+  if (typeof key !== "string") return undefined;
   const [namespace, name, child, ...rest] = key.split(".");
-  if (rest.length) return;
+  if (rest.length) return undefined;
   if (
     namespace === "common" &&
     child === undefined &&
-    Object.hasOwn(commonDescriptors, name)
+    hasDescriptor(commonDescriptors, name)
   )
-    return i18n._(commonDescriptors[name as keyof typeof commonDescriptors]);
-  if (namespace !== "product") return;
+    return i18n._(commonDescriptors[name]);
+  if (namespace !== "product") return undefined;
   if (name === "nav") {
-    if (child && Object.hasOwn(productDescriptors.nav, child))
-      return i18n._(
-        productDescriptors.nav[child as keyof typeof productDescriptors.nav],
-      );
-    return;
+    if (child && hasDescriptor(productDescriptors.nav, child))
+      return i18n._(productDescriptors.nav[child]);
+    return undefined;
   }
-  if (child === undefined && Object.hasOwn(productDescriptors, name))
-    return i18n._(
-      productDescriptors[
-        name as Exclude<keyof typeof productDescriptors, "nav">
-      ],
-    );
+  if (child === undefined && isProductMessage(name))
+    return i18n._(productDescriptors[name]);
+  return undefined;
 }
 
 interface FeedbackState {

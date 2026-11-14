@@ -54,7 +54,17 @@ function responseHeaders(original?: HeadersInit) {
   return headers;
 }
 
-export function createSessionNetwork(options: { upstream: string }) {
+type Serve = (options: {
+  fetch: (request: Request) => Response | Promise<Response>;
+}) => { url: URL; stop(force?: boolean): unknown };
+
+const serveWithBun: Serve = (options) =>
+  Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: options.fetch });
+
+export function createSessionNetwork(options: {
+  upstream: string;
+  serve?: Serve;
+}) {
   const upstream = new URL(options.upstream);
   type Gate = {
     options: NetworkGateOptions;
@@ -86,9 +96,7 @@ export function createSessionNetwork(options: { upstream: string }) {
     }
     await Promise.all(requests);
   }
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = (options.serve ?? serveWithBun)({
     async fetch(request) {
       if (request.method === "OPTIONS")
         return new Response(null, { status: 204, headers: responseHeaders() });
@@ -167,12 +175,15 @@ export function createSessionNetwork(options: { upstream: string }) {
             // The upstream write committed; the client read breaks inside the body. Breaking before
             // the first byte would let Chromium silently resend the request on a reused connection.
             observed.errorText = "RESPONSE_DROPPED";
-            const partial = new Uint8Array(body as ArrayBuffer).subarray(0, 1);
+            const partial =
+              body instanceof ArrayBuffer
+                ? new Uint8Array(body).subarray(0, 1)
+                : new Uint8Array();
             return new Response(
               new ReadableStream({
                 async start(controller) {
                   controller.enqueue(partial);
-                  await Bun.sleep(50);
+                  await new Promise((resolve) => setTimeout(resolve, 50));
                   console.info("[fixture] expected response drop");
                   // 主动断流无需异常对象，避免 Bun 将预期故障标为 CI 错误。
                   controller.error();
@@ -224,11 +235,11 @@ export function createSessionNetwork(options: { upstream: string }) {
       operationCalls.length = 0;
       if (!closed) lifetime = new AbortController();
     },
-    intercept(options: NetworkGateOptions) {
+    intercept(gateOptions: NetworkGateOptions) {
       if (closed) throw new Error("Session network fixture is closed");
       const gate: Gate = {
-        options,
-        pattern: new RegExp(options.pathPattern),
+        options: gateOptions,
+        pattern: new RegExp(gateOptions.pathPattern),
         state: {
           id: ++gateSequence,
           hits: 0,

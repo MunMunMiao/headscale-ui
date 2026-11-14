@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { beforeEach, expect, test } from "vitest";
 import { idbGet, idbPut } from "@/test-utils/storage";
 import { decryptProfileKey, encryptProfileKey } from "./api-key-crypto";
@@ -12,10 +11,34 @@ import {
 } from "./profile-storage";
 import { readVaultState, VAULT_STATE_KEY } from "./vault-state";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
+
+test.each([
+  ["device", undefined],
+  ["password", "legacy-version"],
+] as const)(
+  "reads a legacy encrypted %s credential",
+  async (scheme, credentialVersion) => {
+    const version = readVaultState(await idbGet("meta", VAULT_STATE_KEY));
+    const secret = { v: 1, scheme, iv: "old-iv", ct: "old-cipher" };
+    await idbPut("profiles", {
+      id: `legacy-${scheme}`,
+      name: "Legacy encrypted",
+      baseUrl: `https://${scheme}.example`,
+      apiKey: secret,
+      keyEpoch: version.keyEpoch,
+      scope: "persistent",
+      updatedAt: "old",
+      ...(credentialVersion === undefined ? {} : { credentialVersion }),
+    });
+    const saved = await readProfileForOwner(`legacy-${scheme}`, "owner-a");
+    expect(saved?.profile.apiKey).toEqual(secret);
+    expect(saved?.profile.credentialVersion).toBe(credentialVersion);
+  },
+);
 
 test.each([
   ["https://headscale.example//", "https://headscale.example"],

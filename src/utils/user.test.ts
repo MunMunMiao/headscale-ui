@@ -1,11 +1,12 @@
 import { describe, expect, test } from "vitest";
 import type { HeadscaleUser } from "@/api/contracts";
+import { testDouble } from "@/test/dom";
 import { isEmailLike, userNameIssue } from "./user";
 
-const users = [
+const users = testDouble<HeadscaleUser[]>([
   { id: "1", name: "alice" },
   { id: "0", name: "tagged-devices" },
-] as HeadscaleUser[];
+]);
 
 describe("userNameIssue", () => {
   test("requires a name", () => {

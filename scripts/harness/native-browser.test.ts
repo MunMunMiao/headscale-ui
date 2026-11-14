@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type Browser, chromium } from "playwright";
 import { afterEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { launchNativeBrowser } from "./native-browser";
 
 afterEach(() => vi.restoreAllMocks());
@@ -84,7 +85,7 @@ test("successful native launch stays quiet and disposes its process and profile 
   );
   const context = {};
   const close = vi.fn(async () => {});
-  const browser = { contexts: () => [context], close } as unknown as Browser;
+  const browser = testDouble<Browser>({ contexts: () => [context], close });
   vi.spyOn(chromium, "connectOverCDP").mockResolvedValue(browser);
   vi.spyOn(Bun, "spawn").mockImplementation((command) => {
     const profile = command

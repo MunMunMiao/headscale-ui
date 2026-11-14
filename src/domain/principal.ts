@@ -1,9 +1,9 @@
 import type { HeadscaleUser } from "@/api/contracts";
 
-export type Principal = string & { readonly __brand: "Principal" };
+export type Principal = string;
 
 export function toPrincipal(raw: string): Principal {
-  return raw.trim() as Principal;
+  return raw.trim();
 }
 
 // Headscale 0.29.4 removes exactly one trailing @, even when it is part of the identity.

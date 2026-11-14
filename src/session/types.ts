@@ -1,5 +1,5 @@
 import { type FaultCode, type Infer, struct } from "@defjs/core";
-import { rpcStatus } from "@/api/contracts";
+import { RpcStatus } from "@/api/contracts";
 
 export const SESSION_PROTOCOL_VERSION = 1;
 export const MAX_PORT_REQUESTS = 64;
@@ -7,18 +7,18 @@ export const MAX_PORT_REQUESTS = 64;
 // Wire contracts shared by the page and the Worker; every type that crosses the MessagePort is inferred here.
 // The page imports this module at run time, so it must never import src/api/requests.ts (and defjs's HTTP
 // pipeline with it); the page → Worker command structs live in protocol.ts, which only the Worker loads.
-export const sessionIdentity = struct.object({
+export const SessionIdentity = struct.object({
   workerId: struct.string(),
   sessionId: struct.string(),
 });
-export type SessionIdentity = Infer<typeof sessionIdentity>;
+export type SessionIdentity = Infer<typeof SessionIdentity>;
 
-const sessionProfile = struct.object({
+export const SessionProfile = struct.object({
   id: struct.string(),
   name: struct.string(),
   baseUrl: struct.string(),
 });
-export type SessionProfile = Infer<typeof sessionProfile>;
+export type SessionProfile = Infer<typeof SessionProfile>;
 
 const snapshotFields = {
   pendingProfileId: struct.string().null(),
@@ -27,7 +27,7 @@ const snapshotFields = {
     .null(),
   revision: struct.number(),
 };
-export const publicSessionSnapshot = struct.discriminatedUnion("status", [
+export const PublicSessionSnapshot = struct.discriminatedUnion("status", [
   struct.object({
     ...snapshotFields,
     status: struct.literal("locked"),
@@ -39,16 +39,16 @@ export const publicSessionSnapshot = struct.discriminatedUnion("status", [
   struct.object({
     ...snapshotFields,
     status: struct.literal("unlocked"),
-    identity: sessionIdentity,
-    profile: sessionProfile,
+    identity: SessionIdentity,
+    profile: SessionProfile,
     expiresAt: struct.number(),
     // The display string `apikey list` already shows for the current key, never the key itself.
     apiKeyPrefix: struct.string().null(),
   }),
 ]);
-export type PublicSessionSnapshot = Infer<typeof publicSessionSnapshot>;
+export type PublicSessionSnapshot = Infer<typeof PublicSessionSnapshot>;
 
-const sessionFailureKind = struct.enum([
+export const SessionFailureKind = struct.enum([
   "locked",
   "expired",
   "stale",
@@ -61,12 +61,11 @@ const sessionFailureKind = struct.enum([
   "invalid-request",
   "reload-required",
 ]);
-export type SessionFailureKind = Infer<typeof sessionFailureKind>;
+export type SessionFailureKind = Infer<typeof SessionFailureKind>;
 
 // Every code defjs reports; `satisfies` fails the build when a defjs upgrade adds or drops one.
 const faultCodes = {
   CAP_BUFFER_EXCEEDED: 0,
-  CAP_QUEUE_OVERFLOW: 0,
   ENV_UNSUPPORTED: 0,
   EXT_HOOK_FAILED: 0,
   EXT_INTERCEPTOR_FAILED: 0,
@@ -78,43 +77,52 @@ const faultCodes = {
   NET_UNREACHABLE: 0,
   REQ_BUILD_FAILED: 0,
   REQ_INPUT_INVALID: 0,
-  REQ_OPTIONS_INVALID: 0,
   RES_DECODE_FAILED: 0,
   RES_MEDIA_TYPE_INVALID: 0,
   RES_STRUCT_MISMATCH: 0,
 } satisfies Record<FaultCode, 0>;
 
+const faultCodeSet = new Set<string>(Object.keys(faultCodes));
+function isFaultCode(value: string): value is FaultCode {
+  return faultCodeSet.has(value);
+}
+function nonEmpty<T>(values: readonly T[]): [T, ...T[]] {
+  return [values[0], ...values.slice(1)];
+}
+const FAULT_CODES = nonEmpty(Object.keys(faultCodes).filter(isFaultCode));
+
 // A write may have reached the server, but its result is unknown.
 const outcome = struct.literal("unknown").optional();
-export const workerError = struct.or(
+export const WorkerErrorDto = struct.or(
   struct.object({
     kind: struct.literal("api"),
-    code: struct.enum(Object.keys(faultCodes) as [FaultCode, ...FaultCode[]]),
+    code: struct.enum(FAULT_CODES),
     message: struct.string(),
     status: struct.number().optional(),
-    data: rpcStatus.optional(),
+    data: RpcStatus.optional(),
     outcome,
   }),
-  struct.object({ kind: sessionFailureKind, outcome }),
+  struct.object({ kind: SessionFailureKind, outcome }),
 );
-export type WorkerErrorDto = Infer<typeof workerError>;
+export type WorkerErrorDto = Infer<typeof WorkerErrorDto>;
 export type ApiFailure = Extract<WorkerErrorDto, { kind: "api" }>;
 export type SessionFailure = Exclude<WorkerErrorDto, ApiFailure>;
 
-export const vaultVersion = struct.object({
+export const VaultVersion = struct.object({
   keyEpoch: struct.string(),
   profilesRevision: struct.number(),
 });
+export type VaultVersion = Infer<typeof VaultVersion>;
 
 /** Worker → page: the handshake, replies, and broadcasts. */
-export const workerMessage = struct.discriminatedUnion("type", [
+export const WorkerMessage = struct.discriminatedUnion("type", [
   struct.object({
     type: struct.literal("hello"),
     workerId: struct.string(),
     buildId: struct.string(),
     protocolVersion: struct.number(),
     storageVersion: struct.number(),
-    snapshot: publicSessionSnapshot,
+    snapshot: PublicSessionSnapshot,
   }),
   struct.object({
     type: struct.literal("reply"),
@@ -126,19 +134,19 @@ export const workerMessage = struct.discriminatedUnion("type", [
         ok: struct.literal(true),
         value: struct.unknown().nullish(),
       }),
-      struct.object({ ok: struct.literal(false), error: workerError }),
+      struct.object({ ok: struct.literal(false), error: WorkerErrorDto }),
     ]),
-    snapshot: publicSessionSnapshot,
+    snapshot: PublicSessionSnapshot,
   }),
   struct.object({
     type: struct.literal("snapshot"),
-    snapshot: publicSessionSnapshot,
+    snapshot: PublicSessionSnapshot,
   }),
-  struct.object({ type: struct.literal("reset"), version: vaultVersion }),
+  struct.object({ type: struct.literal("reset"), version: VaultVersion }),
   struct.object({ type: struct.literal("profiles-changed") }),
-  struct.object({ type: struct.literal("error"), error: workerError }),
+  struct.object({ type: struct.literal("error"), error: WorkerErrorDto }),
 ]);
-export type WorkerMessage = Infer<typeof workerMessage>;
+export type WorkerMessage = Infer<typeof WorkerMessage>;
 
 export type SessionResult<T> =
   | { readonly ok: true; readonly value: T }
@@ -149,7 +157,7 @@ export class ApiError extends Error {
   readonly kind: WorkerErrorDto["kind"];
   readonly code?: FaultCode;
   readonly status?: number;
-  readonly data?: Infer<typeof rpcStatus>;
+  readonly data?: RpcStatus;
   readonly outcome?: "unknown";
 
   constructor(error: WorkerErrorDto) {

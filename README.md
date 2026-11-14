@@ -1,161 +1,125 @@
 # Headscale UI
 
-![Headscale UI — machines, users, routes, and access controls](assets/social-previews/01-product-bento.jpg)
+Manage your Headscale network from your browser.
 
-A web interface for managing a private Headscale tailnet: machines, users, auth
-keys, routes, and access policies.
+Machines, users, auth keys, routes, and access policies—all in one interface.
+
+**[Open Headscale UI](https://headscale.lyz.cloud)** · [Getting started](#getting-started) · [Self-hosting](#self-hosting) · [Report an issue](https://github.com/MunMunMiao/headscale-ui/issues)
+
+![Headscale UI — machines, users, routes, and access controls](https://raw.githubusercontent.com/MunMunMiao/headscale-ui/main/assets/social-previews/01-product-bento.jpg)
+
+## Use it online
+
+Open **[headscale.lyz.cloud](https://headscale.lyz.cloud)** to get started. Connect your own Headscale server to explore the interface and use it for everyday administration.
+
+The hosted app requires no UI installation or build. Your Headscale server can run on another machine or network.
+
+You will need:
+
+- A running Headscale server with an HTTPS endpoint accessible from your browser.
+- A Headscale management API key.
+- A reverse proxy configured to allow requests from `https://headscale.lyz.cloud`.
+
+The app connects to your own server, so management actions affect that server. See [Connecting to Headscale](#connecting-to-headscale) for the network and proxy requirements.
 
 > Independent project; not an official Headscale, Tailscale, or WireGuard product.
 
 ## Features
 
-- Multiple server profiles with individually password-encrypted API keys.
-- Machine and user management, search, filters, and device registration.
-- Reusable or ephemeral auth keys with expiration, ACL tags, and `tailscale up` commands.
-- Subnet and exit-route approval, plus SSH check approval or rejection.
-- Visual policy editing for ACLs, groups, and tag owners, with a server-side dry run.
-- 11 languages, Arabic RTL support, and light, dark, or system themes.
+- **Machines and users** — browse, search, register, and manage devices and users.
+- **Auth keys** — create reusable or ephemeral keys with expiration and ACL tags, and generate device connection commands.
+- **Routes** — approve subnet routes and exit routes.
+- **Access policies** — visually manage ACLs, groups, and tag owners, and validate drafts with Headscale before saving.
+- **SSH approvals** — approve or reject SSH check requests.
+- **Multiple servers** — switch between profiles with individually password-encrypted API keys.
+- **11 languages** — including Arabic RTL support, with light, dark, and system themes.
 
-## Quick start
+## Getting started
 
-Use **Bun 1.4.4** for all JavaScript commands.
+### 1. Prepare an API key
 
-```bash
-bun install --frozen-lockfile
-```
-
-```bash
-bun run dev
-```
-
-Open the printed URL and add a server profile with:
-
-- An absolute HTTP(S) server URL, without credentials, query, or fragment.
-- A Headscale API key.
-- A profile password of at least 8 characters.
-
-Profiles can be saved while the server is unavailable, but opening the console
-requires a successful connection. The browser calls Headscale directly: use the
-same origin or configure [CORS](#connecting-to-headscale). HTTPS or loopback
-localhost, SharedWorker, and Web Crypto support are required.
-
-For a disposable local tailnet, see the [contributor playground](e2e/ai/README.md).
-Its seed and reset commands write credentials and data or delete fixture volumes;
-never run them against a tailnet you need to keep.
-
-## Credentials and sessions
-
-- API keys are stored in IndexedDB using AES-256-GCM and a per-profile
-  password-derived PBKDF2 key. Passwords and derived keys are not saved. There is
-  no password recovery: replace the API key and password, or delete the profile.
-- Legacy records migrate explicitly, one profile at a time; password-encrypted
-  records also need the old password. Failed migrations preserve the original.
-  Conflicting writes require a retry; changing active credentials locks the session.
-- A SharedWorker holds the unlocked API key and makes authenticated requests.
-  Same-origin tabs in one storage partition share one active server. A successful
-  switch affects all peers; a failed unlock preserves the existing session.
-- Sessions lock after 30 minutes without trusted user activity in a visible page.
-  Polling, synthetic events, mouse movement, and page focus do not extend them.
-  A refresh rejoins a live Worker session; otherwise the password is required.
-  Closing the last tab does not guarantee immediate Worker memory erasure.
-- Logout locks all peers. Session changes clear generated credentials. Old drafts
-  cannot be submitted to the new server, and stale responses cannot update its UI;
-  discard old drafts to continue. Locking discards unsaved Access edits and
-  reports this on login.
-- Logout and timeout do not revoke Headscale API keys or undo server writes.
-  A lost write response may mean the operation committed; writes are not retried
-  automatically. Read back the server state before retrying.
-- The remember option controls profile visibility, not physical deletion.
-  Temporary encrypted rows can survive reload or browser session restoration;
-  explicitly delete the profile or clear local data to remove them.
-- Encryption protects stored credentials while locked, not an unlocked app from
-  malicious same-origin scripts, browser extensions, or a compromised device.
-  An unavailable or incompatible Worker blocks administration; there is no per-tab fallback.
-
-Before upgrading, close or refresh old UI tabs. Storage uses database version 3;
-old connections can block upgrades. Do not clear or downgrade the database to
-recover: rollback builds must support version 3, or use an independently preserved
-pre-upgrade browser profile.
-
-## Policy compatibility
-
-- Label-to-label network access can be configured visually. New source choices
-  use declarations in the current policy draft, not device or auth-key
-  observations alone. Adding access does not change tag owners or create a
-  reverse rule. New access rows keep the existing default network port 22;
-  confirm custom ports before clearing the last preset.
-- The designer reads JSON and HuJSON. Invalid or unrepresentable policies become
-  read-only: policy saves and related member changes are blocked, preserving the
-  original text. Correct the policy in Headscale and refresh to resume editing.
-  Member deletion can proceed only with policy cleanup explicitly disabled.
-- Unmodeled top-level and ACL fields, including `proto`, survive edits. Split
-  destinations retain their restrictions. Aggregate service controls are read-only
-  when contributing ACLs have extra fields; explicit access removal remains available.
-  Saves normalize to JSON and remove comments and formatting.
-- Group and tag renames or deletions update supported references, including SSH,
-  grants, route approvers, and tests. Unknown reference structures block the change
-  without losing the draft. Renaming a policy tag does not retag devices.
-- Empty ACLs stay empty. Grants-only documents do not gain an allow-all ACL;
-  grants have no dedicated editor. Headscale validates policy semantics and has
-  additional [policy limitations](https://headscale.net/stable/ref/policy/#limitations).
-- API writes require `policy.mode: database`. File mode without `policy.path` is
-  read-only; with a path, reads work but saves fail with an explanation and retain
-  the draft. The Access page can dry-run a draft without saving.
-- Saves replace the whole policy without a concurrent-update check. The returned
-  document becomes the saved baseline while newer local edits remain intact.
-  Member policy actions write only their own change and are disabled while Access
-  has unsaved edits; save or discard those edits first.
-
-## Deployment
-
-The hosted UI is at https://headscale.lyz.cloud. Non-prerelease GitHub Releases
-publish it directly, since CI already ran on the merged commit; the Pages
-workflow can also deploy a selected ref manually to that same production site. Ordinary pushes and pull requests do not
-publish it. Environment protection and approval rules still apply.
-
-### Docker
-
-Release images support `linux/amd64` and `linux/arm64`. Use a release tag or
-`latest` for the latest non-prerelease release:
+On the machine running Headscale, create a management API key:
 
 ```bash
-docker run --rm -p 8080:80 ghcr.io/munmunmiao/headscale-ui:latest
+headscale apikeys create
 ```
 
-Open http://localhost:8080. To serve under a subpath:
+Use a management API key, rather than a pre-auth key used to register devices. See the [Headscale API documentation](https://headscale.net/stable/ref/api/) for details.
 
-```bash
-docker run --rm -p 8080:80 -e BASE_PATH=/admin/ ghcr.io/munmunmiao/headscale-ui:latest
+### 2. Allow the hosted app to connect
+
+Configure the reverse proxy in front of Headscale to allow the UI origin:
+
+```text
+https://headscale.lyz.cloud
 ```
 
-Open http://localhost:8080/admin/. `BASE_PATH` defaults to `/`, accepts nested
-paths, and adds a missing trailing slash. Paths must start with `/`; segments may
-contain ASCII letters, digits, `.`, `_`, `~`, and `-`, but cannot be empty, `.` or
-`..`. URLs, encoded characters, whitespace, queries, fragments, and the reserved
-`__HEADSCALE_UI_BASE__` marker are rejected. Recreate the container after changing
-the value; no image rebuild is needed. Paths outside the prefix return 404.
+The required CORS settings are described [below](#connecting-to-headscale).
 
-Reverse proxies must preserve the prefix: use `proxy_pass http://headscale-ui:80`
-**without a trailing slash**. `BASE_PATH` changes only the UI path, not the
-Headscale API URL.
+### 3. Open the app and add your server
 
-### Static hosting
+Visit **[headscale.lyz.cloud](https://headscale.lyz.cloud)** and add a server profile:
 
-```bash
-PAGES_BASE=/admin/ bun run build
+| Field            | What to enter                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| Server URL       | Your Headscale base URL, such as `https://headscale.example.com`. Do not append `/api/v1`. |
+| API key          | The management API key created on your Headscale server.                                   |
+| Profile password | A password of at least 8 characters to encrypt the API key stored in this browser.         |
+
+The profile password is chosen for the UI. It is separate from your server's operating-system password.
+
+A profile can be saved while its server is unavailable. Opening the management console requires a successful connection.
+
+### 4. Manage your network
+
+Once connected, use the console to manage machines, users, keys, routes, and access policies.
+
+You can return to the same website for ongoing use and unlock your saved profile when needed.
+
+## Connecting to Headscale
+
+### Requests come from your browser
+
+The browser sends authenticated requests directly to your configured Headscale endpoint. The UI hosting server serves the application files; it does not act as an API relay.
+
+Your browser's machine must therefore be able to resolve and reach the Headscale URL. If Headscale is on a private network, connect that machine to the required network or VPN.
+
+Use HTTPS with a certificate trusted by the browser. An HTTPS UI cannot call a plain-HTTP API because browsers block mixed content.
+
+### Using the hosted app: configure CORS
+
+The hosted app and your Headscale server have different origins. Configure CORS on the **reverse proxy in front of Headscale**.
+
+Responses should include:
+
+```http
+Access-Control-Allow-Origin: https://headscale.lyz.cloud
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type
+Vary: Origin
 ```
 
-Serve `dist/` at `/admin/`, falling back to `/admin/index.html` for page routes
-and returning 404 for missing assets. `PAGES_BASE` is build-time configuration;
-Docker's `BASE_PATH` is runtime configuration. GitHub Pages uses `/` and publishes
-an `index.html` copy for each fixed page route so direct visits return HTTP 200
-(after a possible trailing-slash redirect). A `404.html` copy remains for legacy
-and unknown URLs, but those fallback responses still carry HTTP 404.
+The proxy must also:
 
-### Connecting to Headscale
+- Answer preflight `OPTIONS` requests with `204`, without requiring an API key.
+- Include CORS headers on preflight, actual, and error responses.
+- Forward the actual requests' `Authorization` header to Headscale.
+- Apply this configuration to `/api/v1/*` and `/version`.
 
-**Recommended:** serve the UI and Headscale through one HTTPS origin. Run the UI
-with `BASE_PATH=/admin/` and use these locations in the TLS reverse proxy:
+Headscale still authenticates actual API requests. Stock Headscale does not provide the CORS responses required by this setup.
+
+For a separately hosted UI, replace the allowed origin with its exact scheme, hostname, and port if applicable. An origin does not include a path or trailing slash.
+
+### Self-hosting on the same origin
+
+If you host the UI yourself, you can serve both services through one HTTPS origin:
+
+| Service                                | Example address                        |
+| -------------------------------------- | -------------------------------------- |
+| Headscale UI                           | `https://headscale.example.com/admin/` |
+| Headscale server URL entered in the UI | `https://headscale.example.com`        |
+
+Run the UI with `BASE_PATH=/admin/` and use these locations in your TLS reverse proxy:
 
 ```nginx
 location = /admin {
@@ -171,60 +135,160 @@ location / {
 }
 ```
 
-Enter `https://headscale.example.com` as the server URL. The catch-all preserves
-Headscale's API and control endpoints; no CORS configuration is needed.
+Replace the upstream addresses with your own. The services can run on different machines as long as the proxy can reach both.
 
-For separate origins, place a CORS proxy before Headscale: answer unauthenticated
-`OPTIONS` requests with `204`, allow the exact UI origin, methods `GET, POST, PUT,
-DELETE, OPTIONS`, and headers `Authorization, Content-Type`. Include `Vary: Origin`
-and CORS headers on error responses too. Stock Headscale does not provide the
-required CORS responses. An HTTPS UI cannot call a plain-HTTP API (mixed content).
+Preserve the `/admin/` prefix: the UI's `proxy_pass` has no trailing slash. The catch-all forwards Headscale's API and control endpoints. No CORS configuration is needed when the browser sees one origin.
 
-The Docker image sets CSP, frame denial, `nosniff`, and a no-referrer policy;
-see [docker/nginx.conf](docker/nginx.conf) for custom hosting. Preserve the
-SharedWorker response's `connect-src http: https:` exception so it can reach
-user-configured servers. Static hosts may not support these headers.
+## Credentials and sessions
 
-## Development and verification
+API keys are stored in your browser's IndexedDB, encrypted with AES-256-GCM using a per-profile password-derived key. Passwords and derived encryption keys are not saved.
 
-Built with React, shadcn Base UI, Tailwind CSS, TanStack Router, LinguiJS, Defjs,
-and Effect; Vite builds the app, and Vitest and Playwright test it.
-See [AGENTS.md](AGENTS.md) for contribution rules, coverage, and translation workflow.
-Use Bun, not Node.js, npm, npx, Yarn, or pnpm.
+While unlocked, a SharedWorker holds the API key in memory and sends authenticated requests to your Headscale server.
 
-Before shipping, run each command in order; each must exit successfully:
+- Sessions lock after 30 minutes without qualifying user activity.
+- Logout locks the shared session across tabs.
+- Profiles are stored in that browser; they do not automatically follow you to another device.
+- There is no profile password recovery. If you forget it, replace the stored credentials or delete the profile.
+- Logout does not revoke the Headscale API key. Revoke it on Headscale when necessary.
 
-```bash
-bun run --parallel lint format:check typecheck
+Use a UI origin you trust. Encryption protects stored credentials while locked; it does not protect an unlocked session from malicious scripts, browser extensions, or a compromised device.
+
+<details>
+<summary>Session behavior and recovery</summary>
+
+Same-origin tabs in one browser storage partition share one active server. A successful server switch affects those tabs; a failed unlock preserves the existing session.
+
+Visible-page user activity extends the session. Polling, synthetic events, mouse movement, and page focus do not. Refreshing rejoins a live Worker session when available; otherwise, the profile password is required. Closing the last tab does not guarantee immediate Worker memory erasure.
+
+Session changes clear generated credentials. Drafts from a previous server cannot be submitted to the new server. Locking discards unsaved Access edits and reports this on login.
+
+If a write loses its response, it may already have committed. The app does not automatically retry writes; check the server state before trying again.
+
+The remember option controls profile visibility. To remove stored credentials, explicitly delete the profile or clear local data; temporary encrypted records can survive reload or browser session restoration.
+
+Legacy credential records migrate explicitly, one profile at a time. Failed migrations preserve the original record. Conflicting writes require a retry, and changing active credentials locks the session.
+
+Before upgrading, close or refresh old UI tabs. Storage uses database version 3; older open connections can block an upgrade. Do not downgrade or clear the database as an upgrade workaround. A rollback build must support version 3, or use an independently preserved pre-upgrade browser profile.
+
+</details>
+
+## Compatibility
+
+The current UI targets **Headscale 0.29.x**.
+
+A browser with **SharedWorker** and **Web Crypto** support is required. Serve the UI over HTTPS, or use loopback localhost for local development. If the Worker is unavailable or incompatible, administration is blocked.
+
+### Access policies
+
+To save policy changes through the UI, configure Headscale with:
+
+```yaml
+policy:
+  mode: database
 ```
 
-```bash
-bun run i18n:check
-```
+The Access page supports server-side validation without saving.
+
+The visual editor reads JSON and HuJSON. Saving normalizes the policy to JSON and removes comments and formatting. Unsupported or invalid policy structures become read-only to preserve the original document.
+
+<details>
+<summary>Policy editing details</summary>
+
+- Visual network rules can connect policy labels. New source choices come from declarations in the current draft. Adding access does not change tag owners or create a reverse rule.
+- New access rows default to network port 22. Confirm custom ports before clearing the last preset.
+- Unmodeled top-level and ACL fields, including `proto`, survive edits. Split destinations retain their restrictions. Aggregate service controls become read-only when contributing ACLs have extra fields; explicit access removal remains available.
+- Group and tag renames or deletions update supported references, including SSH, grants, route approvers, and tests. Unknown reference structures block the operation while preserving the draft.
+- Renaming a policy tag does not retag devices.
+- Empty ACLs stay empty. Grants-only policies do not gain an allow-all ACL. Grants have no dedicated visual editor.
+- Invalid or unrepresentable policies block policy saves and related member changes. Correct the policy in Headscale and refresh to resume editing. Member deletion can proceed with policy cleanup explicitly disabled.
+- File mode without a policy path is read-only. With a path, reads work, but API saves fail with an explanation and retain the draft.
+- Saving replaces the whole policy without a concurrent-update check. Coordinate edits when multiple administrators are working on the same policy.
+- The returned policy becomes the saved baseline while newer local edits remain intact. Member policy actions write only their own change and are disabled while Access has unsaved edits.
+
+Headscale performs semantic validation and has additional [policy limitations](https://headscale.net/stable/ref/policy/#limitations).
+
+</details>
+
+## Self-hosting
+
+The [hosted app](https://headscale.lyz.cloud) is available for ongoing use. You can also deploy the UI on infrastructure you control.
+
+### Docker
+
+Release images support `linux/amd64` and `linux/arm64`.
 
 ```bash
-bun run test
+docker run --rm -p 8080:80 ghcr.io/munmunmiao/headscale-ui:latest
 ```
+
+Open [localhost:8080](http://localhost:8080). For access from other machines, serve it through an HTTPS reverse proxy.
+
+Use a specific release tag to control upgrades. `latest` follows the latest non-prerelease release.
+
+To serve the UI under `/admin/`:
 
 ```bash
-bun run build
+docker run --rm -p 8080:80 \
+  -e BASE_PATH=/admin/ \
+  ghcr.io/munmunmiao/headscale-ui:latest
 ```
+
+Open [localhost:8080/admin/](http://localhost:8080/admin/).
+
+`BASE_PATH` controls the UI path. Choose the Headscale API endpoint in the UI's server profile. Recreate the container after changing `BASE_PATH`; rebuilding the image is unnecessary.
+
+<details>
+<summary>Custom paths and static hosting</summary>
+
+`BASE_PATH` defaults to `/`, supports nested paths, and adds a missing trailing slash. Paths must start with `/`. Segments may contain ASCII letters, digits, `.`, `_`, `~`, and `-`, but cannot be empty, `.` or `..`.
+
+URLs, encoded characters, whitespace, queries, fragments, and the reserved `__HEADSCALE_UI_BASE__` marker are rejected. Paths outside the configured prefix return 404.
+
+For static hosting, install dependencies with the Bun version pinned in `package.json`, then build:
 
 ```bash
-bun run e2e
+bun install --frozen-lockfile
+PAGES_BASE=/admin/ bun run build
 ```
 
-Tests require 100% statements, branches, functions, and lines per covered file.
-Docker Compose is required for E2E and some macOS unit checks. Install the pinned
-Chromium once:
+Serve `dist/` at `/admin/`. Fall back to `/admin/index.html` for page routes and return 404 for missing assets.
+
+`PAGES_BASE` is a build-time setting; Docker's `BASE_PATH` is a runtime setting.
+
+GitHub Pages uses `/` and publishes an `index.html` copy for each fixed page route. The `404.html` fallback remains for legacy and unknown URLs, but those responses retain HTTP 404.
+
+The Docker image sets CSP, frame denial, `nosniff`, and a no-referrer policy. See the [Nginx configuration](https://github.com/MunMunMiao/headscale-ui/blob/main/docker/nginx.conf) when configuring another host. Preserve the SharedWorker response's `connect-src http: https:` exception so it can reach configured Headscale servers.
+
+</details>
+
+## Troubleshooting
+
+| Problem                                       | What to check                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| The UI loads, but Headscale cannot be reached | Verify DNS, network or VPN access, and TLS from the browser's machine.                                 |
+| The browser reports a CORS error              | Check the Headscale-facing proxy's allowed origin, preflight handling, and headers on error responses. |
+| The browser reports mixed content             | Use an HTTPS Headscale endpoint with an HTTPS UI.                                                      |
+| API requests return `401`                     | Verify that the management API key is valid and that the proxy forwards `Authorization`.               |
+| Policy changes cannot be saved                | Check `policy.mode`, server validation errors, and the policy compatibility notes above.               |
+| The app reports an unavailable Worker         | Check browser support and that the UI is running over HTTPS or loopback localhost.                     |
+
+Need help? [Open an issue](https://github.com/MunMunMiao/headscale-ui/issues) with your Headscale version, UI version, browser, deployment arrangement, and relevant error messages. Remove API keys and other credentials before sharing logs or configuration.
+
+## Development
+
+To work on the UI locally, use the Bun version pinned in `package.json`:
 
 ```bash
-bun run browser:install
+bun install --frozen-lockfile
+bun run dev
 ```
 
-`e2e` runs the main, policy-lifecycle, shared-session, and deployment harnesses
-against disposable Headscale services. CI runs the first four commands, not E2E.
-The manual playground does not replace the automated suites. GUI acceptance covers
-validated actions, correct API requests, public API readback, feedback, and recovery;
-SSH execution, network forwarding, and private server internals are outside its scope.
-Local checks do not prove that remote publication succeeded.
+Built with React, shadcn Base UI, Tailwind CSS, TanStack Router, LinguiJS, Defjs, and Effect. Vite builds the application; Vitest and Playwright cover testing.
+
+See [AGENTS.md](https://github.com/MunMunMiao/headscale-ui/blob/main/AGENTS.md) for the required verification commands, coverage requirements, and translation workflow.
+
+The [contributor playground](https://github.com/MunMunMiao/headscale-ui/blob/main/e2e/ai/README.md) provides a disposable local Headscale environment. Its seed and reset operations are intended only for fixtures.
+
+---
+
+**[Open Headscale UI](https://headscale.lyz.cloud)** and connect your Headscale server.

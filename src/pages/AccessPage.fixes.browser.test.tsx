@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
@@ -38,7 +38,7 @@ async function setup(initial: Record<string, unknown> | string = opsPolicy) {
         ? Response.json({ message: checkFailure }, { status: 400 })
         : Response.json({});
     if (request.method === "PUT" && path === "/api/v1/policy") {
-      const body = (await request.json()) as { policy: string };
+      const body: { policy: string } = await request.json();
       writes.push(body.policy);
       policyText = body.policy;
       return Response.json(body);
@@ -176,14 +176,18 @@ test.each([
         .addEventListener(
           type,
           (event) =>
-            touchEvents.push(`${type}:${(event as PointerEvent).pointerType}`),
+            touchEvents.push(
+              `${type}:${requireInstance(event, PointerEvent).pointerType}`,
+            ),
           { once: true },
         );
     }
     const rect = trigger.element().getBoundingClientRect();
-    const frame = (
-      window.frameElement as HTMLElement | null
-    )?.getBoundingClientRect();
+    const frameElement = window.frameElement;
+    const frame =
+      frameElement instanceof HTMLElement
+        ? frameElement.getBoundingClientRect()
+        : undefined;
     const hit = document.elementFromPoint(
       rect.left + rect.width / 2,
       rect.top + rect.height / 2,

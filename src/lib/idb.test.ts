@@ -1,8 +1,7 @@
-import "fake-indexeddb/auto";
-import { forceCloseDatabase, IDBFactory } from "fake-indexeddb";
 import { unwrap } from "idb";
 import { beforeEach, expect, test, vi } from "vitest";
 import { idbGet, idbPut } from "@/test-utils/storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   __resetForTest,
   bindTransactionAbort,
@@ -13,9 +12,9 @@ import {
   subscribeDatabaseStatus,
 } from "./idb";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 function oldDatabase(version = 1): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -61,7 +60,7 @@ test("reports unavailable storage and permits a fresh open after a failed reques
     "VersionError",
   );
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   expect((await openHeadscaleDb()).version).toBe(DB_VERSION);
 });
 test("exposes a blocked upgrade and resumes after the old connection closes", async () => {
@@ -114,14 +113,10 @@ test("closes on versionchange and refuses subsequent writes until reload", async
 });
 test("reopens after an unexpectedly terminated connection", async () => {
   const db = await openHeadscaleDb();
-  const closed = new Promise<void>((resolve) =>
-    db.addEventListener("close", () => resolve(), { once: true }),
-  );
-  // fake-indexeddb's declaration incorrectly accepts the constructor, not an instance.
-  (forceCloseDatabase as unknown as (database: IDBDatabase) => void)(
-    unwrap(db),
-  );
-  await closed;
+  const connection = unwrap(db);
+  // A browser closes the connection and then fires "close" when storage fails or is cleared.
+  connection.close();
+  connection.dispatchEvent(new Event("close"));
   expect(await openHeadscaleDb()).not.toBe(db);
 });
 test.each(["persistent", "session", undefined])(
@@ -176,9 +171,7 @@ test("a legacy session profile without an owner loses its global active referenc
   await openHeadscaleDb();
   expect(await idbGet("meta", "active-profile-id")).toBeUndefined();
   const keys = await (await openHeadscaleDb()).getAllKeys("meta");
-  expect(
-    keys.filter((key) => String(key).startsWith("active-profile")),
-  ).toEqual([]);
+  expect(keys.filter((key) => key.startsWith("active-profile"))).toEqual([]);
   expect(await idbGet("profiles", "legacy")).toMatchObject({
     keyEpoch: expect.any(String),
   });
@@ -191,7 +184,10 @@ test("drops only an orphaned active reference during upgrade", async () => {
 });
 test("an aborted upgrade leaves the v1 records untouched", async () => {
   await seedOld("legacy");
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const interception = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

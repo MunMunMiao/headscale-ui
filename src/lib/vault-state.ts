@@ -31,8 +31,8 @@ export function subscribeVaultChanges(
   listener: (change: VaultChange) => void,
 ): () => void {
   let stopped = false;
-  const handle = (event: Event) =>
-    listener((event as CustomEvent<VaultChange>).detail);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- CustomEvent detail is untyped at this boundary
+  const handle = (event: Event) => listener(Reflect.get(event, "detail"));
   changes.addEventListener("change", handle);
   const connection = broadcastChannel();
   if (connection && subscribers++ === 0)
@@ -117,19 +117,20 @@ export class VaultDataError extends Error {
 
 export function readVaultState(value: unknown): VaultState {
   if (value === null || typeof value !== "object") throw new VaultDataError();
-  const state = value as Partial<VaultState>;
-  const revision = state.profilesRevision;
+  const v: unknown = Reflect.get(value, "v");
+  const keyEpoch: unknown = Reflect.get(value, "keyEpoch");
+  const profilesRevision: unknown = Reflect.get(value, "profilesRevision");
   if (
-    state.v !== 1 ||
-    typeof state.keyEpoch !== "string" ||
-    !state.keyEpoch ||
-    typeof revision !== "number" ||
-    !Number.isSafeInteger(revision) ||
-    revision < 0
+    v !== 1 ||
+    typeof keyEpoch !== "string" ||
+    !keyEpoch ||
+    typeof profilesRevision !== "number" ||
+    !Number.isSafeInteger(profilesRevision) ||
+    profilesRevision < 0
   ) {
     throw new VaultDataError();
   }
-  return state as VaultState;
+  return { v: 1, keyEpoch, profilesRevision };
 }
 
 export function assertVaultVersion(

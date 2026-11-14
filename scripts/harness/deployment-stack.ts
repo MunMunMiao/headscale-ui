@@ -29,7 +29,7 @@ export function createDeploymentStack(label: string) {
   const temporary = mkdtempSync(join(tmpdir(), `${owned}-`));
   const ephemeralApiKeys: string[] = [];
   const networks: ReturnType<typeof createSessionNetwork>[] = [];
-  const disposers: (() => Promise<unknown> | unknown)[] = [];
+  const disposers: (() => unknown)[] = [];
   let build: ReturnType<typeof Bun.spawn> | undefined;
   let networkCreated = false;
   let imageCreated = false;
@@ -95,7 +95,7 @@ export function createDeploymentStack(label: string) {
     cleanup,
     endpoint,
     /** Runs `dispose` during cleanup, before the containers and the network are removed. */
-    onCleanup(dispose: () => Promise<unknown> | unknown) {
+    onCleanup(dispose: () => unknown) {
       disposers.push(dispose);
     },
     /** Redacts the ephemeral API keys from a diagnostic. */
@@ -125,6 +125,7 @@ export function createDeploymentStack(label: string) {
       return name;
     },
     async start(
+      this: void,
       base: string | undefined,
       { port = 80, flags = [] }: { port?: number; flags?: string[] } = {},
     ): Promise<{ name: string; origin: string; port: number }> {

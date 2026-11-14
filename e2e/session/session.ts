@@ -31,7 +31,10 @@ function assertSingleCurrentServer(
 
 async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
   return page.evaluate(
-    ({ workerUrl, protocolVersion }) =>
+    ({
+      workerUrl: targetWorkerUrl,
+      protocolVersion: expectedProtocolVersion,
+    }) =>
       new Promise<{
         type: string;
         workerId?: string;
@@ -39,7 +42,7 @@ async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
         snapshot?: PublicSessionSnapshot;
         error?: { kind: string };
       }>((resolve, reject) => {
-        const worker = new SharedWorker(workerUrl, {
+        const worker = new SharedWorker(targetWorkerUrl, {
           type: "module",
           name: "headscale-ui-session",
         });
@@ -55,7 +58,7 @@ async function hello(page: Page, workerUrl: string, protocolVersion = 1) {
         };
         worker.port.postMessage({
           type: "hello",
-          protocolVersion,
+          protocolVersion: expectedProtocolVersion,
           storageVersion: 3,
           buildId: "deployment-compatible-page",
           ownerTabId: "deployment-protocol-probe",
@@ -381,7 +384,9 @@ export async function checkSession(
       b.network.clearOperationCalls();
       // The modal blocks pointer clicks; a submit event still reaches the form.
       await pageA.getByTestId("member-form").evaluate((form) => {
-        (form as HTMLFormElement).requestSubmit();
+        if (!(form instanceof HTMLFormElement))
+          throw new Error("Expected an HTML form");
+        form.requestSubmit();
       });
       await hello(pageA, workerUrl);
       for (const [label, connection] of [
@@ -641,24 +646,56 @@ export async function checkSession(
       await openApiKeySettings(pageA);
       await pageA.getByTestId("create-api-key-confirm").click();
       await waitUntil(async () => slow.getSnapshot().captured);
-      // The Worker's 15 s HTTP timeout must fire while the reply is still held.
+      // There is no transport deadline: the page's communication deadline ends the wait.
       const surface = await outcomeSurface(pageA, 25000);
+      assert.equal(surface, "error-screen");
       assert.equal(
         slow.getSnapshot().released,
         false,
         "the outcome appeared before any release",
       );
+      await waitUntil(
+        async () =>
+          b.network
+            .getObservations()
+            .some(
+              (entry) =>
+                entry.gateId === slow.getSnapshot().id && entry.aborted,
+            ),
+        {
+          timeout: 2000,
+          timeoutMsg: "The communication deadline must abort the held write",
+        },
+      );
       await slow.release();
       assert.equal(
         slow.getSnapshot().upstreamRequests,
         1,
-        "HTTP timeout: one upstream write",
+        "held write: one upstream write",
       );
-      assert.equal(apiKeyCreates(), 1, "HTTP timeout: one write at the proxy");
+      assert.equal(apiKeyCreates(), 1, "held write: one write at the proxy");
       await assertNoKeyAnywhere();
-      await assertNoReplay("HTTP timeout");
+      // Recover through the visible actions, including continuing the already-unlocked session.
+      await pageA.getByTestId("error-reload").click();
+      await pageA.getByTestId("login-unlocked").waitFor({ state: "visible" });
+      await pageA.getByTestId("login-continue").click();
+      await pageA.getByTestId("section-home").waitFor({
+        state: "visible",
+        timeout: 30000,
+      });
+      await Bun.sleep(1500);
+      assert.equal(
+        apiKeyCreates(),
+        1,
+        "held write: a lost reply is never replayed",
+      );
+      assert.equal(
+        await pageA.getByTestId("created-api-key").count(),
+        0,
+        "held write: no key is displayed",
+      );
       console.log(
-        `PASS write held past the HTTP timeout surfaced ${surface} without key or replay`,
+        `PASS write held past the communication deadline surfaced ${surface} without key or replay`,
       );
     } finally {
       await slow.release();
@@ -715,17 +752,22 @@ export async function checkSession(
     // Observe actual BFCache use; a reload is not evidence of a persisted restore.
     const bfcache = () =>
       pageA.evaluate(() => {
-        const entry = performance.getEntriesByType(
-          "navigation",
-        )[0] as PerformanceNavigationTiming & {
-          notRestoredReasons?: { reasons?: { reason: string }[] };
-        };
+        const [entry] = performance.getEntriesByType("navigation");
+        const navigationEntry =
+          entry instanceof PerformanceNavigationTiming ? entry : undefined;
+        const notRestored = navigationEntry
+          ? Reflect.get(navigationEntry, "notRestoredReasons")
+          : undefined;
+        const reasons =
+          notRestored && typeof notRestored === "object"
+            ? Reflect.get(notRestored, "reasons")
+            : undefined;
         return {
           persisted: sessionStorage.getItem("deployment-bfcache"),
-          reasons: (entry.notRestoredReasons?.reasons ?? []).map(
-            (item) => item.reason,
-          ),
-          raw: JSON.stringify(entry.notRestoredReasons ?? null),
+          reasons: Array.isArray(reasons)
+            ? reasons.map((item) => Reflect.get(item, "reason"))
+            : [],
+          raw: JSON.stringify(notRestored ?? null),
         };
       });
     await pageA.bringToFront();

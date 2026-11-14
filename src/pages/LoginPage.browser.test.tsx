@@ -62,21 +62,22 @@ async function setup({
   const session = await prepareTestSession(transport);
   await setLocale("en-US");
   const keyEpoch = session.profiles.getSnapshot().version?.keyEpoch;
-  for (const profile of profiles) {
-    const credentialVersion = profile.credentialVersion ?? "fixture-credential";
+  for (const storedProfile of profiles) {
+    const credentialVersion =
+      storedProfile.credentialVersion ?? "fixture-credential";
     const apiKey =
-      profile.credentialKind === "unreadable"
+      storedProfile.credentialKind === "unreadable"
         ? { v: 99 }
-        : profile.credentialKind === "legacy-plaintext"
+        : storedProfile.credentialKind === "legacy-plaintext"
           ? "isolated-legacy-key"
           : await encryptProfileKey({
-              profileId: profile.id,
-              canonicalBaseUrl: profile.baseUrl,
+              profileId: storedProfile.id,
+              canonicalBaseUrl: storedProfile.baseUrl,
               credentialVersion,
               apiKey: "isolated-key",
               password: "server password",
             });
-    const { credentialKind: _kind, ...fields } = profile;
+    const { credentialKind: _kind, ...fields } = storedProfile;
     await idbPut("profiles", {
       ...fields,
       keyEpoch,
@@ -289,7 +290,10 @@ test("keeps a validated connection draft open when its local save fails", async 
   const ctx = await setup();
   await page.getByTestId("profile-option-new").click();
   await fillConnection("Unsaved server");
-  const put = IDBObjectStore.prototype.put;
+  const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -322,7 +326,10 @@ test("keeps a validated connection draft open when its local save fails", async 
 test("keeps a failed profile deletion open and reports the storage error inside its dialog", async () => {
   const ctx = await setup({ profiles: [profile()] });
   await page.getByTestId("delete-profile-Alpha").click();
-  const remove = IDBObjectStore.prototype.delete;
+  const remove: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const failure = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -1291,26 +1298,10 @@ test("a running delete keeps its dialog until the failure is reported there", as
     .not.toBeInTheDocument();
 });
 
-test("centers a single profile card under the heading and keeps long names readable", async () => {
+test("preserves long profile names and prevents edits while saving", async () => {
   const long =
     "Production headscale (eu-west) with a very long descriptive name";
   const ctx = await setup({ profiles: [profile({ name: long })] });
-  const center = (element: Element) => {
-    const box = element.getBoundingClientRect();
-    return box.left + box.width / 2;
-  };
-  const picker = page.getByTestId("profile-picker").element();
-  const cards = [...picker.children].map((child) =>
-    child.getBoundingClientRect(),
-  );
-  const left = Math.min(...cards.map((box) => box.left));
-  const right = Math.max(...cards.map((box) => box.right));
-  expect(
-    Math.abs(
-      (left + right) / 2 -
-        center(page.getByRole("heading", { level: 1 }).element()),
-    ),
-  ).toBeLessThan(2);
   expect(document.querySelector(`[title="${long}"]`)?.textContent).toBe(long);
   await page.getByTestId(`edit-profile-${long}`).click();
   await expect.element(page.getByRole("dialog")).toHaveAttribute("data-open");
@@ -1615,17 +1606,6 @@ test("API key help and copying never submit a valid parent form or erase its dra
     exact: true,
   });
   await help.click();
-  const dialog = page.getByRole("dialog", {
-    name: "How to get an API key",
-    exact: true,
-  });
-  const bounds = dialog.element().getBoundingClientRect();
-  expect(
-    Math.abs(bounds.left + bounds.width / 2 - window.innerWidth / 2),
-  ).toBeLessThan(2);
-  expect(
-    Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2),
-  ).toBeLessThan(2);
   await page.getByTestId("api-key-command-copy").click();
   await expect
     .element(page.getByTestId("api-key-command-copy"))

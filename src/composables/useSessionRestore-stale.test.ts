@@ -1,18 +1,18 @@
-import "fake-indexeddb/auto";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { __resetForTest } from "@/lib/idb";
+import { fieldOf, requireObject, testDouble } from "@/test/dom";
 import {
   hydrateSettings,
   settingsStorageTestingHandle,
 } from "@/lib/settings-storage";
-import type { PublicSessionSnapshot, WorkerMessage } from "@/session/types";
+import type { WorkerMessage } from "@/session/types";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { createSession } from "./session-context";
 import { createSessionRestoration } from "./useSessionRestore";
@@ -20,13 +20,13 @@ import { createSessionRestoration } from "./useSessionRestore";
 const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
   await hydrateSettings();
 });
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 async function fixture(activate = true) {
   const host = await profilesFixture(cleanup);
@@ -76,15 +76,15 @@ test("a delayed locked authority reply cannot redirect a newer authenticated ses
   let hold = true;
   vi.spyOn(f.ports.worker, "postMessage").mockImplementation(
     (value: unknown) => {
-      const message = value as WorkerMessage;
+      const result = fieldOf(value, "result");
       if (
         hold &&
-        message.type === "reply" &&
-        message.result.ok &&
-        (message.result.value as PublicSessionSnapshot)?.status === "locked"
+        fieldOf(value, "type") === "reply" &&
+        fieldOf(result, "ok") === true &&
+        fieldOf(fieldOf(result, "value"), "status") === "locked"
       ) {
         hold = false;
-        held.resolve(message);
+        held.resolve(testDouble<WorkerMessage>(requireObject(value)));
       } else send(value);
     },
   );

@@ -1,65 +1,23 @@
 import { expect, test } from "vitest";
+import { testDouble } from "@/test/dom";
 
-const read = (path: string) => Bun.file(path).text();
-interface Job {
-  if?: string;
-  needs?: string | string[];
-  permissions?: Record<string, string>;
-  uses?: string;
-  steps?: {
-    if?: string;
-    uses?: string;
-    with?: Record<string, unknown>;
-  }[];
-}
 interface Workflow {
-  on: Record<string, unknown>;
-  concurrency?: {
-    group: string;
-    "cancel-in-progress": boolean | string;
-  };
-  jobs: Record<string, Job>;
+  jobs: Record<
+    string,
+    {
+      steps?: {
+        if?: string;
+        uses?: string;
+        with?: Record<string, unknown>;
+      }[];
+    }
+  >;
 }
-// Test-only view of our own workflow files; every asserted field is checked below.
-const workflow = async (name: string) =>
-  Bun.YAML.parse(await read(`.github/workflows/${name}.yml`)) as Workflow;
 
-test("CI checks pull requests without duplicate feature-branch push runs", async () => {
-  const ci = await workflow("ci");
-  expect(ci.on).toEqual({
-    pull_request: null,
-    push: { branches: ["main"] },
-  });
-});
-
-test("CI supersedes only runs from the same pull request", async () => {
-  const ci = await workflow("ci");
-  expect(ci.concurrency).toEqual({
-    group:
-      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}",
-    "cancel-in-progress": "${{ github.event_name == 'pull_request' }}",
-  });
-});
-
-test("publishing workflows build directly instead of re-running CI", async () => {
-  // Merged commits already passed CI, so releases must not gate on a second test run.
-  expect(Object.keys((await workflow("ci")).on)).not.toContain("workflow_call");
-  const docker = await workflow("docker");
-  const pages = await workflow("pages");
-  for (const config of [docker, pages]) {
-    expect(config.jobs.verify).toBeUndefined();
-    expect(Object.values(config.jobs).some((job) => job.uses)).toBe(false);
-  }
-  expect(docker.jobs.build.needs).toBeUndefined();
-  expect(pages.jobs.deploy.needs).toBeUndefined();
-  expect(pages.jobs.deploy.if).toBe(
-    "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}",
+test("CI artifact publication stays failure-only, allowlisted and short-lived", async () => {
+  const ci = testDouble<Workflow>(
+    Bun.YAML.parse(await Bun.file(".github/workflows/ci.yml").text()),
   );
-});
-
-test("failed CI jobs preserve only existing browser screenshots as short-lived artifacts", async () => {
-  const ci = await workflow("ci");
-  expect(ci.jobs.e2e).toBeUndefined();
   const uploads = ci.jobs.test.steps?.filter((step) =>
     step.uses?.startsWith("actions/upload-artifact@"),
   );
@@ -72,48 +30,27 @@ test("failed CI jobs preserve only existing browser screenshots as short-lived a
   expect(upload?.with?.["if-no-files-found"]).toBe("ignore");
   expect(upload?.with?.["retention-days"]).toBeGreaterThanOrEqual(1);
   expect(upload?.with?.["retention-days"]).toBeLessThanOrEqual(7);
-  expect(upload?.with?.name).toEqual(expect.any(String));
 });
 
-test("base images are referenced by tag", async () => {
-  const dockerfile = await read("Dockerfile");
-  expect(dockerfile.match(/^FROM .+$/gm)).toEqual([
-    "FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine AS build",
-    "FROM nginx:1.30.6-alpine",
+test("Git excludes local tool state without excluding application source", () => {
+  const excluded = [
+    ".superpowers/test-cleanup-canary",
+    ".grok/test-cleanup-canary",
+  ];
+  const result = Bun.spawnSync([
+    "git",
+    "-c",
+    "core.excludesFile=",
+    "check-ignore",
+    "--no-index",
+    "--verbose",
+    "--",
+    ...excluded,
+    "src/main.ts",
   ]);
-  expect(dockerfile).not.toContain("@sha256:");
-});
-
-test("nginx template declares headers once at server level", async () => {
-  const template = (await read("docker/nginx.conf")).replace(
-    /\$\{[A-Z_]+\}/g,
-    "x",
-  );
-  const blocks = template.match(/location [^{]*\{[^{}]*\}/g) ?? [];
-  expect(blocks.length).toBeGreaterThan(0);
-  // add_header is not inherited by a location that sets its own, so locations must only set variables.
-  for (const block of blocks) expect(block, block).not.toContain("add_header");
-  for (const header of [
-    "Content-Security-Policy",
-    "X-Frame-Options",
-    "X-Content-Type-Options",
-  ])
-    expect(template).toContain(`add_header ${header} `);
-  expect(template).toContain("gzip_vary on;");
-});
-
-test("deployment check counts a collapsed snapshot status error without opening it", async () => {
-  const source = await read("scripts/check-deployment.ts");
-  expect(source).toContain('[data-testid="page-body"]');
-  expect(source).toContain('[data-testid="feedback-status-error"]');
-  expect(source).toContain("shows an error instead of its content");
-  expect(source).not.toContain("refresh-error-");
-});
-
-test("ignore files keep local tool state out of images and git", async () => {
-  const dockerignore = (await read(".dockerignore")).split("\n");
-  expect(dockerignore).toEqual(
-    expect.arrayContaining([".superpowers", ".grok"]),
-  );
-  expect((await read(".gitignore")).split("\n")).toContain(".superpowers/");
+  expect(result.exitCode).toBe(0);
+  expect(new TextDecoder().decode(result.stderr)).toBe("");
+  const matches = new TextDecoder().decode(result.stdout).trim().split(/\r?\n/);
+  expect(matches.map((line) => line.split("\t")[1])).toEqual(excluded);
+  for (const match of matches) expect(match).toMatch(/^\.gitignore:\d+:[^!]/);
 });

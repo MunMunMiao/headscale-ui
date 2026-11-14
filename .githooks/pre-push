@@ -1,0 +1,8 @@
+#!/bin/sh
+# Local core.hooksPath replaces the global hook directory.
+# Keep the existing GPG check when it is installed.
+global="${HOME}/.config/git/hooks/pre-push"
+if [ -x "$global" ]; then
+  exec "$global" "$@"
+fi
+exit 0

@@ -6,6 +6,7 @@ import { describe, expect, test, vi } from "vitest";
 import { i18n } from "@/i18n";
 import { productDescriptors } from "@/i18n/descriptors";
 import { fixtureSession } from "@/test/dispatch-fixture";
+import { testDouble } from "@/test/dom";
 import { snapshotFixture } from "@/test-utils/headscale.test";
 import { type Session, SessionContext } from "./session-context";
 import { createSessionDrafts } from "./session-drafts";
@@ -77,7 +78,7 @@ function setup(
     version: "0.29.4",
     versionFresh: true,
   });
-  const session = {
+  const session = testDouble<Session>({
     feedback,
     auth,
     client,
@@ -85,7 +86,7 @@ function setup(
     drafts: createSessionDrafts(),
     deviceSetup,
     tagLifecycle,
-  } as Session;
+  });
   let create: ReturnType<typeof useCreatePreAuthKey> | undefined;
   renderToString(
     createElement(

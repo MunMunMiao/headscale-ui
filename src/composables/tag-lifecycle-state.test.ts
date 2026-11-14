@@ -141,7 +141,7 @@ describe("single nonsecret tag management return slot", () => {
         authId: "AUTH-SECRET",
       },
     };
-    const saved = lifecycle.saveReturn(original as TagReturnDraft);
+    const saved = lifecycle.saveReturn(original);
     expect(saved).not.toBeNull();
     expect(JSON.stringify(saved)).not.toContain("SECRET");
     original.form.tags.push("tag:later-edit");
@@ -156,7 +156,7 @@ describe("single nonsecret tag management return slot", () => {
         user: { id: "u1", name: "alice", password: "USER-SECRET" },
       },
     };
-    lifecycle.saveReturn(extraBaseline as TagReturnDraft);
+    lifecycle.saveReturn(extraBaseline);
     expect(JSON.stringify(lifecycle.getSnapshot())).not.toContain("SECRET");
   });
 
@@ -168,9 +168,8 @@ describe("single nonsecret tag management return slot", () => {
     "not-a-url",
   ])("does not retain non-public login-server input %s", (loginServer) => {
     const lifecycle = store();
-    expect(
-      lifecycle.saveReturn({ ...drafts[3], loginServer } as TagReturnDraft),
-    ).toBeNull();
+    const draft = { ...drafts[3], loginServer };
+    expect(lifecycle.saveReturn(draft)).toBeNull();
   });
 
   test.each([
@@ -220,9 +219,8 @@ test.each([
 ])(
   "accepts a public login-server base %s without a substring blacklist",
   (loginServer) => {
-    expect(
-      store().saveReturn({ ...drafts[3], loginServer } as TagReturnDraft),
-    ).toMatchObject({
+    const draft = { ...drafts[3], loginServer };
+    expect(store().saveReturn(draft)).toMatchObject({
       loginServer,
     });
   },
@@ -235,17 +233,15 @@ test.each([
 ])(
   "rejects decoded authentication material or malformed encoding %s",
   (loginServer) => {
-    expect(
-      store().saveReturn({ ...drafts[3], loginServer } as TagReturnDraft),
-    ).toBeNull();
+    const draft = { ...drafts[3], loginServer };
+    expect(store().saveReturn(draft)).toBeNull();
   },
 );
 
 test("setup can retain an unspecified public login server without retaining authentication material", () => {
   const lifecycle = store();
-  expect(
-    lifecycle.saveReturn({ ...drafts[3], loginServer: null } as TagReturnDraft),
-  ).toMatchObject({ loginServer: null });
+  const draft = { ...drafts[3], loginServer: null };
+  expect(lifecycle.saveReturn(draft)).toMatchObject({ loginServer: null });
 });
 
 test("scope ABA never revives a prior confirmation, while unchanged binding and input return still work", () => {

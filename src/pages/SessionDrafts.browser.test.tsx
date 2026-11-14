@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
@@ -93,7 +92,7 @@ async function setup(element: ReactNode, path: string, intercept?: Intercept) {
   return {
     session,
     calls,
-    async reunlock() {
+    async reunlock(this: void) {
       expect(
         await session.profiles.enterProfile(
           originalProfile,
@@ -102,7 +101,7 @@ async function setup(element: ReactNode, path: string, intercept?: Intercept) {
       ).toBe(true);
       await expect.poll(() => session.snapshot.isRefreshing).toBe(false);
     },
-    async switchServer() {
+    async switchServer(this: void) {
       await authenticateTestSession(session, serverB);
       await expect
         .poll(() => session.auth.getSessionSnapshot()?.profile?.baseUrl)
@@ -117,7 +116,7 @@ async function setup(element: ReactNode, path: string, intercept?: Intercept) {
         ),
       ).toBe(true);
     },
-    async expectNoStaleWrite(action: ActionFeedbackKey) {
+    async expectNoStaleWrite(this: void, action: ActionFeedbackKey) {
       await expect
         .poll(() => session.feedback.isActionPending(action))
         .toBe(false);

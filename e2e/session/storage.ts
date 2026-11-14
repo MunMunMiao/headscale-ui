@@ -26,13 +26,15 @@ type WorkerProbe = {
   };
   abort?: { injected: number; installed: boolean; restore(): void };
 };
-type ProbeGlobal = typeof globalThis & { deploymentStorageProbe?: WorkerProbe };
-type LegacyWindow = Window & {
-  deploymentLegacyDb?: IDBDatabase;
-  deploymentVersionChange?: boolean;
-  deploymentUpgradeAborts?: number;
-  deploymentMigrationAborts?: number;
-};
+declare global {
+  var deploymentStorageProbe: WorkerProbe | undefined;
+  interface Window {
+    deploymentLegacyDb?: IDBDatabase;
+    deploymentVersionChange?: boolean;
+    deploymentUpgradeAborts?: number;
+    deploymentMigrationAborts?: number;
+  }
+}
 const password = "deployment-server-password";
 const patchedContexts = new WeakSet<BrowserContext>();
 const workerUrl = (origin: string) => `${origin}/shared-session-worker.js`;
@@ -70,12 +72,15 @@ async function workerCall<T, A>(
 }
 
 function installCryptoGate() {
-  const scope = globalThis as ProbeGlobal;
+  const scope = globalThis;
   scope.deploymentStorageProbe ??= {};
   const probe = scope.deploymentStorageProbe;
   if (probe.crypto?.installed)
     throw new Error("A crypto gate is already installed");
-  const original = crypto.subtle.encrypt;
+  const original: typeof crypto.subtle.encrypt = Reflect.get(
+    crypto.subtle,
+    "encrypt",
+  );
   const pending: Array<{ release(): void; released: boolean }> = [];
   const state = {
     held: 0,
@@ -91,7 +96,7 @@ function installCryptoGate() {
       }
     },
     restore() {
-      Object.defineProperty(crypto.subtle, "encrypt", {
+      Reflect.defineProperty(crypto.subtle, "encrypt", {
         configurable: true,
         value: original,
       });
@@ -102,7 +107,7 @@ function installCryptoGate() {
     },
   };
   probe.crypto = state;
-  Object.defineProperty(crypto.subtle, "encrypt", {
+  Reflect.defineProperty(crypto.subtle, "encrypt", {
     configurable: true,
     async value(...args: Parameters<SubtleCrypto["encrypt"]>) {
       const result = await Reflect.apply(original, crypto.subtle, args);
@@ -118,17 +123,20 @@ function installCryptoGate() {
 }
 
 function installAbort(target: AbortRequest) {
-  const scope = globalThis as ProbeGlobal;
+  const scope = globalThis;
   scope.deploymentStorageProbe ??= {};
   const probe = scope.deploymentStorageProbe;
   if (probe.abort?.installed)
     throw new Error("An IDB fault is already installed");
-  const original = IDBObjectStore.prototype[target.operation];
+  const original: (...args: never[]) => IDBRequest = Reflect.get(
+    IDBObjectStore.prototype,
+    target.operation,
+  );
   const state = {
     injected: 0,
     installed: true,
     restore() {
-      Object.defineProperty(IDBObjectStore.prototype, target.operation, {
+      Reflect.defineProperty(IDBObjectStore.prototype, target.operation, {
         configurable: true,
         writable: true,
         value: original,
@@ -137,15 +145,19 @@ function installAbort(target: AbortRequest) {
     },
   };
   probe.abort = state;
-  Object.defineProperty(IDBObjectStore.prototype, target.operation, {
+  Reflect.defineProperty(IDBObjectStore.prototype, target.operation, {
     configurable: true,
     writable: true,
     value(this: IDBObjectStore, ...args: unknown[]) {
-      const request = Reflect.apply(original, this, args) as IDBRequest;
+      const request: IDBRequest = Reflect.apply(original, this, args);
+      const first = args[0];
+      const profileName =
+        first && typeof first === "object"
+          ? Reflect.get(first, "name")
+          : undefined;
       if (
         this.name === target.store &&
-        (!target.profileName ||
-          (args[0] as { name?: string })?.name === target.profileName)
+        (!target.profileName || profileName === target.profileName)
       ) {
         state.restore();
         request.addEventListener(
@@ -175,8 +187,7 @@ async function waitForCrypto(page: Page, origin: string, count: number) {
       (await workerCall(
         page,
         origin,
-        () =>
-          (globalThis as ProbeGlobal).deploymentStorageProbe?.crypto?.held ?? 0,
+        () => globalThis.deploymentStorageProbe?.crypto?.held ?? 0,
         undefined,
       )) === count,
     { timeoutMsg: `Worker crypto gate did not hold ${count} operations` },
@@ -186,10 +197,8 @@ async function releaseCrypto(page: Page, origin: string, index: number) {
   await workerCall(
     page,
     origin,
-    (index: number) => {
-      (globalThis as ProbeGlobal).deploymentStorageProbe?.crypto?.release(
-        index,
-      );
+    (slot: number) => {
+      globalThis.deploymentStorageProbe?.crypto?.release(slot);
       return true;
     },
     index,
@@ -200,7 +209,7 @@ async function restoreWorker(page: Page, origin: string) {
     page,
     origin,
     () => {
-      const probe = (globalThis as ProbeGlobal).deploymentStorageProbe;
+      const probe = globalThis.deploymentStorageProbe;
       probe?.crypto?.restore();
       probe?.abort?.restore();
       return {
@@ -226,7 +235,7 @@ async function assertAborted(page: Page, origin: string) {
     page,
     origin,
     () => {
-      const abort = (globalThis as ProbeGlobal).deploymentStorageProbe?.abort;
+      const abort = globalThis.deploymentStorageProbe?.abort;
       return { injected: abort?.injected, installed: abort?.installed };
     },
     undefined,
@@ -353,8 +362,8 @@ async function vaultSnapshot(page: Page) {
         ).join("");
       const active: Record<string, unknown> = {};
       metaKeys.result.forEach((key, index) => {
-        if (String(key).startsWith("active-profile"))
-          active[String(key)] = meta.result[index];
+        if (typeof key !== "string") return;
+        if (key.startsWith("active-profile")) active[key] = meta.result[index];
       });
       return {
         databaseVersion: db.version,
@@ -370,12 +379,12 @@ async function vaultSnapshot(page: Page) {
         }),
         profiles: await Promise.all(
           profiles.result.map(async (row) => ({
-            id: row.id as string,
-            name: row.name as string,
-            scope: row.scope as string,
-            ownerTabId: row.ownerTabId as string | undefined,
-            secretVersion: row.apiKey?.v as number | undefined,
-            keyEpoch: row.keyEpoch as string | undefined,
+            id: row.id,
+            name: row.name,
+            scope: row.scope,
+            ownerTabId: row.ownerTabId,
+            secretVersion: row.apiKey?.v,
+            keyEpoch: row.keyEpoch,
             fingerprint: await digest(row),
             // The row without the migration-owned key epoch: legacy fields must survive untouched.
             core: await digest({ ...row, keyEpoch: undefined }),
@@ -395,7 +404,11 @@ async function credentialMatches(
   secret: string,
 ) {
   return page.evaluate(
-    async ({ expected, name, password }) => {
+    async ({
+      expected,
+      name: credentialName,
+      password: credentialPassword,
+    }) => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open("headscale-ui");
         request.onsuccess = () => resolve(request.result);
@@ -410,7 +423,7 @@ async function credentialMatches(
         tx.onabort = () => reject(tx.error);
       });
       db.close();
-      const row = request.result.find((item) => item.name === name);
+      const row = request.result.find((item) => item.name === credentialName);
       if (!row || ![1, 2].includes(row.apiKey?.v)) return false;
       const bytes = (value: string) =>
         Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
@@ -430,7 +443,7 @@ async function credentialMatches(
       const kdf = legacy ? canary.result : row.apiKey.kdf;
       const imported = await crypto.subtle.importKey(
         "raw",
-        new TextEncoder().encode(password),
+        new TextEncoder().encode(credentialPassword),
         "PBKDF2",
         false,
         ["deriveKey"],
@@ -867,7 +880,9 @@ async function checkWriteRaces(
       await b.getByTestId("connect-submit").click();
       await b.getByTestId("profile-option-Second").waitFor();
       assert.deepEqual(
-        (await vaultSnapshot(b)).profiles.map((row) => row.name).sort(),
+        (await vaultSnapshot(b)).profiles
+          .map((row) => row.name)
+          .toSorted((left, right) => left.localeCompare(right)),
         ["First", "Second"],
       );
       assert.ok(await credentialMatches(b, connection, "First", password));
@@ -1053,7 +1068,7 @@ async function seedLegacy(
   );
   await page.goto(`${origin}/__legacy_probe__`);
   await page.evaluate(
-    async ({ baseUrl, apiKey, schema }) => {
+    async ({ baseUrl, apiKey, schema: schemaVersion }) => {
       const base64 = (value: Uint8Array) => btoa(String.fromCharCode(...value));
       const deviceKey = await crypto.subtle.generateKey(
         { name: "AES-GCM", length: 256 },
@@ -1131,16 +1146,16 @@ async function seedLegacy(
           future: { untouched: true },
         },
       ];
-      if (schema === 1)
+      if (schemaVersion === 1)
         for (const profile of profiles)
-          delete (profile as { keyEpoch?: string }).keyEpoch;
+          Reflect.deleteProperty(profile, "keyEpoch");
       const canary = {
         ...(await encrypt("headscale-ui:canary:v1", passwordKey)),
         salt: base64(salt),
         iterations: 310000,
       };
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("headscale-ui", schema);
+        const request = indexedDB.open("headscale-ui", schemaVersion);
         request.onupgradeneeded = () => {
           request.result.createObjectStore("profiles", { keyPath: "id" });
           request.result.createObjectStore("keys");
@@ -1153,7 +1168,7 @@ async function seedLegacy(
       for (const profile of profiles) tx.objectStore("profiles").put(profile);
       tx.objectStore("keys").put(deviceKey, "device-key");
       tx.objectStore("meta").put(canary, "password-canary");
-      if (schema === 2)
+      if (schemaVersion === 2)
         tx.objectStore("meta").put(
           { v: 1, keyEpoch, profilesRevision: 4 },
           "vault-state",
@@ -1164,7 +1179,7 @@ async function seedLegacy(
       );
       tx.objectStore("meta").put({ future: ["preserve"] }, "legacy-extra");
       tx.objectStore("meta").put(
-        schema === 1
+        schemaVersion === 1
           ? "legacy-persistent"
           : { profileId: "legacy-persistent", operationId: "old-reference" },
         "active-profile-id",
@@ -1173,7 +1188,7 @@ async function seedLegacy(
         tx.oncomplete = () => resolve();
         tx.onabort = () => reject(tx.error);
       });
-      const target = window as LegacyWindow;
+      const target = window;
       target.deploymentLegacyDb = db;
       db.onversionchange = () => {
         target.deploymentVersionChange = true;
@@ -1187,15 +1202,18 @@ async function abortFirstUpgrade(page: Page) {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("deployment-aborted-upgrade")) return;
     sessionStorage.setItem("deployment-aborted-upgrade", "1");
-    const originalOpen = IDBFactory.prototype.open;
+    const originalOpen: typeof IDBFactory.prototype.open = Reflect.get(
+      IDBFactory.prototype,
+      "open",
+    );
     IDBFactory.prototype.open = function (name: string, version?: number) {
       const request = originalOpen.call(this, name, version);
       if (name === "headscale-ui" && version === 3)
         request.addEventListener(
           "upgradeneeded",
           () => {
-            (window as LegacyWindow).deploymentUpgradeAborts =
-              ((window as LegacyWindow).deploymentUpgradeAborts ?? 0) + 1;
+            window.deploymentUpgradeAborts =
+              (window.deploymentUpgradeAborts ?? 0) + 1;
             IDBFactory.prototype.open = originalOpen;
             request.transaction?.abort();
           },
@@ -1226,9 +1244,7 @@ async function checkDatabaseUpgrade(
       const original = await vaultSnapshot(old);
       const current = await context.newPage();
       await current.goto(`${origin}/home`);
-      await old.waitForFunction(
-        () => (window as LegacyWindow).deploymentVersionChange,
-      );
+      await old.waitForFunction(() => window.deploymentVersionChange);
       await current.getByTestId("error-screen").waitFor();
       assert.equal(await current.getByTestId("error-reset").count(), 0);
       await old.close();
@@ -1305,9 +1321,7 @@ async function checkDatabaseUpgrade(
       await current.goto(`${origin}/home`);
       await current.getByTestId("error-screen").waitFor();
       assert.equal(
-        await current.evaluate(
-          () => (window as LegacyWindow).deploymentUpgradeAborts,
-        ),
+        await current.evaluate(() => window.deploymentUpgradeAborts),
         1,
         "the actual bootstrap settings upgrade must reach the native fault",
       );
@@ -1341,12 +1355,15 @@ async function checkDatabaseUpgrade(
       await current.addInitScript(() => {
         if (sessionStorage.getItem("deployment-aborted-migration")) return;
         sessionStorage.setItem("deployment-aborted-migration", "1");
-        const original = IDBObjectStore.prototype.put;
+        const nativePut: typeof IDBObjectStore.prototype.put = Reflect.get(
+          IDBObjectStore.prototype,
+          "put",
+        );
         IDBObjectStore.prototype.put = function (
           this: IDBObjectStore,
           ...args: Parameters<IDBObjectStore["put"]>
         ) {
-          const request = Reflect.apply(original, this, args) as IDBRequest;
+          const request: IDBRequest = Reflect.apply(nativePut, this, args);
           const value: unknown = args[0];
           if (
             this.name === "profiles" &&
@@ -1354,12 +1371,12 @@ async function checkDatabaseUpgrade(
             typeof value === "object" &&
             "keyEpoch" in value
           ) {
-            IDBObjectStore.prototype.put = original;
+            IDBObjectStore.prototype.put = nativePut;
             request.addEventListener(
               "success",
               () => {
-                (window as LegacyWindow).deploymentMigrationAborts =
-                  ((window as LegacyWindow).deploymentMigrationAborts ?? 0) + 1;
+                window.deploymentMigrationAborts =
+                  (window.deploymentMigrationAborts ?? 0) + 1;
                 request.transaction?.abort();
               },
               { once: true },
@@ -1371,9 +1388,7 @@ async function checkDatabaseUpgrade(
       await current.goto(`${origin}/home`);
       await current.getByTestId("error-screen").waitFor();
       assert.equal(
-        await current.evaluate(
-          () => (window as LegacyWindow).deploymentMigrationAborts,
-        ),
+        await current.evaluate(() => window.deploymentMigrationAborts),
         1,
         "the actual v1 migration must reach the mid-migration fault",
       );
@@ -1408,13 +1423,14 @@ async function checkDatabaseUpgrade(
         ["active-profile-id"],
         "the plain active id becomes one reference",
       );
-      assert.deepEqual(
-        Object.keys(upgraded.active["active-profile-id"] as object).sort(),
-        ["operationId", "profileId"],
-      );
+      const activeReference = upgraded.active["active-profile-id"];
+      assert.ok(activeReference && typeof activeReference === "object");
+      assert.deepEqual(Object.keys(activeReference).toSorted(), [
+        "operationId",
+        "profileId",
+      ]);
       assert.equal(
-        (upgraded.active["active-profile-id"] as { profileId: string })
-          .profileId,
+        Reflect.get(activeReference, "profileId"),
         "legacy-persistent",
       );
       assert.ok(upgraded.keys.includes("device-key"));
@@ -1664,9 +1680,7 @@ export async function checkVaultRecovery(
       );
       assert.equal(await current.getByTestId("error-reset").count(), 0);
       assert.equal(
-        await current.evaluate(
-          () => (window as LegacyWindow).deploymentUpgradeAborts,
-        ),
+        await current.evaluate(() => window.deploymentUpgradeAborts),
         1,
       );
       assert.deepEqual(await vaultSnapshot(current), original);

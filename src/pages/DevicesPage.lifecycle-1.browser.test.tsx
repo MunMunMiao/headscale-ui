@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -190,7 +191,7 @@ test.each([AUTH_ID, `https://public.example/register/${AUTH_ID}`])(
     await page.getByTestId("pending-registration-user").selectOptions("2");
     await page.getByTestId("pending-node-key").fill(key);
     const form = page.getByTestId("pending-registration-flow");
-    (form.element() as HTMLFormElement).requestSubmit();
+    requireInstance(form.element(), HTMLFormElement).requestSubmit();
     await expect
       .element(page.getByTestId("auth-source-required"))
       .toBeVisible();
@@ -278,12 +279,13 @@ for (const source of ["device", "setup"] as const) {
         const manage = page.getByTestId(
           source === "device" ? "node-tags-manage" : "setup-tags-manage",
         );
-        const newWizard = page
-          .getByTestId("add-device-toggle")
-          .element() as HTMLButtonElement;
+        const newWizard = requireInstance(
+          page.getByTestId("add-device-toggle").element(),
+          HTMLButtonElement,
+        );
         try {
           if (sameTurn) {
-            (manage.element() as HTMLButtonElement).click();
+            requireInstance(manage.element(), HTMLButtonElement).click();
             if (newer) newWizard.click();
             ctx.router.history.back();
           } else {

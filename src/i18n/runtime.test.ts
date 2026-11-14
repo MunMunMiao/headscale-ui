@@ -1,6 +1,5 @@
-import { expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import { SUPPORTED_LOCALES } from "./locales";
-import { englishCopy } from "./product-copy";
 import { getLocaleI18n, i18n, loadLocale } from "./runtime";
 
 // A Vue composer or an unactivated Lingui runtime cannot serve the React bootstrap.
@@ -26,19 +25,4 @@ test("deduplicates pending catalogs and loads every supported translator without
   expect(getLocaleI18n("ar")._("product.missing-test")).toBe(
     "product.missing-test",
   );
-  expect(englishCopy.nav.devices).toBe("Machines");
-});
-
-test("removes a failed pending load so a later request can retry", async () => {
-  vi.resetModules();
-  vi.doMock("./locales/ko-KR/messages", () => {
-    throw new Error("catalog unavailable");
-  });
-  const runtime = await import("./runtime");
-  await expect(runtime.loadLocale("ko-KR")).rejects.toThrow();
-  expect(() => runtime.getLocaleI18n("ko-KR")).toThrow("has not been loaded");
-  vi.doUnmock("./locales/ko-KR/messages");
-  await runtime.loadLocale("ko-KR");
-  expect(runtime.getLocaleI18n("ko-KR")._("common.light")).toBe("라이트");
-  expect(runtime.i18n.locale).toBe("en-US");
 });

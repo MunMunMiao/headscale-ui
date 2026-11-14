@@ -2,7 +2,8 @@ import { type I18n, type Messages, setupI18n } from "@lingui/core";
 import { DEFAULT_LOCALE, type Locale } from "./locales";
 import { messages as englishMessages } from "./locales/en-US/messages";
 
-const loaders = {
+const loaders: Record<Locale, () => Promise<{ messages: Messages }>> = {
+  "en-US": () => Promise.resolve({ messages: englishMessages }),
   "zh-Hans": () => import("./locales/zh-Hans/messages"),
   "zh-Hant-TW": () => import("./locales/zh-Hant-TW/messages"),
   "zh-Hant-HK": () => import("./locales/zh-Hant-HK/messages"),
@@ -27,10 +28,11 @@ export const i18n = setupI18n({
 const localeInstances = new Map<Locale, I18n>();
 
 export function loadLocale(locale: Locale): Promise<void> {
-  if (catalogs.has(locale)) return Promise.resolve();
+  if (locale !== DEFAULT_LOCALE && catalogs.has(locale))
+    return Promise.resolve();
   let pending = pendingLoads.get(locale);
   if (!pending) {
-    pending = loaders[locale as keyof typeof loaders]()
+    pending = loaders[locale]()
       .then(({ messages }) => {
         catalogs.set(locale, messages);
         i18n.load(locale, messages);

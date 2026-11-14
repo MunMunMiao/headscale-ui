@@ -13,48 +13,36 @@ import {
 import { i18n } from "@/i18n";
 import { Notice } from "./notice";
 
-test("a persistent notice keeps compact content and its action without a dismiss control", async () => {
+test("a persistent notice replaces stale details without losing its action or adding a dismiss control", async () => {
   const inspect = vi.fn();
-  await render(
-    <Notice
-      id="persistent-notice"
-      tone="warning"
-      title="Data may be out of date"
-      className="test-owner-style"
-      action={
-        <Button type="button" onClick={inspect}>
-          Inspect state
-        </Button>
-      }
-    >
+  const action = (
+    <Button type="button" onClick={inspect}>
+      Inspect state
+    </Button>
+  );
+  const view = await render(
+    <Notice tone="warning" title="Data may be out of date" action={action}>
       The original operation remains unresolved.
     </Notice>,
   );
-  const notice = document.getElementById("persistent-notice");
-  expect.assert(notice);
-  await expect.element(notice).toHaveAttribute("data-slot", "notice");
-  await expect.element(notice).toHaveAttribute("data-tone", "warning");
-  await expect.element(notice).toHaveClass("test-owner-style");
   await page.getByRole("button", { name: "Inspect state" }).click();
   expect(inspect).toHaveBeenCalledOnce();
   await expect
     .element(page.getByText("The original operation remains unresolved."))
     .toBeVisible();
   expect(page.getByRole("button").elements()).toHaveLength(1);
-});
 
-test.each(["info", "success", "warning", "error"] as const)(
-  "%s styling preserves the visible title",
-  async (tone) => {
-    await render(<Notice id="tone-notice" tone={tone} title="Current state" />);
-    const notice = document.getElementById("tone-notice");
-    expect.assert(notice);
-    await expect.element(notice).toHaveAttribute("data-tone", tone);
-    await expect
-      .element(page.getByText("Current state", { exact: true }))
-      .toBeVisible();
-  },
-);
+  await view.rerender(
+    <Notice tone="warning" title="Review the latest state" action={action} />,
+  );
+  await expect
+    .element(page.getByText("The original operation remains unresolved."))
+    .not.toBeInTheDocument();
+  await expect.element(page.getByText("Review the latest state")).toBeVisible();
+  await page.getByRole("button", { name: "Inspect state" }).click();
+  expect(inspect).toHaveBeenCalledTimes(2);
+  expect(page.getByRole("button").elements()).toHaveLength(1);
+});
 
 test.each(["page", "lower dialog"] as const)(
   "a notice action remains usable after a foreground modal is dismissed from a %s",

@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { isTimestampExpired } from "@/domain/node-status";
@@ -67,16 +66,14 @@ test("unmounting clears the pending expiry timer", async () => {
   const session = await prepareTestSession();
   const armed: unknown[] = [];
   const originalSetTimeout = globalThis.setTimeout;
-  vi.spyOn(globalThis, "setTimeout").mockImplementation(((
-    handler: TimerHandler,
-    ms?: number,
-    ...args: unknown[]
-  ) => {
-    const id = originalSetTimeout(handler, ms, ...args);
-    // Only the expiry timer waits about a minute.
-    if (ms !== undefined && ms > 59000 && ms < 61000) armed.push(id);
-    return id;
-  }) as typeof setTimeout);
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(
+    (handler, ms, ...args) => {
+      const id = originalSetTimeout(handler, ms, ...args);
+      // Only the expiry timer waits about a minute.
+      if (ms !== undefined && ms > 59000 && ms < 61000) armed.push(id);
+      return id;
+    },
+  );
   const cleared: unknown[] = [];
   const originalClearTimeout = globalThis.clearTimeout;
   vi.spyOn(globalThis, "clearTimeout").mockImplementation((id) => {

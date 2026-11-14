@@ -1,4 +1,5 @@
 import type { Page } from "playwright";
+import { testDouble } from "@/test/dom";
 
 export async function evaluateSharedWorker<T>(
   page: Page,
@@ -43,7 +44,7 @@ export async function evaluateSharedWorker<T>(
             `Worker evaluation failed: ${message.error?.message ?? exception.exception?.description ?? exception.text}`,
           ),
         );
-      else reply.resolve(message.result.result.value as T);
+      else reply.resolve(testDouble<T>(message.result.result.value));
     };
     connection.on("Target.receivedMessageFromTarget", receive);
     try {

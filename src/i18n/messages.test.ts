@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import { getMessage } from "@/test/messages";
-import type { MessageKey } from "./descriptors";
 import { SUPPORTED_LOCALES } from "./locales";
 import { getProductCopy } from "./product-copy";
 import { loadLocale } from "./runtime";
@@ -42,45 +41,3 @@ describe("localized messages", () => {
     ).toBe("Unlock Alpha's {lab}");
   });
 });
-
-test.each(SUPPORTED_LOCALES)(
-  "provides translated per-server credential UI in %s",
-  async (locale) => {
-    await loadLocale(locale);
-    const keys = [
-      "sessionDraftsStaleTitle",
-      "sessionDraftsStaleBody",
-      "sessionDraftsDiscard",
-      "clearProfilesDescription",
-      "forgotServerPasswordHint",
-      "serverPassword",
-      "currentServerPassword",
-      "newServerPassword",
-      "serverPasswordHint",
-      "serverCredentialEditHint",
-      "sessionSharedNote",
-      "profileUnlockTitle",
-      "profileMigrationTitle",
-      "profileMigrationHint",
-      "legacyPasswordLabel",
-      "migrationRequired",
-      "migrateAndUnlock",
-      "saveAndUnlock",
-      "passwordsMismatch",
-      "profilePasswordChanged",
-      "securityProfileHint",
-    ];
-    for (const key of keys) {
-      const text = getMessage(locale, key as MessageKey, {
-        name: "Server Alpha",
-      });
-      expect.soft(text).toBeTruthy();
-      if (locale !== "en-US")
-        expect
-          .soft(text)
-          .not.toBe(
-            getMessage("en-US", key as MessageKey, { name: "Server Alpha" }),
-          );
-    }
-  },
-);

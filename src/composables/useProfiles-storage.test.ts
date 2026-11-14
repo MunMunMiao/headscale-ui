@@ -1,21 +1,21 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { SAVED_LOCKED_ERROR } from "@/composables/useProfiles";
 import { __resetForTest, STORE_META, STORE_PROFILES } from "@/lib/idb";
 import { VAULT_STATE_KEY } from "@/lib/vault-state";
+import { fieldOf, requireObject, testDouble } from "@/test/dom";
 import { profilesFixture } from "@/test/profiles-fixture";
 import { idbGet, idbGetAll } from "@/test-utils/storage";
 
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
 });
 async function saved() {
   const f = await profilesFixture(cleanup);
@@ -41,8 +41,14 @@ test("a wrong independent password never marks a profile permanently corrupted",
 test("a committed save remains successful and visible when the subsequent list read fails", async () => {
   const f = await profilesFixture(cleanup);
   f.profiles.setConnectionForm(f.form);
-  const originalPut = IDBObjectStore.prototype.put;
-  const originalRead = IDBObjectStore.prototype.getAll;
+  const originalPut: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
+  const originalRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   let committed = false;
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,
@@ -85,7 +91,10 @@ test("a failed native deletion preserves the credential and its confirmation for
   const f = await saved();
   const before = await idbGet(STORE_PROFILES, f.profile.id);
   f.profiles.deleteProfile(f.profile);
-  const original = IDBObjectStore.prototype.delete;
+  const original: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   const fault = vi
     .spyOn(IDBObjectStore.prototype, "delete")
     .mockImplementation(function (this: IDBObjectStore, ...args) {
@@ -360,7 +369,10 @@ test("request success followed by transaction abort retains the unsaved form and
   const f = await profilesFixture(cleanup);
   f.profiles.setConnectionForm(f.form);
   f.profiles.setState({ connectionDialogOpen: true });
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -462,7 +474,10 @@ test("closing during legacy encryption cancels migration and cannot log in after
 test("disposing list synchronization prevents a queued read failure from changing a newer page's feedback", async () => {
   const f = await saved();
   const stop = f.profiles.startVaultSync();
-  const original = IDBObjectStore.prototype.getAll;
+  const original: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -543,7 +558,10 @@ test("repeated delete confirmation sends one storage operation and does not turn
 test("an old delete failure cannot overwrite a newer confirmation or its feedback", async () => {
   const f = await saved();
   f.profiles.deleteProfile(f.profile);
-  const original = IDBObjectStore.prototype.delete;
+  const original: typeof IDBObjectStore.prototype.delete = Reflect.get(
+    IDBObjectStore.prototype,
+    "delete",
+  );
   vi.spyOn(IDBObjectStore.prototype, "delete").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -567,8 +585,14 @@ test("an old delete failure cannot overwrite a newer confirmation or its feedbac
 
 function failProfileReadsAfterWrite(operation: "put" | "delete") {
   let committed = false;
-  const nativeWrite = IDBObjectStore.prototype[operation];
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeWrite: (...args: never[]) => IDBRequest = Reflect.get(
+    IDBObjectStore.prototype,
+    operation,
+  );
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   if (operation === "put") {
     vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
       this: IDBObjectStore,
@@ -582,7 +606,7 @@ function failProfileReadsAfterWrite(operation: "put" | "delete") {
           },
           { once: true },
         );
-      return (nativeWrite as IDBObjectStore["put"]).apply(this, args);
+      return Reflect.apply(nativeWrite, this, args);
     });
   } else {
     vi.spyOn(IDBObjectStore.prototype, "delete").mockImplementation(function (
@@ -597,7 +621,7 @@ function failProfileReadsAfterWrite(operation: "put" | "delete") {
           },
           { once: true },
         );
-      return (nativeWrite as IDBObjectStore["delete"]).apply(this, args);
+      return Reflect.apply(nativeWrite, this, args);
     });
   }
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
@@ -648,7 +672,10 @@ test.each(["save", "password", "delete"] as const)(
     await peer.profiles.loadProfile(f.profile.id);
     peer.profiles.setConnectionForm({ profileName: "Peer rename" });
     await peer.profiles.addProfile();
-    const nativeRead = IDBObjectStore.prototype.getAll;
+    const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+      IDBObjectStore.prototype,
+      "getAll",
+    );
     vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
       this: IDBObjectStore,
       ...args
@@ -684,7 +711,10 @@ test("an active list subscription reports an unreadable repository without delet
   const f = await saved();
   const stop = f.profiles.startVaultSync();
   cleanup.push(stop);
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args
@@ -726,7 +756,7 @@ test("a migrated record stays visible as password encrypted when the following l
 });
 
 import { t } from "@/i18n";
-import type { PublicSessionSnapshot, WorkerMessage } from "@/session/types";
+import type { WorkerMessage } from "@/session/types";
 
 test("a successful unlock reply delayed behind a peer switch cannot report the old identity as current", async () => {
   const f = await saved();
@@ -735,13 +765,13 @@ test("a successful unlock reply delayed behind a peer switch cannot report the o
   const held = Promise.withResolvers<WorkerMessage>();
   vi.spyOn(f.ports.worker, "postMessage").mockImplementation(
     (value: unknown) => {
-      const message = value as WorkerMessage;
+      const result = fieldOf(value, "result");
       if (
-        message.type === "reply" &&
-        message.result.ok &&
-        (message.result.value as PublicSessionSnapshot)?.status === "unlocked"
+        fieldOf(value, "type") === "reply" &&
+        fieldOf(result, "ok") === true &&
+        fieldOf(fieldOf(result, "value"), "status") === "unlocked"
       )
-        held.resolve(message);
+        held.resolve(testDouble<WorkerMessage>(requireObject(value)));
       else send(value);
     },
   );
@@ -830,9 +860,18 @@ test.each(["migration", "delete"] as const)(
     const f = await saved();
     const profile =
       operation === "migration" ? await legacyProfile(f) : f.profile;
-    const originalPut = IDBObjectStore.prototype.put;
-    const originalDelete = IDBObjectStore.prototype.delete;
-    const originalRead = IDBObjectStore.prototype.getAll;
+    const originalPut: typeof IDBObjectStore.prototype.put = Reflect.get(
+      IDBObjectStore.prototype,
+      "put",
+    );
+    const originalDelete: typeof IDBObjectStore.prototype.delete = Reflect.get(
+      IDBObjectStore.prototype,
+      "delete",
+    );
+    const originalRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+      IDBObjectStore.prototype,
+      "getAll",
+    );
     let committed = false;
     const reading = Promise.withResolvers<void>();
     vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
@@ -914,7 +953,10 @@ test("an older commit receipt cannot overwrite a newer verified repository proje
   await peer.profiles.persistConnection();
   const current = peer.profiles.getSnapshot();
   f.profiles.setState({ profiles: current.profiles, version: current.version });
-  const nativeRead = IDBObjectStore.prototype.getAll;
+  const nativeRead: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
     ...args

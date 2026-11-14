@@ -67,67 +67,6 @@ export interface RouteRef {
 export const routeKey = (method: string, path: string) =>
   `${method.toUpperCase()} ${path.replace(/\{[^}]+\}|:[A-Za-z]+/g, "{}")}`;
 
-export function definitionOf(
-  request: unknown,
-): RouteRef & { operation: string } {
-  if (typeof request !== "function")
-    throw new Error("Request registry entry is not a function");
-  const definition: unknown = request({}).definition;
-  if (
-    definition === null ||
-    typeof definition !== "object" ||
-    !("method" in definition) ||
-    !("path" in definition) ||
-    !("operation" in definition) ||
-    typeof definition.method !== "string" ||
-    typeof definition.path !== "string" ||
-    typeof definition.operation !== "string"
-  )
-    throw new Error("Request registry entry has no HTTP definition");
-  return {
-    method: definition.method,
-    path: definition.path,
-    operation: definition.operation,
-  };
-}
-
-/** Route of every request in a module of endpoints, keyed by its defjs operation id. */
-export function registryRoutes(registry: Readonly<Record<string, unknown>>) {
-  const routes = new Map<string, string>();
-  for (const request of Object.values(registry)) {
-    const { method, path, operation: id } = definitionOf(request);
-    const key = routeKey(method, path);
-    const other = routes.get(key);
-    if (other)
-      throw new Error(`Operations ${other} and ${id} share the route ${key}`);
-    routes.set(key, id);
-  }
-  return routes;
-}
-
-/** Human-readable differences between the expected upstream routes and the request registry. */
-export function diffRoutes(
-  expected: readonly RouteRef[],
-  registry: Readonly<Record<string, unknown>>,
-  nonRpc: readonly string[] = NON_RPC_OPERATIONS,
-): string[] {
-  const lines: string[] = [];
-  const seen = new Set<string>();
-  for (const { method, path } of expected) {
-    const key = routeKey(method, path);
-    if (seen.has(key)) lines.push(`Duplicate upstream route: ${key}`);
-    seen.add(key);
-  }
-  const actual = registryRoutes(registry);
-  for (const key of seen)
-    if (!actual.has(key))
-      lines.push(`Missing operation for upstream route: ${key}`);
-  for (const [key, id] of actual)
-    if (!seen.has(key) && !nonRpc.includes(id))
-      lines.push(`Operation without upstream route: ${id}`);
-  return lines;
-}
-
 /** Route list of a swagger/OpenAPI document, shaped like UPSTREAM_RPCS. */
 export function swaggerRoutes(document: unknown): RouteRef[] {
   if (

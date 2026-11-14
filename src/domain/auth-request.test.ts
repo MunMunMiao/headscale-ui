@@ -1,9 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  AUTH_ID_PLACEHOLDER,
-  normalizePublicLoginServer,
-  parseAuthRequest,
-} from "./auth-request";
+import { normalizePublicLoginServer, parseAuthRequest } from "./auth-request";
 
 const id = "hskey-authreq-abcdefghijklmnopqrstuvwx";
 
@@ -79,8 +75,4 @@ test("normalizes only a public HTTP server address without carrying secrets", ()
   ]) {
     expect(normalizePublicLoginServer(server)).toBeNull();
   }
-});
-
-test("keeps the placeholder a protocol token", () => {
-  expect(AUTH_ID_PLACEHOLDER.startsWith("hskey-authreq-")).toBe(true);
 });

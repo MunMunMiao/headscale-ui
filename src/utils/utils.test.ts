@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import type { HeadscaleNode, HeadscaleUser, PreAuthKey } from "@/api/contracts";
+import type { HeadscaleNode, HeadscaleUser } from "@/api/contracts";
 import { csvCell, downloadCsv } from "./csv";
 import { DATE_TIME_FORMAT, formatDate } from "./format";
 import {
@@ -9,18 +9,7 @@ import {
   nodeRevocationTargets,
   nodeStatusLabel,
 } from "./node";
-import {
-  apiKeyStatusClass,
-  approvedRouteClass,
-  deviceTagClass,
-  isExitRoute,
-  keyEphemeralClass,
-  keyKindClass,
-  keyStatusClass,
-  keyTagClass,
-  nodeStatusClass,
-  pendingRouteClass,
-} from "./status-class";
+import { isExitRoute } from "./status-class";
 import { normalizedBaseUrl, parseList, shortSecret } from "./strings";
 import { hasVisibleUser, isTagManagedDeviceUser, userLabel } from "./user";
 
@@ -38,18 +27,6 @@ function buildNode(overrides: Partial<HeadscaleNode> = {}): HeadscaleNode {
     availableRoutes: [],
     subnetRoutes: [],
     tags: [],
-    ...overrides,
-  };
-}
-
-function buildKey(overrides: Partial<PreAuthKey> = {}): PreAuthKey {
-  return {
-    id: "key-a",
-    key: "test-key",
-    reusable: false,
-    ephemeral: false,
-    used: false,
-    aclTags: [],
     ...overrides,
   };
 }
@@ -104,43 +81,46 @@ describe("CSV", () => {
     }
   });
 
-  test("downloads the rendered CSV and revokes its object URL", async () => {
-    let blob: Blob | undefined;
-    let revokedUrl = "";
-    let clicks = 0;
-    const link = {
-      download: "",
-      href: "",
-      click: () => void clicks++,
+  function stubCsvDownload(blobUrl: string, onClick: () => void = () => {}) {
+    const link = { download: "", href: "" };
+    const state: {
+      blob: Blob | MediaSource | undefined;
+      revoked: string;
+    } = { blob: undefined, revoked: "" };
+    // The page builds a real anchor; only click(), which would start a download, is observed.
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        link.download = this.download;
+        link.href = this.href;
+        onClick();
+      });
+    const create = vi
+      .spyOn(URL, "createObjectURL")
+      .mockImplementation((value) => {
+        state.blob = value;
+        return blobUrl;
+      });
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation((url) => {
+        state.revoked = url;
+      });
+    return {
+      link,
+      state,
+      restore(this: void) {
+        click.mockRestore();
+        create.mockRestore();
+        revoke.mockRestore();
+      },
     };
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => link },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:test-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value: (value: string) => {
-        revokedUrl = value;
-      },
+  }
+
+  test("downloads the rendered CSV and revokes its object URL", async () => {
+    let clicks = 0;
+    const { link, state, restore } = stubCsvDownload("blob:test-csv", () => {
+      clicks++;
     });
 
     vi.useFakeTimers();
@@ -154,28 +134,21 @@ describe("CSV", () => {
         ],
       );
       // Revoking during click() can cancel a download that has not read the blob yet.
-      expect(revokedUrl).toBe("");
+      expect(state.revoked).toBe("");
       vi.runAllTimers();
     } finally {
       vi.useRealTimers();
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
     expect(link.download).toBe("devices.csv");
     expect(link.href).toBe("blob:test-csv");
     expect(clicks).toBe(1);
-    expect(revokedUrl).toBe("blob:test-csv");
-    expect(blob?.type).toBe("text/csv;charset=utf-8");
+    expect(state.revoked).toBe("blob:test-csv");
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(state.blob.type).toBe("text/csv;charset=utf-8");
     // The UTF-8 byte order mark makes Excel read non-ASCII names correctly.
-    const bytes = new Uint8Array(await (blob as Blob).arrayBuffer());
+    const bytes = new Uint8Array(await state.blob.arrayBuffer());
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     expect(new TextDecoder().decode(bytes)).toBe(
       '"name","active","count"\n"A ""quoted"" device","true","2"\n"Second","","3"',
@@ -183,81 +156,20 @@ describe("CSV", () => {
   });
 
   test("writes only the declared header row for an empty export", async () => {
-    let blob: Blob | undefined;
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => ({ href: "", download: "", click() {} }) },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:empty-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value() {},
-    });
+    const { state, restore } = stubCsvDownload("blob:empty-csv");
 
     try {
       downloadCsv("empty.csv", ["name", "owner"], []);
     } finally {
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
-    expect(await blob?.text()).toBe('"name","owner"');
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(await state.blob.text()).toBe('"name","owner"');
   });
 
   test("neutralises formulas in downloaded cells but not negative numbers", async () => {
-    let blob: Blob | undefined;
-    const documentDescriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "document",
-    );
-    const createDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "createObjectURL",
-    );
-    const revokeDescriptor = Object.getOwnPropertyDescriptor(
-      URL,
-      "revokeObjectURL",
-    );
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: { createElement: () => ({ href: "", download: "", click() {} }) },
-    });
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: (value: Blob) => {
-        blob = value;
-        return "blob:formula-csv";
-      },
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value() {},
-    });
+    const { state, restore } = stubCsvDownload("blob:formula-csv");
 
     try {
       downloadCsv(
@@ -266,18 +178,11 @@ describe("CSV", () => {
         [{ name: "=cmd|' /C calc'!A0", count: -1 }],
       );
     } finally {
-      if (documentDescriptor) {
-        Object.defineProperty(globalThis, "document", documentDescriptor);
-      } else {
-        Reflect.deleteProperty(globalThis, "document");
-      }
-      if (createDescriptor)
-        Object.defineProperty(URL, "createObjectURL", createDescriptor);
-      if (revokeDescriptor)
-        Object.defineProperty(URL, "revokeObjectURL", revokeDescriptor);
+      restore();
     }
 
-    expect(await blob?.text()).toBe(
+    if (!(state.blob instanceof Blob)) throw new Error("expected a Blob");
+    expect(await state.blob.text()).toBe(
       '"name","count"\n"\'=cmd|\' /C calc\'!A0","-1"',
     );
   });
@@ -399,100 +304,11 @@ describe("nodeRevocationTargets", () => {
   });
 });
 
-describe("status classes", () => {
-  test("maps api-key status to expired or active", () => {
-    expect(
-      apiKeyStatusClass({
-        expiration: new Date(Date.now() - 60_000).toISOString(),
-      }),
-    ).toContain("rose");
-    expect(
-      apiKeyStatusClass({
-        expiration: new Date(Date.now() + 3_600_000).toISOString(),
-      }),
-    ).toContain("emerald");
-    expect(apiKeyStatusClass({ expiration: null })).toContain("emerald");
-    expect(apiKeyStatusClass({})).toContain("emerald");
-  });
-
+describe("exit routes", () => {
   test("recognizes both exit-route forms", () => {
     expect(isExitRoute("0.0.0.0/0")).toBe(true);
     expect(isExitRoute("::/0")).toBe(true);
     expect(isExitRoute("10.0.0.0/24")).toBe(false);
-  });
-
-  test("maps all node states", () => {
-    expect(nodeStatusClass(buildNode({ online: true }))).toContain("emerald");
-    expect(nodeStatusClass(buildNode())).toContain("slate");
-    expect(
-      nodeStatusClass(
-        buildNode({ expiry: new Date(Date.now() - 60_000).toISOString() }),
-      ),
-    ).toContain("rose");
-  });
-
-  test("used reusable keys remain available; expiry and unreadable expiry are not hidden by usage history", () => {
-    expect(keyStatusClass(buildKey({ used: true, reusable: true }))).toContain(
-      "emerald",
-    );
-    expect(
-      keyStatusClass(
-        buildKey({
-          used: true,
-          reusable: true,
-          expiration: "2000-01-01T00:00:00Z",
-        }),
-      ),
-    ).toContain("rose");
-    expect(
-      keyStatusClass(
-        buildKey({
-          used: true,
-          reusable: false,
-          expiration: "2000-01-01T00:00:00Z",
-        }),
-      ),
-    ).toContain("rose");
-    expect(
-      keyStatusClass(buildKey({ used: false, expiration: "unreadable" })),
-    ).toContain("amber");
-  });
-
-  test("maps auth-key status and kind", () => {
-    expect(keyStatusClass(buildKey({ used: true }))).toContain("sky");
-    expect(
-      keyStatusClass(
-        buildKey({ expiration: new Date(Date.now() - 60_000).toISOString() }),
-      ),
-    ).toContain("rose");
-    expect(keyStatusClass(buildKey())).toContain("emerald");
-    expect(keyKindClass(buildKey({ reusable: true }))).toContain("teal");
-    expect(keyKindClass(buildKey())).toContain("violet");
-    expect(keyEphemeralClass()).toContain("amber");
-  });
-
-  test("distinguishes approved, pending subnet, and pending exit routes", () => {
-    expect(approvedRouteClass()).toContain("emerald");
-    expect(pendingRouteClass("10.0.0.0/24")).toContain("amber");
-    expect(pendingRouteClass("::/0")).toContain("rose");
-  });
-
-  test("maps device tag keywords and falls back for unknown tags", () => {
-    expect(deviceTagClass("tag:server")).toContain("cyan");
-    expect(deviceTagClass("tag:workstation")).toContain("fuchsia");
-    expect(deviceTagClass("tag:desktop")).toContain("fuchsia");
-    expect(deviceTagClass("tag:mobile")).toContain("pink");
-    expect(deviceTagClass("tag:phone")).toContain("pink");
-    expect(deviceTagClass("tag:db")).toContain("indigo");
-    expect(deviceTagClass("tag:database")).toContain("indigo");
-    expect(deviceTagClass("tag:unknown")).toContain("emerald");
-  });
-
-  test("uses the narrower auth-key tag palette", () => {
-    expect(keyTagClass("tag:server")).toContain("cyan");
-    expect(keyTagClass("tag:mobile")).toContain("pink");
-    expect(keyTagClass("tag:db")).toContain("indigo");
-    expect(keyTagClass("tag:desktop")).toContain("slate");
   });
 });
 

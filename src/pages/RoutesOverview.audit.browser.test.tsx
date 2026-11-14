@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
@@ -74,7 +74,7 @@ async function setup(element: ReactNode = <RoutesPage />, path = "/routes") {
     return Response.json(reads[pathname]);
   };
   const session = await prepareTestSession(transport);
-  setLocale("en-US");
+  await setLocale("en-US");
   await authenticateTestSession(session);
   const { router } = await renderSessionPage(session, element, path);
   await expect.poll(() => session.snapshot.getSnapshot().isReady).toBe(true);
@@ -149,7 +149,10 @@ test.each([
   "route node context shows online=%s expiry=%s without banning approval",
   async (online, expiry, status) => {
     const ctx = await setup();
-    Object.assign(ctx.backend.nodes[0], { online, expiry });
+    const node = ctx.backend.nodes[0];
+    if (!node) throw new Error("fixture node is missing");
+    node.online = online;
+    node.expiry = expiry;
     await ctx.session.snapshot.refreshSnapshot();
     await expect
       .element(page.getByTestId("route-node-status-1"))
@@ -199,7 +202,7 @@ test.each([
     await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
     const confirm = page.getByTestId(`${action}-confirm`);
     await expect.element(confirm).toBeDisabled();
-    (confirm.element() as HTMLButtonElement).click();
+    requireInstance(confirm.element(), HTMLButtonElement).click();
     expect(ctx.writes).toEqual([]);
     const error = page.getByTestId(`${action}-error`);
     await error.getByText("Details", { exact: true }).click();

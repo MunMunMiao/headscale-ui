@@ -1,4 +1,3 @@
-import { createContext, useContext, useSyncExternalStore } from "react";
 import type { BootstrapState } from "@/bootstrap";
 import { applyStoredLocale } from "@/i18n";
 import { clearSessionMetadata } from "@/lib/secure-storage";
@@ -223,24 +222,4 @@ export function createSession(initialState: BootstrapState) {
 }
 
 export type Session = ReturnType<typeof createSession>;
-export const SessionContext = createContext<Session | null>(null);
-
-export function useSession(): Session {
-  const session = useContext(SessionContext);
-  if (!session) throw new Error("Application state requires AppProviders");
-  return session;
-}
-
-type ObservableStore = {
-  getSnapshot(): object;
-  subscribe(listener: () => void): () => void;
-};
-
-export function useStore<Model extends ObservableStore>(store: Model) {
-  const state = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
-  );
-  return { ...state, ...store } as ReturnType<Model["getSnapshot"]> & Model;
-}
+export { SessionContext, useSession, useStore } from "./session-context-value";

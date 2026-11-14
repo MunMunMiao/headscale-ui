@@ -136,6 +136,7 @@ export default function AccessTagMaintenance({
     return () => {
       active.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one inventory read per mounted context
   }, []);
 
   const inviteLink = (name: string) => (
@@ -383,11 +384,10 @@ export default function AccessTagMaintenance({
               mode === "migrate" && targetDeclared
                 ? replaceTagInSet(node.tags, tag, target)
                 : node.tags;
-            const observedTarget = Boolean(
+            const observedTarget =
               targetDeclared &&
               !node.tags.includes(tag) &&
-              node.tags.includes(target),
-            );
+              node.tags.includes(target);
             return (
               <div
                 key={node.id}
@@ -440,7 +440,9 @@ export default function AccessTagMaintenance({
           <h3 className="font-medium">{copy.policyObservedKeys}</h3>
           {relevantKeys.map((entry) => {
             const { id } = entry;
-            const key = snapshot.preAuthKeys.find((key) => key.id === id);
+            const key = snapshot.preAuthKeys.find(
+              (candidate) => candidate.id === id,
+            );
             return (
               <div
                 key={id}
@@ -493,7 +495,10 @@ export default function AccessTagMaintenance({
                 data-testid="tag-retirement-external"
                 disabled={!known}
                 checked={external}
-                onCheckedChange={(value) => setExternal(value === true)}
+                onCheckedChange={(value) => {
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- Base UI can pass a non-boolean value
+                  setExternal(value === true);
+                }}
               />
               {copy.policyExternalConfirm}
             </label>

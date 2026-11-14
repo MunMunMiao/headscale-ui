@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -45,13 +45,13 @@ async function setup(
   const writes: Array<{ path: string; body: unknown }> = [];
   const transport: FetchHandle = async (input, init) => {
     const request = input instanceof Request ? input : new Request(input, init);
-    const path = new URL(request.url).pathname;
+    const requestPath = new URL(request.url).pathname;
     if (request.method === "POST") {
-      writes.push({ path, body: await request.json() });
+      writes.push({ path: requestPath, body: await request.json() });
       return Response.json({ message: "Creation refused" }, { status: 400 });
     }
-    if (readHold && path === "/api/v1/preauthkey") await readHold;
-    if (readFailure && path === "/api/v1/preauthkey") {
+    if (readHold && requestPath === "/api/v1/preauthkey") await readHold;
+    if (readFailure && requestPath === "/api/v1/preauthkey") {
       return Response.json(
         { message: "Identity read failed" },
         { status: 500 },
@@ -66,7 +66,7 @@ async function setup(
       "/api/v1/apikey": { apiKeys: [] },
       "/api/v1/policy": backend.policy,
     };
-    return Response.json(reads[path]);
+    return Response.json(reads[requestPath]);
   };
   const session = await prepareTestSession(transport);
   await setLocale("en-US");
@@ -330,7 +330,7 @@ test("a stale command draft rejects native submission without trimming or publis
   const field = page.getByTestId("invite-login-server");
   const draft = "  https://old-server.example.test  ";
   await field.fill(draft);
-  const form = (field.element() as HTMLInputElement).form;
+  const form = requireInstance(field.element(), HTMLInputElement).form;
   expect.assert(form);
   ctx.session.drafts.hold(
     { id: "previous-profile", name: "Previous server" },
@@ -350,8 +350,8 @@ test("an input event already in flight cannot publish a command draft after the 
   const ctx = await setup();
   const field = page.getByTestId("invite-login-server");
   await field.fill("https://saved.example.test");
-  const input = field.element() as HTMLInputElement;
-  const setValue = Object.getOwnPropertyDescriptor(
+  const input = requireInstance(field.element(), HTMLInputElement);
+  const setValue = Reflect.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
     "value",
   )?.set;
@@ -377,9 +377,10 @@ test("an external pending creation blocks a close callback before the child rece
   const ctx = await setup();
   await page.getByTestId("open-create-invite").click();
   await expect.element(page.getByTestId("invite-user")).toHaveValue("1");
-  const cancel = page
-    .getByTestId("cancel-create-invite")
-    .element() as HTMLButtonElement;
+  const cancel = requireInstance(
+    page.getByTestId("cancel-create-invite").element(),
+    HTMLButtonElement,
+  );
   const request = Promise.withResolvers<void>();
   const externalAction = ctx.session.feedback.runAction(
     "create-invite",
@@ -412,7 +413,7 @@ test("an action confirmation already in flight cannot duplicate another pending 
   await page.getByTestId("expire-invite-1").click();
   const confirm = page.getByTestId("confirm-invite-action");
   await expect.element(confirm).toBeEnabled();
-  const button = confirm.element() as HTMLButtonElement;
+  const button = requireInstance(confirm.element(), HTMLButtonElement);
   const request = Promise.withResolvers<void>();
   const externalAction = ctx.session.feedback.runAction(
     "invite-action",

@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -26,9 +27,10 @@ test("a same-tick scope invalidation prevents an old Apply button from dispatchi
     finishRead();
   }
   await expect.element(page.getByTestId("node-tags-apply")).toBeEnabled();
-  const apply = page
-    .getByTestId("node-tags-apply")
-    .element() as HTMLButtonElement;
+  const apply = requireInstance(
+    page.getByTestId("node-tags-apply").element(),
+    HTMLButtonElement,
+  );
   ctx.session.snapshot.applyPatch({ version: { version: "0.29.5" } });
   apply.click();
   await expect
@@ -103,10 +105,9 @@ test.each(["pointer", "virtual"])(
     if (activation === "pointer")
       await page.getByTestId("add-device-step-preferences").click();
     else
-      (
-        page
-          .getByTestId("add-device-step-preferences")
-          .element() as HTMLButtonElement
+      requireInstance(
+        page.getByTestId("add-device-step-preferences").element(),
+        HTMLButtonElement,
       ).click();
     await page.getByTestId("setup-tags-manage").click();
     await expect
@@ -148,7 +149,7 @@ test.each(["device", "setup"])(
     );
     await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
     await expect.element(manageButton).toBeEnabled();
-    const manage = manageButton.element() as HTMLButtonElement;
+    const manage = requireInstance(manageButton.element(), HTMLButtonElement);
     ctx.session.tagLifecycle.bind(null);
     manage.click();
     await expect
@@ -198,9 +199,10 @@ test("a failed device return never consumes another source slot, and retry witho
   await page.getByTestId("tag-return-retry").click();
   expect(ctx.session.tagLifecycle.getSnapshot().returnTo).toEqual(foreign);
   expect(ctx.calls).toHaveLength(calls);
-  const retry = page
-    .getByTestId("tag-return-retry")
-    .element() as HTMLButtonElement;
+  const retry = requireInstance(
+    page.getByTestId("tag-return-retry").element(),
+    HTMLButtonElement,
+  );
   ctx.session.tagLifecycle.cancelReturn(foreign.id);
   retry.click();
   await expect
@@ -284,9 +286,10 @@ test.each([0, 1, 2])(
     await openTags();
     await page.getByTestId("node-tags-remove-tag:extra").click();
     await page.getByTestId("node-tags-option-tag:prod").click();
-    const remove = page
-      .getByTestId("node-tags-remove-tag:prod")
-      .element() as HTMLButtonElement;
+    const remove = requireInstance(
+      page.getByTestId("node-tags-remove-tag:prod").element(),
+      HTMLButtonElement,
+    );
     const finishRead = ctx.holdReads();
     submitTags();
     for (let i = 0; i < microtasks; i++) await Promise.resolve();

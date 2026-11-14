@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance } from "@/test/dom";
 import { afterAll, afterEach, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import { setLocale } from "@/i18n";
@@ -13,8 +13,8 @@ import DevicesPage from "./DevicesPage";
 // Base UI caches platform detection on import. Emulate Android before importing the UI,
 // including UA client hints used by development builds, not only a narrow desktop viewport.
 await vi.hoisted(async () => {
-  const { cdp } = await import("vitest/browser");
-  await cdp().send("Emulation.setUserAgentOverride", {
+  const { cdp: hoistedCdp } = await import("vitest/browser");
+  await hoistedCdp().send("Emulation.setUserAgentOverride", {
     userAgent:
       "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36",
     platform: "Android",
@@ -28,14 +28,16 @@ await vi.hoisted(async () => {
       mobile: true,
     },
   });
-  await cdp().send("Emulation.setTouchEmulationEnabled", {
+  await hoistedCdp().send("Emulation.setTouchEmulationEnabled", {
     enabled: true,
     maxTouchPoints: 5,
   });
 });
 
 afterAll(async () => {
-  await cdp().send("Emulation.setTouchEmulationEnabled", { enabled: false });
+  await cdp().send("Emulation.setTouchEmulationEnabled", {
+    enabled: false,
+  });
   await cdp().send("Emulation.setUserAgentOverride", { userAgent: "" });
   await cdp().send("Emulation.clearDeviceMetricsOverride");
   await page.viewport(1366, 900);
@@ -108,7 +110,11 @@ async function press(testId: string, input: "virtual" | "pointer" | "touch") {
       touchPoints: [],
     });
   } else {
-    await cdp().send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await cdp().send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x,
+      y,
+    });
     await cdp().send("Input.dispatchMouseEvent", {
       type: "mousePressed",
       x,
@@ -150,7 +156,7 @@ test.each(
     const ctx = await setup();
     const focusHistory: string[] = [];
     const trackFocus = (event: FocusEvent) => {
-      const target = event.target as HTMLElement;
+      const target = requireInstance(event.target, HTMLElement);
       focusHistory.push(target.dataset.testid || target.tagName);
     };
     document.addEventListener("focusin", trackFocus);
@@ -192,7 +198,7 @@ test.each(
 test("keyboard menu navigation returns focus after closing the tag editor", async () => {
   const ctx = await setup();
   const trigger = page.getByTestId("machine-actions-trigger-mobile-1");
-  (trigger.element() as HTMLElement).focus();
+  requireInstance(trigger.element(), HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
   await expect
     .element(page.getByTestId("view-node-details-action-mobile-1"))
@@ -251,16 +257,17 @@ test("tag editor to personal restoration retains the original row trigger", asyn
 test("a removed row opener falls back to existing focus history without focusing a detached node", async () => {
   const ctx = await setup();
   const fallback = page.getByTestId("device-detail-link-2");
-  (fallback.element() as HTMLElement).focus();
+  requireInstance(fallback.element(), HTMLElement).focus();
   await press("machine-actions-trigger-mobile-1", "virtual");
   await expect
     .element(page.getByTestId("edit-node-tags-action-mobile-1"))
     .toBeVisible();
   await press("edit-node-tags-action-mobile-1", "virtual");
   await expect.element(page.getByTestId("node-tags-dialog")).toBeVisible();
-  const original = page
-    .getByTestId("machine-actions-trigger-mobile-1")
-    .element() as HTMLElement;
+  const original = requireInstance(
+    page.getByTestId("machine-actions-trigger-mobile-1").element(),
+    HTMLElement,
+  );
   const focus = vi.spyOn(original, "focus");
   ctx.snapshot.nodes = ctx.snapshot.nodes.filter((node) => node.id !== "1");
   expect(await ctx.session.snapshot.refreshSegments(["fabric"])).toBe(true);

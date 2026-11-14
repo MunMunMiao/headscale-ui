@@ -413,7 +413,7 @@ function controlledTimers() {
   return {
     timers,
     delays,
-    idleSleep(milliseconds: number) {
+    idleSleep(this: void, milliseconds: number) {
       delays.push(milliseconds);
       const timer = Promise.withResolvers<void>();
       timers.push(timer);

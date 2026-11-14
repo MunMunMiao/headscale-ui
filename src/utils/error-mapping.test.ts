@@ -1,8 +1,15 @@
-import "fake-indexeddb/auto";
-import type { FaultCode } from "@defjs/core";
+import { serveFixture } from "@/test/fixture-server";
+import {
+  createClient,
+  type FaultCode,
+  withEndpoint,
+  withHTTPHandle,
+} from "@defjs/core";
+import { listUsers } from "@/api/requests";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { setLocale, t } from "@/i18n";
+import { testDouble } from "@/test/dom";
 import { getProductCopy } from "@/i18n/product-copy";
 import { hydrateSettings } from "@/lib/settings-storage";
 import type { SessionExecutionContext } from "@/session/auth-session";
@@ -54,7 +61,9 @@ test.each([
     await hydrateSettings();
     await setLocale(locale);
     for (const [kind, expected] of Object.entries(messages)) {
-      const error = new ApiError({ kind: kind as SessionFailureKind });
+      const error = new ApiError({
+        kind: testDouble<SessionFailureKind>(kind),
+      });
       expect.soft(getErrorMessage(error)).toBe(expected);
       expect.soft(storageErrorMessage(error)).toBe(expected);
     }
@@ -82,6 +91,69 @@ test.each([
   },
 );
 
+test("step wrappers recognize a native Defjs fault without exposing outer diagnostics", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const client = createClient(
+    withEndpoint("https://headscale.test"),
+    withHTTPHandle(async () =>
+      Response.json({ code: 5, message: "user not found" }, { status: 404 }),
+    ),
+  );
+  const [err] = await listUsers(client, {});
+  expect(err).toMatchObject({ code: "HTTP_STATUS", status: 404 });
+  const wrapped = new Error("list users secret-canary", { cause: err });
+  expect(getErrorDetails(wrapped)).toEqual({
+    message: getProductCopy("en-US").errorUserNotFound,
+    productKey: "errorUserNotFound",
+  });
+  expect(getErrorMessage(wrapped)).not.toContain("secret-canary");
+});
+
+test("step wrappers preserve API recovery and localized business details without exposing their diagnostics", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const original = new ApiError({
+    kind: "api",
+    code: "HTTP_STATUS",
+    message: "server failure",
+    status: 404,
+    data: { message: "user not found" },
+  });
+  const wrapped = new Error("read identity secret-canary", {
+    cause: new Error("list users", { cause: original }),
+  });
+  expect(getErrorDetails(wrapped)).toEqual(getErrorDetails(original));
+  expect(getErrorDetails(wrapped).productKey).toBe("errorUserNotFound");
+  expect(getErrorMessage(wrapped)).not.toContain("secret-canary");
+
+  const denied = new ApiError({
+    kind: "api",
+    code: "RES_MEDIA_TYPE_INVALID",
+    message: "text/plain",
+    status: 401,
+  });
+  expect(getErrorMessage(new Error("read snapshot", { cause: denied }))).toBe(
+    getProductCopy("en-US").errorRequestFailed,
+  );
+  const unknown = new ApiError({ kind: "unavailable", outcome: "unknown" });
+  expect(getErrorMessage(new Error("write policy", { cause: unknown }))).toBe(
+    t("sessionOutcomeUnknown"),
+  );
+});
+
+test("the first recognized cause keeps unsupported-version precedence over its API cause", async () => {
+  await hydrateSettings();
+  await setLocale("en-US");
+  const api = new ApiError({ kind: "unavailable", outcome: "unknown" });
+  const unsupported = new UnsupportedServerVersionError("0.28.0", {
+    cause: api,
+  });
+  expect(
+    getErrorMessage(new Error("read fabric", { cause: unsupported })),
+  ).toBe(getErrorMessage(unsupported));
+});
+
 function context(baseUrl: string): SessionExecutionContext {
   return {
     signal: new AbortController().signal,
@@ -92,7 +164,7 @@ function context(baseUrl: string): SessionExecutionContext {
 async function failureFrom(
   respond: () => Response | Promise<Response>,
 ): Promise<ApiError> {
-  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: respond });
+  const server = serveFixture({ fetch: respond });
   try {
     const result = await executeOperation(
       { type: "api.read", endpoint: "listUsers", input: {} },
@@ -101,7 +173,7 @@ async function failureFrom(
     if (result.ok) throw new Error("Expected an API failure");
     return new ApiError(result.error);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 }
 
@@ -118,7 +190,7 @@ test.each(["en-US", "zh-Hans", "ar"] as const)(
     );
     expect(error.code).toBe("RES_MEDIA_TYPE_INVALID");
     expect(error.status).toBe(401);
-    expect("data" in JSON.parse(JSON.stringify(error))).toBe(false);
+    expect(JSON.stringify(error)).not.toContain('"data"');
     const expected = getProductCopy(locale).errorRequestFailed;
     expect(getErrorMessage(error)).toBe(expected);
     expect(storageErrorMessage(error)).toBe(expected);
@@ -160,13 +232,11 @@ test("classifies transport and proxy faults", async () => {
   await setLocale("en-US");
   const unexpected = (status: number) =>
     t("requestUnexpectedResponse", { status });
-  const refused = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const refused = serveFixture({
     fetch: () => new Response(),
   });
   const origin = refused.url.origin;
-  refused.stop(true);
+  void refused.stop(true);
   const refusedResult = await executeOperation(
     { type: "api.read", endpoint: "listUsers", input: {} },
     context(origin),
@@ -303,9 +373,7 @@ test("never surfaces defjs transport text but keeps internal diagnostics", async
   const internal = new Set<FaultCode>([
     "REQ_BUILD_FAILED",
     "REQ_INPUT_INVALID",
-    "REQ_OPTIONS_INVALID",
     "CAP_BUFFER_EXCEEDED",
-    "CAP_QUEUE_OVERFLOW",
     "ENV_UNSUPPORTED",
     "EXT_HOOK_FAILED",
     "EXT_INTERCEPTOR_FAILED",
@@ -322,7 +390,7 @@ test("never surfaces defjs transport text but keeps internal diagnostics", async
     "RES_MEDIA_TYPE_INVALID",
     "RES_STRUCT_MISMATCH",
   ];
-  expect(codes).toHaveLength(17);
+  expect(codes).toHaveLength(15);
   for (const code of codes) {
     const message = getErrorMessage(
       new ApiError({

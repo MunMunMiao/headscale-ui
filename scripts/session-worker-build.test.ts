@@ -3,50 +3,56 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { afterEach, expect, test } from "vitest";
+import { expect } from "vitest";
+import { requireValue } from "@/test/dom";
 import { computeBuildId } from "./build-id.ts";
+import {
+  runTestCommand,
+  test,
+  type TestResources,
+} from "./harness/test-resources";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const temporary: string[] = [];
-const cleanups: (() => void | Promise<void>)[] = [];
-
-afterEach(async () => {
-  for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
-  await Promise.all(
-    temporary
-      .splice(0)
-      .map((path) => rm(path, { recursive: true, force: true })),
+async function buildFixture(
+  base: string,
+  resources: TestResources,
+  signal: AbortSignal,
+) {
+  signal.throwIfAborted();
+  const creating = mkdtemp(join(tmpdir(), "headscale-session-build-"));
+  resources.files.defer(async () =>
+    rm(await creating, { recursive: true, force: true }),
   );
-});
-
-async function buildFixture(base: string) {
-  const directory = await mkdtemp(join(tmpdir(), "headscale-session-build-"));
-  temporary.push(directory);
-  await Bun.write(
-    join(directory, "index.html"),
-    '<!doctype html><html><body><script type="module" src="/main.ts"></script></body></html>',
-  );
-  await Bun.write(
-    join(directory, "main.ts"),
-    `import { createSessionBridge } from ${JSON.stringify(join(root, "src/session/bridge.ts"))};
+  const directory = await creating;
+  signal.throwIfAborted();
+  const preparing = (async () => {
+    await Bun.write(
+      join(directory, "index.html"),
+      '<!doctype html><html><body><script type="module" src="/main.ts"></script></body></html>',
+    );
+    await Bun.write(
+      join(directory, "main.ts"),
+      `import { createSessionBridge } from ${JSON.stringify(join(root, "src/session/bridge.ts"))};
 const worker = new SharedWorker(new URL('./worker.ts', import.meta.url), {
   type: 'module', name: 'headscale-ui-session',
 });
 worker.port.onmessage = ({ data }) => {
   document.body.textContent = JSON.stringify({
     bridgeAvailable: typeof createSessionBridge === 'function',
+    production: process.env.NODE_ENV === 'production',
     pageBuildId: typeof __HEADSCALE_UI_BUILD_ID__ === 'string' ? __HEADSCALE_UI_BUILD_ID__ : null,
     worker: data,
   });
 };
 worker.port.start();
 `,
-  );
-  await Bun.write(
-    join(directory, "worker.ts"),
-    `self.onconnect = async ({ ports: [port] }) => {
+    );
+    await Bun.write(
+      join(directory, "worker.ts"),
+      `self.onconnect = async ({ ports: [port] }) => {
   const { chunkBuildId, chunkUrl } = await import('./worker-lazy');
   port.postMessage({
+    production: process.env.NODE_ENV === 'production',
     buildId: typeof __HEADSCALE_UI_BUILD_ID__ === 'string' ? __HEADSCALE_UI_BUILD_ID__ : null,
     chunkBuildId,
     chunkUrl,
@@ -54,12 +60,16 @@ worker.port.start();
   });
 };
 `,
-  );
-  await Bun.write(
-    join(directory, "worker-lazy.ts"),
-    "export const chunkBuildId = __HEADSCALE_UI_BUILD_ID__; export const chunkUrl = import.meta.url;\n",
-  );
-  const child = Bun.spawn(
+    );
+    await Bun.write(
+      join(directory, "worker-lazy.ts"),
+      "export const chunkBuildId = __HEADSCALE_UI_BUILD_ID__; export const chunkUrl = import.meta.url;\n",
+    );
+  })();
+  resources.tasks.defer(() => preparing);
+  await preparing;
+  signal.throwIfAborted();
+  const { code, stdout, stderr } = await runTestCommand(
     [
       process.execPath,
       "run",
@@ -74,21 +84,23 @@ worker.port.start();
       "--logLevel",
       "warn",
     ],
-    { cwd: root, stdout: "pipe", stderr: "pipe" },
+    {
+      cwd: root,
+      signal,
+      tasks: resources.tasks,
+      env: { ...process.env, NODE_ENV: "production" },
+    },
   );
-  const [code, stdout, stderr] = await Promise.all([
-    child.exited,
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-  ]);
   expect(code, stdout + stderr).toBe(0);
   return join(directory, "dist");
 }
 
-test.each(["/", "/nested/ui/"])(
-  "Vite emits one stable SharedWorker entry under application base %s",
-  async (base) => {
-    const output = await buildFixture(base);
+for (const base of ["/", "/nested/ui/"]) {
+  test(`Vite emits one stable SharedWorker entry under application base ${base}`, async ({
+    resources,
+    signal,
+  }) => {
+    const output = await buildFixture(base, resources, signal);
     expect(await readdir(output, { recursive: true })).toContain(
       "shared-session-worker.js",
     );
@@ -97,21 +109,25 @@ test.each(["/", "/nested/ui/"])(
     expect(main).toBeDefined();
     expect(main?.startsWith(base)).toBe(true);
     const javascript = await Bun.file(
-      join(output, (main as string).slice(base.length)),
+      join(output, requireValue(main).slice(base.length)),
     ).text();
     expect(javascript).toContain(`${base}shared-session-worker.js`);
     // The page reaches the Worker through bridge.ts only: requests.ts and defjs's HTTP pipeline stay out.
     expect(javascript).not.toContain("/api/v1/");
-  },
-  30_000,
-);
+  }, 30_000);
+}
 
-test("built module workers report their own URL and the page's build identity", async () => {
-  const browser = await chromium.launch({ headless: true });
-  cleanups.push(() => browser.close());
+test("built module workers report their own URL and the page's build identity", async ({
+  resources,
+  signal,
+}) => {
+  const launching = chromium.launch({ headless: true });
+  resources.tasks.defer(async () => (await launching).close());
+  const browser = await launching;
+  signal.throwIfAborted();
   const buildIds: string[] = [];
   for (const base of ["/", "/nested/ui/"]) {
-    const output = await buildFixture(base);
+    const output = await buildFixture(base, resources, signal);
     const server = Bun.serve({
       hostname: "127.0.0.1",
       port: 0,
@@ -127,10 +143,10 @@ test("built module workers report their own URL and the page's build identity", 
           : new Response("Not found", { status: 404 });
       },
     });
-    cleanups.push(() => server.stop(true));
+    resources.tasks.defer(() => server.stop(true));
     const origin = `http://127.0.0.1:${server.port}`;
     const context = await browser.newContext();
-    cleanups.push(() => context.close());
+    signal.throwIfAborted();
     const page = await context.newPage();
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -141,6 +157,8 @@ test("built module workers report their own URL and the page's build identity", 
     const result = JSON.parse((await page.textContent("body")) ?? "");
     expect.soft(errors).toEqual([]);
     expect.soft(result.bridgeAvailable).toBe(true);
+    expect.soft(result.production).toBe(true);
+    expect.soft(result.worker.production).toBe(true);
     expect
       .soft(result.worker.sourceUrl)
       .toBe(`${origin}${base}shared-session-worker.js`);

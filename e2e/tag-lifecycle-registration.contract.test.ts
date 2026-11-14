@@ -34,7 +34,9 @@ async function joined(name: string, tags: string[], reusable = false) {
   });
   const client = await fixture.client(name);
   await fixture.register(client, key.key);
-  const node = (await fixture.nodes()).find((node) => node.name === name);
+  const node = (await fixture.nodes()).find(
+    (candidate) => candidate.name === name,
+  );
   if (!node)
     throw new Error("The official client did not register its fixture node");
   return { client, key, node };

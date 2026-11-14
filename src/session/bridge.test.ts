@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { expect, test, vi } from "vitest";
 import { createSession } from "@/composables/session-context";
 import { createMutation } from "@/composables/useMutation";
@@ -13,7 +12,13 @@ import { createSessionBridge, type SessionBridgeOptions } from "./bridge";
 import type { ProfileActions } from "./profile-actions";
 import { type ApiCommand, createSessionProtocol } from "./protocol";
 import { createSessionRuntime } from "./runtime";
-import type { SessionResult, WorkerErrorDto } from "./types";
+import type { WorkerErrorDto } from "./types";
+
+function fieldOf(value: unknown, key: string): unknown {
+  return value !== null && typeof value === "object"
+    ? Reflect.get(value, key)
+    : undefined;
+}
 
 function fixture(
   execute?: AuthSessionDependencies["execute"],
@@ -208,7 +213,7 @@ test("a hidden one-time key result waits for same-session recovery and is delive
     expect.assert(pair);
     await sessionMessage(
       pair.page,
-      (value) => (value as { requestId?: number }).requestId === 2,
+      (value) => fieldOf(value, "requestId") === 2,
     );
     expect(deliveries).toBe(0);
     expect(await f.bridge.resume()).toMatchObject({ ok: true });
@@ -231,7 +236,7 @@ function scheduler() {
   }[] = [];
   return {
     timers,
-    schedule(milliseconds: number, callback: () => void) {
+    schedule(this: void, milliseconds: number, callback: () => void) {
       const timer = { milliseconds, callback, cancelled: false };
       timers.push(timer);
       return () => {
@@ -336,7 +341,7 @@ test("timely hidden replies stop their communication deadline while waiting for 
     expect.assert(pair);
     await sessionMessage(
       pair.page,
-      (value) => (value as { requestId?: number }).requestId === 2,
+      (value) => fieldOf(value, "requestId") === 2,
     );
     expect(timer.timers.some((entry) => entry.milliseconds === 20_000)).toBe(
       true,
@@ -458,7 +463,7 @@ test("buffered results and in-flight work share a 64-command bound", async () =>
     expect.assert(pair);
     await sessionMessage(
       pair.page,
-      (value) => (value as { requestId?: number }).requestId === 64,
+      (value) => fieldOf(value, "requestId") === 64,
     );
     const extra = f.bridge.read(identity, { endpoint: "listUsers", input: {} });
     const result = await Promise.race([
@@ -724,7 +729,7 @@ test.each([
       expect.assert(pair);
       await sessionMessage(
         pair.page,
-        (value) => (value as { requestId?: number }).requestId === 2,
+        (value) => fieldOf(value, "requestId") === 2,
       );
       if (action === "lock") await f.bridge.lock(identity);
       else f.clock.advance(SESSION_IDLE_MS);
@@ -785,7 +790,7 @@ test("a new suspension prevents an older resume check from releasing buffered re
     expect.assert(pair);
     await sessionMessage(
       pair.page,
-      (value) => (value as { requestId?: number }).requestId === 2,
+      (value) => fieldOf(value, "requestId") === 2,
     );
     pair.pause();
     const oldResume = f.bridge.resume();
@@ -1184,10 +1189,7 @@ async function held(
   const pending = f.bridge.write(identity, command);
   const pair = f.pairs[0];
   expect.assert(pair);
-  await sessionMessage(
-    pair.page,
-    (value) => (value as { requestId?: number }).requestId === 2,
-  );
+  await sessionMessage(pair.page, (value) => fieldOf(value, "requestId") === 2);
   return { identity, pending, pair };
 }
 
@@ -1375,14 +1377,11 @@ test.each<{
       expect.assert(pair);
       f.bridge.suspend();
       const received = sessionMessage(pair.page, (value) => {
-        const reply = value as {
-          type: string;
-          result?: SessionResult<unknown>;
-        };
+        const result = fieldOf(value, "result");
         return (
-          reply.type === "reply" &&
-          reply.result?.ok === false &&
-          reply.result.error.kind === "api"
+          fieldOf(value, "type") === "reply" &&
+          fieldOf(result, "ok") === false &&
+          fieldOf(fieldOf(result, "error"), "kind") === "api"
         );
       });
       const command: ApiCommand =
@@ -1535,7 +1534,12 @@ test("a late message from a replaced port cannot change the current connection",
           type: string,
           listener: EventListenerOrEventListenerObject,
         ) {
-          if (type === "message") mine.push(listener as EventListener);
+          if (type === "message")
+            mine.push(
+              typeof listener === "function"
+                ? (event) => Reflect.apply(listener, undefined, [event])
+                : (event) => listener.handleEvent(event),
+            );
           pair.page.addEventListener(type, listener);
         },
         removeEventListener: () => {},

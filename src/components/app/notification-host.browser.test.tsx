@@ -2,6 +2,7 @@ import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
+import { requireInstance } from "@/test/dom";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -332,14 +333,13 @@ test("an unfocused error timing out does not move focus from the modal input to 
   const session = await setupRefreshes();
   const timers: Array<() => void> = [];
   const realSetTimeout = globalThis.setTimeout;
-  vi.spyOn(globalThis, "setTimeout").mockImplementation(((
-    handler: () => void,
-    ms?: number,
-    ...args: unknown[]
-  ) => {
-    if (ms === 4000) timers.push(handler);
-    return realSetTimeout(handler, ms, ...args);
-  }) as typeof setTimeout);
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(
+    (handler, ms, ...args) => {
+      if (ms === 4000 && typeof handler === "function")
+        timers.push(() => handler());
+      return realSetTimeout(handler, ms, ...args);
+    },
+  );
   await page
     .getByRole("button", { name: "Report failure", exact: true })
     .click();
@@ -489,14 +489,13 @@ test("notifications retain the existing four-second timeout without clearing bus
   const before = session.feedback.getSnapshot();
   const timers: { handler: () => void; ms?: number }[] = [];
   const realSetTimeout = globalThis.setTimeout;
-  vi.spyOn(globalThis, "setTimeout").mockImplementation(((
-    handler: () => void,
-    ms?: number,
-    ...args: unknown[]
-  ) => {
-    timers.push({ handler, ms });
-    return realSetTimeout(handler, ms, ...args);
-  }) as typeof setTimeout);
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(
+    (handler, ms, ...args) => {
+      if (typeof handler === "function")
+        timers.push({ handler: () => handler(), ms });
+      return realSetTimeout(handler, ms, ...args);
+    },
+  );
   await page
     .getByRole("button", { name: "Report failure", exact: true })
     .click();
@@ -551,9 +550,6 @@ test("the root host keeps all limited toast data non-secret at a narrow RTL view
         .getByRole("button", { name: "Report failure", exact: true })
         .click();
     await expect.element(notification().first()).toBeVisible();
-    const rect = notifications().element().getBoundingClientRect();
-    expect(rect.left).toBeGreaterThanOrEqual(0);
-    expect(rect.right).toBeLessThanOrEqual(window.innerWidth);
     expect(
       document.querySelectorAll('[data-slot="toast"]:not([inert])'),
     ).toHaveLength(3);
@@ -595,13 +591,16 @@ test.each(["pointer", "touch"] as const)(
       const pointerTypes: string[] = [];
       close.addEventListener(
         "pointerdown",
-        (event) => pointerTypes.push((event as PointerEvent).pointerType),
+        (event) =>
+          pointerTypes.push(requireInstance(event, PointerEvent).pointerType),
         { once: true },
       );
       const rect = close.getBoundingClientRect();
-      const frame = (
-        window.frameElement as HTMLElement | null
-      )?.getBoundingClientRect();
+      const frameElement = window.frameElement;
+      const frame =
+        frameElement instanceof HTMLElement
+          ? frameElement.getBoundingClientRect()
+          : undefined;
       await cdp().send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [

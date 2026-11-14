@@ -30,16 +30,19 @@ function firstAndLastLeft(node: Text) {
  * Asserts every IP address or CIDR rendered under `root` is laid out left-to-right and isolated
  * from the surrounding bidi context (the "0/::" symptom in right-to-left locales).
  */
-export function expectNetworkTokensLtr(root: ParentNode, minimum = 1) {
-  const walker = document.createTreeWalker(root as Node, NodeFilter.SHOW_TEXT);
+export function expectNetworkTokensLtr(root: Node, minimum = 1) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let count = 0;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const text = node as Text;
-    const value = text.data.trim();
+  for (
+    let node = walker.nextNode();
+    node instanceof Text;
+    node = walker.nextNode()
+  ) {
+    const value = node.data.trim();
     const isIpv6 = IPV6.test(value);
     if (!IPV4.test(value) && !isIpv6) continue;
     count += 1;
-    const parent = text.parentElement;
+    const parent = node.parentElement;
     if (!parent) continue;
     const style = getComputedStyle(parent);
     expect(style.direction, `direction of ${value}`).toBe("ltr");
@@ -47,8 +50,8 @@ export function expectNetworkTokensLtr(root: ParentNode, minimum = 1) {
       ISOLATING.has(style.unicodeBidi),
       `unicode-bidi of ${value}: ${style.unicodeBidi}`,
     ).toBe(true);
-    if (isIpv6 && text.data.trim().length > 1) {
-      const { first, last, sameLine } = firstAndLastLeft(text);
+    if (isIpv6 && node.data.trim().length > 1) {
+      const { first, last, sameLine } = firstAndLastLeft(node);
       if (sameLine)
         expect(
           first,

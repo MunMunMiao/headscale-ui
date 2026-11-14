@@ -7,6 +7,7 @@ import { i18n, t } from "@/i18n";
 import { type MessageKey, productDescriptors } from "@/i18n/descriptors";
 import type { SessionFailureKind } from "@/session/types";
 import { ApiError } from "@/session/types";
+import { findErrorCause } from "./error-cause";
 
 const sessionErrorKeys = {
   locked: "sessionLocked",
@@ -34,9 +35,7 @@ const faultKeys = {
   RES_STRUCT_MISMATCH: "requestUnexpectedResponse",
   REQ_BUILD_FAILED: null,
   REQ_INPUT_INVALID: null,
-  REQ_OPTIONS_INVALID: null,
   CAP_BUFFER_EXCEEDED: null,
-  CAP_QUEUE_OVERFLOW: null,
   ENV_UNSUPPORTED: null,
   EXT_HOOK_FAILED: null,
   EXT_INTERCEPTOR_FAILED: null,
@@ -79,10 +78,18 @@ function isFaultCode(code: unknown): code is FaultCode {
   return typeof code === "string" && Object.hasOwn(faultKeys, code);
 }
 
-export function getErrorDetails(error: unknown): {
+export function getErrorDetails(input: unknown): {
   message: string;
   productKey?: ProductKey;
 } {
+  const error =
+    findErrorCause(
+      input,
+      (cause): cause is Error =>
+        cause instanceof UnsupportedServerVersionError ||
+        cause instanceof ApiError ||
+        ("code" in cause && isFaultCode(cause.code)),
+    ) ?? input;
   if (error instanceof UnsupportedServerVersionError)
     return {
       message: t("serverVersionUnreadable", {

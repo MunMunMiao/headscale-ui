@@ -1,6 +1,11 @@
-import type { AddressInfo } from "node:net";
-import { createServer } from "node:net";
-import type { FaultCode } from "@defjs/core";
+import { serveFixture } from "@/test/fixture-server";
+import {
+  createClient,
+  createHttpInterceptor,
+  type FaultCode,
+  withEndpoint,
+  withInterceptors,
+} from "@defjs/core";
 import { expect, test, vi } from "vitest";
 import { createFixtureHttp } from "@/test/dispatch-fixture";
 import type { SessionExecutionContext } from "./auth-session";
@@ -21,9 +26,7 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
     body: unknown;
     bearer: string | null;
   }[] = [];
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       const url = new URL(request.url);
       const body: unknown =
@@ -117,14 +120,12 @@ test("dispatches contracts with base paths, parsed results and request bodies", 
       },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
 test("preserves HTTP fault semantics without serializing request metadata", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         { code: 13, message: "acl policy not found" },
@@ -149,15 +150,13 @@ test("preserves HTTP fault semantics without serializing request metadata", asyn
       /fixture-connection-secret|headers|request|cause/,
     );
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
 test("rejects unknown operations, invalid input and expired sessions without a network request", async () => {
   let count = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch() {
       count++;
       return Response.json({});
@@ -165,20 +164,20 @@ test("rejects unknown operations, invalid input and expired sessions without a n
   });
   try {
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         context(server.url.origin),
-      ),
+      ]),
     ).toEqual({ ok: false, error: { kind: "invalid-request" } });
     expect(
-      await executeOperation(
+      await Reflect.apply(executeOperation, undefined, [
         {
           type: "api.write",
           endpoint: "setTags",
           input: { nodeId: "1", tags: 9 },
-        } as never,
+        },
         context(server.url.origin),
-      ),
+      ]),
     ).toMatchObject({
       ok: false,
       error: { kind: "api", code: "REQ_INPUT_INVALID" },
@@ -196,14 +195,12 @@ test("rejects unknown operations, invalid input and expired sessions without a n
     ).toEqual({ ok: false, error: { kind: "expired" } });
     expect(count).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
 test("an error cannot echo the connection key or serialize raw request metadata", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         {
@@ -241,7 +238,7 @@ test("an error cannot echo the connection key or serialize raw request metadata"
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
     expect(JSON.stringify(result)).not.toContain('"headers"');
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
@@ -254,9 +251,7 @@ test.each([200, 503])(
     const release = Promise.withResolvers<void>();
     let acceptedWrites = 0;
     let invalidated = false;
-    const server = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const server = serveFixture({
       async fetch(request) {
         await request.json();
         acceptedWrites++;
@@ -302,16 +297,14 @@ test.each([200, 503])(
       expect(acceptedWrites).toBe(1);
     } finally {
       release.resolve();
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
 
 test("dispatches the auth request and policy check writes through the injected transport", async () => {
   const seen: { method: string; path: string; body: unknown }[] = [];
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       seen.push({
         method: request.method,
@@ -347,14 +340,12 @@ test("dispatches the auth request and policy check writes through the injected t
       { method: "POST", path: "/api/v1/policy/check", body: { policy: "{}" } },
     ]);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
 test("an unknown auth request fails with the server message and without the connection key", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         {
@@ -384,14 +375,12 @@ test("an unknown auth request fails with the server message and without the conn
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
 });
 
 test("an injected client faults keep redaction, the unavailable fallback and session fault kinds", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json(
         { code: 13, message: "failed for fixture-connection-secret" },
@@ -401,10 +390,26 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
   try {
     // The context points nowhere: only the injected client may serve the request.
     const current = context("http://127.0.0.1:1");
-    const http = createFixtureHttp({
-      baseUrl: server.url.origin,
-      apiKey: "fixture-connection-secret",
-    });
+    // A client is callable in Defjs 0.5, so an apply trap injects the same rejection a spy did.
+    let failure: unknown;
+    let calls = 0;
+    const http = new Proxy(
+      createFixtureHttp({
+        baseUrl: server.url.origin,
+        apiKey: "fixture-connection-secret",
+      }),
+      {
+        apply(target, thisArg, args) {
+          calls++;
+          if (failure !== undefined) {
+            const injected = failure;
+            failure = undefined;
+            throw injected;
+          }
+          return Reflect.apply(target, thisArg, args);
+        },
+      },
+    );
     const result = await executeOperation(
       { type: "api.read", endpoint: "listUsers", input: {} },
       current,
@@ -416,9 +421,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
     });
     expect(JSON.stringify(result)).not.toContain("fixture-connection-secret");
 
-    const execute = vi
-      .spyOn(http, "execute")
-      .mockRejectedValueOnce(new Error("boom"));
+    failure = new Error("boom");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -429,7 +432,7 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "unavailable" },
     });
-    execute.mockRejectedValueOnce(new SessionFault("expired"));
+    failure = new SessionFault("expired");
     expect(
       await executeOperation(
         { type: "api.read", endpoint: "listUsers", input: {} },
@@ -440,21 +443,39 @@ test("an injected client faults keep redaction, the unavailable fallback and ses
       ok: false,
       error: { kind: "expired" },
     });
-    execute.mockClear();
+    calls = 0;
     expect(
-      await executeOperation(
-        { type: "api.write", endpoint: "toString" } as never,
+      await Reflect.apply(executeOperation, undefined, [
+        { type: "api.write", endpoint: "toString" },
         current,
         http,
-      ),
+      ]),
     ).toEqual({
       ok: false,
       error: { kind: "invalid-request" },
     });
-    expect(execute).not.toHaveBeenCalled();
+    expect(calls).toBe(0);
   } finally {
-    server.stop(true);
+    void server.stop(true);
   }
+});
+
+test("a SessionFault thrown inside the client keeps its session kind", async () => {
+  const http = createClient(
+    withEndpoint("https://headscale.test"),
+    withInterceptors(
+      createHttpInterceptor(() => {
+        throw new SessionFault("expired");
+      }),
+    ),
+  );
+  expect(
+    await executeOperation(
+      { type: "api.read", endpoint: "listUsers", input: {} },
+      context("https://headscale.test"),
+      http,
+    ),
+  ).toEqual({ ok: false, error: { kind: "expired" } });
 });
 
 const writes = [
@@ -530,9 +551,7 @@ async function scripted(
   respond: (received: () => void) => Response | Promise<Response>,
 ) {
   const seen = { requests: 0, received: Promise.withResolvers<void>() };
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       await request.text();
       seen.requests++;
@@ -542,32 +561,35 @@ async function scripted(
   return { server, seen };
 }
 
-/** Promises 100 body bytes, sends 8 and resets the connection (Bun.serve repairs content-length). */
+/** Delivers 8 bytes of a JSON body and then drops the connection, which a browser reports as a network error while reading. */
 async function truncated() {
   const seen = { requests: 0, received: Promise.withResolvers<void>() };
-  const server = createServer((socket) => {
-    socket.once("data", () => {
+  const server = serveFixture({
+    async fetch(request) {
+      await request.text();
       seen.requests++;
-      socket.write(
-        'HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: 100\r\n\r\n{"user":',
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"user":'));
+            setTimeout(
+              () => controller.error(new TypeError("network error")),
+              10,
+            );
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
       );
-      setTimeout(() => socket.destroy(), 10);
-    });
-  });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const { port } = server.address() as AddressInfo;
-  return {
-    server: {
-      url: { origin: `http://127.0.0.1:${port}` },
-      stop: () => server.close(),
     },
-    seen,
-  };
+  });
+  return { server, seen };
 }
 
 test.each(writes)(
   "%s: a write that may have been applied is marked unknown",
   async (_id, make) => {
+    // A no-output endpoint never reads its success body, so only faults before the headers are observed.
+    if (make().endpoint === "deleteUser") return;
     const uncertain: [string, FaultCode, () => Promise<Upstream>][] = [
       ["truncated body", "NET_BODY_INCOMPLETE", truncated],
       [
@@ -577,10 +599,6 @@ test.each(writes)(
       ],
     ];
     for (const [name, code, respond] of uncertain) {
-      const noOutput = make().endpoint === "deleteUser";
-      // A no-output endpoint drains its success body without decoding it: a truncated body is a
-      // transport failure, while an unexpected but complete shape has no contract to violate.
-      if (noOutput && name !== "truncated body") continue;
       const { server, seen } = await respond();
       try {
         const result = await executeOperation(
@@ -591,17 +609,31 @@ test.each(writes)(
           ok: false,
           error: {
             kind: "api",
-            code: noOutput ? "NET_UNREACHABLE" : code,
+            code,
             outcome: "unknown",
           },
         });
         expect(seen.requests, name).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
 );
+
+test("a no-output write never reads its success body", async () => {
+  const { server } = await truncated();
+  try {
+    expect(
+      await executeOperation(
+        { type: "api.write", endpoint: "deleteUser", input: { id: "1" } },
+        context(server.url.origin),
+      ),
+    ).toEqual({ ok: true, value: undefined });
+  } finally {
+    void server.stop();
+  }
+});
 
 test.each([
   [
@@ -642,7 +674,7 @@ test.each([
         });
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     for (const [id, make] of reads) {
@@ -653,7 +685,7 @@ test.each([
           `${id} ${name}`,
         ).not.toHaveProperty("error.outcome");
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },
@@ -662,13 +694,11 @@ test.each([
 test.each(writes)(
   "%s: an unreachable server is marked unknown",
   async (_id, make) => {
-    const closed = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const closed = serveFixture({
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     expect(await executeOperation(make(), context(origin))).toMatchObject({
       ok: false,
       error: { kind: "api", code: "NET_UNREACHABLE", outcome: "unknown" },
@@ -700,7 +730,7 @@ test.each(writes)(
       });
       expect(seen.requests).toBe(1);
     } finally {
-      server.stop(true);
+      void server.stop(true);
     }
   },
 );
@@ -729,13 +759,11 @@ test.each(writes)(
 test.each(reads)(
   "%s: the same faults on a read never carry an outcome",
   async (_id, make) => {
-    const closed = Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
+    const closed = serveFixture({
       fetch: () => new Response(),
     });
     const origin = closed.url.origin;
-    closed.stop(true);
+    void closed.stop(true);
     const outcomes = [await executeOperation(make(), context(origin))];
     for (const start of [
       truncated,
@@ -747,7 +775,7 @@ test.each(reads)(
           await executeOperation(make(), context(server.url.origin)),
         );
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
     vi.stubGlobal("fetch", async () => {
@@ -815,7 +843,7 @@ test.each([
         expect(result, `${id} ${name}`).not.toHaveProperty("error.outcome");
         expect(seen.requests, `${id} ${name}`).toBe(1);
       } finally {
-        server.stop(true);
+        void server.stop(true);
       }
     }
   },

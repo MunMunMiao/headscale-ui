@@ -1,13 +1,10 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { __resetForTest } from "@/lib/idb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { createBrowserSessionBridge } from "./connect";
 import { createSessionHost } from "./host";
 
-beforeEach(() => {
-  __resetForTest();
-  vi.stubGlobal("indexedDB", new IDBFactory());
+beforeEach(async () => {
+  await clearHeadscaleDatabase();
   vi.stubGlobal("__HEADSCALE_UI_BUILD_ID__", "browser-build");
 });
 afterEach(() => vi.unstubAllGlobals());

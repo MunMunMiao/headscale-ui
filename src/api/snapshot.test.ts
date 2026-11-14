@@ -1,19 +1,105 @@
+import { serveFixture } from "@/test/fixture-server";
 import { expect, test } from "vitest";
 import { UnsupportedServerVersionError } from "@/domain/server-version";
 import { SessionFault } from "@/session/auth-session";
 import { executeOperation } from "@/session/operation-dispatch";
-import type { EndpointName } from "@/session/protocol";
+import type { ApiRequest, EndpointName } from "@/session/protocol";
 import { ApiError } from "@/session/types";
+import { testDouble } from "@/test/dom";
+import { findErrorCause } from "@/utils/error-cause";
 import {
   snapshotFixture,
   startSnapshotServer,
 } from "@/test-utils/headscale.test";
 import {
+  type ApiResult,
   type Execute,
   fetchSegment,
   fetchSnapshot,
+  readHealth,
   readPolicy,
 } from "./snapshot";
+
+test.each([
+  { name: "health", read: readHealth },
+  { name: "policy", read: readPolicy },
+])(
+  "$name returns an error-first tuple without throwing a normal API failure",
+  async ({ read }) => {
+    const gateway = testDouble<Execute>(async () => ({
+      ok: false,
+      error: {
+        kind: "api",
+        code: "HTTP_STATUS",
+        message: "forbidden",
+        status: 403,
+        data: { message: "permission denied" },
+      },
+    }));
+    const [err, data] = await read(gateway);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err).toMatchObject({
+      status: 403,
+      data: { message: "permission denied" },
+    });
+    expect(data).toBeUndefined();
+  },
+);
+
+test("an unexpected rejected gateway is retained as a cause in the public tuple", async () => {
+  const cause = new Error("gateway failed");
+  const gateway = testDouble<Execute>(async () => {
+    throw cause;
+  });
+  const [err, data] = await readHealth(gateway);
+  expect(err).toMatchObject({ message: "execute request", cause });
+  expect(data).toBeUndefined();
+  const [policyErr, policy] = await readPolicy(gateway);
+  expect(policyErr).toHaveProperty("cause", cause);
+  expect(policy).toBeUndefined();
+});
+
+test.each([
+  ["identity", "listUsers"],
+  ["snapshot", "listUsers"],
+  ["snapshot", "getPolicy"],
+] as const)(
+  "%s returns a required %s failure without waiting for unrelated pending reads",
+  async (scope, endpoint) => {
+    const pending = Promise.withResolvers<void>();
+    const f = fixture();
+    const calls: EndpointName[] = [];
+    const gateway = testDouble<Execute>(async (command: ApiRequest) => {
+      calls.push(command.endpoint);
+      if (command.endpoint === endpoint)
+        return { ok: false, error: { kind: "cancelled" } };
+      await pending.promise;
+      return { ok: true, value: f.values.get(command.endpoint) };
+    });
+    const reading =
+      scope === "identity"
+        ? fetchSegment(gateway, "identity")
+        : fetchSnapshot(gateway);
+    try {
+      const [err, data] = await reading;
+      expect(err).toBeInstanceOf(Error);
+      expect(err).toHaveProperty("cause");
+      expect(
+        findErrorCause(err, (cause) => cause instanceof ApiError),
+      ).toMatchObject({ kind: "cancelled" });
+      expect(data).toBeUndefined();
+      expect(calls).toHaveLength(scope === "identity" ? 3 : 7);
+    } finally {
+      pending.resolve();
+    }
+  },
+);
+
+async function value<T>(reading: Promise<ApiResult<T>>): Promise<T> {
+  const [err, result] = await reading;
+  if (err) throw err;
+  return result;
+}
 
 function fixture() {
   const snapshot = snapshotFixture();
@@ -28,11 +114,13 @@ function fixture() {
   ]);
   const calls: { endpoint: EndpointName; signal?: AbortSignal }[] = [];
   const release = Promise.withResolvers<void>();
-  const gateway = (async (command, options) => {
-    calls.push({ endpoint: command.endpoint, signal: options?.signal });
-    await release.promise;
-    return { ok: true, value: values.get(command.endpoint) };
-  }) as Execute;
+  const gateway = testDouble<Execute>(
+    async (command: ApiRequest, options?: { signal?: AbortSignal }) => {
+      calls.push({ endpoint: command.endpoint, signal: options?.signal });
+      await release.promise;
+      return { ok: true, value: values.get(command.endpoint) };
+    },
+  );
   return { snapshot, values, calls, release, gateway };
 }
 
@@ -42,8 +130,8 @@ test("starts exactly seven reads with one cancellation signal and assembles norm
   const result = fetchSnapshot(f.gateway, { signal });
   const started = [...f.calls];
   f.release.resolve();
-  const snapshot = await result;
-  expect(started.map(({ endpoint }) => endpoint).sort()).toEqual([
+  const snapshot = await value(result);
+  expect(started.map(({ endpoint }) => endpoint).toSorted()).toEqual([
     "getPolicy",
     "health",
     "listApiKeys",
@@ -65,15 +153,15 @@ test("starts exactly seven reads with one cancellation signal and assembles norm
 test("reads only the resources of the selected segment", async () => {
   const f = fixture();
   f.release.resolve();
-  expect(await fetchSegment(f.gateway, "identity")).toEqual({
+  expect(await value(fetchSegment(f.gateway, "identity"))).toEqual({
     users: f.snapshot.users,
     preAuthKeys: f.snapshot.preAuthKeys,
     apiKeys: f.snapshot.apiKeys,
   });
-  expect(await fetchSegment(f.gateway, "policy")).toEqual({
+  expect(await value(fetchSegment(f.gateway, "policy"))).toEqual({
     policy: f.snapshot.policy,
   });
-  expect(f.calls.map(({ endpoint }) => endpoint).sort()).toEqual([
+  expect(f.calls.map(({ endpoint }) => endpoint).toSorted()).toEqual([
     "getPolicy",
     "listApiKeys",
     "listPreAuthKeys",
@@ -88,7 +176,7 @@ test("keeps optional lists empty and normalizes missing node and key arrays", as
   f.values.set("listNodes", { nodes: [{ id: "1", name: "node" }] });
   f.values.set("listPreAuthKeys", { preAuthKeys: [{ id: "1" }] });
   f.release.resolve();
-  const snapshot = await fetchSnapshot(f.gateway);
+  const snapshot = await value(fetchSnapshot(f.gateway));
   expect(snapshot.users).toEqual([]);
   expect(snapshot.apiKeys).toEqual([]);
   expect(snapshot.nodes[0]).toMatchObject({
@@ -101,14 +189,16 @@ test("keeps optional lists empty and normalizes missing node and key arrays", as
   expect(snapshot.preAuthKeys[0]?.aclTags).toEqual([]);
   f.values.set("listNodes", {});
   f.values.set("listPreAuthKeys", {});
-  expect(await fetchSegment(f.gateway, "fabric")).toMatchObject({ nodes: [] });
-  expect(await fetchSegment(f.gateway, "identity")).toMatchObject({
+  expect(await value(fetchSegment(f.gateway, "fabric"))).toMatchObject({
+    nodes: [],
+  });
+  expect(await value(fetchSegment(f.gateway, "identity"))).toMatchObject({
     preAuthKeys: [],
   });
 });
 
 test("treats only Headscale's missing ACL policy error as an empty policy", async () => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -120,12 +210,12 @@ test("treats only Headscale's missing ACL policy error as an empty policy", asyn
         message: "loading ACL from database: acl policy not found",
       },
     },
-  })) as Execute;
-  expect(await readPolicy(gateway)).toEqual({ policy: "" });
+  }));
+  expect(await value(readPolicy(gateway))).toEqual({ policy: "" });
 });
 
 test("reports file mode without a policy path as an empty annotated policy", async () => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -138,8 +228,8 @@ test("reports file mode without a policy path as an empty annotated policy", asy
           'reading policy from path "": open : no such file or directory',
       },
     },
-  })) as Execute;
-  expect(await readPolicy(gateway)).toEqual({
+  }));
+  expect(await value(readPolicy(gateway))).toEqual({
     policy: "",
     fileModeWithoutPath: true,
   });
@@ -164,7 +254,7 @@ test.each([
   { status: 403, data: { message: "acl policy not found" } },
   { status: 500, data: undefined },
 ])("preserves policy failure $status $data", async ({ status, data }) => {
-  const gateway = (async () => ({
+  const gateway = testDouble<Execute>(async () => ({
     ok: false,
     error: {
       kind: "api",
@@ -173,52 +263,59 @@ test.each([
       status,
       data,
     },
-  })) as Execute;
-  await expect(readPolicy(gateway)).rejects.toMatchObject({
-    code: "HTTP_STATUS",
-    status,
-  });
+  }));
+  const [err, policy] = await readPolicy(gateway);
+  expect(err).toMatchObject({ code: "HTTP_STATUS", status });
+  expect(policy).toBeUndefined();
 });
 
 test("keeps policy nullable timestamp and extension fields", async () => {
   const policy = { policy: '{"acls":[]}', updatedAt: null, revision: "17" };
-  const gateway = (async () => ({ ok: true, value: policy })) as Execute;
-  expect(await readPolicy(gateway)).toEqual(policy);
+  const gateway = testDouble<Execute>(async () => ({
+    ok: true,
+    value: policy,
+  }));
+  expect(await value(readPolicy(gateway))).toEqual(policy);
 });
 
 test.each(["listUsers", "listNodes", "getPolicy"] as const)(
   "does not hide cancellation during %s",
   async (operation) => {
     const f = fixture();
-    const gateway = (async (command) =>
+    const gateway = testDouble<Execute>(async (command: ApiRequest) =>
       command.endpoint === operation
         ? { ok: false, error: { kind: "cancelled" } }
-        : { ok: true, value: f.values.get(command.endpoint) }) as Execute;
-    await expect(fetchSnapshot(gateway)).rejects.toMatchObject({
-      kind: "cancelled",
-    });
+        : { ok: true, value: f.values.get(command.endpoint) },
+    );
+    const [err, snapshot] = await fetchSnapshot(gateway);
+    expect(
+      findErrorCause(err, (cause) => cause instanceof ApiError),
+    ).toMatchObject({ kind: "cancelled" });
+    expect(snapshot).toBeUndefined();
   },
 );
 
 test("the Worker dispatcher reads all seven resources through declared Defjs contracts", async () => {
   const server = startSnapshotServer();
   const controller = new AbortController();
-  const gateway = ((command, options) =>
-    executeOperation(
-      { ...command, type: "api.read" },
-      {
-        signal: options?.signal ?? controller.signal,
-        requireCurrent: () => ({
-          baseUrl: server.baseUrl,
-          apiKey: "fixture-connection-key",
-        }),
-      },
-    )) as Execute;
+  const gateway = testDouble<Execute>(
+    (command: ApiRequest, options?: { signal?: AbortSignal }) =>
+      executeOperation(
+        { ...command, type: "api.read" },
+        {
+          signal: options?.signal ?? controller.signal,
+          requireCurrent: () => ({
+            baseUrl: server.baseUrl,
+            apiKey: "fixture-connection-key",
+          }),
+        },
+      ),
+  );
   try {
     expect(
-      await fetchSnapshot(gateway, { signal: controller.signal }),
+      await value(fetchSnapshot(gateway, { signal: controller.signal })),
     ).toMatchObject(server.snapshot);
-    expect(server.requests.sort()).toEqual([
+    expect(server.requests.toSorted()).toEqual([
       "GET /api/v1/apikey",
       "GET /api/v1/health",
       "GET /api/v1/node",
@@ -236,9 +333,7 @@ test("snapshot cancellation reaches all seven in-flight Defjs requests", async (
   const arrived = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let count = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch() {
       if (++count === 7) arrived.resolve();
       await release.promise;
@@ -246,26 +341,31 @@ test("snapshot cancellation reaches all seven in-flight Defjs requests", async (
     },
   });
   const controller = new AbortController();
-  const gateway = ((command, options) =>
-    executeOperation(
-      { ...command, type: "api.read" },
-      {
-        signal: options?.signal ?? controller.signal,
-        requireCurrent() {
-          if (controller.signal.aborted) throw new SessionFault("cancelled");
-          return {
-            baseUrl: server.url.origin,
-            apiKey: "fixture-connection-key",
-          };
+  const gateway = testDouble<Execute>(
+    (command: ApiRequest, options?: { signal?: AbortSignal }) =>
+      executeOperation(
+        { ...command, type: "api.read" },
+        {
+          signal: options?.signal ?? controller.signal,
+          requireCurrent() {
+            if (controller.signal.aborted) throw new SessionFault("cancelled");
+            return {
+              baseUrl: server.url.origin,
+              apiKey: "fixture-connection-key",
+            };
+          },
         },
-      },
-    )) as Execute;
+      ),
+  );
   const pending = fetchSnapshot(gateway, { signal: controller.signal });
-  const outcome = pending.catch((error: unknown) => error);
   try {
     await arrived.promise;
     controller.abort();
-    expect(await outcome).toMatchObject({ kind: "cancelled" });
+    const [err, snapshot] = await pending;
+    expect(
+      findErrorCause(err, (cause) => cause instanceof ApiError),
+    ).toMatchObject({ kind: "cancelled" });
+    expect(snapshot).toBeUndefined();
     expect(count).toBe(7);
   } finally {
     release.resolve();
@@ -280,7 +380,7 @@ function fabricGateway(
   failures: Partial<Record<EndpointName, Failure>>,
 ) {
   f.release.resolve();
-  return (async (command) => {
+  return testDouble<Execute>(async (command: ApiRequest) => {
     const failure = failures[command.endpoint];
     if (failure)
       return {
@@ -291,9 +391,9 @@ function fabricGateway(
           message: failure.code,
           status: failure.status,
         },
-      } as never;
+      };
     return { ok: true, value: f.values.get(command.endpoint) };
-  }) as Execute;
+  });
 }
 
 test.each([
@@ -314,7 +414,7 @@ test.each([
   async ({ failures }) => {
     const f = fixture();
     const gateway = fabricGateway(f, failures);
-    const fabric = await fetchSegment(gateway, "fabric");
+    const fabric = await value(fetchSegment(gateway, "fabric"));
     expect(fabric.nodes).toHaveLength(2);
     if ("health" in failures) expect(fabric.health).toBeNull();
     else expect(fabric.health).toMatchObject({ serverReachable: true });
@@ -333,9 +433,8 @@ test.each([
     const f = fixture();
     f.values.set("version", { version: "0.28.0" });
     const gateway = fabricGateway(f, { listNodes: { code } });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [error, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
     expect(error).toBeInstanceOf(UnsupportedServerVersionError);
     expect(error).toMatchObject({ serverVersion: "0.28.0", cause: { code } });
   },
@@ -360,9 +459,9 @@ test.each([
         ? { version: { code: "HTTP_STATUS", status: 404 } }
         : {}),
     });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [err, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
+    const error = findErrorCause(err, (cause) => cause instanceof ApiError);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ code: "RES_STRUCT_MISMATCH" });
   },
@@ -378,9 +477,9 @@ test.each([
     const f = fixture();
     f.values.set("version", { version: "0.28.0" });
     const gateway = fabricGateway(f, { listNodes: failure });
-    const error = await fetchSegment(gateway, "fabric").catch(
-      (e: unknown) => e,
-    );
+    const [err, data] = await fetchSegment(gateway, "fabric");
+    expect(data).toBeUndefined();
+    const error = findErrorCause(err, (cause) => cause instanceof ApiError);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject(failure);
   },

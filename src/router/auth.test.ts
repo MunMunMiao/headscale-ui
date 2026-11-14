@@ -1,7 +1,7 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { __resetForTest } from "@/lib/idb";
+import { testDouble } from "@/test/dom";
 import { createSessionHarness } from "@/test/session-host";
 import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { idbPut } from "@/test-utils/storage";
@@ -12,7 +12,7 @@ let page: Awaited<ReturnType<typeof harness.openPage>>;
 let server: ReturnType<typeof startSnapshotServer>;
 beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   harness = await createSessionHarness();
   page = await harness.openPage("owner-a");
   server = startSnapshotServer();
@@ -26,7 +26,7 @@ function decision(path: string, search: Record<string, unknown> = {}) {
     guardRoute({ auth: page.bridge }, { pathname: path, href: path, search });
     return null;
   } catch (redirect) {
-    return (redirect as { options: object }).options;
+    return testDouble<{ options: object }>(redirect).options;
   }
 }
 async function unlock() {

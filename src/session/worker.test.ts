@@ -1,19 +1,22 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DB_VERSION } from "@/lib/idb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { createSessionBridge } from "./bridge";
 
 const cleanup: (() => void)[] = [];
-beforeEach(() => {
-  vi.resetModules();
-  vi.stubGlobal("indexedDB", new IDBFactory());
+// A browser evaluates a module once per URL, so every test imports its own copy of the entry.
+async function loadWorker() {
+  await import(/* @vite-ignore */ `./worker.ts?load=${crypto.randomUUID()}`);
+}
+beforeEach(async () => {
+  await clearHeadscaleDatabase();
   vi.stubGlobal("self", new EventTarget());
   vi.stubGlobal("__HEADSCALE_UI_BUILD_ID__", "worker-test-build");
 });
 afterEach(() => {
   for (const stop of cleanup.splice(0)) stop();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 function bridge() {
   const page = createSessionBridge({
@@ -36,7 +39,7 @@ function bridge() {
   return page;
 }
 test("the module entry shares one host across simultaneously connecting ports", async () => {
-  await import("./worker");
+  await loadWorker();
   const first = bridge();
   const second = bridge();
   expect(
@@ -49,21 +52,21 @@ test("the module entry shares one host across simultaneously connecting ports", 
 });
 test("database initialization failure is returned as unavailable without an unhandled rejection", async () => {
   vi.stubGlobal("indexedDB", undefined);
-  await import("./worker");
+  await loadWorker();
   expect(await bridge().connect()).toEqual({
     ok: false,
     error: { kind: "unavailable" },
   });
 });
 test("explicit reconnection retries a failed initialization and shares one recovered host", async () => {
+  const database = indexedDB;
   vi.stubGlobal("indexedDB", undefined);
-  await import("./worker");
+  await loadWorker();
   const first = bridge();
   expect(await first.connect()).toEqual({
     ok: false,
     error: { kind: "unavailable" },
   });
-  const database = new IDBFactory();
   vi.stubGlobal("indexedDB", database);
   const opens = vi.spyOn(database, "open");
   const second = bridge();
@@ -76,9 +79,9 @@ test("explicit reconnection retries a failed initialization and shares one recov
   expect(first.getSnapshot().workerId).toBe(second.getSnapshot().workerId);
 });
 test("ports sharing one failed initialization never discard a host created while they were refused", async () => {
+  const database = indexedDB;
   vi.stubGlobal("indexedDB", undefined);
-  await import("./worker");
-  const database = new IDBFactory();
+  await loadWorker();
   const opens = vi.spyOn(database, "open");
   const first = new MessageChannel();
   const second = new MessageChannel();

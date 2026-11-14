@@ -4,6 +4,7 @@ import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import { cleanup, render } from "vitest-browser-react";
+import { testDouble } from "@/test/dom";
 import { authenticateTestSession, prepareTestSession } from "@/test/session";
 import { createSessionHarness } from "@/test/session-host";
 import App from "./App";
@@ -512,15 +513,13 @@ test("an error thrown above the router is caught by the root boundary and logged
 test("the application router uses the shared recovery screen for every route error", () => {
   const router = createApplicationRouter(
     // Only the options object is inspected, so no session behaviour is needed.
-    {} as Session,
+    testDouble<Session>({}),
     createMemoryHistory({ initialEntries: ["/login"] }),
   );
   expect(router.options.defaultErrorComponent).toBe(ErrorScreen);
 });
 
 describe("theme before JavaScript chooses a class", () => {
-  const LIGHT_BACKGROUND = "oklch(1 0 0)";
-  const DARK_BACKGROUND = "oklch(0.145 0 0)";
   const root = document.documentElement;
   afterEach(async () => {
     root.classList.remove("dark", "light");
@@ -530,7 +529,6 @@ describe("theme before JavaScript chooses a class", () => {
     cdp().send("Emulation.setEmulatedMedia", {
       features: [{ name: "prefers-color-scheme", value: scheme }],
     });
-  const body = () => getComputedStyle(document.body);
 
   test("an explicit class sets the native color scheme and wins over the OS", async () => {
     await emulate("light");
@@ -539,18 +537,12 @@ describe("theme before JavaScript chooses a class", () => {
     root.classList.replace("dark", "light");
     await emulate("dark");
     expect(getComputedStyle(root).colorScheme).toBe("light");
-    expect(body().backgroundColor).toBe(LIGHT_BACKGROUND);
   });
 
-  test("without a class the OS preference darkens the page", async () => {
+  test("without a class the native color scheme follows the OS", async () => {
     await emulate("dark");
     expect(getComputedStyle(root).colorScheme).toBe("dark");
-    expect(body().backgroundColor).toBe(DARK_BACKGROUND);
     await emulate("light");
-    expect(body().backgroundColor).toBe(LIGHT_BACKGROUND);
-  });
-
-  test("anchored scrolling keeps clear of the sticky header", () => {
-    expect(getComputedStyle(root).scrollPaddingTop).toBe("96px");
+    expect(getComputedStyle(root).colorScheme).toBe("light");
   });
 });

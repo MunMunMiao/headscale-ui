@@ -1,5 +1,4 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -18,11 +17,11 @@ const cleanup: (() => void | Promise<void>)[] = [];
 beforeEach(async () => {
   __resetForTest();
   settingsStorageTestingHandle.reset();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   await hydrateSettings();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
 });
 async function fixture() {
@@ -35,7 +34,7 @@ async function fixture() {
   }
   const first = await page("owner-a");
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   first.profiles.setConnectionForm({
     profileName: "Shared server",
     baseUrl: server.baseUrl,
@@ -128,7 +127,10 @@ test("a failed profile read after committed reset remains visible while the page
       failReads = true;
     }),
   );
-  const getAll = IDBObjectStore.prototype.getAll;
+  const getAll: typeof IDBObjectStore.prototype.getAll = Reflect.get(
+    IDBObjectStore.prototype,
+    "getAll",
+  );
   let failures = 0;
   vi.spyOn(IDBObjectStore.prototype, "getAll").mockImplementation(function (
     this: IDBObjectStore,
@@ -547,6 +549,7 @@ test("a reconnect failing after a newer reset began reports nothing", async () =
     .mockImplementationOnce(() => gate.promise);
   await first.profiles.resetLocalData();
   await expect.poll(() => reconnect.mock.calls.length).toBe(1);
+  await expect.poll(() => first.auth.getSnapshot().status).toBe("ready-locked");
   await first.profiles.resetLocalData();
   await expect.poll(() => reconnect.mock.calls.length).toBe(2);
   gate.reject(new Error("late reconnect failure"));

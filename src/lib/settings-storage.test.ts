@@ -1,9 +1,9 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { idbGet, idbPut } from "@/test-utils/storage";
 import { __resetForTest } from "./idb";
 import { clearAllSecureData } from "./secure-storage";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   captureSettingsWriteEpoch,
   hydrateSettings,
@@ -14,9 +14,9 @@ import {
   writeSetting,
 } from "./settings-storage";
 
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
   settingsStorageTestingHandle.reset();
 });
 afterEach(() => {
@@ -51,10 +51,10 @@ test("preference hints contain only committed preference keys and ignore foreign
     { locale: "ar", sessionId: "foreign" },
     true,
   ])
-    channel.onmessage?.({ data } as MessageEvent<unknown>);
+    channel.onmessage?.(testDouble<MessageEvent>({ data }));
   expect(received).toEqual([]);
-  channel.onmessage?.({ data: "locale" } as MessageEvent<unknown>);
-  channel.onmessage?.({ data: "theme" } as MessageEvent<unknown>);
+  channel.onmessage?.(testDouble<MessageEvent>({ data: "locale" }));
+  channel.onmessage?.(testDouble<MessageEvent>({ data: "theme" }));
   expect(received).toEqual(["locale", "theme"]);
   expect(second).toEqual(["locale", "theme"]);
   expect(readSetting("locale")).toBeNull();
@@ -143,7 +143,10 @@ test("failed writes preserve both old disk state and the old projection", async 
   await hydrateSettings();
   const epoch = captureSettingsWriteEpoch();
   await writeSetting("locale", "en-US", epoch);
-  const original = IDBObjectStore.prototype.put;
+  const original: typeof IDBObjectStore.prototype.put = Reflect.get(
+    IDBObjectStore.prototype,
+    "put",
+  );
   const interception = vi
     .spyOn(IDBObjectStore.prototype, "put")
     .mockImplementation(function (this: IDBObjectStore, ...args) {

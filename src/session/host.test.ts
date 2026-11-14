@@ -1,9 +1,10 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { encryptProfileKey } from "@/lib/api-key-crypto";
+import * as snapshotModule from "@/api/snapshot";
 import { __resetForTest, DB_VERSION } from "@/lib/idb";
 import { subscribeVaultChanges } from "@/lib/vault-state";
+import { serveFixture } from "@/test/fixture-server";
 import { createSessionPorts } from "@/test/session-ports";
 import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { idbDelete, idbGet, idbGetAll, idbPut } from "@/test-utils/storage";
@@ -14,14 +15,19 @@ import { createSessionHost } from "./host";
 import * as runtimeModule from "./runtime";
 import type { SessionResult } from "./types";
 
+vi.mock("./runtime", { spy: true });
+vi.mock("@/api/snapshot", { spy: true });
+
 const cleanup: (() => void | Promise<void>)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(async () => {
-  for (const stop of cleanup.reverse().splice(0)) await stop();
+  for (const stop of cleanup.splice(0).toReversed()) await stop();
   vi.restoreAllMocks();
+  // vi.mock spies are not restored by restoreAllMocks; their calls would otherwise carry over.
+  vi.resetAllMocks();
 });
 function value<T>(result: SessionResult<T>): T {
   expect(result.ok).toBe(true);
@@ -35,7 +41,7 @@ async function fixture() {
     const bridge = createSessionBridge({
       openPort() {
         const ports = createSessionPorts();
-        cleanup.push(ports.close);
+        cleanup.push(() => ports.close());
         host.connect(ports.worker);
         return ports.page;
       },
@@ -55,7 +61,7 @@ async function save(
   wrapUrl: (url: string) => string = (url) => url,
 ) {
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const list = value(await bridge.listProfiles());
   const result = value(
     await bridge.saveProfile({
@@ -83,11 +89,44 @@ async function save(
   return { result, server };
 }
 
+test("an unexpected validation failure cannot save credentials or escape through the Worker reply", async () => {
+  const { page } = await fixture();
+  const bridge = await page("owner-a");
+  const before = value(await bridge.listProfiles());
+  vi.mocked(snapshotModule.fetchSnapshot).mockResolvedValueOnce([
+    new Error("unexpected validation failure: private-secret"),
+    undefined,
+  ]);
+  const result = await bridge.saveProfile({
+    kind: "credentials",
+    expected: { version: before.version, ownerTabId: "owner-a", profile: null },
+    profile: {
+      id: "broken",
+      name: "Broken",
+      baseUrl: "https://headscale.test",
+      scope: "persistent",
+    },
+    apiKey: "private-secret",
+    password: "profile-password",
+    validation: "required",
+    activate: true,
+    expectedWorkerId: bridge.getSnapshot().workerId ?? "",
+    expectedIdentity: null,
+  });
+  expect(result).toEqual({ ok: false, error: { kind: "storage-failed" } });
+  expect(value(await bridge.listProfiles())).toEqual(before);
+  expect(bridge.getSessionSnapshot()?.status).toBe("locked");
+  expect(await idbGetAll("profiles")).toEqual([]);
+  expect(JSON.stringify(result)).not.toMatch(
+    /private-secret|profile-password|unexpected validation/,
+  );
+});
+
 test("validates and unlocks a profile when Headscale file mode has no policy path", async () => {
   const { page } = await fixture();
   const bridge = await page("owner-a");
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   server.policyFailure = {
     status: 500,
     message: 'reading policy from path "": open : no such file or directory',
@@ -139,7 +178,7 @@ test.each([
     const { page } = await fixture();
     const bridge = await page("owner-a");
     const server = startSnapshotServer();
-    cleanup.push(server.stop);
+    cleanup.push(() => server.stop());
     const before = value(await bridge.listProfiles()).version;
     const binding = {
       profileId: "historical-password",
@@ -217,7 +256,7 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   const peer = await page("owner-b");
   let network: ReturnType<typeof createSessionNetwork> | undefined;
   await save(first, "persistent", (upstream) => {
-    network = createSessionNetwork({ upstream });
+    network = createSessionNetwork({ serve: serveFixture, upstream });
     cleanup.push(() => network?.close());
     return network.url;
   });
@@ -226,9 +265,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   const identity = first.getSessionSnapshot()?.identity;
   expect.assert(identity);
   const window = new EventTarget();
-  const document = Object.assign(new EventTarget(), {
-    visibilityState: "visible" as const,
-  });
+  class VisibleDocument extends EventTarget {
+    readonly visibilityState: DocumentVisibilityState = "visible";
+  }
+  const document = new VisibleDocument();
   cleanup.push(
     attachSessionActivity({ window, document, now: Date.now }, first),
   );
@@ -249,9 +289,10 @@ test("permanent pagehide aborts that port's live HTTP without locking its peer",
   });
   const pending = first.read(identity, { endpoint: "listUsers", input: {} });
   await expect.poll(() => gate.getSnapshot().captured).toBe(true);
-  window.dispatchEvent(
-    Object.assign(new Event("pagehide"), { persisted: false }),
-  );
+  class PageHideEvent extends Event {
+    readonly persisted = false;
+  }
+  window.dispatchEvent(new PageHideEvent("pagehide"));
   expect(await pending).toMatchObject({
     ok: false,
     error: { kind: "unavailable" },
@@ -324,10 +365,7 @@ test("a newly created host cannot inherit an earlier unlocked connection", async
 });
 
 test("disposing the host also erases its live session and closes the Effect scope", async () => {
-  const createRuntime = runtimeModule.createSessionRuntime;
-  const runtime = vi
-    .spyOn(runtimeModule, "createSessionRuntime")
-    .mockImplementation(createRuntime);
+  const runtime = vi.mocked(runtimeModule.createSessionRuntime);
   const { host, page } = await fixture();
   const first = await page("owner-a");
   await save(first);
@@ -369,8 +407,11 @@ test.each(["cancel", "disconnect"] as const)(
   "a committed save notifies peers even when activation is abandoned by %s",
   async (boundary) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
-    const network = createSessionNetwork({ upstream: backend.baseUrl });
+    cleanup.push(() => backend.stop());
+    const network = createSessionNetwork({
+      serve: serveFixture,
+      upstream: backend.baseUrl,
+    });
     cleanup.push(() => network.close());
     const { page } = await fixture();
     const first = await page("owner-a");
@@ -430,8 +471,11 @@ test.each(["cancel", "disconnect"] as const)(
 
 test("an unlock adopts the current profile name when a peer renames it during validation", async () => {
   const backend = startSnapshotServer();
-  cleanup.push(backend.stop);
-  const network = createSessionNetwork({ upstream: backend.baseUrl });
+  cleanup.push(() => backend.stop());
+  const network = createSessionNetwork({
+    serve: serveFixture,
+    upstream: backend.baseUrl,
+  });
   cleanup.push(() => network.close());
   const { page } = await fixture();
   const first = await page("owner-a");
@@ -495,8 +539,11 @@ test.each(["deleted", "credential-rotated"] as const)(
   "an unlock fails with a storage conflict when a foreign writer leaves the profile %s during validation",
   async (change) => {
     const backend = startSnapshotServer();
-    cleanup.push(backend.stop);
-    const network = createSessionNetwork({ upstream: backend.baseUrl });
+    cleanup.push(() => backend.stop());
+    const network = createSessionNetwork({
+      serve: serveFixture,
+      upstream: backend.baseUrl,
+    });
     cleanup.push(() => network.close());
     const { page } = await fixture();
     const bridge = await page("owner-a");

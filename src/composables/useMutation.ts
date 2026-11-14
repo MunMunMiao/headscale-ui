@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { redactDiagnosticData } from "@/api/operation-log";
+import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import { ALL_SEGMENTS } from "@/api/snapshot";
 import type { SessionRequestOptions } from "@/session/auth-session";
 import type { ApiCommand, ApiOutput, EndpointName } from "@/session/protocol";
@@ -18,16 +18,19 @@ interface UseMutationOptions {
 }
 interface UseMutationReturn {
   mutateDetailed<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
   ): Promise<DetailedMutationResult<ApiOutput<K>>>;
   mutate<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
   ): Promise<boolean>;
   mutateWith<K extends EndpointName>(
+    this: void,
     key: ActionFeedbackKey,
     command: ApiCommand<K>,
     options?: SessionRequestOptions,
@@ -35,13 +38,11 @@ interface UseMutationReturn {
 }
 
 const DRY_RUNS: ReadonlySet<EndpointName> = new Set(["checkPolicy"]);
+// Defjs codes that prove no request reached the server. `CAP_BUFFER_EXCEEDED` is post-send.
 const NOT_SENT: ReadonlySet<ApiError["code"]> = new Set([
   "REQ_BUILD_FAILED",
   "REQ_INPUT_INVALID",
-  "REQ_OPTIONS_INVALID",
   "ENV_UNSUPPORTED",
-  "CAP_BUFFER_EXCEEDED",
-  "CAP_QUEUE_OVERFLOW",
 ]);
 
 // These exact v0.29.4 failures precede any mutation. A generic 4xx is not such evidence.
@@ -103,7 +104,23 @@ function failureOutcome(
   };
 }
 
-function safeReplyError(command: ApiCommand, error: WorkerErrorDto): ApiError {
+function redactReplyError(
+  error: WorkerErrorDto,
+  secret: string,
+): WorkerErrorDto {
+  if (error.kind !== "api") return error;
+  const data = redactStatusData(error.data, secret);
+  return {
+    ...error,
+    message: redactDiagnosticData(error.message, secret),
+    ...(data === undefined ? {} : { data }),
+  };
+}
+
+function safeReplyError<K extends EndpointName>(
+  command: ApiCommand<K>,
+  error: WorkerErrorDto,
+): ApiError {
   const input = "input" in command ? command.input : undefined;
   const secret =
     input && "authId" in input
@@ -111,7 +128,7 @@ function safeReplyError(command: ApiCommand, error: WorkerErrorDto): ApiError {
       : input && "key" in input
         ? input.key
         : "";
-  const clean = redactDiagnosticData(
+  const clean = redactReplyError(
     error,
     typeof secret === "string" ? secret : "",
   );
@@ -185,7 +202,7 @@ export function createMutation(
             options?.signal ? { signal: options.signal } : undefined,
           );
           if (!reply.ok) {
-            const error = safeReplyError(command as ApiCommand, reply.error);
+            const error = safeReplyError(command, reply.error);
             outcome = failureOutcome(command.endpoint, error, dispatched);
             // Refresh once after a server answer or a lost response; never replay the write.
             if (
@@ -218,13 +235,13 @@ export function createMutation(
   }
   return {
     mutateDetailed,
-    async mutateWith(key, command, options) {
+    async mutateWith(this: void, key, command, options) {
       const completed = await mutateDetailed(key, command, options);
       return completed.ok
         ? { ok: true, result: completed.result }
         : { ok: false };
     },
-    async mutate(key, command, options) {
+    async mutate(this: void, key, command, options) {
       return (await mutateDetailed(key, command, options)).ok;
     },
   };
@@ -239,6 +256,7 @@ export function useMutation({
   // The factory captures the external store's current session and lifecycle scope.
   return useMemo(
     () => createMutation(session, { skipRefresh }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- identity/scope invalidate the captured session
     [session, skipRefresh, identity, scope],
   );
 }

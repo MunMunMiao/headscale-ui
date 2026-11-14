@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { getProductCopy } from "@/i18n/product-copy";
 import {
-  API_KEY_EXPIRY_DAYS,
-  AUTH_KEY_EXPIRY_DAYS,
   authKeyDialogLabels,
   authKeyDialogUser,
   dateTimeLocalToIso,
@@ -26,11 +24,6 @@ describe("auth key date-time helpers", () => {
 });
 
 describe("relative default expiration", () => {
-  test("exposes the shared day constants", () => {
-    expect(AUTH_KEY_EXPIRY_DAYS).toBe(7);
-    expect(API_KEY_EXPIRY_DAYS).toBe(90);
-  });
-
   test.each(["2027-03-01T12:00:00Z", "2031-07-15T03:30:00Z"])(
     "defaults to the given number of days after %s",
     (nowIso) => {

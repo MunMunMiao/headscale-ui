@@ -4,10 +4,9 @@ import {
   nodeConnectionStatus,
 } from "@/domain/node-status";
 import { registrationKeyStatus } from "@/domain/tag-lifecycle";
+import { isExitRoute } from "./routes";
 
-export function isExitRoute(route: string): boolean {
-  return route === "0.0.0.0/0" || route === "::/0";
-}
+export { isExitRoute } from "./routes";
 
 /* ----------------------------------------------------------------------------
  * Palette table — every status badge in the app picks one of these triplets.

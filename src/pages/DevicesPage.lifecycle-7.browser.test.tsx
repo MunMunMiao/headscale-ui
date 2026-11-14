@@ -1,3 +1,4 @@
+import { requireInstance } from "@/test/dom";
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { getProductCopy } from "@/i18n/product-copy";
@@ -77,8 +78,9 @@ test.each(["late-error", "lost-response"])(
     await expect
       .element(page.getByTestId("restore-personal-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     expect(ctx.writes()).toHaveLength(1);
     const current = fixtureNode(ctx.backend);
@@ -126,12 +128,13 @@ test("G02 round1: a changed baseline for request B can be rereviewed in the same
   await page.getByTestId("restore-auth-id").fill(nextAuthId);
   for (const name of ["server", "backup", "source"]) {
     const checkbox = page.getByTestId(`restore-${name}-confirm`);
-    if (!(checkbox.element() as HTMLInputElement).checked)
+    if (!requireInstance(checkbox.element(), HTMLInputElement).checked)
       await checkbox.click();
   }
   fixtureNode(ctx.backend).tags = ["tag:prod"];
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect.element(page.getByTestId("restore-safety-error")).toBeVisible();
   expect(ctx.writes()).toHaveLength(1);
@@ -181,14 +184,15 @@ test.each(["already-target", "different-person", "duplicate-machine"])(
     await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
     for (const name of ["server", "backup", "source"]) {
       const checkbox = page.getByTestId(`restore-${name}-confirm`);
-      if (!(checkbox.element() as HTMLInputElement).checked)
+      if (!requireInstance(checkbox.element(), HTMLInputElement).checked)
         await checkbox.click();
     }
     await expect
       .element(page.getByTestId("restore-personal-confirm"))
       .toBeDisabled();
-    (
-      page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+    requireInstance(
+      page.getByTestId("pending-registration-flow").element(),
+      HTMLFormElement,
     ).requestSubmit();
     await expect
       .element(page.getByTestId("restore-auth-id"))
@@ -213,7 +217,7 @@ test("G02 round1: editing a rereviewed new request revokes that attempt's review
   await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
   for (const name of ["server", "backup", "source"]) {
     const checkbox = page.getByTestId(`restore-${name}-confirm`);
-    if (!(checkbox.element() as HTMLInputElement).checked)
+    if (!requireInstance(checkbox.element(), HTMLInputElement).checked)
       await checkbox.click();
   }
   await page

@@ -1,7 +1,9 @@
-import "fake-indexeddb/auto";
-import { IDBFactory } from "fake-indexeddb";
+import { serveFixture } from "@/test/fixture-server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { fetchSnapshot } from "@/api/snapshot";
+import { UnsupportedServerVersionError } from "@/domain/server-version";
+import { findErrorCause } from "@/utils/error-cause";
+import { ApiError } from "./types";
 import { decryptProfileKey, encryptProfileKey } from "@/lib/api-key-crypto";
 import { __resetForTest } from "@/lib/idb";
 import {
@@ -14,6 +16,7 @@ import { startSnapshotServer } from "@/test-utils/headscale.test";
 import { idbDelete, idbGet, idbPut } from "@/test-utils/storage";
 import { createAuthSession, SessionFault } from "./auth-session";
 import { executeOperation } from "./operation-dispatch";
+import { clearHeadscaleDatabase } from "@/test/clear-headscale-database";
 import {
   createProfileActions,
   type ProfileActionContext,
@@ -22,9 +25,9 @@ import {
 } from "./profile-actions";
 
 const cleanup: (() => void)[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   __resetForTest();
-  globalThis.indexedDB = new IDBFactory();
+  await clearHeadscaleDatabase();
 });
 afterEach(() => {
   for (const stop of cleanup.splice(0)) stop();
@@ -36,16 +39,23 @@ async function version() {
 }
 function fixture() {
   const server = startSnapshotServer();
-  cleanup.push(server.stop);
+  cleanup.push(() => server.stop());
   const clock = createManualClock();
   let sequence = 0;
   const validate: ProfileActionDependencies["validate"] = async (context) => {
-    await fetchSnapshot(
+    const [err] = await fetchSnapshot(
       (command) => executeOperation({ ...command, type: "api.read" }, context),
-      {
-        signal: context.signal,
-      },
+      { signal: context.signal },
     );
+    if (err)
+      throw (
+        findErrorCause(
+          err,
+          (cause): cause is ApiError | UnsupportedServerVersionError =>
+            cause instanceof ApiError ||
+            cause instanceof UnsupportedServerVersionError,
+        ) ?? err
+      );
   };
   const auth = createAuthSession({
     workerId: "worker-a",
@@ -56,18 +66,18 @@ function fixture() {
       if (!read?.profile.credentialVersion)
         throw new SessionFault("storage-conflict");
       const credentialVersion = read.profile.credentialVersion;
-      const profile = read.profile;
+      const storedProfile = read.profile;
       const apiKey = await decryptProfileKey({
-        profileId: profile.id,
-        canonicalBaseUrl: profile.baseUrl,
+        profileId: storedProfile.id,
+        canonicalBaseUrl: storedProfile.baseUrl,
         credentialVersion,
-        secret: profile.apiKey,
+        secret: storedProfile.apiKey,
         password: input.password,
       });
       return {
-        profile,
+        profile: storedProfile,
         apiKey,
-        keyEpoch: profile.keyEpoch,
+        keyEpoch: storedProfile.keyEpoch,
         credentialVersion,
       };
     },
@@ -345,14 +355,12 @@ test.each(["password", "apiKey", "baseUrl"] as const)(
 
 test("validation failure preserves storage; explicit save without validation requires a fresh call and cannot activate", async () => {
   const f = fixture();
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     fetch: () =>
       Response.json({ code: 7, message: "permission denied" }, { status: 403 }),
   });
   cleanup.push(() => {
-    server.stop(true);
+    void server.stop(true);
   });
   const input = await credentials(f);
   input.profile.baseUrl = server.url.origin;
@@ -547,7 +555,10 @@ test.each(["cancelled", "transaction-abort"] as const)(
     const controller = new AbortController();
     if (boundary === "cancelled") controller.abort();
     else {
-      const put = IDBObjectStore.prototype.put;
+      const put: typeof IDBObjectStore.prototype.put = Reflect.get(
+        IDBObjectStore.prototype,
+        "put",
+      );
       vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
         this: IDBObjectStore,
         ...args
@@ -743,7 +754,10 @@ test("reset failure keeps the global session locked and original data recoverabl
   const row = await f.profile();
   expect((await f.unlock(row)).ok).toBe(true);
   const expected = await version();
-  const clear = IDBObjectStore.prototype.clear;
+  const clear: typeof IDBObjectStore.prototype.clear = Reflect.get(
+    IDBObjectStore.prototype,
+    "clear",
+  );
   const spy = vi
     .spyOn(IDBObjectStore.prototype, "clear")
     .mockImplementation(function (this: IDBObjectStore) {
@@ -976,7 +990,10 @@ test("a failed read of a readable row is not mistaken for an unreadable row", as
   const f = fixture();
   const row = await f.profile();
   const input = await credentials(f);
-  const get = IDBObjectStore.prototype.get;
+  const get: typeof IDBObjectStore.prototype.get = Reflect.get(
+    IDBObjectStore.prototype,
+    "get",
+  );
   let denied = false;
   vi.spyOn(IDBObjectStore.prototype, "get").mockImplementation(function (
     this: IDBObjectStore,

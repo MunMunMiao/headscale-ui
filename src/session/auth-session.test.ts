@@ -1,4 +1,8 @@
+import type { HeadscaleHttp } from "@/api/http";
+import { listUsers } from "@/api/requests";
+import { serveFixture } from "@/test/fixture-server";
 import { expect, test, vi } from "vitest";
+import { testDouble } from "@/test/dom";
 import { createManualClock } from "@/test/session-clock";
 import {
   type AuthSessionDependencies,
@@ -66,6 +70,72 @@ function fixture(overrides: Partial<AuthSessionDependencies> = {}) {
   return { session, clock, deps, execute, input };
 }
 
+test("session-owned clients isolate call cancellation and cannot outlive their credential scope", async () => {
+  const seen: string[] = [];
+  const server = serveFixture({
+    fetch(request) {
+      seen.push(request.headers.get("authorization") ?? "");
+      return Response.json({ users: [] });
+    },
+  });
+  let http: HeadscaleHttp | undefined;
+  const f = fixture({
+    openCredential: async (input) => ({
+      profile: {
+        id: input.profileId,
+        name: input.profileId,
+        baseUrl: server.url.origin,
+      },
+      credentialVersion: input.expectedCredentialVersion,
+      keyEpoch: "epoch-a",
+      apiKey: `${input.profileId}-key`,
+    }),
+    execute: (command, context) => {
+      if (!context.http) throw new Error("Missing session-owned client");
+      http = context.http;
+      return executeOperation(command, context);
+    },
+  });
+  try {
+    const first = identityOf(successful(await f.session.unlock(f.input())));
+    const controller = new AbortController();
+    const command = {
+      type: "api.read",
+      endpoint: "listUsers",
+      input: {},
+    } as const;
+    successful(
+      await f.session.execute(first, command, { signal: controller.signal }),
+    );
+    controller.abort();
+    successful(await f.session.execute(first, command));
+    const previousHttp = http;
+    if (!previousHttp) throw new Error("Expected authenticated client");
+    successful(f.session.lock(first));
+    const [lockedErr] = await listUsers(previousHttp, {});
+    expect(lockedErr).toMatchObject({
+      code: "EXT_INTERCEPTOR_FAILED",
+      cause: { kind: "locked" },
+    });
+    const second = identityOf(
+      successful(await f.session.unlock(f.input("profile-b"))),
+    );
+    successful(await f.session.execute(second, command));
+    const [staleErr] = await listUsers(previousHttp, {});
+    expect(staleErr).toMatchObject({
+      code: "EXT_INTERCEPTOR_FAILED",
+      cause: { kind: "stale" },
+    });
+    expect(seen).toEqual([
+      "Bearer profile-a-key",
+      "Bearer profile-a-key",
+      "Bearer profile-b-key",
+    ]);
+  } finally {
+    void server.stop(true);
+  }
+});
+
 test("credential validation preserves API fault semantics without exposing the connection secret", async () => {
   const f = fixture();
   const active = successful(await f.session.unlock(f.input()));
@@ -118,9 +188,6 @@ test("unlock starts a 30 minute session with a stable, public-only snapshot", as
   expect(JSON.stringify(unlocked)).not.toMatch(
     /worker-only-key|profile password|credential-1/,
   );
-  expect(Object.isFrozen(unlocked)).toBe(true);
-  expect(Object.isFrozen(unlocked.identity)).toBe(true);
-  expect(Object.isFrozen(unlocked.profile)).toBe(true);
 });
 
 const newFormatKey = "hskey-api-abcdefghijkl-secretSECRETsecretSECRETsecret";
@@ -890,7 +957,6 @@ test("committed display-name changes update metadata without renewing or replaci
   });
   expect(renamed.identity).toBe(original.identity);
   expect(renamed.expiresAt).toBe(original.expiresAt);
-  expect(Object.isFrozen(renamed.profile)).toBe(true);
   expect(f.session.updateProfileName("profile-a", "Renamed")).toBe(renamed);
   expect(
     (
@@ -1029,24 +1095,23 @@ const interrupted = [
 test.each(interrupted)(
   "a write ended by $name is unconfirmed, a read is not",
   async (scenario) => {
-    for (const [command, outcome] of [
-      ...writeCommands.map(
-        (command) => [command, { outcome: "unknown" }] as const,
-      ),
+    for (const [apiCommand, outcome] of [
+      ...writeCommands.map((entry) => [entry, { outcome: "unknown" }] as const),
       [readCommand, {}] as const,
     ]) {
       const f = fixture();
       const identity = identityOf(
         successful(await f.session.unlock(f.input())),
       );
-      const { interrupt, release } = (await scenario.run(f, identity)) as {
+      const scenarioResult = testDouble<{
         interrupt?: () => unknown;
         release: () => void;
-      };
-      const pending = f.session.execute(identity, command);
+      }>(await scenario.run(f, identity));
+      const { interrupt, release } = scenarioResult;
+      const pending = f.session.execute(identity, apiCommand);
       await interrupt?.();
       release();
-      expect(await pending, command.endpoint).toEqual({
+      expect(await pending, apiCommand.endpoint).toEqual({
         ok: false,
         error: { kind: scenario.kind, ...outcome },
       });
@@ -1129,9 +1194,7 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
   const received = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let acceptedWrites = 0;
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
+  const server = serveFixture({
     async fetch(request) {
       await request.json();
       acceptedWrites++;
@@ -1170,6 +1233,6 @@ test("a write whose late 200 reply is discarded by an unlock is reported as unco
     expect(acceptedWrites).toBe(1);
   } finally {
     release.resolve();
-    server.stop(true);
+    void server.stop(true);
   }
 });

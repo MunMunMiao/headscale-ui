@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -19,7 +18,7 @@ import RoutesPage from "./RoutesPage";
 
 beforeEach(async () => {
   await hydrateSettings();
-  setLocale("en-US");
+  await setLocale("en-US");
 });
 
 const alice = {
@@ -103,7 +102,7 @@ interface Call {
   body: Record<string, unknown> & { routes: string[] };
 }
 async function setup(path = "/", tweak?: (backend: HeadscaleSnapshot) => void) {
-  setLocale("en-US");
+  await setLocale("en-US");
   const backend = fixture();
   tweak?.(backend);
   const calls: Call[] = [];
@@ -155,7 +154,9 @@ async function setup(path = "/", tweak?: (backend: HeadscaleSnapshot) => void) {
       request.method === "POST" &&
       url.pathname === "/api/v1/preauthkey/expire"
     ) {
-      const key = backend.preAuthKeys.find((key) => key.id === body.id);
+      const key = backend.preAuthKeys.find(
+        (candidate) => candidate.id === body.id,
+      );
       if (!key) throw new Error("Unknown fixture key");
       key.expiration = "2000-01-01T00:00:00Z";
       return Response.json({});
@@ -178,7 +179,7 @@ async function setup(path = "/", tweak?: (backend: HeadscaleSnapshot) => void) {
     return Response.json(responses[url.pathname]);
   };
   const session = await prepareTestSession(transport);
-  setLocale("en-US");
+  await setLocale("en-US");
   await authenticateTestSession(session);
   const { router } = await renderSessionPage(
     session,
@@ -944,9 +945,6 @@ test("an expired unused key reads Expired and is found by searching for it", asy
   await expect
     .element(page.getByTestId("invite-status-3"))
     .toHaveTextContent("Expired");
-  expect(page.getByTestId("invite-status-3").element().className).toContain(
-    "rose",
-  );
   await expect
     .element(page.getByTestId("invite-status-1"))
     .toHaveTextContent("Ready");

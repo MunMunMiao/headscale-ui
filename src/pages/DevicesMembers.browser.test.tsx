@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+import { requireInstance, requireValue } from "@/test/dom";
 import type { FetchHandle } from "@defjs/core";
 import { afterEach, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -14,6 +14,19 @@ import {
 } from "@/test/session";
 import DevicesPage from "./DevicesPage";
 import MembersPage from "./MembersPage";
+
+function assignmentAction(
+  kind: string,
+): "assign-user-groups" | "assign-user-tags" {
+  return kind === "groups" ? "assign-user-groups" : "assign-user-tags";
+}
+
+function requestTags(body: unknown): string[] {
+  const value =
+    body && typeof body === "object" ? Reflect.get(body, "tags") : undefined;
+  if (!Array.isArray(value)) throw new Error("fixture request is missing tags");
+  return value.filter((tag): tag is string => typeof tag === "string");
+}
 
 const alice = {
   id: "1",
@@ -134,7 +147,7 @@ async function setup(
     )
       return Response.json({ message: failure }, { status: failureStatus });
     if (request.method === "POST" && url.pathname === "/api/v1/user") {
-      const user = { id: "3", ...body } as typeof bob;
+      const user: typeof bob = { id: "3", ...body };
       backend.users.push(user);
       return Response.json({ user });
     }
@@ -211,7 +224,7 @@ async function setup(
           url.pathname.split("/").at(-1) ?? "",
         );
       if (url.pathname.endsWith("/tags")) {
-        const tags = body.tags as string[];
+        const tags = requestTags(body);
         const owners =
           JSON.parse(backend.policy?.policy || "{}").tagOwners ?? {};
         if (
@@ -319,8 +332,8 @@ function discardDraft(ctx: Awaited<ReturnType<typeof setup>>) {
 function sectionRows(testid: string) {
   return Array.from(
     document.querySelectorAll(`[data-testid="${testid}"]`),
-    (row) => String(row.textContent),
-  ).sort();
+    (row) => row.textContent ?? "",
+  ).toSorted();
 }
 async function deviceAction(action: string, id = "1") {
   await page.getByTestId(`machine-actions-trigger-${id}`).click();
@@ -927,7 +940,7 @@ test("device and member exports contain only matching rows", async () => {
   let blob: Blob | undefined;
   const downloads: string[] = [];
   vi.spyOn(URL, "createObjectURL").mockImplementation((value) => {
-    blob = value as Blob;
+    if (value instanceof Blob) blob = value;
     return "blob:fixture";
   });
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -955,7 +968,7 @@ test("device and member exports contain only matching rows", async () => {
 function captureDownloads() {
   const csv = { text: async (): Promise<string | undefined> => undefined };
   vi.spyOn(URL, "createObjectURL").mockImplementation((value) => {
-    csv.text = () => (value as Blob).text();
+    csv.text = () => requireInstance(value, Blob).text();
     return "blob:fixture";
   });
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -1389,11 +1402,7 @@ for (const kind of ["groups", "tags"]) {
     await page.getByTestId(`assign-member-${kind}-bob`).click();
     release();
     await expect
-      .poll(() =>
-        ctx.session.feedback.isActionPending(
-          `assign-user-${kind}` as "assign-user-groups" | "assign-user-tags",
-        ),
-      )
+      .poll(() => ctx.session.feedback.isActionPending(assignmentAction(kind)))
       .toBe(false);
     await expect
       .element(page.getByTestId("policy-save-notice"))
@@ -1430,11 +1439,7 @@ for (const kind of ["groups", "tags"]) {
     });
     release();
     await expect
-      .poll(() =>
-        ctx.session.feedback.isActionPending(
-          `assign-user-${kind}` as "assign-user-groups" | "assign-user-tags",
-        ),
-      )
+      .poll(() => ctx.session.feedback.isActionPending(assignmentAction(kind)))
       .toBe(false);
     expect(ctx.session.policy.policyPayload?.hosts).toEqual({
       newer: "10.99.0.0/16",
@@ -1659,29 +1664,29 @@ test("member details remove group and tag references only after successful polic
   const tagRemove = document.querySelector<HTMLElement>(
     '[data-testid^="remove-user-policy-reference-tagOwner-"]',
   )?.dataset.testid;
-  expect(groupRemove).toBeTruthy();
-  expect(tagRemove).toBeTruthy();
-  await page.getByTestId(groupRemove as string).click();
+  const groupTestId = requireValue(groupRemove);
+  const tagTestId = requireValue(tagRemove);
+  await page.getByTestId(groupTestId).click();
   await page.getByTestId("confirm-remove-user-policy-reference").click();
   await page.getByTestId("policy-publication-confirm").click();
   await expect
-    .element(page.getByTestId((groupRemove as string).replace("remove-", "")))
+    .element(page.getByTestId(groupTestId.replace("remove-", "")))
     .toBeVisible();
   await expect
     .poll(() => ctx.session.feedback.actionError("save-policy"))
     .toContain("Policy removal denied");
   ctx.fail("");
-  await page.getByTestId(groupRemove as string).click();
+  await page.getByTestId(groupTestId).click();
   await page.getByTestId("confirm-remove-user-policy-reference").click();
   await page.getByTestId("policy-publication-confirm").click();
   await expect
-    .element(page.getByTestId((groupRemove as string).replace("remove-", "")))
+    .element(page.getByTestId(groupTestId.replace("remove-", "")))
     .not.toBeInTheDocument();
-  await page.getByTestId(tagRemove as string).click();
+  await page.getByTestId(tagTestId).click();
   await page.getByTestId("confirm-remove-user-policy-reference").click();
   await page.getByTestId("policy-publication-confirm").click();
   await expect
-    .element(page.getByTestId((tagRemove as string).replace("remove-", "")))
+    .element(page.getByTestId(tagTestId.replace("remove-", "")))
     .not.toBeInTheDocument();
   const policy = JSON.parse(ctx.backend.policy?.policy ?? "{}");
   expect(policy.groups["group:ops"]).toEqual([]);
@@ -2116,7 +2121,7 @@ test("nodes owned by nobody or by the hidden tagged-devices user stay out of mem
     Array.from(
       document.querySelectorAll('[data-testid^="member-device-tag-"]'),
       (button) => button.getAttribute("data-testid"),
-    ).sort(),
+    ).toSorted((a, b) => String(a).localeCompare(String(b))),
   ).toEqual(["member-device-tag-alice-1", "member-device-tag-bob-2"]);
 });
 
@@ -2695,11 +2700,11 @@ for (const kind of ["groups", "tags"] as const) {
 const ZERO_TIME = "0001-01-01T00:00:00Z";
 function spareNode(
   ctx: Awaited<ReturnType<typeof setup>>,
-  patch: Record<string, unknown>,
+  patch: Partial<(typeof ctx.backend.nodes)[number]>,
 ) {
   const source = ctx.backend.nodes[1];
   if (!source) throw new Error("Missing fixture node");
-  return { ...source, ...patch } as (typeof ctx.backend.nodes)[number];
+  return { ...source, ...patch };
 }
 function pushNodes(ctx: Awaited<ReturnType<typeof setup>>) {
   ctx.session.snapshot.applyPatch({
@@ -2881,8 +2886,9 @@ test("a missing device preserves the selected target with a read error and never
   await expect
     .element(page.getByTestId("node-tags-remove-tag:server"))
     .toBeVisible();
-  (
-    page.getByTestId("node-tags-form").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("node-tags-form").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect.poll(() => ctx.session.snapshot.isRefreshing).toBe(false);
   expect(writes(ctx)).toEqual([]);
@@ -3143,7 +3149,7 @@ test("tag-owned machines have no owner link, owner text or owner search match", 
     .not.toBeInTheDocument();
   const cells = Array.from(
     document.querySelectorAll("[data-testid='device-3'] td"),
-    (cell) => String(cell.textContent).trim(),
+    (cell) => (cell.textContent ?? "").trim(),
   );
   expect(cells).toContain("-");
   await page.getByTestId("device-detail-link-3").click();
@@ -3260,8 +3266,9 @@ test("a registration error keeps its reason and target but cannot replay the con
     ctx.session.deviceSetup.getSnapshot().pendingRegistrationForm.key,
   ).toBe("");
   ctx.fail("");
-  (
-    page.getByTestId("pending-registration-flow").element() as HTMLFormElement
+  requireInstance(
+    page.getByTestId("pending-registration-flow").element(),
+    HTMLFormElement,
   ).requestSubmit();
   await expect
     .element(page.getByTestId("register-pending-node"))

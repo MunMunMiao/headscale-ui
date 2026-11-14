@@ -1,4 +1,5 @@
-import { redactDiagnosticData } from "@/api/operation-log";
+import { createWorkerHeadscaleHttp, type HeadscaleHttp } from "@/api/http";
+import { redactDiagnosticData, redactStatusData } from "@/api/operation-log";
 import { listedApiKeyPrefix } from "@/domain/api-key";
 import type { ApiRequest } from "./protocol";
 import {
@@ -35,28 +36,33 @@ export interface SessionRequestOptions {
 }
 
 export interface SessionExecutionContext {
+  http?: HeadscaleHttp;
   signal: AbortSignal;
-  requireCurrent(): { baseUrl: string; apiKey: string };
+  requireCurrent(this: void): { baseUrl: string; apiKey: string };
 }
 
 export interface AuthSessionDependencies {
   workerId: string;
-  now(): number;
-  newSessionId(): string;
+  now(this: void): number;
+  newSessionId(this: void): string;
   openCredential(
+    this: void,
     input: UnlockInput,
     signal: AbortSignal,
   ): Promise<CandidateCredential>;
   readCurrentProfile(
+    this: void,
     credential: CandidateCredential,
     ownerTabId: string,
   ): Promise<SessionProfile | null>;
   validateCredential(
+    this: void,
     credential: CandidateCredential,
     signal: AbortSignal,
     requireCurrent: () => void,
   ): Promise<void>;
   execute(
+    this: void,
     command: ApiRequest,
     context: SessionExecutionContext,
   ): Promise<SessionResult<unknown>>;
@@ -74,6 +80,17 @@ export class SessionFault extends Error {
   }
 }
 
+/** A full status switch or a same-status field update; `publish` owns the revision. */
+type SnapshotPatch =
+  | Omit<Extract<PublicSessionSnapshot, { status: "locked" }>, "revision">
+  | Omit<Extract<PublicSessionSnapshot, { status: "unlocked" }>, "revision">
+  | {
+      readonly status?: undefined;
+      readonly profile?: SessionProfile;
+      readonly pendingProfileId?: string | null;
+      readonly expiresAt?: number;
+    };
+
 export function createAuthSession(deps: AuthSessionDependencies) {
   const listeners = new Set<() => void>();
   let active: {
@@ -81,6 +98,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
     identity: SessionIdentity;
     expiresAt: number;
     controller: AbortController;
+    http: HeadscaleHttp;
   } | null = null;
   type Candidate = {
     controller: AbortController;
@@ -89,7 +107,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
   };
   let candidate: Candidate | null = null;
   let lastObserved = deps.now();
-  let snapshot: PublicSessionSnapshot = Object.freeze({
+  let snapshot: PublicSessionSnapshot = {
     status: "locked",
     identity: null,
     profile: null,
@@ -98,7 +116,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
     reason: "initial",
     revision: 0,
     apiKeyPrefix: null,
-  });
+  };
   const failure = (
     kind: SessionFailureKind,
     outcome?: "unknown",
@@ -106,19 +124,47 @@ export function createAuthSession(deps: AuthSessionDependencies) {
     ok: false,
     error: { kind, ...(outcome ? { outcome } : {}) },
   });
-  function publish(patch: Partial<PublicSessionSnapshot>) {
+  function publish(patch: SnapshotPatch) {
     if (
-      (Object.keys(patch) as (keyof PublicSessionSnapshot)[]).every((key) =>
-        Object.is(snapshot[key], patch[key]),
+      Object.keys(patch).every((key) =>
+        Object.is(Reflect.get(snapshot, key), Reflect.get(patch, key)),
       )
     )
       return snapshot;
-    // Every caller patches a whole locked or unlocked group, so the result is one of the two branches.
-    snapshot = Object.freeze({
-      ...snapshot,
-      ...patch,
-      revision: snapshot.revision + 1,
-    } as PublicSessionSnapshot);
+    const revision = snapshot.revision + 1;
+    if (patch.status !== undefined) {
+      // A status switch carries a whole locked or unlocked group.
+      snapshot = { ...patch, revision };
+    } else if (snapshot.status === "locked") {
+      snapshot = {
+        status: "locked",
+        identity: null,
+        profile: null,
+        expiresAt: null,
+        apiKeyPrefix: null,
+        pendingProfileId:
+          /* istanbul ignore next -- a locked partial update always carries the unlock marker */
+          patch.pendingProfileId !== undefined
+            ? patch.pendingProfileId
+            : snapshot.pendingProfileId,
+        reason: snapshot.reason,
+        revision,
+      };
+    } else {
+      snapshot = {
+        status: "unlocked",
+        identity: snapshot.identity,
+        profile: patch.profile ?? snapshot.profile,
+        expiresAt: patch.expiresAt ?? snapshot.expiresAt,
+        apiKeyPrefix: snapshot.apiKeyPrefix,
+        pendingProfileId:
+          patch.pendingProfileId !== undefined
+            ? patch.pendingProfileId
+            : snapshot.pendingProfileId,
+        reason: snapshot.reason,
+        revision,
+      };
+    }
     for (const listener of listeners) listener();
     return snapshot;
   }
@@ -195,11 +241,11 @@ export function createAuthSession(deps: AuthSessionDependencies) {
         snapshot.profile?.name === name
       )
         return snapshot;
-      active.credential.profile = Object.freeze({
+      active.credential.profile = {
         id: profileId,
         name,
         baseUrl: active.credential.profile.baseUrl,
-      });
+      };
       return publish({ profile: active.credential.profile });
     },
     invalidateProfile(profileId: string) {
@@ -274,21 +320,32 @@ export function createAuthSession(deps: AuthSessionDependencies) {
             current.baseUrl !== credential.profile.baseUrl
           )
             throw new SessionFault("storage-conflict");
-          credential.profile = Object.freeze({
+          credential.profile = {
             id: current.id,
             name: current.name,
             baseUrl: current.baseUrl,
-          });
-          const identity = Object.freeze({
+          };
+          const identity = {
             workerId: deps.workerId,
             sessionId: deps.newSessionId(),
-          });
+          };
+          const http = createWorkerHeadscaleHttp(
+            credential.profile.baseUrl,
+            () => {
+              const bound = requireActive(identity).credential;
+              return {
+                baseUrl: bound.profile.baseUrl,
+                apiKey: bound.apiKey,
+              };
+            },
+          );
           active?.controller.abort();
           active = {
             credential,
             identity,
             expiresAt: lastObserved + SESSION_IDLE_MS,
             controller: new AbortController(),
+            http,
           };
           candidate = null;
           return {
@@ -296,11 +353,11 @@ export function createAuthSession(deps: AuthSessionDependencies) {
             value: publish({
               status: "unlocked",
               identity,
-              profile: Object.freeze({
+              profile: {
                 id: credential.profile.id,
                 name: credential.profile.name,
                 baseUrl: credential.profile.baseUrl,
-              }),
+              },
               expiresAt: active.expiresAt,
               pendingProfileId: null,
               reason: null,
@@ -326,7 +383,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
                 code: error.code,
                 message: redactDiagnosticData(error.message, credential.apiKey),
                 status: error.status,
-                data: redactDiagnosticData(error.data, credential.apiKey),
+                data: redactStatusData(error.data, credential.apiKey),
               },
             };
           return failure(
@@ -378,6 +435,7 @@ export function createAuthSession(deps: AuthSessionDependencies) {
         if (signal.aborted) return failure("cancelled");
         unknown = command.type === "api.write" ? "unknown" : undefined;
         const result = await deps.execute(command, {
+          http: current.http,
           signal,
           requireCurrent() {
             const credential = requireActive(current.identity).credential;
